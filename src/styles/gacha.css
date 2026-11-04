@@ -2832,3 +2832,7 @@ html body > #geongi-version {
 /* v0.50 header mascot */
 .gacha-header .brand-icon{overflow:hidden;display:grid;place-items:center;background:#fff3ed!important}
 .gacha-header .brand-icon img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+
+/* v0.51: keep weed speed and combat power on separate lines on mobile and desktop. */
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot{min-height:39px}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot .friend-bonus{line-height:1.45;white-space:normal}
