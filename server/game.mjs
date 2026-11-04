@@ -210,7 +210,14 @@ export function validateMail({ message, coins }, { sentToday, balance, admin }) 
 }
 
 /** Storage box: extra (duplicate) copies can be sold for coins. */
-export const CHAR_SELL_PRICE = 3
+export const CHAR_SELL_PRICES = { normal: 3, rare: 5, epic: 10, unique: 30 }
+export const characterSellPrice = id => id.startsWith('m_') || id === 'hanip' || id === 'duip'
+  ? CHAR_SELL_PRICES.rare
+  : ['siren', 'shimajiro', 'anoko', 'dekatsuyo'].includes(id)
+    ? CHAR_SELL_PRICES.epic
+    : ['c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'beetle'].includes(id)
+      ? CHAR_SELL_PRICES.unique
+      : CHAR_SELL_PRICES.normal
 export const DECO_SELL_PRICE = 5
 /** Character duplicates: { [characterId]: extra copies beyond the first }. */
 export function normalizeDupes(value) {
@@ -235,7 +242,7 @@ export function sellCharacter(dupes, id, count) {
   if (n > have) return { error: 'sell_not_enough' }
   const next = { ...normalizeDupes(dupes) }
   if (have - n > 0) next[id] = have - n; else delete next[id]
-  return { dupes: next, coins: n * CHAR_SELL_PRICE }
+  return { dupes: next, coins: n * characterSellPrice(id) }
 }
 /** Sell `count` duplicate copies of a deco; always keeps one copy, and every copy placed in the house. */
 export function sellDeco(decos, id, count, placed = 0) {

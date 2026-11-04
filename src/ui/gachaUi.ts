@@ -2,7 +2,7 @@ import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'
 import { BATTLE_TICK_MS, ENEMY_HP, battlePower, CHARACTERS, DAILY_GIFT, NEW_ENTRY_BONUS, RARE_NEW_BONUS, PULL_OPTIONS, characterById, fullName, type Character, pullCost, STARTING_COINS, ROULETTE_PRIZES, type CharacterId, type PullCount, type PullResult } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
-import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICE, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
+import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICES, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
 import { weedFieldMarkup } from './weedField'
 import { battleFieldMarkup } from './battleField'
 import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
@@ -985,10 +985,10 @@ export class GachaUi {
     if (this.storageTab === 'char') {
       const owned = CHARACTERS.filter(c => this.store.data.owned.includes(c.id))
       const extras = owned.reduce((sum, c) => sum + (this.store.dupes[c.id] ?? 0), 0)
-      if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 중복 캐릭터는 1개당 ${CHAR_SELL_PRICE}코인에 팔 수 있어요 (원본 1개는 남아요).`
+      if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 중복 판매: 노말 3 · 레어 5 · 에픽 10 · 유니크 30코인 (원본 1개는 남아요).`
       grid.innerHTML = owned.length ? owned.map(c => {
         const extra = this.store.dupes[c.id] ?? 0
-        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small>${sellButtons('char', c.id, extra, CHAR_SELL_PRICE)}</article>`
+        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small>${sellButtons('char', c.id, extra, CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' ? 'unique' : 'normal'])}</article>`
       }).join('') : '<p class="users-empty">아직 뽑은 캐릭터가 없어요.</p>'
     } else {
       const placed: Record<string, number> = {}
