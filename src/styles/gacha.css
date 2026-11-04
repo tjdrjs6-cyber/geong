@@ -1637,3 +1637,32 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen > .pop-reveal { z-index:1000 !important; }
 .gacha-modal[data-screen="result"] { z-index:1001 !important; }
 .gacha-modal[data-screen="result"].is-active { isolation:isolate; }
+
+/* Final stacking fix: reveal and result are ROOT-level fullscreen overlays.
+   position:fixed prevents overlap with positioned main-screen controls. */
+#ui > .pop-reveal,
+.gacha-app > .pop-reveal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  z-index: 2147483646 !important;
+  isolation: isolate !important;
+  place-items: center !important;
+}
+#ui > .pop-reveal.is-visible,
+.gacha-app > .pop-reveal.is-visible {
+  pointer-events: auto !important;
+}
+#ui > .gacha-modal[data-screen="result"],
+.gacha-app > .gacha-modal[data-screen="result"] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483645 !important;
+}
+#ui > .pop-reveal .pop-card,
+.gacha-app > .pop-reveal .pop-card {
+  max-width: calc(100vw - 28px);
+  max-height: calc(100dvh - 28px);
+  box-sizing: border-box;
+}
