@@ -2792,3 +2792,13 @@ html body > #geongi-version {
 @keyframes exp-fighter-strike{0%{transform:translateY(-10px)}9%{transform:translateY(0)}96%,100%{transform:translateY(0)}}
 @keyframes exp-shot-to-boss{0%{opacity:1;transform:translate(0,0) scale(1)}31%{opacity:1;transform:translate(var(--shot-x),var(--shot-y)) scale(1.5)}33.333%{opacity:0;transform:translate(var(--shot-x),var(--shot-y)) scale(.2)}33.34%,99.99%{opacity:0;transform:translate(0,0) scale(.5)}100%{opacity:1;transform:translate(0,0) scale(1)}}
 @keyframes exp-boss-hit{0%,32%{transform:translateX(-50%) rotate(-1deg) scale(1);filter:drop-shadow(0 6px 5px #001a46aa)}33.333%{transform:translateX(-50%) rotate(2deg) scale(.96,1.04);filter:brightness(1.7) drop-shadow(0 0 12px #ff6464)}39%{transform:translateX(-50%) rotate(-2deg) scale(1.04,.96);filter:brightness(1.25) drop-shadow(0 0 8px #ff9696)}48%,100%{transform:translateX(-50%) rotate(-1deg) scale(1);filter:drop-shadow(0 6px 5px #001a46aa)}}
+
+/* v0.42 collection: compact stat text must wrap within each card, never spill into neighbors. */
+.collection-grid .friend-card{min-width:0;overflow:hidden;box-sizing:border-box;}
+.collection-grid .friend-card .friend-bonus{display:block!important;position:static!important;max-width:100%;width:100%;box-sizing:border-box;margin:5px 0 0!important;padding:3px 4px!important;white-space:normal!important;overflow-wrap:anywhere;word-break:keep-all;text-align:center;line-height:1.5;font-size:10px;min-height:30px;}
+.collection-grid .friend-card .friend-avatar{overflow:hidden!important;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.collection-grid .friend-card .friend-avatar img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center center!important;box-sizing:border-box!important;padding:5px!important;transform:none!important;}
+.collection-grid .friend-card .friend-avatar img[src*="beetle"],
+.collection-grid .friend-card .friend-avatar img[src*="honey"],
+.collection-grid .friend-card .friend-avatar img[src*="ode"]{padding:8px!important;object-fit:contain!important;}
+.collection-grid .friend-card>small{margin-top:6px;}

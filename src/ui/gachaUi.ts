@@ -835,7 +835,7 @@ export class GachaUi {
 
   /** Collection cards; uncollected friends stay gray with a question mark. */
   private collectionCards(owned: readonly CharacterId[], interactive: boolean): string {
-    return CHARACTERS.map(character => {
+    return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4}[b.tier])).map(character => {
       const has = owned.includes(character.id)
       const isFeatured = has && character.id === this.heroId()
       const footer = has && interactive
