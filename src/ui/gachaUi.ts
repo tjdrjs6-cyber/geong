@@ -11,8 +11,8 @@ import { machineMarkup } from './toonMachine'
 
 const MACHINE_SPIN_SECONDS = 1.35
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
-const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
-const bonusTag = (character: Character): string => character.weedBonus ? `제초 +${character.weedBonus}%` : ''
+const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
+const bonusTag = (character: Character): string => `${character.weedBonus ? `제조속도 +${character.weedBonus}% · ` : ''}전투력 ${character.power}`
 
 type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
@@ -270,7 +270,7 @@ export class GachaUi {
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="collection-info-sticky"><div class="modal-kicker">YOUR LITTLE FRIENDS</div><h2 id="collection-title">캐릭터 도감</h2>
-          <p class="collection-summary">31명의 친구를 모아보세요. 일반 각 6.04% (갑옷씨2·3 각 6.05%) · 레어(인어의섬) 각 2.20% · 에픽 각 1.00% · 유니크(카레·진저맨·풍뎅이) 각 0.30%</p></div>
+          <p class="collection-summary">총 37종 · 노멀 71.86% · 레어 22.00% · 에픽 4.25% · 유니크 1.84% · 레전더리 0.05%</p></div>
           <div class="collection-grid"></div>
           <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
           <button class="modal-primary" data-action="close">가챠로 돌아가기</button>
@@ -843,7 +843,7 @@ export class GachaUi {
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
-        <div class="friend-chance">${tierTag(character)} · ${character.probability}%</div>
+        <div class="friend-chance">${tierTag(character)}</div>
         <b>${has ? character.name : '???'}</b>${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}
