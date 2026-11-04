@@ -68,6 +68,21 @@ async function prepareDatabase() {
     damage INT NOT NULL DEFAULT 0
   )`)
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
+    raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
+    hp BIGINT NOT NULL DEFAULT 10000000, last_tick BIGINT NOT NULL,
+    PRIMARY KEY (raid_day, server_id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_member (
+    raid_day VARCHAR(10) NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
+    server_id TINYINT UNSIGNED NOT NULL, character_id VARCHAR(32) NOT NULL,
+    joined_ms BIGINT NOT NULL, PRIMARY KEY (raid_day, account_id),
+    KEY ix_gm_expedition_room (raid_day, server_id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_paid (
+    raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
+    account_id BIGINT UNSIGNED NOT NULL, PRIMARY KEY (raid_day, server_id, account_id)
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_weeding (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     character_id VARCHAR(20) NOT NULL,
@@ -543,7 +558,89 @@ async function ensureGlobalChatTables() {
   )`)
 }
 
+// The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
+const EXP_HP = 10000000
+const EXP_TICK = 3000
+function expeditionWindow(now = Date.now()) {
+  const kst = new Date(now + 9 * 3600000)
+  const midnight = Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate()) - 9*3600000
+  const actualStart = midnight + 9*3600000 - (kst.getUTCHours() < 9 ? 86400000 : 0)
+  const d = new Date(actualStart + 9*3600000)
+  return {day:d.toISOString().slice(0,10),start:actualStart,next:actualStart+86400000}
+}
+async function expeditionSettle(conn, day, serverId, now) {
+  const [bossRows] = await conn.query('SELECT hp,last_tick FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+  if (!bossRows.length) return null
+  const boss=bossRows[0]
+  let hp=Number(boss.hp),last=Number(boss.last_tick)
+  const ticks=hp>0 ? Math.max(0,Math.floor((now-last)/EXP_TICK)) : 0
+  if(ticks) {
+    const [members]=await conn.query('SELECT character_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0),0)
+    hp=Math.max(0,hp-ticks*power)
+    last+=ticks*EXP_TICK
+    await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
+    if(hp===0) {
+      const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+      for(const player of players) {
+        const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_paid (raid_day,server_id,account_id) VALUES (?,?,?)',[day,serverId,player.account_id])
+        if(paid.affectedRows) await conn.query('UPDATE gm_saves SET gems=gems+500 WHERE account_id=?',[player.account_id])
+      }
+    }
+  }
+  return hp
+}
+async function expeditionSnapshot(accountId) {
+  const now=Date.now(), {day,start,next}=expeditionWindow(now)
+  const conn=await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const [mine]=await conn.query('SELECT server_id,character_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
+    const servers=[]
+    for(let id=1;id<=3;id++) {
+      await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,id,EXP_HP,start])
+      const hp=await expeditionSettle(conn,day,id,now)
+      const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
+      servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,me:String(m.account_id)===String(accountId)}))})
+    }
+    await conn.commit()
+    return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
+  } catch(e){await conn.rollback();throw e} finally {conn.release()}
+}
+async function expeditionJoin(accountId,serverId,characterId) {
+  const now=Date.now(),{day,start}=expeditionWindow(now)
+  const conn=await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
+    const hp=await expeditionSettle(conn,day,serverId,now)
+    const [old]=await conn.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
+    if(old.length) {await conn.rollback();return 'exp_already_joined'}
+    if(hp<=0) {await conn.rollback();return 'exp_boss_dead'}
+    const [count]=await conn.query('SELECT COUNT(*) AS n FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+    if(Number(count[0].n)>=10){await conn.rollback();return 'exp_full'}
+    const [owned]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[accountId])
+    const ids=owned.length?normalizeOwned(parseJson(owned[0].owned)):[]
+    if(!ids.includes(characterId)){await conn.rollback();return 'not_owned'}
+    await conn.query('INSERT INTO gm_expedition_member (raid_day,account_id,server_id,character_id,joined_ms) VALUES (?,?,?,?,?)',[day,accountId,serverId,characterId,now])
+    await conn.commit();return null
+  } catch(e){await conn.rollback();if(e.code==='ER_DUP_ENTRY')return 'exp_already_joined';throw e}finally{conn.release()}
+}
 const routes = {
+  'GET /api/expedition': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    send(res,200,await expeditionSnapshot(account.id))
+  },
+  'POST /api/expedition/join': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {serverId,characterId}=await readJson(req)
+    if(![1,2,3].includes(serverId)||typeof characterId!=='string'||!CHARACTER_IDS.includes(characterId))return send(res,400,{error:'not_owned'})
+    const error=await expeditionJoin(account.id,serverId,characterId)
+    if(error)return send(res,409,{error})
+    send(res,200,await expeditionSnapshot(account.id))
+  },
   'GET /api/global-chat': async (req, res) => {
     await ensureGlobalChatTables()
     const account = await currentAccount(req)

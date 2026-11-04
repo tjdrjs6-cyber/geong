@@ -2671,3 +2671,76 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen > .gacha-actions { bottom:calc(42px + var(--safe-b,0px)) !important; }
 .gacha-screen > .free-note { bottom:calc(22px + var(--safe-b,0px)) !important; }
 #geongi-version { position:fixed !important; bottom:max(6px,env(safe-area-inset-bottom,0px)) !important; right:max(7px,env(safe-area-inset-right,0px)) !important; z-index:2147483647 !important; display:block !important; visibility:visible !important; opacity:1 !important; font:11px/1.2 Arial,sans-serif !important; color:#6d6268 !important; background:rgba(255,255,255,.85) !important; border-radius:6px !important; padding:3px 5px !important; pointer-events:none !important; }
+
+/* v0.30: show claw-machine currency errors in front of the claw modal, not behind it. */
+.claw-screen.is-active .claw-card { position:relative; isolation:isolate; }
+.claw-screen.is-active .claw-toast {
+  position:sticky!important; top:8px!important; bottom:auto!important; left:auto!important;
+  display:block; width:max-content; max-width:calc(100% - 16px); margin:0 auto -4px;
+  z-index:999!important; box-sizing:border-box; white-space:normal!important;
+  overflow:visible!important; text-overflow:clip!important; text-align:center;
+  font-size:12px; line-height:1.45; transform:translateY(-8px);
+}
+.claw-screen.is-active .claw-toast.is-visible {transform:translateY(0)}
+
+/* v0.31: allow full claw controls and bottom message to be reached at all heights. */
+.gacha-modal.claw-screen.is-active {
+  box-sizing:border-box!important;
+  display:flex!important; flex-direction:column!important; align-items:center!important;
+  justify-content:flex-start!important;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(14px + env(safe-area-inset-bottom,0px))!important;
+  overflow-y:auto!important; overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+}
+.gacha-modal.claw-screen.is-active .claw-card {
+  flex:0 0 auto!important;
+  width:min(100%,540px)!important;
+  max-height:none!important;
+  overflow:visible!important;
+  margin:0 auto!important;
+  padding:14px 12px 18px!important;
+  box-sizing:border-box!important;
+}
+.gacha-modal.claw-screen.is-active .claw-machine {
+  height:clamp(185px,35cqh,320px)!important;
+  min-height:0!important;
+}
+.gacha-modal.claw-screen.is-active .claw-controls {margin-top:12px!important;}
+.gacha-modal.claw-screen.is-active .claw-message {margin-bottom:4px!important;}
+/* Version label stays anchored to actual browser viewport, not the scaled game canvas. */
+html body > #geongi-version {
+  position:fixed!important; right:8px!important;
+  bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;
+  display:block!important; visibility:visible!important; opacity:1!important;
+  z-index:2147483647!important; transform:none!important;
+  background:rgba(255,255,255,.94)!important;
+  color:#65575d!important; padding:4px 6px!important;
+  border:1px solid rgba(112,89,99,.25)!important; border-radius:7px!important;
+  font:600 11px/1.2 Arial,sans-serif!important; pointer-events:none!important;
+}
+
+/* v0.32 expedition - responsive fixed-ratio stage */
+.expedition-entry{position:absolute;top:84px;left:50%;transform:translateX(-50%);z-index:15;width:104px;border:0;background:transparent;cursor:pointer;padding:0;text-align:center;color:#69435a;font-weight:900;font-size:12px}
+.expedition-entry img{width:90px;height:57px;object-fit:cover;border:2px solid #e3bfd4;border-radius:12px;display:block;margin:auto;box-shadow:0 3px 8px #0002}
+.expedition-screen{overflow-y:auto!important;overflow-x:hidden!important;display:none;flex-direction:column;background:#edf9ff!important}
+.expedition-screen.is-active{display:flex!important}
+.expedition-server-tabs{display:flex;gap:8px;padding:12px;justify-content:center}
+.expedition-server-tabs button{background:#fff;border:2px solid #9ccad8;border-radius:20px;padding:8px 17px;font-weight:800;color:#3b6977}
+.expedition-server-tabs button.selected{background:#86c5dd;color:#fff;border-color:#488eb0}
+.expedition-cave{position:relative;flex:none;width:100%;height:min(100vw,430px);min-height:310px;overflow:hidden;background:radial-gradient(ellipse at 50% 5%,#97f1f0 0%,#2a9fae 28%,#145b79 65%,#073149 100%);border:solid 12px #59677a;border-radius:45% 45% 8% 8%/25% 25% 8% 8%;box-sizing:border-box;box-shadow:inset 0 16px 40px #09283a99}
+.expedition-cave:before{content:' ';position:absolute;inset:0;background:repeating-linear-gradient(140deg,transparent 0 44px,#ffffff09 45px 50px);pointer-events:none}
+.expedition-hp-label{position:absolute;z-index:5;top:12px;left:10%;right:10%;text-align:center;font-weight:900;color:#fff;text-shadow:0 2px 4px #000}
+.expedition-hp-track{position:absolute;z-index:5;top:40px;left:8%;width:84%;height:17px;background:#351c2b;border:3px solid #fff;border-radius:20px;overflow:hidden}
+.expedition-hp-fill{height:100%;background:linear-gradient(90deg,#ffbc5a,#ff667f);transition:width .3s}
+.expedition-boss{position:absolute;right:2%;bottom:7%;width:43%;height:64%;object-fit:contain;filter:drop-shadow(0 8px 7px #001a36aa)}
+.expedition-boss.defeated{opacity:0;transform:scale(.5);transition:all .5s}
+.expedition-party{position:absolute;left:2%;bottom:8%;width:52%;height:62%;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);align-items:end;z-index:2}
+.expedition-fighter{width:100%;height:100%;object-fit:contain;transform-origin:bottom center;animation:exp-hit 3s ease-in-out infinite}
+@keyframes exp-hit{0%,68%,100%{transform:translateX(0)}78%{transform:translateX(24%) scale(1.08)}85%{transform:translateX(0)}}
+.expedition-details{padding:12px 16px 28px;display:flex;flex-direction:column;gap:10px;overflow:visible;color:#37586a}
+.expedition-status{font-weight:800;text-align:center}
+.expedition-members{display:flex;flex-wrap:wrap;gap:6px}.expedition-members span{padding:5px 8px;border-radius:15px;background:#fff;border:1px solid #add9e9;font-size:11px}
+.expedition-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:220px;overflow-y:auto}
+.expedition-choices button{display:flex;flex-direction:column;align-items:center;border:1px solid #abd1e4;background:#fff;border-radius:12px;padding:5px;color:#3c596b;font-size:10px;cursor:pointer}
+.expedition-choices img{height:52px;max-width:100%;object-fit:contain}.expedition-choices small{display:block;color:#527f94}
+.expedition-help{font-size:11px;line-height:1.5}
