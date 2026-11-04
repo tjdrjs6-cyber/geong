@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --no-audit --no-fund
 COPY . .
-RUN node scripts/manus-game-assets/restore.mjs && npx vite build
+RUN mkdir -p public/assets && cp -R assets/. public/assets/ && npx vite build
 
 FROM node:22-bookworm-slim
 WORKDIR /app
