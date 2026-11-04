@@ -174,6 +174,7 @@ export class GachaUi {
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
+          <p class="battle-reward-hint">💎 몬스터 1마리 처치 시 다이아 코인 1개! 보관함에 자동 지급돼요.</p>
           <p class="battle-status"></p>
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
           <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 다이아 코인 1개가 인벤토리에 자동 지급돼요. 앱을 닫아도 계속 싸워요.</p>
