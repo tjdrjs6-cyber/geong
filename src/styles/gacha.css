@@ -1739,3 +1739,10 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .global-chat-input { flex:1; min-width:0; border:1px solid #e7c9d1; border-radius:13px; padding:10px 12px; font:inherit; background:#fff; }
 .global-chat-compose .modal-primary { flex:0 0 auto; width:auto; margin:0; padding:9px 16px; }
 .global-chat-hint { margin:6px 0 0; color:#9d7b86; font-size:12px; }
+
+/* Game version — increment by 0.01 on each requested update. */
+#geongi-version { position:fixed; right: max(8px, env(safe-area-inset-right, 0px)); bottom:max(6px, env(safe-area-inset-bottom, 0px)); z-index:2147483640; pointer-events:none; font-family:Arial,sans-serif; font-size:10px; line-height:1.2; font-weight:400; color:#999; opacity:.8; text-shadow:0 1px 2px #fff; }
+
+/* v0.02: unread global chat indicator */
+.nav-global-chat { position: relative; }
+.global-chat-dot:not([hidden]) { position:absolute; top:5px; right:7px; width:10px; height:10px; border-radius:50%; background:#f13e50; border:2px solid #fff; box-shadow:0 0 0 1px #e65a65; pointer-events:none; }

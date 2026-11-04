@@ -113,6 +113,10 @@ async function prepareDatabase() {
     created_ms BIGINT NOT NULL,
     KEY ix_gm_global_chat_time (id)
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_global_chat_seen (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    last_seen_id BIGINT UNSIGNED NOT NULL DEFAULT 0
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_global_chat_cooldown (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     last_sent_ms BIGINT NOT NULL DEFAULT 0
@@ -536,7 +540,19 @@ const routes = {
       FROM gm_global_chat c JOIN gm_accounts a ON a.id = c.account_id
       ORDER BY c.id DESC LIMIT 100`)
     const [last] = await pool.query('SELECT last_sent_ms FROM gm_global_chat_cooldown WHERE account_id = ?', [account.id])
-    send(res, 200, { items: rows.reverse().map(x => ({ id: Number(x.id), message: x.message, at: Number(x.created_ms), nickname: x.nickname || x.username })), nextAt: Number(last[0]?.last_sent_ms || 0) + 10000, now: Date.now() })
+    const [seen] = await pool.query('SELECT last_seen_id FROM gm_global_chat_seen WHERE account_id = ?', [account.id])
+    const lastSeenId = Number(seen[0]?.last_seen_id || 0)
+    const latestId = Number(rows[0]?.id || 0)
+    send(res, 200, { items: rows.reverse().map(x => ({ id: Number(x.id), message: x.message, at: Number(x.created_ms), nickname: x.nickname || x.username })), nextAt: Number(last[0]?.last_sent_ms || 0) + 10000, now: Date.now(), unread: latestId > lastSeenId })
+  },
+  'POST /api/global-chat-seen': async (req, res) => {
+    await ensureGlobalChatTables()
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await pool.query(`INSERT INTO gm_global_chat_seen (account_id, last_seen_id)
+      SELECT ?, COALESCE(MAX(id), 0) FROM gm_global_chat
+      ON DUPLICATE KEY UPDATE last_seen_id = GREATEST(last_seen_id, VALUES(last_seen_id))`, [account.id])
+    send(res, 200, { ok: true })
   },
   'POST /api/global-chat': async (req, res) => {
     await ensureGlobalChatTables()

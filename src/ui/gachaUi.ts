@@ -41,6 +41,7 @@ export class GachaUi {
   private storageTab: 'char' | 'deco' = 'char'
   private noticeTimer = 0
   private chatTimer = 0
+  private chatBadgeTimer = 0
   private chatNextAt = 0
   private revealing = false
   private revealSequence = 0
@@ -65,6 +66,7 @@ export class GachaUi {
     this.house = new HouseView(this.root.querySelector<HTMLElement>('.house-screen')!, this.store, { toast: text => this.toast(text), error: error => this.handleError(error), wallet: () => this.renderWallet() })
     this.renderWallet()
     this.renderCollection()
+    this.chatBadgeTimer = window.setInterval(() => { if (this.screen === 'title') void this.refreshGlobalChatDot() }, 12000)
     // Keep the 2D stage (floor + name tag) clear of the bottom controls, whatever their height.
     const fitStage = (): void => {
       const screen = this.root.querySelector<HTMLElement>('[data-screen="title"]')
@@ -99,7 +101,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot() }
+    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); this.weedTimer = window.setInterval(() => this.renderWeedStatus(), 1000) }
     if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 1000) }
@@ -218,7 +220,7 @@ export class GachaUi {
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span>📢</span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span>💬</span>전체채팅</button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span>📢</span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span>💬</span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -894,6 +896,15 @@ export class GachaUi {
     const id = this.store.featured
     return id && owned.includes(id) ? id : owned[0] ?? 'chiikawa'
   }
+  private async refreshGlobalChatDot(): Promise<void> {
+    if (!this.store.user || this.screen !== 'title') return
+    try {
+      const data = await this.store.globalChat()
+      const dot = this.root.querySelector<HTMLElement>('.global-chat-dot')
+      if (dot) dot.hidden = !data.unread
+    } catch { /* Retry during next refresh */ }
+  }
+
   private async loadGlobalChat(silent = false): Promise<void> {
     if (this.screen !== 'global-chat') return
     const body = this.root.querySelector<HTMLElement>('.global-chat-messages')
@@ -902,6 +913,11 @@ export class GachaUi {
       const data = await this.store.globalChat()
       if (this.screen !== 'global-chat') return
       this.chatNextAt = data.nextAt
+      if (data.unread) {
+        await this.store.globalChatSeen()
+        const dot = this.root.querySelector<HTMLElement>('.global-chat-dot')
+        if (dot) dot.hidden = true
+      }
       const wasBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 65
       const oldLast = body.dataset.last || ''
       const newLast = String(data.items.at(-1)?.id || '')

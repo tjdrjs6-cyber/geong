@@ -239,7 +239,8 @@ export class RemoteGachaStore {
   async userHouse(nickname: string): Promise<HouseLayout> {
     return (await request<{ house: HouseLayout }>('users/house', { nickname })).house
   }
-  async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number }> { return request('global-chat') }
+  async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
+  async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
   async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
