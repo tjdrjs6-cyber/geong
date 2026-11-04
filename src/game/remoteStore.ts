@@ -137,8 +137,7 @@ export class RemoteGachaStore {
   hourlyRate(): number {
     const hour = 3_600_000
     const weed = (this.weed?.members ?? []).reduce((sum, m) => sum + hour / weedIntervalMs(m.id), 0) * (this.weed?.beetle ? 2 : 1)
-    const battle = this.battle ? battlePower(this.battle.id) * (hour / BATTLE_TICK_MS) / ENEMY_HP : 0
-    return weed + battle
+    return weed
   }
   /** Server credits weeding + battle coins without opening those screens. */
   async autoSettle(): Promise<number> {

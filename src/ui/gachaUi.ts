@@ -151,7 +151,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="weed-title">제초장</b>
-          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장·토벌장 자동 수입 (하우스 코인 제외)"></small></div>
+          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
         <div class="weed-field">${weedFieldMarkup()}</div>
         <div class="weed-panel">
@@ -169,14 +169,14 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title">토벌장</b>
-          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장·토벌장 자동 수입 (하우스 코인 제외)"></small></div>
+          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-status"></p>
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
-          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 1코인을 받아요. 앱을 닫아도 계속 싸워요.</p>
+          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 다이아 코인 1개가 인벤토리에 자동 지급돼요. 앱을 닫아도 계속 싸워요.</p>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -186,7 +186,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="house-title">하우스</b>
-          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장·토벌장 자동 수입 (하우스 코인 제외)"></small></div>
+          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
         <div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><span class="house-coin-face">✿</span><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div>
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
@@ -202,7 +202,7 @@ export class GachaUi {
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon">✦</span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
-          <div class="header-right"><div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장·토벌장 자동 수입 (하우스 코인 제외)"></small></div></div>
+          <div class="header-right"><div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아 코인"><span>💎</span><strong class="diamond-value">0</strong><span>다이아 코인</span></div></div>
         </header>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-storage" data-action="storage"><span>🎒</span>보관함</button><button class="nav-button nav-suggest" data-action="suggest"><span>💌</span>건의함</button></nav>
@@ -273,7 +273,7 @@ export class GachaUi {
       <section class="gacha-modal" data-screen="storage" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="storage-title">
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2>
+          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 다이아 코인">💎 다이아 코인 <strong class="diamond-value">0</strong>개</div>
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab">🧸 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab">🌸 데코</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
@@ -449,7 +449,7 @@ export class GachaUi {
       try {
         const earned = await this.store.startBattle(id)
         const name = fullName(characterById(id))
-        this.toast(earned > 0 ? `몬스터 ${earned}마리 처치 보상 ${earned}코인! ${withJosa(name, '이', '가')} 토벌에 나섰어요!` : `${withJosa(name, '이', '가')} 토벌에 나섰어요! (전투력 ${battlePower(id)})`)
+        this.toast(earned > 0 ? `몬스터 ${earned}마리 처치 보상 다이아 코인 ${earned}개! ${withJosa(name, '이', '가')} 토벌에 나섰어요!` : `${withJosa(name, '이', '가')} 토벌에 나섰어요! (전투력 ${battlePower(id)})`)
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.lastEnemyHp = -1
       this.renderBattle()
@@ -516,6 +516,7 @@ export class GachaUi {
 
   private renderWallet(): void {
     this.root.querySelectorAll<HTMLElement>('.wallet-value').forEach(balance => { balance.textContent = this.isAdmin ? '∞' : this.store.data.gems.toLocaleString('ko-KR') })
+    this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.store.data.diamonds ?? 0).toLocaleString('ko-KR') })
     const rate = `+${this.store.hourlyRate().toFixed(2)} 코인/시간`
     this.root.querySelectorAll<HTMLElement>('.wallet-rate').forEach(node => { node.textContent = rate })
     const count = this.store.data.owned.length
@@ -783,6 +784,7 @@ export class GachaUi {
   }
 
   private renderStorage(): void {
+    this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(el => { el.textContent = (this.store.data.diamonds ?? 0).toLocaleString('ko-KR') })
     const grid = this.root.querySelector<HTMLElement>('.storage-grid')
     const summary = this.root.querySelector<HTMLElement>('.storage-summary')
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="storage-tab"]').forEach(tab => {
@@ -946,7 +948,7 @@ export class GachaUi {
       const friend = walker.querySelector<HTMLElement>('.weed-friend')
       if (!friend) return
       friend.classList.toggle('is-empty', !character)
-      friend.innerHTML = character ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="제초 중인 ${fullName(character)}" />` : ''
+      friend.innerHTML = character ? `<img src="/assets/weed/${character.id}.png" alt="제초 중인 ${fullName(character)}" />` : ''
     })
     this.renderBeetle()
     this.renderWeedStatus()
@@ -976,7 +978,7 @@ export class GachaUi {
     this.renderBattleStatus()
   }
 
-  /** Settles defeated monsters on the server (coins are paid automatically). */
+  /** Settles defeated monsters on the server (diamonds are credited to inventory). */
   private async syncBattle(): Promise<void> {
     if (!this.store.battle || this.battleSyncing) return
     this.battleSyncing = true
@@ -984,7 +986,7 @@ export class GachaUi {
       const earned = await this.store.claimBattle()
       if (earned > 0) {
         this.audio.play('pickup')
-        if (this.screen === 'battle') this.toast(`몬스터를 ${earned}마리 물리쳤어요! +${earned} 코인`)
+        if (this.screen === 'battle') this.toast(`몬스터를 ${earned}마리 물리쳤어요! 다이아 코인 +${earned}개`)
       }
     } catch { /* Retried on the next tick. */ } finally { this.battleSyncing = false }
     this.renderWallet()
@@ -1154,7 +1156,7 @@ export class GachaUi {
       this.renderWallet()
       if (this.screen === 'weed') this.renderWeed()
       if (this.screen === 'battle') this.renderBattle()
-      if (earned > 0) this.toast(`🌿 제초장·토벌장에서 ${earned}코인이 자동으로 들어왔어요!`)
+      if (earned > 0) this.toast(`🌿 제초장에서 ${earned}코인이 자동으로 들어왔어요!`)
     } catch { /* next tick retries */ }
   }
   private handleError(error: unknown): void {

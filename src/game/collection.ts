@@ -35,7 +35,7 @@ export const CHARACTERS = [
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 

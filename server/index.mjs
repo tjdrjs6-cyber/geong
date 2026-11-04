@@ -82,6 +82,7 @@ async function prepareDatabase() {
   try { await pool.query("ALTER TABLE gm_saves ADD COLUMN last_roulette VARCHAR(16) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   // Existing databases may already have last_roulette VARCHAR(10); the slot value is 11 chars (YYYY-MM-DD + A/B).
   await pool.query("ALTER TABLE gm_saves MODIFY COLUMN last_roulette VARCHAR(16) NOT NULL DEFAULT ''")
+  try { await pool.query('ALTER TABLE gm_saves ADD COLUMN diamonds BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN nickname VARCHAR(6) NULL') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('CREATE UNIQUE INDEX uq_gm_accounts_nickname ON gm_accounts (nickname)') } catch (error) { if (!error || error.code !== 'ER_DUP_KEYNAME') throw error }
@@ -236,7 +237,7 @@ function recordFailure(key) {
 
 function saveView(row) {
   const owned = typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned
-  return { version: 1, gems: Number(row.gems), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '' }
+  return { version: 1, gems: Number(row.gems), diamonds: Number(row.diamonds ?? 0), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '' }
 }
 
 async function startSession(res, accountId, username, nickname, save, admin = false) {
@@ -260,7 +261,7 @@ async function withSave(accountId, change) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [rows] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [rows] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const outcome = change(state)
     if (outcome.ok) {
@@ -288,7 +289,7 @@ async function houseCoinRow(db, accountId, lock = false) {
 }
 
 async function getSave(accountId) {
-  const [rows] = await pool.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ?', [accountId])
+  const [rows] = await pool.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ?', [accountId])
   return rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
 }
 
@@ -377,7 +378,7 @@ async function updateBattle(accountId, nextCharacter) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [saves] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const [rows] = await conn.query('SELECT character_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
     const now = Date.now()
@@ -395,8 +396,8 @@ async function updateBattle(accountId, nextCharacter) {
     }
     if (nextCharacter) battle = battle ? { ...battle, id: nextCharacter } : { id: nextCharacter, since: now, damage: 0 }
     if (!battle) { await conn.rollback(); return { error: 'not_fighting' } }
-    state.gems += earned
-    await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems)', [accountId, state.gems, JSON.stringify(state.owned), state.lastDaily])
+    state.diamonds = (state.diamonds ?? 0) + earned
+    if (earned > 0) await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [earned, accountId])
     await conn.query('INSERT INTO gm_battle (account_id, character_id, since_ms, damage) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.since, battle.damage])
     await conn.commit()
     return { save: state, battle, earned, now }
@@ -423,7 +424,7 @@ async function autoSettle(accountId) {
   const weed = await updateWeed(accountId, {})
   if (!weed.error) earned += weed.earned
   const battle = await updateBattle(accountId, null)
-  if (!battle.error) earned += battle.earned
+  // Battle rewards are diamonds, not ordinary coins.
   return earned
 }
 /** op: { add?: id, remove?: id, beetle?: boolean } — settles every member's coins first, then applies the change. */
@@ -431,7 +432,7 @@ async function updateWeed(accountId, op = {}) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [saves] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const current = await readWeed(conn, accountId, true)
     const now = Date.now()
@@ -760,7 +761,7 @@ const routes = {
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-      const [saves] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
       const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
       const decos = rows[0] ? normalizeDecos(parseJson(rows[0].items)) : {}
