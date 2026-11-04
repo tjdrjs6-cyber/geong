@@ -1081,16 +1081,14 @@ const routes = {
       const x = Math.max(0, Math.min(100, Number(body.x) || 0))
       const y = Math.max(0, Math.min(100, Number(body.y) || 0))
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
-      // Cumulative win chances for distance segments 1–6: 69, 47.6, 44, 39, 34, 30%.
-      // For longer paths, retain an 89% grip per additional segment.
-      const cumulative = [1, .69, .69 ** 2, .44, .39, .34, .30]
-      const gripAt = (step) => step <= 6 ? cumulative[step] / cumulative[step - 1] : .89
-      let dropAt = -1
-      if (aligned === true) for (let i = 1; i <= segments; i++) {
-        if (randomInt(1000000) >= Math.round(gripAt(i) * 1000000)) { dropAt = i; break }
-      }
-      const won = aligned === true && dropAt === -1
-      const chance = aligned === true ? Math.round((segments <= 6 ? cumulative[segments] : cumulative[6] * .89 ** (segments - 6)) * 100) : 0
+      // Exact success probabilities by distance band. Band 6 is deliberately
+      // more generous than bands 3–5 per the game's configured rules.
+      const bandChances = [0, .69, .67, .40, .35, .30, .50]
+      const probability = segments <= 6 ? bandChances[segments] : bandChances[6] * .89 ** (segments - 6)
+      const won = aligned === true && randomInt(1000000) < Math.round(probability * 1000000)
+      // Failed grabs release the plush at a random point along the trip.
+      const dropAt = aligned === true && !won ? 1 + randomInt(segments) : -1
+      const chance = aligned === true ? Math.round(probability * 100) : 0
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
       if (prize) {

@@ -78,7 +78,7 @@ export class GachaUi {
       this.moveClaw(button.dataset.action ?? '')
       this.stopClawHold()
       this.clawHoldDelay = window.setTimeout(() => {
-        this.clawHoldTimer = window.setInterval(() => this.moveClaw(button.dataset.action ?? ''), 55)
+        this.clawHoldTimer = window.setInterval(() => this.moveClaw(button.dataset.action ?? ''), 38)
       }, 170)
     })
     window.addEventListener('pointerup', () => this.stopClawHold())
@@ -775,7 +775,7 @@ export class GachaUi {
 
   private moveClaw(action: string): void {
     if (this.clawBusy) return
-    const directions: Record<string, [number, number]> = { 'claw-up':[0,-2], 'claw-down':[0,2], 'claw-left':[-2,0], 'claw-right':[2,0] }
+    const directions: Record<string, [number, number]> = { 'claw-up':[0,-2.8], 'claw-down':[0,2.8], 'claw-left':[-2.8,0], 'claw-right':[2.8,0] }
     const move = directions[action]
     if (!move) return
     this.clawX = Math.max(10, Math.min(90, this.clawX + move[0]))
@@ -849,8 +849,13 @@ export class GachaUi {
         const startX = this.clawX
         const startY = this.clawY
         toy.style.transition = 'none'
+        // The toy hangs at the gripping tips, below the claw's center.
+        const clawBox = arm?.getBoundingClientRect()
+        const machineBox = machine?.getBoundingClientRect()
+        const gripOffsetY = clawBox && machineBox && machineBox.height > 0
+          ? clawBox.height * .29 / machineBox.height * 100 : 7
         toy.style.left = `${startX}%`
-        toy.style.top = `${startY}%`
+        toy.style.top = `${startY + gripOffsetY}%`
         void toy.offsetWidth
         const endStep = result.won ? steps : Math.max(1, result.dropAt)
         for (let step = 1; step <= endStep; step++) {
@@ -859,7 +864,7 @@ export class GachaUi {
           const py = startY + (exitY - startY) * fraction
           if (arm) { arm.style.transition = 'left .28s linear, top .28s linear'; arm.style.left = `${px}%`; arm.style.top = `${py}%` }
           toy.style.transition = 'left .28s linear, top .28s linear, transform .3s, opacity .3s'
-          toy.style.left = `${px}%`; toy.style.top = `${py}%`
+          toy.style.left = `${px}%`; toy.style.top = `${py + gripOffsetY}%`
           await new Promise(resolve => window.setTimeout(resolve, 310))
         }
         if (!result.won) {
@@ -869,7 +874,7 @@ export class GachaUi {
           // A failed grab stays where it fell, including after leaving or reloading.
           const landedFraction = endStep / steps
           const landedX = startX + (exitX - startX) * landedFraction
-          const landedY = startY + (exitY - startY) * landedFraction
+          const landedY = startY + (exitY - startY) * landedFraction + gripOffsetY
           if (originalToy) {
             originalToy.x = Math.max(10, Math.min(90, landedX))
             originalToy.y = Math.max(10, Math.min(90, landedY))
