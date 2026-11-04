@@ -7,7 +7,7 @@ body { background:#fff5f0; color:var(--g-ink); touch-action:manipulation; }
 .gacha-screen,.gacha-modal,.gacha-boot { position:absolute; inset:0; }
 .gacha-screen { opacity:0; visibility:hidden; transition:opacity .38s ease,visibility 0s linear .38s; pointer-events:none; background:linear-gradient(90deg,rgba(255,250,242,.88) 0%,rgba(255,250,242,.64) 35%,rgba(255,250,242,.08) 69%,transparent 100%),linear-gradient(0deg,rgba(255,248,240,.94) 0%,rgba(255,248,240,0) 31%); }
 .gacha-screen.is-active { opacity:1;visibility:visible;transition:opacity .38s ease;pointer-events:none; }
-.gacha-header { position:absolute;top:calc(22px + var(--safe-t));left:clamp(18px,4.3vw,66px);right:clamp(18px,4.3vw,66px);display:flex;align-items:center;justify-content:space-between;gap:18px;pointer-events:auto; }
+.gacha-header { position:absolute;top:calc(22px + var(--safe-t));left:clamp(18px,4.3cqw,66px);right:clamp(18px,4.3cqw,66px);display:flex;align-items:center;justify-content:space-between;gap:18px;pointer-events:auto; }
 .brand { display:flex;align-items:center;gap:12px; }
 .brand-icon { display:grid;place-items:center;width:45px;height:45px;border-radius:16px;background:linear-gradient(140deg,#ffe09e,#ffc0c5);color:#d78284;font-size:26px;box-shadow:0 7px 17px rgba(196,132,110,.19); }
 .brand b,.brand small { display:block; }
@@ -16,15 +16,15 @@ body { background:#fff5f0; color:var(--g-ink); touch-action:manipulation; }
 .wallet { display:flex;align-items:center;gap:9px;padding:10px 16px;border:1px solid rgba(223,181,151,.5);border-radius:999px;background:rgba(255,255,255,.84);box-shadow:0 5px 17px rgba(86,61,70,.07);font-size:13px;backdrop-filter:blur(12px); }
 .wallet strong {font-size:18px;font-variant-numeric:tabular-nums;}.wallet span:last-child{color:var(--g-soft)}
 .coin-icon {font-size:18px;color:#e9a645}
-.hero-copy { position:absolute;left:clamp(20px,7.2vw,112px);top:47%;width:min(42vw,475px);transform:translateY(-51%);pointer-events:none; }
+.hero-copy { position:absolute;left:clamp(20px,7.2cqw,112px);top:47%;width:min(42cqw,475px);transform:translateY(-51%);pointer-events:none; }
 .eyebrow,.modal-kicker {font-size:10px;font-weight:800;letter-spacing:.2em;color:#c07d86;}
-.hero-copy h2 {margin:14px 0 12px;font-size:clamp(34px,5.1vw,66px);letter-spacing:-.07em;line-height:1.12;color:#56434b;text-shadow:0 2px 0 rgba(255,255,255,.6);}
+.hero-copy h2 {margin:14px 0 12px;font-size:clamp(34px,5.1cqw,66px);letter-spacing:-.07em;line-height:1.12;color:#56434b;text-shadow:0 2px 0 rgba(255,255,255,.6);}
 .hero-copy h2 em {font-style:normal;color:#e8899d;}
-.hero-copy p {margin:0;color:#7c6c73;font-size:clamp(13px,1.3vw,16px);line-height:1.7;}
+.hero-copy p {margin:0;color:#7c6c73;font-size:clamp(13px,1.3cqw,16px);line-height:1.7;}
 .rate-note {display:inline-flex;margin-top:14px;padding:8px 12px;border:1px solid rgba(219,175,155,.45);border-radius:999px;background:rgba(255,255,255,.58);color:#846d70;font-size:11px;}
-.collection-peek {position:absolute;right:clamp(20px,5vw,76px);top:42%;display:flex;flex-direction:column;align-items:center;gap:4px;width:124px;padding:16px 12px;border:1px solid rgba(255,255,255,.82);border-radius:24px;background:rgba(255,255,255,.62);box-shadow:var(--g-shadow);backdrop-filter:blur(10px);pointer-events:auto;}
+.collection-peek {position:absolute;right:clamp(20px,5cqw,76px);top:42%;display:flex;flex-direction:column;align-items:center;gap:4px;width:124px;padding:16px 12px;border:1px solid rgba(255,255,255,.82);border-radius:24px;background:rgba(255,255,255,.62);box-shadow:var(--g-shadow);backdrop-filter:blur(10px);pointer-events:auto;}
 .peek-flowers {font-size:15px;color:#dfa1a9;letter-spacing:4px;}.collection-count{font-size:23px;color:#5b4851;font-variant-numeric:tabular-nums}.collection-peek small{color:#8a7b7d;font-size:11px}.soft-button{margin-top:8px;padding:8px 11px;border:0;border-radius:12px;background:#f8e7e4;color:#8e6269;font-size:11px;font-weight:700;cursor:pointer}.soft-button span{margin-left:5px}
-.gacha-actions {position:absolute;left:clamp(16px,4vw,64px);right:clamp(16px,4vw,64px);bottom:calc(38px + var(--safe-b));display:flex;align-items:stretch;justify-content:center;gap:12px;pointer-events:auto;}
+.gacha-actions {position:absolute;left:clamp(16px,4cqw,64px);right:clamp(16px,4cqw,64px);bottom:calc(38px + var(--safe-b));display:flex;align-items:stretch;justify-content:center;gap:12px;pointer-events:auto;}
 .gacha-actions button {min-height:66px;border:1px solid rgba(222,183,160,.5);border-radius:19px;box-shadow:0 9px 24px rgba(90,65,74,.1);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;}
 .gacha-actions button:hover:not(:disabled),.friend-select:hover,.modal-primary:hover,.modal-secondary:hover{transform:translateY(-3px);box-shadow:0 13px 28px rgba(90,65,74,.17)}
 .gacha-actions button:active:not(:disabled){transform:translateY(0) scale(.985)}
@@ -37,15 +37,15 @@ body { background:#fff5f0; color:var(--g-ink); touch-action:manipulation; }
 .toast {position:absolute;left:50%;bottom:calc(117px + var(--safe-b));transform:translate(-50%,12px);padding:11px 18px;border:1px solid rgba(255,255,255,.8);border-radius:999px;background:rgba(80,64,73,.88);color:#fffdf8;font-size:13px;opacity:0;transition:opacity .18s ease,transform .18s ease;pointer-events:none;white-space:nowrap;z-index:4}.toast.is-visible{opacity:1;transform:translate(-50%,0)}
 .gacha-modal{display:grid;place-items:center;padding:18px;opacity:0;visibility:hidden;transition:opacity .22s ease,visibility 0s linear .22s;background:rgba(82,63,71,.24);backdrop-filter:blur(8px);pointer-events:auto;}
 .gacha-modal.is-active{opacity:1;visibility:visible;transition:opacity .22s ease;}
-.modal-card{position:relative;width:min(560px,100%);max-height:min(86dvh,760px);overflow:auto;padding:34px clamp(20px,5vw,42px) 28px;border:1px solid rgba(255,255,255,.9);border-radius:30px;background:linear-gradient(155deg,#fffdf7,#fff2ed);box-shadow:0 24px 90px rgba(72,48,58,.24);text-align:center;}
-.modal-card h2{margin:8px 0 6px;font-size:clamp(27px,6vw,38px);letter-spacing:-.055em;color:#59454d}.collection-summary{margin:0 0 24px;color:#8a787c;font-size:13px}.modal-close{position:absolute;right:16px;top:14px;width:36px;height:36px;border:0;border-radius:50%;background:#f6e8e5;color:#8b6a70;font-size:24px;cursor:pointer}
+.modal-card{position:relative;width:min(560px,100%);max-height:min(86cqh,760px);overflow:auto;padding:34px clamp(20px,5cqw,42px) 28px;border:1px solid rgba(255,255,255,.9);border-radius:30px;background:linear-gradient(155deg,#fffdf7,#fff2ed);box-shadow:0 24px 90px rgba(72,48,58,.24);text-align:center;}
+.modal-card h2{margin:8px 0 6px;font-size:clamp(27px,6cqw,38px);letter-spacing:-.055em;color:#59454d}.collection-summary{margin:0 0 24px;color:#8a787c;font-size:13px}.modal-close{position:absolute;right:16px;top:14px;width:36px;height:36px;border:0;border-radius:50%;background:#f6e8e5;color:#8b6a70;font-size:24px;cursor:pointer}
 .collection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;text-align:center}.friend-card{display:flex;flex-direction:column;align-items:center;min-width:0;padding:14px 8px 12px;border:1px solid rgba(219,190,177,.52);border-radius:20px;background:rgba(255,255,255,.65)}.friend-avatar{display:grid;place-items:center;width:min(100%,98px);aspect-ratio:1;margin-bottom:8px;border-radius:50%;background:radial-gradient(circle at 35% 28%,white 0%,var(--friend) 70%,var(--accent) 150%);color:#786168;font-size:37px;box-shadow:inset 0 -4px 10px rgba(155,111,113,.08)}.is-locked .friend-avatar{filter:grayscale(1);opacity:.54}.friend-stars{color:#eab55f;font-size:10px;letter-spacing:2px}.friend-card>b{margin-top:5px;font-size:14px}.friend-card>small{min-height:27px;margin-top:5px;color:#9a8889;font-size:9px;line-height:1.4}.friend-lock,.friend-select{margin-top:8px}.friend-lock{padding:6px 9px;border-radius:999px;background:#f2eceb;color:#a49394;font-size:9px}.friend-select{padding:7px 9px;border:0;border-radius:999px;background:#f5e3df;color:#956d72;font-size:9px;cursor:pointer}
 .duplicate-note{margin:18px 0 14px;color:#938181;font-size:11px}.modal-primary,.modal-secondary{width:100%;min-height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,#ee9baa,#de8293);color:white;font-weight:800;cursor:pointer;transition:transform .16s,box-shadow .16s}.modal-secondary{margin-top:9px;background:#f3e9e6;color:#856d73}
-.result-card{width:min(460px,100%);padding-top:30px}.result-sparkle{position:absolute;top:21px;right:52px;color:#efbd69;font-size:22px;animation:sparkle 1.5s ease-in-out infinite alternate}.result-list{display:flex;flex-direction:column;gap:8px;max-height:min(36dvh,330px);overflow:auto;margin:19px 0 21px;text-align:left}.result-friend{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid rgba(219,190,177,.4);border-radius:15px;background:rgba(255,255,255,.7)}.result-avatar{display:grid;place-items:center;width:43px;height:43px;border-radius:50%;background:linear-gradient(140deg,white,var(--friend),var(--accent));font-size:22px}.result-friend>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:3px}.result-friend b{font-size:13px}.result-friend small{color:#958485;font-size:10px}.result-stars{color:#eab55f;font-size:9px;letter-spacing:1px}.result-subtitle{margin:0;color:#89787a;font-size:12px}
-.gacha-boot{display:grid;align-content:center;justify-items:center;gap:13px;background:#fff5f0;pointer-events:auto;z-index:5}.gacha-boot:not(.is-active){display:none}.gacha-boot h1{margin:4px 0 0;color:#7d5c66;font-size:24px;letter-spacing:-.04em}.gacha-boot p{margin:0;color:#9a8288;font-size:12px}.boot-capsule{display:grid;place-items:center;width:78px;height:78px;border:6px solid rgba(255,255,255,.95);border-radius:24px;background:#fffaf3;box-shadow:0 11px 28px rgba(198,141,133,.22);animation:capsule-bob 1.4s ease-in-out infinite}.boot-capsule img{width:58px;height:58px;object-fit:contain}.boot-track{width:min(270px,68vw);height:9px;overflow:hidden;border-radius:9px;background:#ead2d2}.boot-fill{display:block;width:100%;height:100%;transform:scaleX(.05);transform-origin:left;background:linear-gradient(90deg,#efad9e,#e48ca1);transition:transform .24s ease}
+.result-card{width:min(460px,100%);padding-top:30px}.result-sparkle{position:absolute;top:21px;right:52px;color:#efbd69;font-size:22px;animation:sparkle 1.5s ease-in-out infinite alternate}.result-list{display:flex;flex-direction:column;gap:8px;max-height:min(36cqh,330px);overflow:auto;margin:19px 0 21px;text-align:left}.result-friend{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid rgba(219,190,177,.4);border-radius:15px;background:rgba(255,255,255,.7)}.result-avatar{display:grid;place-items:center;width:43px;height:43px;border-radius:50%;background:linear-gradient(140deg,white,var(--friend),var(--accent));font-size:22px}.result-friend>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:3px}.result-friend b{font-size:13px}.result-friend small{color:#958485;font-size:10px}.result-stars{color:#eab55f;font-size:9px;letter-spacing:1px}.result-subtitle{margin:0;color:#89787a;font-size:12px}
+.gacha-boot{display:grid;align-content:center;justify-items:center;gap:13px;background:#fff5f0;pointer-events:auto;z-index:5}.gacha-boot:not(.is-active){display:none}.gacha-boot h1{margin:4px 0 0;color:#7d5c66;font-size:24px;letter-spacing:-.04em}.gacha-boot p{margin:0;color:#9a8288;font-size:12px}.boot-capsule{display:grid;place-items:center;width:78px;height:78px;border:6px solid rgba(255,255,255,.95);border-radius:24px;background:#fffaf3;box-shadow:0 11px 28px rgba(198,141,133,.22);animation:capsule-bob 1.4s ease-in-out infinite}.boot-capsule img{width:58px;height:58px;object-fit:contain}.boot-track{width:min(270px,68cqw);height:9px;overflow:hidden;border-radius:9px;background:#ead2d2}.boot-fill{display:block;width:100%;height:100%;transform:scaleX(.05);transform-origin:left;background:linear-gradient(90deg,#efad9e,#e48ca1);transition:transform .24s ease}
 @keyframes capsule-bob{50%{transform:translateY(-6px) rotate(8deg)}}@keyframes sparkle{to{transform:rotate(23deg) scale(1.15);opacity:.58}}
-@media(max-width:760px){.gacha-screen{background:linear-gradient(180deg,rgba(255,250,242,.65),rgba(255,250,242,.08) 37%,rgba(255,248,240,.28) 56%,rgba(255,248,240,.97) 100%)}.gacha-header{top:calc(13px + var(--safe-t));left:14px;right:14px}.brand-icon{width:38px;height:38px;border-radius:13px;font-size:21px}.brand b{font-size:14px}.brand small{font-size:9px}.wallet{padding:8px 12px;font-size:11px}.wallet strong{font-size:15px}.hero-copy{left:22px;top:31%;width:min(78vw,430px);transform:none}.hero-copy h2{margin:8px 0;font-size:clamp(30px,8vw,52px)}.hero-copy p{font-size:12px}.rate-note{margin-top:8px;font-size:9px}.collection-peek{top:auto;right:17px;bottom:calc(145px + var(--safe-b));width:93px;padding:10px 6px;border-radius:18px}.peek-flowers{font-size:11px;letter-spacing:2px}.collection-count{font-size:18px}.collection-peek small{font-size:9px}.soft-button{margin-top:4px;padding:7px 8px;font-size:9px}.gacha-actions{left:13px;right:13px;bottom:calc(29px + var(--safe-b));display:grid;grid-template-columns:1fr 1fr;gap:8px}.gacha-actions button{min-height:56px;border-radius:16px}.daily-button{grid-column:1/-1;min-height:46px!important;padding:6px 12px}.daily-button b{font-size:11px}.daily-button small{font-size:9px}.gift-icon{width:29px;height:29px}.pull-button{min-width:0;padding:8px 11px;gap:8px}.pull-button b{font-size:12px}.pull-button small{font-size:9px}.button-arrow{font-size:16px}.button-star{font-size:17px}.free-note{bottom:calc(8px + var(--safe-b));font-size:8px}.toast{bottom:calc(165px + var(--safe-b));max-width:calc(100vw - 24px);font-size:11px}.modal-card{padding:30px 16px 18px;border-radius:24px}.friend-card{padding:10px 5px}.friend-card>b{font-size:12px}.friend-card>small{font-size:8px}.friend-select{padding:7px 6px;font-size:8px}.friend-avatar{font-size:28px}.collection-grid{gap:7px}}
-@media(max-height:520px) and (orientation:landscape){.hero-copy{top:34%;left:5vw;width:38vw}.hero-copy h2{font-size:34px}.collection-peek{top:27%;right:4vw}.gacha-actions{bottom:27px}.gacha-actions button{min-height:50px}.free-note{bottom:6px}}
+@media(max-width:99998px){.gacha-screen{background:linear-gradient(180deg,rgba(255,250,242,.65),rgba(255,250,242,.08) 37%,rgba(255,248,240,.28) 56%,rgba(255,248,240,.97) 100%)}.gacha-header{top:calc(13px + var(--safe-t));left:14px;right:14px}.brand-icon{width:38px;height:38px;border-radius:13px;font-size:21px}.brand b{font-size:14px}.brand small{font-size:9px}.wallet{padding:8px 12px;font-size:11px}.wallet strong{font-size:15px}.hero-copy{left:22px;top:31%;width:min(78cqw,430px);transform:none}.hero-copy h2{margin:8px 0;font-size:clamp(30px,8cqw,52px)}.hero-copy p{font-size:12px}.rate-note{margin-top:8px;font-size:9px}.collection-peek{top:auto;right:17px;bottom:calc(145px + var(--safe-b));width:93px;padding:10px 6px;border-radius:18px}.peek-flowers{font-size:11px;letter-spacing:2px}.collection-count{font-size:18px}.collection-peek small{font-size:9px}.soft-button{margin-top:4px;padding:7px 8px;font-size:9px}.gacha-actions{left:13px;right:13px;bottom:calc(29px + var(--safe-b));display:grid;grid-template-columns:1fr 1fr;gap:8px}.gacha-actions button{min-height:56px;border-radius:16px}.daily-button{grid-column:1/-1;min-height:46px!important;padding:6px 12px}.daily-button b{font-size:11px}.daily-button small{font-size:9px}.gift-icon{width:29px;height:29px}.pull-button{min-width:0;padding:8px 11px;gap:8px}.pull-button b{font-size:12px}.pull-button small{font-size:9px}.button-arrow{font-size:16px}.button-star{font-size:17px}.free-note{bottom:calc(8px + var(--safe-b));font-size:8px}.toast{bottom:calc(165px + var(--safe-b));max-width:calc(100cqw - 24px);font-size:11px}.modal-card{padding:30px 16px 18px;border-radius:24px}.friend-card{padding:10px 5px}.friend-card>b{font-size:12px}.friend-card>small{font-size:8px}.friend-select{padding:7px 6px;font-size:8px}.friend-avatar{font-size:28px}.collection-grid{gap:7px}}
+@media(max-height:520px) and (orientation:landscape){.hero-copy{top:34%;left:5cqw;width:38cqw}.hero-copy h2{font-size:34px}.collection-peek{top:27%;right:4cqw}.gacha-actions{bottom:27px}.gacha-actions button{min-height:50px}.free-note{bottom:6px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 .boot-retry { padding:10px 18px; border:0; border-radius:999px; background:#e78fa0; color:white; font-weight:700; cursor:pointer; }
@@ -62,7 +62,7 @@ html:lang(ko), body { font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto
 .result-avatar { flex: 0 0 43px; overflow: hidden; background: #fff; }
 .result-avatar img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .result-chance { flex: 0 0 auto; color: #b9894e; font-size: 10px; font-weight: 800; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .collection-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .friend-avatar { width: min(100%, 84px); }
 }
@@ -84,9 +84,9 @@ html:lang(ko), body { font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto
 .is-visible .pop-card { animation: pop-in .62s cubic-bezier(.18,1.8,.4,1) both; }
 .pop-burst { position:absolute; top:-26px; left:50%; transform:translateX(-50%) rotate(-8deg); padding:6px 16px; border-radius:999px; background:#ff8eaa; color:#fff; font-size:22px; font-weight:900; box-shadow:0 8px 18px rgba(230,110,140,.35); }
 .is-visible .pop-burst { animation: burst .5s .12s cubic-bezier(.2,2,.4,1) both; }
-.pop-photo { display:grid; place-items:center; width:min(46vw,190px); aspect-ratio:1; border-radius:26px; background:#fff; overflow:hidden; }
+.pop-photo { display:grid; place-items:center; width:min(46cqw,190px); aspect-ratio:1; border-radius:26px; background:#fff; overflow:hidden; }
 .pop-photo img { width:100%; height:100%; object-fit:contain; }
-.pop-name { font-size:clamp(24px,5vw,34px); color:#56434b; letter-spacing:-.04em; }
+.pop-name { font-size:clamp(24px,5cqw,34px); color:#56434b; letter-spacing:-.04em; }
 .is-visible .pop-name { animation: rise-in .4s .28s ease-out both; }
 .pop-tag { padding:5px 12px; border-radius:999px; background:rgba(255,255,255,.85); color:#a26f7a; font-size:12px; font-weight:800; }
 .pop-more { color:#8d7a7e; font-size:11px; }
@@ -116,7 +116,7 @@ html:lang(ko), body { font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto
 .auth-submit:disabled { opacity:.6; cursor:wait; }
 .auth-note { margin:12px 0 0; color:#a3929a; font-size:10px; text-align:center; line-height:1.5; }
 #ui input { pointer-events:auto; }
-@media (max-width:760px) { .account-chip { padding:5px 6px 5px 10px; font-size:10px; } .account-name { max-width:6em; } .header-right { gap:6px; } .brand small { display:none; } }
+@media (max-width:99998px) { .account-chip { padding:5px 6px 5px 10px; font-size:10px; } .account-name { max-width:6em; } .header-right { gap:6px; } .brand small { display:none; } }
 
 /* Rare 세이렌 (1%). */
 .friend-card.is-rare.is-owned { border-color:#f0b7a0; box-shadow:0 0 0 2px rgba(240,183,160,.45), 0 10px 26px rgba(217,67,79,.16); }
@@ -129,7 +129,7 @@ html:lang(ko), body { font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto
 .pull-3 { background:linear-gradient(135deg,#f3a3b8,#e88aa3); }
 .pull-5 { background:linear-gradient(135deg,#c9a6e8,#ad8bd8); }
 .pull-10 { background:linear-gradient(135deg,#f4b469,#e69d5a); }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-actions { grid-template-columns:repeat(4,1fr); }
   .pull-button { padding:6px 4px; }
   .pull-button b { font-size:11px; }
@@ -145,10 +145,10 @@ html:lang(ko), html:lang(ko) body, html:lang(ko) button, html:lang(ko) input { f
 html:lang(ko) b, html:lang(ko) h1, html:lang(ko) h2, html:lang(ko) strong, html:lang(ko) .pop-burst { font-family: var(--display); font-weight: 400; }
 
 /* Full-height layout that respects mobile browser bars. */
-.gacha-screen, .weed-screen { height: 100dvh; }
+.gacha-screen, .weed-screen { height: 100cqh; }
 
 /* Navigation chips (weeding field, user collections). */
-.gacha-nav { position:absolute; left:clamp(16px,3vw,40px); top:calc(96px + var(--safe-t)); display:flex; flex-direction:column; gap:8px; z-index:3; pointer-events:auto; }
+.gacha-nav { position:absolute; left:clamp(16px,3cqw,40px); top:calc(96px + var(--safe-t)); display:flex; flex-direction:column; gap:8px; z-index:3; pointer-events:auto; }
 .nav-button { display:flex; align-items:center; gap:8px; padding:10px 16px; border:1px solid rgba(222,183,160,.55); border-radius:999px; background:rgba(255,255,255,.9); color:#5b4750; font-size:14px; box-shadow:0 8px 20px rgba(90,65,74,.1); cursor:pointer; }
 .nav-button span { font-size:17px; }
 .nav-weed { background:linear-gradient(135deg,#e6f7d6,#c8eba4); }
@@ -157,7 +157,7 @@ html:lang(ko) b, html:lang(ko) h1, html:lang(ko) h2, html:lang(ko) strong, html:
 /* Pull dock: never wider than the screen. */
 .gacha-actions .pull-button { min-width:0; flex:1 1 0; max-width:170px; }
 .gacha-actions .daily-button { flex:1.25 1 0; max-width:240px; min-width:0; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-nav { top:calc(70px + var(--safe-t)); left:12px; flex-direction:row; }
   .nav-button { padding:7px 11px; font-size:12px; }
   .gacha-actions { left:10px; right:10px; bottom:calc(26px + var(--safe-b)); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
@@ -181,7 +181,7 @@ html:lang(ko) b, html:lang(ko) h1, html:lang(ko) h2, html:lang(ko) strong, html:
 .weed-sky { position:absolute; inset:0; background:#fff; }
 .weed-meadow { position:absolute; left:0; right:0; top:var(--horizon); bottom:0; background:#c8eba4; z-index:1; }
 .weed-doodles { width:100%; height:100%; display:block; }
-.weed-walker { position:absolute; bottom:calc(100% - var(--horizon) - 6px); width:min(44vw,230px); aspect-ratio:1; z-index:2; left:8%; animation:weed-walk 18s ease-in-out infinite; clip-path:inset(-200% -200% 0 -200%); }
+.weed-walker { position:absolute; bottom:calc(100% - var(--horizon) - 6px); width:min(44cqw,230px); aspect-ratio:1; z-index:2; left:8%; animation:weed-walk 18s ease-in-out infinite; clip-path:inset(-200% -200% 0 -200%); }
 .weed-friend { position:absolute; left:0; right:0; bottom:-26%; height:100%; transform-origin:50% 90%; animation:weed-face 18s steps(1) infinite; }
 .weed-friend img { width:100%; height:100%; object-fit:contain; animation:weed-work .9s ease-in-out infinite; transform-origin:50% 85%; mix-blend-mode:multiply; }
 .weed-friend.is-empty { display:none; }
@@ -189,11 +189,11 @@ html:lang(ko) b, html:lang(ko) h1, html:lang(ko) h2, html:lang(ko) strong, html:
 .weed-clippings { position:absolute; inset:auto 15% 4% 15%; height:40%; pointer-events:none; }
 .weed-friend.is-empty + .weed-clippings { display:none; }
 .clip { position:absolute; bottom:0; left:var(--x); width:4px; height:11px; border-radius:3px; background:#7fbf5a; border:1px solid #2e2a2b; opacity:0; animation:clip-fly 1.8s var(--d) ease-out infinite; }
-@keyframes weed-walk { 0%{left:6%} 45%{left:calc(94% - min(44vw,230px))} 50%{left:calc(94% - min(44vw,230px))} 95%{left:6%} 100%{left:6%} }
+@keyframes weed-walk { 0%{left:6%} 45%{left:calc(94% - min(44cqw,230px))} 50%{left:calc(94% - min(44cqw,230px))} 95%{left:6%} 100%{left:6%} }
 @keyframes weed-face { 0%{transform:scaleX(1)} 47%{transform:scaleX(-1)} 97%{transform:scaleX(1)} }
 @keyframes weed-work { 0%,100%{transform:rotate(-4deg) translateY(0)} 50%{transform:rotate(4deg) translateY(-3%)} }
 @keyframes clip-fly { 0%{opacity:0; transform:translate(0,0) rotate(0)} 15%{opacity:1} 100%{opacity:0; transform:translate(calc((var(--x) - 50%) * .4), -120px) rotate(var(--r))} }
-.weed-panel { position:relative; z-index:4; flex:0 0 auto; max-height:52dvh; overflow:auto; padding:16px 16px calc(16px + var(--safe-b)); background:#fffdf8; border-top:2px solid #2e2a2b; border-radius:26px 26px 0 0; margin-top:-24px; box-shadow:0 -8px 24px rgba(60,80,40,.12); }
+.weed-panel { position:relative; z-index:4; flex:0 0 auto; max-height:52cqh; overflow:auto; padding:16px 16px calc(16px + var(--safe-b)); background:#fffdf8; border-top:2px solid #2e2a2b; border-radius:26px 26px 0 0; margin-top:-24px; box-shadow:0 -8px 24px rgba(60,80,40,.12); }
 .weed-status { margin:0 0 10px; text-align:center; color:#4a3d42; font-size:15px; }
 .weed-earn { display:grid; grid-template-columns:1fr 1fr 1.4fr; gap:8px; align-items:stretch; }
 .weed-earn > span { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 4px; border-radius:16px; background:#eef8e4; }
@@ -209,9 +209,9 @@ html:lang(ko) b, html:lang(ko) h1, html:lang(ko) h2, html:lang(ko) strong, html:
 .weed-toast { position:absolute; left:50%; bottom:auto; top:calc(60px + var(--safe-t)); transform:translateX(-50%); z-index:6; }
 
 /* User collections. */
-.users-card { max-width:760px; }
+.users-card { max-width:99998px; }
 .users-empty { text-align:center; color:#8a7b7f; padding:24px 0; }
-.users-list { display:flex; flex-direction:column; gap:8px; max-height:52dvh; overflow:auto; padding:2px; }
+.users-list { display:flex; flex-direction:column; gap:8px; max-height:52cqh; overflow:auto; padding:2px; }
 .user-row { display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:12px; padding:8px 12px; border:1px solid #f0e2db; border-radius:18px; background:#fff; text-align:left; cursor:pointer; color:#4a3d42; }
 .user-row:hover { background:#fff6f2; }
 .user-row.is-me { border-color:#f3a3b8; }
@@ -225,20 +225,20 @@ html:lang(ko) b, html:lang(ko) h1, html:lang(ko) h2, html:lang(ko) strong, html:
 .user-count { font-size:14px; color:#8d6b74; font-variant-numeric:tabular-nums; }
 .user-detail-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:6px 0 12px; }
 .user-detail-head b { font-size:17px; color:#4a3d42; }
-.user-grid { max-height:52dvh; overflow:auto; }
+.user-grid { max-height:52cqh; overflow:auto; }
 .user-grid .friend-lock { font-size:10px; }
-.weed-walker { width:min(58vw,300px); animation-name:weed-walk-big; }
-@keyframes weed-walk-big { 0%{left:4%} 45%{left:calc(96% - min(58vw,300px))} 50%{left:calc(96% - min(58vw,300px))} 95%{left:4%} 100%{left:4%} }
+.weed-walker { width:min(58cqw,300px); animation-name:weed-walk-big; }
+@keyframes weed-walk-big { 0%{left:4%} 45%{left:calc(96% - min(58cqw,300px))} 50%{left:calc(96% - min(58cqw,300px))} 95%{left:4%} 100%{left:4%} }
 .weed-field { --horizon:52%; }
 .weed-pick img { mix-blend-mode:multiply; }
 
 /* Weeding friend: small, standing fully on the meadow while it works. */
 .weed-field { --horizon:42%; }
-.weed-walker { width:min(30vw,150px); bottom:24%; clip-path:none; animation-name:weed-walk-small; z-index:2; }
+.weed-walker { width:min(30cqw,150px); bottom:24%; clip-path:none; animation-name:weed-walk-small; z-index:2; }
 .weed-friend { bottom:0; }
 .weed-friend::after { content:''; position:absolute; left:18%; right:18%; bottom:-2%; height:9%; border-radius:50%; background:rgba(60,100,40,.22); z-index:-1; }
 .weed-clippings { inset:auto -10% -2% -10%; height:60%; }
-@keyframes weed-walk-small { 0%{left:6%} 45%{left:calc(94% - min(30vw,150px))} 50%{left:calc(94% - min(30vw,150px))} 95%{left:6%} 100%{left:6%} }
+@keyframes weed-walk-small { 0%{left:6%} 45%{left:calc(94% - min(30cqw,150px))} 50%{left:calc(94% - min(30cqw,150px))} 95%{left:6%} 100%{left:6%} }
 @keyframes weed-work { 0%,100%{transform:rotate(-6deg) translateY(0)} 25%{transform:rotate(0) translateY(-6%)} 50%{transform:rotate(6deg) translateY(0)} 75%{transform:rotate(0) translateY(-6%)} }
 /* A mown trail of lighter grass follows the friend. */
 .weed-walker::before { content:''; position:absolute; left:-30%; right:-30%; bottom:-4%; height:14%; border-radius:50%; background:radial-gradient(ellipse at center, rgba(235,250,215,.9), rgba(235,250,215,0) 70%); }
@@ -270,14 +270,14 @@ html, body { background:#fff8f1; }
   radial-gradient(circle at 78% 70%, rgba(185,227,154,.45) 0 6px, transparent 7px),
   linear-gradient(#fff8f1, #fff1e8); }
 .toon-stage { position:absolute; left:0; right:0; top:calc(120px + var(--safe-t)); bottom:calc(190px + var(--safe-b)); pointer-events:none; z-index:1; }
-.toon-floor { position:absolute; left:50%; bottom:4%; width:min(70vw,420px); height:min(10vw,60px); transform:translateX(-50%); border-radius:50%; background:#f6e3d6; border:3px solid #3a2e2f; }
-.toon-machine { position:absolute; right:max(6%, calc(50% - 300px)); bottom:14%; width:min(30vw,170px); transform-origin:50% 95%; }
+.toon-floor { position:absolute; left:50%; bottom:4%; width:min(70cqw,420px); height:min(10cqw,60px); transform:translateX(-50%); border-radius:50%; background:#f6e3d6; border:3px solid #3a2e2f; }
+.toon-machine { position:absolute; right:max(6%, calc(50% - 300px)); bottom:14%; width:min(30cqw,170px); transform-origin:50% 95%; }
 .toon-machine-svg { width:100%; height:auto; display:block; overflow:visible; }
-.toon-hero { position:absolute; left:50%; bottom:8%; width:min(52vw,290px); aspect-ratio:1; transform:translateX(-58%); }
+.toon-hero { position:absolute; left:50%; bottom:8%; width:min(52cqw,290px); aspect-ratio:1; transform:translateX(-58%); }
 .toon-hero-img { width:100%; height:100%; object-fit:contain; animation:hero-bob 2.6s ease-in-out infinite; transform-origin:50% 95%; filter:drop-shadow(0 6px 0 rgba(58,46,47,.08)); }
 .toon-stage.is-empty .toon-hero-img { filter:grayscale(1) brightness(.75) opacity(.35); }
-.toon-hero-name { position:absolute; left:50%; bottom:calc(8% - 6px); transform:translateX(-58%); padding:5px 14px; border:2px solid #3a2e2f; border-radius:999px; background:#fff; color:#3a2e2f; font-family:var(--display); font-size:clamp(12px,3.4vw,16px); white-space:nowrap; }
-.toon-capsule { position:absolute; width:34px; height:34px; border-radius:50%; border:3px solid #3a2e2f; background:linear-gradient(var(--cap,#f7a8bd) 0 50%, #fffdf7 50%); opacity:0; right:calc(max(6%, calc(50% - 300px)) + min(30vw,170px) * .28); bottom:16%; }
+.toon-hero-name { position:absolute; left:50%; bottom:calc(8% - 6px); transform:translateX(-58%); padding:5px 14px; border:2px solid #3a2e2f; border-radius:999px; background:#fff; color:#3a2e2f; font-family:var(--display); font-size:clamp(12px,3.4cqw,16px); white-space:nowrap; }
+.toon-capsule { position:absolute; width:34px; height:34px; border-radius:50%; border:3px solid #3a2e2f; background:linear-gradient(var(--cap,#f7a8bd) 0 50%, #fffdf7 50%); opacity:0; right:calc(max(6%, calc(50% - 300px)) + min(30cqw,170px) * .28); bottom:16%; }
 @keyframes hero-bob { 0%,100%{ transform:translateY(0) rotate(-1.5deg) } 50%{ transform:translateY(-4%) rotate(1.5deg) } }
 .toon-stage.is-spinning .toon-machine { animation:machine-shake .5s ease-in-out 2; }
 .toon-stage.is-spinning .m-handle { animation:handle-turn 1s ease-in-out; transform-box:fill-box; transform-origin:center; }
@@ -287,40 +287,40 @@ html, body { background:#fff8f1; }
 @keyframes handle-turn { from{ rotate:0deg } to{ rotate:360deg } }
 @keyframes cap-jiggle { from{ translate:0 0 } to{ translate:0 -5px } }
 @keyframes capsule-drop { 0%,55%{opacity:0; transform:translate(0,0) scale(.6)} 62%{opacity:1; transform:translate(0,0) scale(1)} 80%{transform:translate(-40px,8px) rotate(-200deg)} 90%{transform:translate(-56px,0) rotate(-260deg)} 100%{opacity:1; transform:translate(-64px,6px) rotate(-300deg) scale(1.15)} }
-@media (min-width:761px) { .toon-stage { bottom:calc(150px + var(--safe-b)); top:110px; } }
+@media (min-width:99999px) { .toon-stage { bottom:calc(150px + var(--safe-b)); top:110px; } }
 
 /* ---------- One-line text everywhere (no wrapping) ---------- */
 .friend-card b, .friend-card small, .friend-chance, .friend-select, .friend-lock, .result-friend b, .result-friend small, .pop-name, .pop-tag, .weed-pick span, .user-main b, .nav-button, .daily-button b, .daily-button small, .collection-peek small, .collection-peek b, .soft-button, .modal-primary, .modal-secondary, .weed-status, .free-note, .toast { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .friend-card { min-width:0; }
-.friend-card b { display:block; max-width:100%; font-size:clamp(13px,3.6vw,16px); }
+.friend-card b { display:block; max-width:100%; font-size:clamp(13px,3.6cqw,16px); }
 .friend-variant, .friend-bonus { display:inline-block; margin:2px 2px 0; padding:1px 7px; border-radius:999px; font-style:normal; font-size:10px; white-space:nowrap; background:#eaf6df; color:#4f7d3a; }
 .friend-bonus { background:#fff1cf; color:#a06a12; }
-.friend-chance { font-size:clamp(9px,2.6vw,11px); }
-.friend-select { font-size:clamp(10px,2.8vw,12px); }
+.friend-chance { font-size:clamp(9px,2.6cqw,11px); }
+.friend-select { font-size:clamp(10px,2.8cqw,12px); }
 .result-friend > span:nth-child(2) { min-width:0; }
-.result-friend b { display:block; font-size:clamp(12px,3.4vw,15px); }
-.result-friend small { display:block; font-size:clamp(10px,2.8vw,12px); }
+.result-friend b { display:block; font-size:clamp(12px,3.4cqw,15px); }
+.result-friend small { display:block; font-size:clamp(10px,2.8cqw,12px); }
 .pop-variant { display:block; margin-top:2px; color:#4f7d3a; font-size:13px; }
 .weed-pick { min-width:0; }
 .weed-pick span { max-width:100%; font-size:11px; }
 .weed-pick em { font-style:normal; font-size:9px; padding:0 5px; border-radius:999px; background:#eaf6df; color:#4f7d3a; white-space:nowrap; }
 .weed-pick em.is-bonus { background:#fff1cf; color:#a06a12; }
-.weed-status { font-size:clamp(12px,3.6vw,15px); }
-.free-note { font-size:clamp(9px,2.6vw,12px); }
-.collection-summary { font-size:clamp(11px,3vw,14px); }
-.duplicate-note { font-size:clamp(10px,2.8vw,13px); }
+.weed-status { font-size:clamp(12px,3.6cqw,15px); }
+.free-note { font-size:clamp(9px,2.6cqw,12px); }
+.collection-summary { font-size:clamp(11px,3cqw,14px); }
+.duplicate-note { font-size:clamp(10px,2.8cqw,13px); }
 
 /* 2D layout fixes: compact collection chip in the nav row, smaller machine behind the hero. */
 .weed-friend img, .weed-pick img, .weed-walker { mix-blend-mode:normal; }
-.collection-peek { position:absolute; top:calc(96px + var(--safe-t)); right:clamp(16px,3vw,40px); bottom:auto; flex-direction:row; width:auto; gap:8px; padding:6px 6px 6px 14px; border-radius:999px; z-index:3; }
+.collection-peek { position:absolute; top:calc(96px + var(--safe-t)); right:clamp(16px,3cqw,40px); bottom:auto; flex-direction:row; width:auto; gap:8px; padding:6px 6px 6px 14px; border-radius:999px; z-index:3; }
 .collection-peek .peek-flowers { display:none; }
 .collection-peek .collection-count { font-size:16px; }
 .collection-peek .soft-button { margin-top:0; }
-.toon-machine { right:max(8%, calc(50% - 250px)); bottom:30%; width:min(25vw,140px); opacity:.95; }
-.toon-hero { width:min(60vw,320px); transform:translateX(-50%); z-index:2; }
+.toon-machine { right:max(8%, calc(50% - 250px)); bottom:30%; width:min(25cqw,140px); opacity:.95; }
+.toon-hero { width:min(60cqw,320px); transform:translateX(-50%); z-index:2; }
 .toon-hero-name { transform:translateX(-50%); z-index:3; }
-.toon-capsule { right:calc(max(8%, calc(50% - 250px)) + min(25vw,140px) * .25); bottom:31%; z-index:1; }
-@media (max-width:760px) {
+.toon-capsule { right:calc(max(8%, calc(50% - 250px)) + min(25cqw,140px) * .25); bottom:31%; z-index:1; }
+@media (max-width:99998px) {
   .collection-peek { top:calc(70px + var(--safe-t)); right:12px; padding:4px 4px 4px 10px; }
   .collection-peek small { display:none; }
   .collection-peek .collection-count { font-size:14px; }
@@ -337,11 +337,11 @@ html, body { background:#fff8f1; }
 @keyframes bf-flame { from{transform:scale(1,1) rotate(-3deg)} to{transform:scale(1.08,.94) rotate(3deg)} }
 .bf-circle { animation:bf-dash 6s linear infinite; }
 @keyframes bf-dash { to{stroke-dashoffset:-560} }
-.bf-title { position:absolute; left:50%; top:calc(64px + var(--safe-t)); transform:translateX(-50%); z-index:3; padding:6px 22px; border:3px solid #4a3b3b; border-radius:14px; background:#f6e3c4; color:#4a3b3b; font-size:clamp(18px,5vw,26px); font-weight:800; white-space:nowrap; box-shadow:0 4px 0 #c9a77a; }
+.bf-title { position:absolute; left:50%; top:calc(64px + var(--safe-t)); transform:translateX(-50%); z-index:3; padding:6px 22px; border:3px solid #4a3b3b; border-radius:14px; background:#f6e3c4; color:#4a3b3b; font-size:clamp(18px,5cqw,26px); font-weight:800; white-space:nowrap; box-shadow:0 4px 0 #c9a77a; }
 .bf-title span { font-size:.8em; }
 .bf-unit { position:absolute; bottom:16%; z-index:2; display:flex; flex-direction:column; align-items:center; }
-.bf-enemy { left:6%; width:min(34vw,190px); }
-.bf-friend { right:5%; width:min(42vw,230px); }
+.bf-enemy { left:6%; width:min(34cqw,190px); }
+.bf-friend { right:5%; width:min(42cqw,230px); }
 .bf-friend.is-empty { display:none; }
 .bf-body { width:100%; }
 .bf-body img, .bf-body svg { display:block; width:100%; height:auto; }
@@ -350,7 +350,7 @@ html, body { background:#fff8f1; }
 .bf-friend-body { animation:bf-attack 2.4s ease-in-out infinite; }
 @keyframes bf-wobble { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-4%) rotate(2deg)} }
 @keyframes bf-attack { 0%,55%,100%{transform:translateX(0) rotate(0)} 65%{transform:translateX(6%) rotate(4deg)} 75%{transform:translateX(-26%) rotate(-10deg)} 85%{transform:translateX(-8%) rotate(-3deg)} }
-.bf-spark { position:absolute; left:44%; bottom:34%; z-index:3; font-size:clamp(28px,8vw,46px); color:#ffd84a; -webkit-text-stroke:2px #4a3b3b; opacity:0; pointer-events:none; }
+.bf-spark { position:absolute; left:44%; bottom:34%; z-index:3; font-size:clamp(28px,8cqw,46px); color:#ffd84a; -webkit-text-stroke:2px #4a3b3b; opacity:0; pointer-events:none; }
 .battle-field.is-fighting .bf-spark { animation:bf-spark 2.4s ease-out infinite; }
 @keyframes bf-spark { 0%,70%{opacity:0; transform:scale(.4) rotate(0)} 76%{opacity:1; transform:scale(1.2) rotate(20deg)} 90%{opacity:0; transform:scale(1.5) rotate(40deg)} 100%{opacity:0} }
 .battle-field.is-fighting .bf-enemy-body { animation:bf-wobble 1.6s ease-in-out infinite, bf-flinch 2.4s ease-in-out infinite; }
@@ -362,34 +362,34 @@ html, body { background:#fff8f1; }
 .bf-bar-track b { display:block; height:100%; border-radius:999px; background:#e86f6f; transform-origin:left center; transition:transform .5s ease; }
 .bf-friend-fill { background:#8fd36a !important; }
 .bf-bar em { flex:0 0 auto; font-style:normal; font-size:12px; font-weight:800; color:#4a3b3b; font-variant-numeric:tabular-nums; }
-.bf-hit { position:absolute; top:10%; left:50%; z-index:4; transform:translateX(-50%); font-size:clamp(22px,6vw,32px); font-weight:900; color:#ff5e5e; -webkit-text-stroke:2px #fff; opacity:0; pointer-events:none; }
+.bf-hit { position:absolute; top:10%; left:50%; z-index:4; transform:translateX(-50%); font-size:clamp(22px,6cqw,32px); font-weight:900; color:#ff5e5e; -webkit-text-stroke:2px #fff; opacity:0; pointer-events:none; }
 .bf-hit.is-showing { animation:bf-hit 1.2s ease-out both; }
 @keyframes bf-hit { 0%{opacity:0; transform:translate(-50%,10px) scale(.6)} 20%{opacity:1; transform:translate(-50%,0) scale(1.15)} 100%{opacity:0; transform:translate(-50%,-40px) scale(1)} }
 .bf-enemy.is-hit .bf-enemy-body { animation:bf-shake .5s ease-in-out; }
 @keyframes bf-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8%)} 50%{transform:translateX(6%)} 75%{transform:translateX(-4%)} }
 .battle-panel .weed-earn { grid-template-columns:1fr 1fr 1fr; }
 .battle-panel .weed-earn > span { background:#f8ece4; }
-.battle-panel .weed-earn b { color:#a24c4c; font-size:clamp(16px,5vw,22px); white-space:nowrap; }
-.battle-status { margin:0 0 10px; text-align:center; color:#4a3d42; font-size:clamp(12px,3.6vw,15px); }
+.battle-panel .weed-earn b { color:#a24c4c; font-size:clamp(16px,5cqw,22px); white-space:nowrap; }
+.battle-status { margin:0 0 10px; text-align:center; color:#4a3d42; font-size:clamp(12px,3.6cqw,15px); }
 .weed-pick em.is-power { background:#fde3e0; color:#a24c4c; }
 .battle-toast { position:absolute; left:50%; bottom:auto; top:calc(110px + var(--safe-t)); transform:translateX(-50%); z-index:6; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .bf-title { top:calc(58px + var(--safe-t)); }
   .bf-unit { bottom:12%; }
 }
 
 /* Weeding friend: show the whole body (no crop), standing on the meadow. */
-.weed-field .weed-walker { clip-path:none !important; overflow:visible; bottom:12% !important; width:min(38vw,200px) !important; }
+.weed-field .weed-walker { clip-path:none !important; overflow:visible; bottom:12% !important; width:min(38cqw,200px) !important; }
 .weed-field .weed-friend { bottom:0 !important; top:auto !important; height:100% !important; }
 .weed-field .weed-friend img { object-fit:contain; object-position:50% 100%; }
-@keyframes weed-walk-fit { 0%{left:6%} 45%{left:calc(94% - min(38vw,200px))} 50%{left:calc(94% - min(38vw,200px))} 95%{left:6%} 100%{left:6%} }
+@keyframes weed-walk-fit { 0%{left:6%} 45%{left:calc(94% - min(38cqw,200px))} 50%{left:calc(94% - min(38cqw,200px))} 95%{left:6%} 100%{left:6%} }
 .weed-field .weed-walker { animation-name:weed-walk-fit !important; }
 /* Hunting ground: keep the sign clear of the HP bars. */
-.bf-title { top:calc(54px + var(--safe-t)); padding:4px 16px; font-size:clamp(15px,4.4vw,24px); }
-.bf-enemy { width:min(30vw,180px); }
-.bf-friend { width:min(36vw,210px); }
+.bf-title { top:calc(54px + var(--safe-t)); padding:4px 16px; font-size:clamp(15px,4.4cqw,24px); }
+.bf-enemy { width:min(30cqw,180px); }
+.bf-friend { width:min(36cqw,210px); }
 .bf-unit { bottom:10%; }
-.battle-panel { max-height:46dvh; }
+.battle-panel { max-height:46cqh; }
 .weed-field .weed-walker { z-index:4 !important; }
 /* A friend already working in the other field can't be picked here. */
 .weed-pick.is-busy { opacity:.5; filter:grayscale(.7); }
@@ -405,7 +405,7 @@ html, body { background:#fff8f1; }
 .gacha-actions.is-deco .deco-pull { display:flex; }
 .gacha-actions.is-deco [data-action="pull"] { display:none; }
 .collection-peek .deco-count { margin-left:4px; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-actions .pull-mode { grid-column:1/-1; }
   .gacha-actions .pull-mode-button { min-height:30px; padding:4px 12px; font-size:12px; }
   .collection-peek .deco-count { display:none; }
@@ -421,13 +421,13 @@ html, body { background:#fff8f1; }
 .house-piece.is-flipped img { transform:scaleX(-1); }
 .house-piece.is-selected { outline:2px dashed #e07f97; outline-offset:3px; border-radius:12px; }
 .house-friend { width:clamp(72px,21vmin,160px); }
-.house-tools { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(min(46dvh,340px) + 6px); z-index:6; display:flex; align-items:center; gap:4px; padding:5px 6px 5px 12px; border-radius:999px; background:#fff; box-shadow:0 6px 18px rgba(60,40,50,.18); max-width:calc(100vw - 16px); }
+.house-tools { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(min(46cqh,340px) + 6px); z-index:6; display:flex; align-items:center; gap:4px; padding:5px 6px 5px 12px; border-radius:999px; background:#fff; box-shadow:0 6px 18px rgba(60,40,50,.18); max-width:calc(100cqw - 16px); }
 .house-tools[hidden], .house-tools button[hidden] { display:none; }
-.house-tools-name { font-size:12px; color:#5b4750; margin-right:4px; white-space:nowrap; max-width:30vw; overflow:hidden; text-overflow:ellipsis; }
+.house-tools-name { font-size:12px; color:#5b4750; margin-right:4px; white-space:nowrap; max-width:30cqw; overflow:hidden; text-overflow:ellipsis; }
 .house-tools button { border:0; border-radius:999px; padding:6px 9px; background:#f6eef0; color:#5b4750; font-size:12px; white-space:nowrap; cursor:pointer; }
 .house-tools button[data-action="house-remove"] { background:#fde3e0; color:#a24c4c; }
 .house-tools button[data-action="house-done"] { background:#5b4750; color:#fff; }
-.house-panel { max-height:min(46dvh,340px); }
+.house-panel { max-height:min(46cqh,340px); }
 .house-panel-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
 .house-tabs { margin:0; }
 .house-meta { font-size:11px; color:#9a8088; white-space:nowrap; }
@@ -445,7 +445,7 @@ html, body { background:#fff8f1; }
 .user-count small { display:block; font-size:10px; color:#9a8088; }
 
 /* Mobile top area: 4 move buttons on one row, collection box on its own row below. */
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-nav { left:10px; right:10px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
   .gacha-nav .nav-button { justify-content:center; gap:4px; padding:7px 4px; font-size:12px; min-width:0; }
   .gacha-nav .nav-button span { font-size:14px; }
@@ -461,7 +461,7 @@ html, body { background:#fff8f1; }
 .toon-stage { bottom:var(--actions-h, calc(230px + var(--safe-b))) !important; }
 
 /* ---------- Top rewards: daily check-in + roulette ---------- */
-.top-rewards { position:absolute; top:calc(150px + var(--safe-t)); right:clamp(16px,3vw,40px); display:flex; gap:8px; z-index:3; pointer-events:auto; }
+.top-rewards { position:absolute; top:calc(150px + var(--safe-t)); right:clamp(16px,3cqw,40px); display:flex; gap:8px; z-index:3; pointer-events:auto; }
 .reward-chip { display:flex; align-items:center; gap:7px; padding:7px 13px 7px 8px; min-height:0; border:1px solid rgba(222,183,160,.6); border-radius:999px; background:rgba(255,255,255,.94); color:#5b4750; box-shadow:0 8px 20px rgba(90,65,74,.1); cursor:pointer; text-align:left; }
 .reward-chip .reward-icon { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#fff1e6; font-size:17px; }
 .reward-chip b { display:block; font-size:13px; line-height:1.15; white-space:nowrap; }
@@ -470,7 +470,7 @@ html, body { background:#fff8f1; }
 .reward-chip:disabled, .reward-chip.is-used { opacity:.6; }
 .reward-chip:not(:disabled):not(.is-used) .reward-icon { animation:reward-bob 1.6s ease-in-out infinite; }
 @keyframes reward-bob { 50% { transform:translateY(-3px) rotate(-6deg); } }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .top-rewards { top:calc(162px + var(--safe-t)); left:10px; right:auto; flex-direction:column; gap:6px; }
   .reward-chip { padding:5px 10px 5px 5px; gap:5px; }
   .reward-chip .reward-icon { width:26px; height:26px; font-size:15px; }
@@ -478,8 +478,8 @@ html, body { background:#fff8f1; }
 }
 
 /* ---------- Roulette modal ---------- */
-.roulette-card { width:min(420px,94vw); text-align:center; }
-.roulette-wrap { position:relative; width:min(290px,74vw); aspect-ratio:1; margin:6px auto 10px; }
+.roulette-card { width:min(420px,94cqw); text-align:center; }
+.roulette-wrap { position:relative; width:min(290px,74cqw); aspect-ratio:1; margin:6px auto 10px; }
 .roulette-svg { width:100%; height:100%; display:block; filter:drop-shadow(0 10px 18px rgba(90,65,74,.18)); }
 .roulette-wheel { transform-origin:0 0; transform-box:view-box; transition:transform 4.1s cubic-bezier(.12,.75,.12,1); }
 .roulette-pointer { position:absolute; left:50%; top:-6px; z-index:2; width:0; height:0; transform:translateX(-50%); border-left:14px solid transparent; border-right:14px solid transparent; border-top:26px solid #e8687f; filter:drop-shadow(0 2px 0 #3a2e2f); }
@@ -494,16 +494,16 @@ html, body { background:#fff8f1; }
 .house-bg { object-fit:cover; object-position:center bottom; pointer-events:none; user-select:none; -webkit-user-drag:none; background:#eeeef3; }
 .house-inventory .weed-empty { grid-column:1 / -1; width:auto; text-align:center; }
 /* Desktop/tablet: rewards sit in the left column under the move buttons, clear of the hero and machine. */
-@media (min-width:761px) {
-  .top-rewards { left:clamp(16px,3vw,40px); right:auto; top:calc(300px + var(--safe-t)); flex-direction:column; align-items:flex-start; }
+@media (min-width:99999px) {
+  .top-rewards { left:clamp(16px,3cqw,40px); right:auto; top:calc(300px + var(--safe-t)); flex-direction:column; align-items:flex-start; }
 }
-@media (min-width:761px) and (max-height:600px) {
-  .top-rewards { top:calc(96px + var(--safe-t)); left:calc(clamp(16px,3vw,40px) + 140px); }
+@media (min-width:99999px) and (max-height:600px) {
+  .top-rewards { top:calc(96px + var(--safe-t)); left:calc(clamp(16px,3cqw,40px) + 140px); }
 }
 /* Rewards now live in the header row. */
 .gacha-header .top-rewards { position:static; flex-direction:row; align-items:center; }
-@media (min-width:761px) { .gacha-header .top-rewards { position:static !important; } }
-@media (max-width:760px) {
+@media (min-width:99999px) { .gacha-header .top-rewards { position:static !important; } }
+@media (max-width:99998px) {
   .gacha-header { position:absolute; }
   .gacha-header .top-rewards { position:absolute !important; top:calc(150px - 13px); left:-4px; right:auto; flex-direction:column; align-items:flex-start; gap:6px; }
 }
@@ -547,7 +547,7 @@ html, body { background:#fff8f1; }
 .featured-pick.is-active { border-color:#e98fa0; box-shadow:0 0 0 3px rgba(233,143,160,.35); background:#fff6f7; }
 
 /* ---------- Mailbox ---------- */
-.mail-list { display:flex; flex-direction:column; gap:10px; max-height:min(52vh,460px); overflow:auto; padding:2px; margin-bottom:12px; text-align:left; }
+.mail-list { display:flex; flex-direction:column; gap:10px; max-height:min(52cqh,460px); overflow:auto; padding:2px; margin-bottom:12px; text-align:left; }
 .mail-item { padding:12px 14px; border:1.5px solid rgba(219,190,177,.6); border-radius:18px; background:#fff; }
 .mail-item.is-new { border-color:#e98fa0; background:#fff7f8; }
 .mail-head { display:flex; align-items:center; gap:8px; }
@@ -571,7 +571,7 @@ html, body { background:#fff8f1; }
 .mail-limit { margin:2px 0 6px; font-size:12px; color:#8a7470; }
 .mail-limit b { color:#e24e5c; }
 
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .profile-chip { position:relative; left:auto; top:auto; transform:none; margin:2px auto 6px; padding:4px 12px 4px 4px; }
   .profile-chip:active { transform:translateY(2px); }
   .profile-avatar { width:32px; height:32px; }
@@ -583,7 +583,7 @@ html, body { background:#fff8f1; }
 .gacha-header .account-chip { display:none !important; }
 .profile-bottom { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
 .profile-bottom > button { margin:0; width:100%; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .profile-chip { position:absolute; left:50%; top:calc(10px + var(--safe-t, 0px)); transform:translateX(-50%); margin:0; }
   .profile-chip:active { transform:translateX(-50%) translateY(2px); }
   .profile-text small { display:none; }
@@ -599,14 +599,14 @@ html, body { background:#fff8f1; }
 .mail-read { background:#e9f1fa !important; color:#56789b !important; }
 .mail-actions [hidden] { display:none; }
 /* ---------- Sent notice ---------- */
-.send-notice { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:60; width:min(320px,86vw); padding:22px 18px 18px; border-radius:24px; background:#fffdf8; border:3px solid #f2b5c4; box-shadow:0 20px 50px rgba(90,60,70,.28); text-align:center; display:flex; flex-direction:column; gap:6px; align-items:center; pointer-events:none; animation:send-pop .38s cubic-bezier(.2,1.4,.4,1); }
+.send-notice { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:60; width:min(320px,86cqw); padding:22px 18px 18px; border-radius:24px; background:#fffdf8; border:3px solid #f2b5c4; box-shadow:0 20px 50px rgba(90,60,70,.28); text-align:center; display:flex; flex-direction:column; gap:6px; align-items:center; pointer-events:none; animation:send-pop .38s cubic-bezier(.2,1.4,.4,1); }
 .send-notice-icon { font-size:44px; line-height:1; animation:send-fly 1.2s ease-in-out infinite alternate; }
 .send-notice b { font-size:20px; color:#5b4750; }
 .send-notice small { font-size:13px; color:#8a7079; line-height:1.45; word-break:keep-all; }
 @keyframes send-pop { from { transform:translate(-50%,-50%) scale(.6); opacity:0; } to { transform:translate(-50%,-50%) scale(1); opacity:1; } }
 @keyframes send-fly { from { transform:translateY(0) rotate(-6deg); } to { transform:translateY(-6px) rotate(6deg); } }
 /* ---------- Storage box ---------- */
-.storage-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px; max-height:min(56vh,520px); overflow:auto; padding:2px 2px 6px; }
+.storage-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px; max-height:min(56cqh,520px); overflow:auto; padding:2px 2px 6px; }
 .storage-item { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px; border-radius:16px; background:#fff; border:1px solid #f0dbe1; min-width:0; text-align:center; }
 .storage-pic { width:76px; height:76px; border-radius:18px; background:#fff4f6; display:grid; place-items:center; overflow:hidden; }
 .storage-pic img { width:100%; height:100%; object-fit:contain; }
@@ -624,7 +624,7 @@ html, body { background:#fff8f1; }
 .suggest-input { flex:1 1 auto; min-width:0; border:1px solid #efc9d3; border-radius:14px; padding:10px 12px; font:inherit; font-size:14px; background:#fff; }
 .suggest-row .modal-primary { flex:0 0 auto; width:auto; margin:0; padding:10px 18px; }
 .suggest-counter { align-self:flex-end; font-size:11px; color:#9a8088; }
-.suggest-list { display:flex; flex-direction:column; gap:8px; max-height:min(50vh,460px); overflow:auto; padding:2px; }
+.suggest-list { display:flex; flex-direction:column; gap:8px; max-height:min(50cqh,460px); overflow:auto; padding:2px; }
 .suggest-item { padding:10px 12px; border-radius:16px; background:#fff; border:1px solid #f0dbe1; }
 .suggest-item.is-mine { border-color:#f2b5c4; background:#fff8fa; }
 .suggest-me { font-style:normal; font-size:10px; background:#f3a3b8; color:#fff; border-radius:999px; padding:1px 6px; margin-left:4px; }
@@ -636,14 +636,14 @@ html, body { background:#fff8f1; }
 .suggest-admin .soft-button { flex:0 0 auto; }
 .profile-actions { flex-wrap:wrap; }
 /* Mobile: 6 move buttons as 3 x 2, collection box below them. */
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .collection-peek { top:calc(150px + var(--safe-t)); }
   .storage-grid { grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px; }
   .storage-pic { width:62px; height:62px; }
 }
 /* Mobile: nav is now 2 rows, so the reward buttons start below the collection box. */
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-header .top-rewards { top:calc(198px - 13px) !important; flex-direction:row !important; align-items:center; gap:6px; left:-2px; }
   /* The character stage starts below the menu, collection box and reward buttons so nothing covers it. */
   .toon-stage { top:calc(246px + var(--safe-t)) !important; }
@@ -651,15 +651,15 @@ html, body { background:#fff8f1; }
 /* Size the hero and machine from the stage height too, so they never poke out above the stage on short phones. */
 .toon-stage { container-type:size; }
 @supports (width:1cqh) {
-  .toon-hero { width:min(60vw, 320px, 84cqh); }
-  .toon-machine { width:min(25vw, 140px, 46cqh); }
+  .toon-hero { width:min(60cqw, 320px, 84cqh); }
+  .toon-machine { width:min(25cqw, 140px, 46cqh); }
 }
 /* Visiting another user's house (read-only). */
 .user-tabs-3 { grid-template-columns:repeat(3,1fr); }
 .user-house { margin-top:4px; }
 .user-house-loading, .user-house-note { text-align:center; color:#9a7d82; font-size:13px; margin:10px 0 2px; }
 .house-lot.house-visit { flex:none; width:100%; aspect-ratio:1 / 1; max-height:none; min-height:0; border-radius:18px; border:2px solid #f0d9d2; touch-action:auto; }
-@media (min-width:761px) { .house-lot.house-visit { aspect-ratio:16 / 10; } }
+@media (min-width:99999px) { .house-lot.house-visit { aspect-ratio:16 / 10; } }
 .house-visit .house-items { position:absolute; inset:0; }
 .house-visit .house-piece { cursor:default; pointer-events:none; width:calc(clamp(44px,13cqw,120px) * var(--s,1)); }
 .house-visit .house-friend { width:clamp(50px,15cqw,130px); }
@@ -696,18 +696,18 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .weed-beetle-helper b { position:absolute; right:-10px; top:-6px; padding:1px 7px; border-radius:999px; background:#fff; border:2px solid #e0a84f; color:#b86d22; font-family:var(--display); font-size:12px; white-space:nowrap; }
 /* Up to 3 weeding friends: hide empty walkers, shrink and stagger when 2-3 are out. */
 .weed-field .weed-walker.is-idle { display:none !important; }
-.weed-field[data-count="2"] .weed-walker, .weed-field[data-count="3"] .weed-walker { width:min(38vw,200px) !important; animation-name:weed-walk-multi !important; }
+.weed-field[data-count="2"] .weed-walker, .weed-field[data-count="3"] .weed-walker { width:min(38cqw,200px) !important; animation-name:weed-walk-multi !important; }
 .weed-field[data-count="2"] .weed-walker[data-slot="1"], .weed-field[data-count="3"] .weed-walker[data-slot="1"] { animation-delay:-6s; bottom:20% !important; z-index:3 !important; }
 .weed-field[data-count="3"] .weed-walker[data-slot="2"] { animation-delay:-12s; bottom:4% !important; z-index:5 !important; }
 .weed-field[data-count="2"] .weed-walker[data-slot="0"], .weed-field[data-count="3"] .weed-walker[data-slot="0"] { bottom:10% !important; }
-@keyframes weed-walk-multi { 0%{left:4%} 45%{left:calc(96% - min(38vw,200px))} 50%{left:calc(96% - min(38vw,200px))} 95%{left:4%} 100%{left:4%} }
+@keyframes weed-walk-multi { 0%{left:4%} 45%{left:calc(96% - min(38cqw,200px))} 50%{left:calc(96% - min(38cqw,200px))} 95%{left:4%} 100%{left:4%} }
 .weed-field[data-count="2"] .weed-walker[data-slot="1"] .weed-friend, .weed-field[data-count="3"] .weed-walker[data-slot="1"] .weed-friend { animation-delay:-6s; }
 .weed-field[data-count="3"] .weed-walker[data-slot="2"] .weed-friend { animation-delay:-12s; }
 .weed-field .weed-beetle-helper { bottom:auto !important; top:34%; left:auto; right:6%; z-index:6; }
 /* Passive income (weeding + battle) just under the coin balance. */
 .wallet { position:relative; }
 .wallet .wallet-rate { position:absolute; top:calc(100% + 3px); right:8px; font-size:11px; font-weight:700; line-height:1; color:#5f8f3e; white-space:nowrap; pointer-events:none; background:rgba(255,255,255,.85); padding:2px 6px; border-radius:999px; }
-@media (max-width: 760px) {
+@media (max-width:99998px) {
   .wallet { display:inline-grid; grid-template-columns:auto auto auto; align-items:center; justify-content:center; column-gap:6px; row-gap:1px; padding-top:6px; padding-bottom:6px; width:max-content; }
   .wallet .wallet-rate { position:static; grid-column:1 / -1; text-align:center; background:none; padding:0; font-size:10px; }
 }
@@ -715,12 +715,12 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* Let 우사기's enlarged ears poke out of square picture frames instead of being clipped. */
 .friend-avatar, .result-avatar, .pop-photo, .storage-pic { overflow:visible; }
 /* House: bigger room, the deco/friend tray takes half the old height and scrolls inside. */
-.house-screen .house-panel { display:flex; flex-direction:column; height:min(29dvh,220px); max-height:none; overflow:hidden; padding-top:10px; padding-bottom:calc(8px + var(--safe-b)); }
+.house-screen .house-panel { display:flex; flex-direction:column; height:min(29cqh,220px); max-height:none; overflow:hidden; padding-top:10px; padding-bottom:calc(8px + var(--safe-b)); }
 /* 데코/친구 tabs stay put; only the picker list below them scrolls. */
 .house-screen .house-panel-head { flex:0 0 auto; }
 .house-screen .house-inventory { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:2px 2px 6px; align-content:start; }
 .house-screen .house-panel .weed-rule { display:none; }
-.house-screen .house-tools { bottom:calc(min(29dvh,220px) + 8px); }
+.house-screen .house-tools { bottom:calc(min(29cqh,220px) + 8px); }
 .house-screen .house-lot { flex:1 1 auto; min-height:0; }
 
 /* Fixed collection portrait slots: images never push the labels down. */
@@ -735,7 +735,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 .collection-grid .friend-card > b { width:100%; min-height:20px; line-height:20px; }
 .collection-grid .friend-card > small { width:100%; min-height:28px; line-height:14px; }
-@media(max-width:760px) {
+@media(max-width:99998px) {
   .collection-grid .friend-avatar { width:min(100%,84px); }
   .collection-grid .friend-card > b { min-height:18px; line-height:18px; }
 }
@@ -762,7 +762,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   border-bottom: 1px solid #eadcd4;
 }
 .weed-panel .field-info-sticky .weed-rule { margin-bottom: 0; }
-@media (max-width: 760px) {
+@media (max-width:99998px) {
   .collection-card .collection-info-sticky { top: -30px; margin-top: -14px; padding-top: 14px; padding-right: 34px; }
   .collection-card .modal-close { margin: -14px -8px 0 0; }
 }
@@ -774,7 +774,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   flex-direction:column;
   overflow:hidden;
   min-height:0;
-  max-height:min(86dvh,760px);
+  max-height:min(86cqh,760px);
 }
 .gacha-modal .collection-card .collection-info-sticky {
   position:relative;
@@ -831,10 +831,10 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   align-content:start;
 }
 .weed-screen .weed-panel:not(.house-panel) .weed-beetle-slot { flex:0 0 auto; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .gacha-modal { padding:10px; }
   .gacha-modal .modal-card.collection-card {
-    max-height:calc(100dvh - 24px - var(--safe-t, 0px) - var(--safe-b, 0px));
+    max-height:calc(100cqh - 24px - var(--safe-t, 0px) - var(--safe-b, 0px));
   }
   .gacha-modal .collection-card .collection-info-sticky {
     top:auto; margin:0 0 8px; padding:0 28px 8px 0;
@@ -844,7 +844,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Mobile: reserve a visible 1.5 rows of character/deco choices on every field. */
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .weed-screen .weed-panel,
   .weed-screen .weed-panel.battle-panel,
   .weed-screen.house-screen .weed-panel.house-panel {
@@ -852,8 +852,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     display:flex;
     flex-direction:column;
     flex:0 0 auto;
-    height:clamp(210px, 36dvh, 280px);
-    max-height:calc(100dvh - 155px - var(--safe-t, 0px) - var(--safe-b, 0px));
+    height:clamp(210px, 36cqh, 280px);
+    max-height:calc(100cqh - 155px - var(--safe-t, 0px) - var(--safe-b, 0px));
     min-height:0;
     overflow:hidden;
     padding:8px 10px calc(7px + var(--safe-b));
@@ -896,11 +896,11 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .weed-screen .weed-panel .house-panel-head {margin:0;gap:4px;}
   .weed-screen .weed-panel .house-tabs .auth-tab {padding:5px 8px;}
   .weed-screen .weed-panel .house-meta {font-size:10px;}
-  .weed-screen .house-tools {bottom:calc(clamp(210px,36dvh,280px) + 8px);}
+  .weed-screen .house-tools {bottom:calc(clamp(210px,36cqh,280px) + 8px);}
   .weed-screen .battle-field {min-height:120px;}
   .weed-screen .weed-field {min-height:120px;}
 }
-@media (max-width:760px) and (max-height:620px) {
+@media (max-width:99998px) and (max-height:620px) {
   .weed-screen .weed-panel,
   .weed-screen .weed-panel.battle-panel,
   .weed-screen.house-screen .weed-panel.house-panel {height:210px;}
@@ -908,7 +908,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Mobile field: small, visually normalized weeding friends and more room for choices. */
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .weed-screen .weed-field {
     --horizon:18%;
     min-height:0 !important;
@@ -936,8 +936,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .weed-screen .weed-panel,
   .weed-screen .weed-panel.battle-panel,
   .weed-screen.house-screen .weed-panel.house-panel {
-    height:clamp(290px,43dvh,380px) !important;
-    max-height:calc(100dvh - 140px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
+    height:clamp(290px,43cqh,380px) !important;
+    max-height:calc(100cqh - 140px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
     min-height:0;
     padding:7px 10px calc(7px + var(--safe-b)) !important;
   }
@@ -965,7 +965,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   }
   .weed-screen .weed-panel .weed-pick,
   .weed-screen .weed-panel .house-slot {height:86px !important;}
-  .weed-screen .house-tools {bottom:calc(clamp(290px,43dvh,380px) + 8px) !important;}
+  .weed-screen .house-tools {bottom:calc(clamp(290px,43cqh,380px) + 8px) !important;}
 }
 @keyframes weed-walk-mobile-small {
   0%,100% {left:4%}
@@ -980,7 +980,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   background:#eff8ff;color:#315b87;font-size:12px;white-space:nowrap;
 }
 .diamond-wallet strong {font-size:16px;font-weight:800;}
-@media(max-width:760px) {
+@media(max-width:99998px) {
   .gacha-header .header-right .diamond-wallet {padding:5px 8px;font-size:10px;gap:3px;}
   .diamond-wallet strong {font-size:13px;}
 }
@@ -989,7 +989,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .storage-diamonds strong {font-size:19px;}
 
 /* iPhone Safari / Kakao in-app browser: constrain every main-screen row to the visual viewport. */
-@media screen and (max-width: 760px) {
+@media screen and (max-width:99998px) {
   html, body, #ui, .gacha-screen {
     width:100% !important;
     max-width:100% !important;
@@ -1006,7 +1006,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     gap:5px !important;
   }
   .gacha-header .brand {flex:0 1 auto;min-width:0;gap:5px;}
-  .gacha-header .brand b {font-size:clamp(10px,3vw,13px);overflow:hidden;text-overflow:ellipsis;}
+  .gacha-header .brand b {font-size:clamp(10px,3cqw,13px);overflow:hidden;text-overflow:ellipsis;}
   .gacha-header .brand-icon {flex:none;}
   .gacha-header .header-right {flex:0 1 auto;min-width:0;max-width:72%;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
   .gacha-header .wallet {padding:4px 7px;gap:3px;min-width:0;font-size:10px;}
@@ -1024,7 +1024,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     grid-template-columns:repeat(3,minmax(0,1fr)) !important;
     gap:6px !important;
   }
-  .gacha-nav .nav-button {min-width:0 !important;width:100%;max-width:100%;padding:7px 2px !important;font-size:clamp(10px,2.9vw,12px) !important;white-space:nowrap;overflow:hidden;justify-content:center;}
+  .gacha-nav .nav-button {min-width:0 !important;width:100%;max-width:100%;padding:7px 2px !important;font-size:clamp(10px,2.9cqw,12px) !important;white-space:nowrap;overflow:hidden;justify-content:center;}
   .gacha-nav .nav-button span {font-size:13px;flex:none;}
   .collection-peek {
     top:calc(150px + var(--safe-t)) !important;
@@ -1037,7 +1037,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     gap:5px;
     padding:5px 7px;
   }
-  .collection-peek .soft-button {font-size:clamp(10px,2.9vw,12px);padding:5px 7px;}
+  .collection-peek .soft-button {font-size:clamp(10px,2.9cqw,12px);padding:5px 7px;}
   .gacha-header .top-rewards {top:calc(198px - 13px) !important;left:0 !important;right:auto !important;max-width:100%;}
   .gacha-actions {
     left:max(8px,env(safe-area-inset-left,0px)) !important;
@@ -1048,15 +1048,15 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     grid-template-columns:repeat(4,minmax(0,1fr)) !important;
   }
   .gacha-actions .pull-button {width:100%;min-width:0 !important;padding:6px 1px !important;}
-  .gacha-actions .pull-button b {font-size:clamp(10px,2.8vw,12px) !important;white-space:normal;line-height:1.2;}
-  .gacha-actions .pull-button small {font-size:clamp(8px,2.3vw,10px) !important;white-space:normal;}
+  .gacha-actions .pull-button b {font-size:clamp(10px,2.8cqw,12px) !important;white-space:normal;line-height:1.2;}
+  .gacha-actions .pull-button small {font-size:clamp(8px,2.3cqw,10px) !important;white-space:normal;}
   .gacha-screen .toon-stage {max-width:100%;overflow:hidden;}
   .gacha-screen .free-note {left:8px;right:8px;max-width:calc(100% - 16px);}
 }
 
 /* iOS Safari: separate profile from wallet row, compact six navigation actions. */
 .battle-reward-hint {margin:0 0 5px;padding:7px 9px;border-radius:10px;background:#eaf4ff;color:#34628b;font-size:12px;font-weight:800;line-height:1.3;text-align:center;}
-@media(max-width:760px) {
+@media(max-width:99998px) {
   .gacha-screen > .profile-chip {
     position:absolute !important;left:50% !important;top:calc(64px + var(--safe-t,0px)) !important;
     transform:translateX(-50%) !important;max-width:calc(100% - 24px);margin:0 !important;
@@ -1075,7 +1075,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .gacha-header .header-right .diamond-wallet {padding:4px 5px !important;font-size:9px !important;white-space:nowrap;}
   .gacha-header .header-right .diamond-wallet strong {font-size:11px !important;}
   .gacha-nav {top:calc(113px + var(--safe-t,0px)) !important;gap:5px !important;}
-  .gacha-nav .nav-button {min-height:35px !important;padding:5px 2px !important;font-size:clamp(10px,2.8vw,12px) !important;border-radius:18px !important;gap:3px !important;}
+  .gacha-nav .nav-button {min-height:35px !important;padding:5px 2px !important;font-size:clamp(10px,2.8cqw,12px) !important;border-radius:18px !important;gap:3px !important;}
   .gacha-nav .nav-button span {font-size:12px !important;}
   .collection-peek {top:calc(197px + var(--safe-t,0px)) !important;}
   .gacha-header .top-rewards {top:calc(250px - 9px) !important;left:0 !important;}
@@ -1089,13 +1089,13 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Mobile Safari: six compact navigation buttons in one horizontal row. */
-@media screen and (max-width:760px) {
+@media screen and (max-width:99998px) {
   .gacha-screen > .profile-chip {
     left:max(10px,env(safe-area-inset-left,0px)) !important;
     right:auto !important;
     top:calc(59px + var(--safe-t,0px)) !important;
     transform:none !important;
-    max-width:min(46vw,190px) !important;
+    max-width:min(46cqw,190px) !important;
     min-height:30px;
     padding:2px 8px 2px 2px !important;
     gap:4px !important;
@@ -1121,7 +1121,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     height:33px !important;
     padding:3px 0 !important;
     border-radius:12px !important;
-    font-size:clamp(8px,2.1vw,10px) !important;
+    font-size:clamp(8px,2.1cqw,10px) !important;
     line-height:1.1 !important;
     gap:2px !important;
     letter-spacing:-.06em;
@@ -1132,7 +1132,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     align-items:center;
     justify-content:center;
   }
-  .gacha-nav .nav-button span {font-size:clamp(9px,2.4vw,12px) !important;flex:none;}
+  .gacha-nav .nav-button span {font-size:clamp(9px,2.4cqw,12px) !important;flex:none;}
   .collection-peek {top:calc(151px + var(--safe-t,0px)) !important;}
   .gacha-header .top-rewards {top:calc(201px - 9px) !important;}
 }
@@ -1142,10 +1142,10 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Responsive claw-machine minigame (PC and mobile) */
-.claw-screen .claw-card{width:min(96vw,540px);max-height:94dvh;overflow-y:auto;padding:18px;box-sizing:border-box;text-align:center}
-.claw-card h2{margin:5px 0 8px;font-size:clamp(20px,4vw,27px)}
+.claw-screen .claw-card{width:min(96cqw,540px);max-height:94cqh;overflow-y:auto;padding:18px;box-sizing:border-box;text-align:center}
+.claw-card h2{margin:5px 0 8px;font-size:clamp(20px,4cqw,27px)}
 .claw-desc,.claw-balance{font-size:12px;line-height:1.5;margin:6px 0;color:#79515b}
-.claw-machine{height:clamp(220px,42dvh,390px);position:relative;overflow:hidden;border:12px solid #f2a5bf;border-radius:24px;background:linear-gradient(140deg,#cceaff,#fff1fa 75%);box-shadow:inset 0 0 0 3px #fff,0 8px 0 #e8b1b6}
+.claw-machine{height:clamp(220px,42cqh,390px);position:relative;overflow:hidden;border:12px solid #f2a5bf;border-radius:24px;background:linear-gradient(140deg,#cceaff,#fff1fa 75%);box-shadow:inset 0 0 0 3px #fff,0 8px 0 #e8b1b6}
 .claw-rail{position:absolute;top:6%;left:5%;right:5%;height:6px;border-radius:5px;background:#9c7287}
 .claw-arm{position:absolute;top:12%;left:50%;z-index:4;transform:translateX(-50%);transition:left .23s,top .23s;pointer-events:none}
 .claw-wire{height:40px;width:4px;background:#72545d;margin:auto;transition:height .5s}
@@ -1162,20 +1162,20 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .claw-controls button{touch-action:manipulation;border:2px solid #d9a3b6;border-radius:14px;background:#fff4f8;color:#845269;min-width:45px;min-height:43px;font-weight:bold;cursor:pointer}
 .claw-play{background:#ffe18c!important;min-width:115px!important;min-height:70px!important;font-size:18px!important}.claw-play small{display:block;font-size:11px}
 .claw-message{min-height:40px;font-weight:700;font-size:13px;margin:10px 0 0}
-@media(max-width:760px){.claw-screen .claw-card{padding:12px}.claw-machine{height:36dvh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}}
+@media(max-width:99998px){.claw-screen .claw-card{padding:12px}.claw-machine{height:36cqh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}}
 
 /* Persistent roulette reward notice, visible on PC and mobile. */
 .roulette-reward-message:not([hidden]) {display:block;margin:12px auto 0;padding:12px 14px;border-radius:14px;background:#fff1ce;border:1px solid #e7c77d;color:#68471e;font-weight:800;font-size:14px;line-height:1.5;text-align:center;}
 
 /* Profile requested at the top center on mobile; keep wallets out of its row. */
-@media screen and (max-width:760px) {
+@media screen and (max-width:99998px) {
   .gacha-screen > .profile-chip {
     position:absolute !important;
     top:calc(9px + var(--safe-t,0px)) !important;
     left:50% !important;
     right:auto !important;
     transform:translateX(-50%) !important;
-    max-width:min(44vw,180px) !important;
+    max-width:min(44cqw,180px) !important;
     z-index:30 !important;
   }
   .gacha-screen > .profile-chip:active {transform:translateX(-50%) translateY(1px) !important;}
@@ -1189,7 +1189,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Roulette reward: short pop-up over wheel on desktop and mobile. */
-.roulette-pop-reward:not([hidden]) {display:block;position:absolute;top:42%;left:50%;width:max-content;max-width:90%;transform:translate(-50%,-50%);padding:15px 23px;border:2px solid #f4c969;border-radius:24px;background:#fff5d6;color:#78441e;box-shadow:0 12px 35px #68432955;font-size:clamp(18px,4.5vw,26px);font-weight:900;z-index:25;pointer-events:none;text-align:center;}
+.roulette-pop-reward:not([hidden]) {display:block;position:absolute;top:42%;left:50%;width:max-content;max-width:90%;transform:translate(-50%,-50%);padding:15px 23px;border:2px solid #f4c969;border-radius:24px;background:#fff5d6;color:#78441e;box-shadow:0 12px 35px #68432955;font-size:clamp(18px,4.5cqw,26px);font-weight:900;z-index:25;pointer-events:none;text-align:center;}
 .roulette-pop-reward.pop-in {animation:roulette-reward-pop 2.3s ease-in-out both;}
 @keyframes roulette-reward-pop {0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}13%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}23%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%) scale(1.03)}}
 @media(prefers-reduced-motion:reduce){.roulette-pop-reward.pop-in{animation:none;}}
@@ -1207,9 +1207,9 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 @keyframes claw-grab-top{50%{transform:scale(.6);background:#f9a6c9aa}}
 .claw-chute{top:4%;right:3%;bottom:auto;border-radius:50%;width:65px;height:65px;display:grid;place-items:center}
 .claw-prize{top:6%;right:6%;bottom:auto}
-@media(max-width:760px){.claw-single-toy{width:58px!important;height:58px!important}.claw-arm{width:55px;height:55px}.claw-head{width:51px;height:51px;line-height:34px}.claw-chute{width:52px;height:52px}}
+@media(max-width:99998px){.claw-single-toy{width:58px!important;height:58px!important}.claw-arm{width:55px;height:55px}.claw-head{width:51px;height:51px;line-height:34px}.claw-chute{width:52px;height:52px}}
 /* Main header: balances directly at the top, keeping profile centered below them. */
-@media(max-width:760px){
+@media(max-width:99998px){
  .gacha-header .header-right .wallet,.gacha-header .header-right .diamond-wallet{position:relative;top:auto;left:auto;right:auto;bottom:auto}
  .gacha-header .header-right{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:5px}
  .gacha-header .header-right .wallet{order:-3}
@@ -1219,7 +1219,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* Profile representative picker: scroll the choices, not the profile controls. */
 .gacha-modal .modal-card.profile-modal-card {
   display:flex;flex-direction:column;min-height:0;overflow:hidden;
-  max-height:min(90dvh,800px);
+  max-height:min(90cqh,800px);
 }
 .gacha-modal .profile-modal-card .profile-card,
 .gacha-modal .profile-modal-card .profile-actions,
@@ -1244,10 +1244,10 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   color:white;background:#e56b96;font-size:13px;font-weight:900;
 }
 .gacha-modal .profile-modal-card .featured-pick[aria-pressed="true"] {outline-offset:2px;}
-@media(max-width:760px) {
+@media(max-width:99998px) {
   .gacha-modal .modal-card.profile-modal-card {
-    box-sizing:border-box;max-height:calc(100dvh - 20px - var(--safe-t,0px) - var(--safe-b,0px));
-    height:min(700px,calc(100dvh - 20px - var(--safe-t,0px) - var(--safe-b,0px)));
+    box-sizing:border-box;max-height:calc(100cqh - 20px - var(--safe-t,0px) - var(--safe-b,0px));
+    height:min(700px,calc(100cqh - 20px - var(--safe-t,0px) - var(--safe-b,0px)));
     padding:12px 12px 10px;gap:0;
   }
   .gacha-modal .profile-modal-card .modal-kicker {font-size:9px;line-height:1.1;margin:0;}
@@ -1277,20 +1277,20 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen > .top-rewards {
   position:absolute !important;display:flex !important;flex-direction:column !important;
   align-items:stretch !important;gap:6px !important;
-  left:auto !important;right:clamp(12px,3vw,36px) !important;
+  left:auto !important;right:clamp(12px,3cqw,36px) !important;
   top:calc(100px + var(--safe-t,0px)) !important;
   z-index:25 !important;pointer-events:auto !important;
 }
 .gacha-screen > .top-rewards .reward-chip {display:flex !important;visibility:visible !important;opacity:1 !important;cursor:pointer;}
 /* Left vertical menu on both PC and mobile. */
 .gacha-screen > .gacha-nav {
-  position:absolute !important;left:clamp(9px,2vw,24px) !important;right:auto !important;
+  position:absolute !important;left:clamp(9px,2cqw,24px) !important;right:auto !important;
   top:calc(120px + var(--safe-t,0px)) !important;
   display:flex !important;flex-direction:column !important;grid-template-columns:none !important;
-  align-items:stretch !important;width:clamp(98px,11vw,140px) !important;
+  align-items:stretch !important;width:clamp(98px,11cqw,140px) !important;
   max-width:none !important;gap:6px !important;z-index:22 !important;
   pointer-events:auto !important;overflow-y:auto;overscroll-behavior:contain;
-  max-height:calc(100dvh - 235px - var(--safe-t,0px) - var(--safe-b,0px));
+  max-height:calc(100cqh - 235px - var(--safe-t,0px) - var(--safe-b,0px));
 }
 .gacha-screen > .gacha-nav .nav-button {
   width:100% !important;min-width:0 !important;min-height:35px !important;
@@ -1298,7 +1298,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   justify-content:flex-start !important;gap:5px !important;
   font-size:11px !important;border-radius:12px !important;white-space:nowrap !important;
 }
-@media(max-width:760px){
+@media(max-width:99998px){
   .gacha-screen > .top-rewards {
     top:calc(105px + var(--safe-t,0px)) !important;
     right:max(7px,env(safe-area-inset-right,0px)) !important;
@@ -1313,8 +1313,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     top:calc(105px + var(--safe-t,0px)) !important;
     left:max(7px,env(safe-area-inset-left,0px)) !important;right:auto !important;
     display:flex !important;flex-direction:column !important;grid-template-columns:none !important;
-    width:clamp(90px,26vw,112px) !important;gap:4px !important;
-    max-height:calc(100dvh - 250px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
+    width:clamp(90px,26cqw,112px) !important;gap:4px !important;
+    max-height:calc(100cqh - 250px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
   }
   .gacha-screen > .gacha-nav .nav-button {
     width:100% !important;min-height:30px !important;height:30px !important;
@@ -1330,20 +1330,20 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* 2026-11-04: final mobile layout zones. Prevent collection card from overlapping navigation and rewards. */
-@media screen and (max-width:760px) {
-  .gacha-screen { --mobile-rail:clamp(88px,25vw,108px); --mobile-gap:9px; }
+@media screen and (max-width:99998px) {
+  .gacha-screen { --mobile-rail:clamp(88px,25cqw,108px); --mobile-gap:9px; }
   .gacha-screen > .gacha-nav {
     top:calc(112px + var(--safe-t,0px)) !important;
     left:max(8px,env(safe-area-inset-left,0px)) !important;
     width:var(--mobile-rail) !important;
-    max-height:calc(100dvh - 280px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
+    max-height:calc(100cqh - 280px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
     overflow-y:auto !important;
     z-index:28 !important;
   }
   .gacha-screen > .top-rewards {
     top:calc(112px + var(--safe-t,0px)) !important;
     right:max(8px,env(safe-area-inset-right,0px)) !important;
-    width:clamp(100px,29vw,126px) !important;
+    width:clamp(100px,29cqw,126px) !important;
     z-index:28 !important;
   }
   .gacha-screen > .collection-peek {
@@ -1351,7 +1351,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     top:calc(215px + var(--safe-t,0px)) !important;
     right:max(8px,env(safe-area-inset-right,0px)) !important;
     left:auto !important;bottom:auto !important;
-    width:clamp(100px,29vw,126px) !important;
+    width:clamp(100px,29cqw,126px) !important;
     box-sizing:border-box !important;
     padding:9px 5px !important;gap:3px !important;
     z-index:23 !important;
@@ -1365,13 +1365,13 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .gacha-screen > .collection-peek .peek-flowers {display:none !important;}
   .gacha-screen > .hero-copy {
     left:calc(var(--mobile-rail) + 17px) !important;
-    right:calc(clamp(100px,29vw,126px) + 14px) !important;
+    right:calc(clamp(100px,29cqw,126px) + 14px) !important;
     width:auto !important;max-width:none !important;
     top:calc(170px + var(--safe-t,0px)) !important;
     transform:none !important;
     text-align:center;
   }
-  .gacha-screen > .hero-copy h2 {font-size:clamp(17px,5vw,27px) !important;line-height:1.16 !important;overflow-wrap:anywhere;}
+  .gacha-screen > .hero-copy h2 {font-size:clamp(17px,5cqw,27px) !important;line-height:1.16 !important;overflow-wrap:anywhere;}
   .gacha-screen > .hero-copy p {font-size:10px !important;line-height:1.4 !important;}
   .gacha-screen > .hero-copy .rate-note {font-size:9px !important;max-width:100%;white-space:normal;}
   .gacha-screen > .gacha-actions {
@@ -1380,8 +1380,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     z-index:26 !important;
   }
 }
-@media screen and (max-width:760px) and (max-height:670px) {
-  .gacha-screen > .gacha-nav {max-height:calc(100dvh - 235px - var(--safe-t,0px) - var(--safe-b,0px)) !important;}
+@media screen and (max-width:99998px) and (max-height:670px) {
+  .gacha-screen > .gacha-nav {max-height:calc(100cqh - 235px - var(--safe-t,0px) - var(--safe-b,0px)) !important;}
   .gacha-screen > .collection-peek {top:calc(205px + var(--safe-t,0px)) !important;padding:5px 4px !important;}
   .gacha-screen > .collection-peek .soft-button {padding:4px 2px !important;}
 }
@@ -1394,19 +1394,19 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* Claw game: same upper-left return control as the weeding/battle screens. */
 .claw-card{position:relative}
 .claw-back{position:relative;z-index:12;display:inline-flex;align-items:center;justify-content:center;margin:0 0 10px 0;align-self:flex-start;max-width:max-content}
-@media(max-width:760px){.claw-card .claw-back{position:sticky;top:0;left:0;margin-bottom:8px;z-index:20}}
+@media(max-width:99998px){.claw-card .claw-back{position:sticky;top:0;left:0;margin-bottom:8px;z-index:20}}
 
 /* Subscreens should never show main navigation behind their dialogs. */
 .gacha-app[data-active-screen="storage"] .gacha-screen, .gacha-app[data-active-screen="suggest"] .gacha-screen, .gacha-app[data-active-screen="claw"] .gacha-screen {visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
 
 /* 2026-11-04: Clear right-hand stack: currency, collection, daily actions. */
-@media screen and (max-width:760px){
+@media screen and (max-width:99998px){
  .gacha-screen .gacha-header .header-right{
    position:absolute!important;top:calc(8px + var(--safe-t,0px))!important;
    right:max(7px,env(safe-area-inset-right,0px))!important;left:auto!important;
    display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;
    align-items:stretch!important;justify-content:flex-start!important;
-   width:clamp(100px,29vw,126px)!important;max-width:calc(100vw - 16px)!important;
+   width:clamp(100px,29cqw,126px)!important;max-width:calc(100cqw - 16px)!important;
    gap:4px!important;z-index:36!important;
  }
  .gacha-screen .gacha-header .header-right .account-chip{display:none!important}
@@ -1423,7 +1423,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen > .collection-peek{
    position:absolute!important;top:calc(79px + var(--safe-t,0px))!important;
    right:max(7px,env(safe-area-inset-right,0px))!important;left:auto!important;
-   width:clamp(100px,29vw,126px)!important;max-width:none!important;
+   width:clamp(100px,29cqw,126px)!important;max-width:none!important;
    box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
    align-items:stretch!important;gap:4px!important;padding:8px 6px!important;
    margin:0!important;z-index:30!important;
@@ -1437,12 +1437,12 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen > .top-rewards{
    position:absolute!important;top:calc(240px + var(--safe-t,0px))!important;
    right:max(7px,env(safe-area-inset-right,0px))!important;left:auto!important;
-   width:clamp(100px,29vw,126px)!important;display:flex!important;
+   width:clamp(100px,29cqw,126px)!important;display:flex!important;
    flex-direction:column!important;gap:5px!important;z-index:29!important;
  }
  .gacha-screen > .gacha-nav{top:calc(115px + var(--safe-t,0px))!important}
 }
-@media screen and (max-width:760px) and (max-height:680px){
+@media screen and (max-width:99998px) and (max-height:680px){
  .gacha-screen > .top-rewards{top:calc(230px + var(--safe-t,0px))!important}
  .gacha-screen > .collection-peek{padding:5px 5px!important;gap:2px!important}
 }
@@ -1460,7 +1460,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Compact non-overlapping right column for mobile title screen. */
-@media(max-width:760px){
+@media(max-width:99998px){
  .gacha-screen>.collection-peek{top:calc(80px + var(--safe-t,0px))!important;gap:2px!important;padding:5px!important;}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important;}
  .gacha-screen>.collection-peek .collection-count,.gacha-screen>.collection-peek .deco-count{font-size:11px!important;line-height:1.1!important;}
@@ -1470,7 +1470,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen>.top-rewards .reward-chip small{display:none!important;}
  .gacha-screen>.gacha-nav{top:calc(115px + var(--safe-t,0px))!important;}
 }
-@media(max-width:760px) and (max-height:670px){
+@media(max-width:99998px) and (max-height:670px){
  .gacha-screen>.collection-peek{top:calc(80px + var(--safe-t,0px))!important;}
  .gacha-screen>.top-rewards{top:calc(210px + var(--safe-t,0px))!important;}
 }
@@ -1486,21 +1486,21 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen>.collection-peek .soft-button{background:#fff!important;color:#945d7b!important;border:1.5px solid #edc2d6!important;border-radius:12px!important;font-weight:800!important;box-shadow:0 2px 0 #efc8d9!important}
 .gacha-screen>.top-rewards .reward-chip{background:linear-gradient(135deg,#fffefa,#fff0db)!important;border:2px solid #f4d7a6!important;border-radius:16px!important;box-shadow:0 3px 0 #e9cda3!important;color:#7c5d61!important}
 .gacha-screen>.top-rewards .roulette-chip{background:linear-gradient(135deg,#fffafa,#f0edff)!important;border-color:#d6c9f5!important;box-shadow:0 3px 0 #c6b7eb!important}
-@media(max-width:760px){
- .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,24vw,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(100dvh - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
+@media(max-width:99998px){
+ .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,24cqw,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(100cqh - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
  .gacha-screen>.gacha-nav .nav-button{width:100%!important;min-height:34px!important;padding:6px 3px!important;font-size:10px!important;line-height:1.15!important;flex-shrink:0!important}
  .gacha-screen>.gacha-nav .nav-button span{font-size:14px!important}
- .gacha-screen .gacha-header .header-right{position:absolute!important;top:calc(8px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27vw,120px)!important;display:flex!important;flex-direction:column!important;gap:5px!important;z-index:36!important}
+ .gacha-screen .gacha-header .header-right{position:absolute!important;top:calc(8px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27cqw,120px)!important;display:flex!important;flex-direction:column!important;gap:5px!important;z-index:36!important}
  .gacha-screen .gacha-header .header-right .account-chip{display:none!important}
  .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;max-width:100%!important;min-width:0!important;min-height:29px!important;margin:0!important;padding:4px!important;display:flex!important;justify-content:center!important;gap:3px!important;font-size:10px!important;box-sizing:border-box!important;white-space:nowrap!important}
  .gacha-screen .gacha-header .header-right .wallet{order:1!important}
  .gacha-screen .gacha-header .header-right .diamond-wallet{order:2!important}
  .gacha-screen .gacha-header .header-right .wallet-rate{display:none!important}
- .gacha-screen>.collection-peek{position:absolute!important;top:calc(84px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27vw,120px)!important;max-width:none!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important;padding:6px!important;margin:0!important;z-index:34!important}
+ .gacha-screen>.collection-peek{position:absolute!important;top:calc(84px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27cqw,120px)!important;max-width:none!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important;padding:6px!important;margin:0!important;z-index:34!important}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important}
  .gacha-screen>.collection-peek .collection-count,.gacha-screen>.collection-peek .deco-count{font-size:11px!important;line-height:1.2!important;text-align:center!important}
  .gacha-screen>.collection-peek .soft-button{width:100%!important;min-height:28px!important;margin:0!important;padding:5px 2px!important;font-size:10px!important;line-height:1.2!important;white-space:normal!important}
- .gacha-screen>.top-rewards{position:absolute!important;top:calc(222px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27vw,120px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:33!important;box-sizing:border-box!important}
+ .gacha-screen>.top-rewards{position:absolute!important;top:calc(222px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27cqw,120px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:33!important;box-sizing:border-box!important}
  .gacha-screen>.top-rewards .reward-chip{width:100%!important;min-height:36px!important;box-sizing:border-box!important;padding:5px!important;gap:3px!important}
  .gacha-screen>.top-rewards .reward-chip b{font-size:10px!important}
  .gacha-screen>.top-rewards .reward-chip small{display:none!important}
@@ -1509,7 +1509,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 @media(max-width:360px){.gacha-screen>.gacha-nav{width:78px!important}.gacha-screen>.collection-peek,.gacha-screen>.top-rewards,.gacha-screen .gacha-header .header-right{width:88px!important}.gacha-screen>.gacha-nav .nav-button{font-size:9px!important}}
 
 /* Desktop UI: dedicated right rail, no absolute-position collisions. */
-@media (min-width:761px){
+@media (min-width:99999px){
  .gacha-screen .gacha-header{top:18px!important;left:28px!important;right:24px!important;z-index:20!important;pointer-events:none!important}
  .gacha-screen .gacha-header .header-right{position:absolute!important;top:0!important;right:0!important;left:auto!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;flex-wrap:nowrap!important;width:190px!important;max-width:190px!important;gap:8px!important;pointer-events:auto!important}
  .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{position:relative!important;inset:auto!important;transform:none!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;margin:0!important;justify-content:center!important;white-space:nowrap!important}
@@ -1521,14 +1521,14 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen>.top-rewards .reward-chip{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0!important;min-width:0!important;justify-content:flex-start!important}
  .gacha-screen>.gacha-nav{max-width:190px!important}
 }
-@media (min-width:761px) and (max-height:620px){
+@media (min-width:99999px) and (max-height:620px){
  .gacha-screen>.collection-peek{top:125px!important;padding:8px!important;gap:4px!important}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important}
  .gacha-screen>.top-rewards{top:305px!important}
  .gacha-screen>.top-rewards .reward-chip{min-height:38px!important;padding:6px!important}
 }
 /* Small viewports: keep the same right-rail ordering without collision. */
-@media (max-width:760px){
+@media (max-width:99998px){
  .gacha-screen>.collection-peek{top:calc(86px + var(--safe-t,0px))!important;min-height:0!important}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important}
  .gacha-screen>.top-rewards{top:calc(245px + var(--safe-t,0px))!important}
@@ -1536,24 +1536,24 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Right-side controls: unified size and non-overlapping reserved slots. */
-@media(max-width:760px){
- .gacha-screen .gacha-header .header-right{top:calc(8px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,33vw,150px)!important;max-width:calc(100vw - 16px)!important;gap:6px!important;align-items:stretch!important}
+@media(max-width:99998px){
+ .gacha-screen .gacha-header .header-right{top:calc(8px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,33cqw,150px)!important;max-width:calc(100cqw - 16px)!important;gap:6px!important;align-items:stretch!important}
  .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{width:100%!important;min-width:0!important;max-width:none!important;height:42px!important;min-height:42px!important;max-height:42px!important;padding:5px 7px!important;margin:0!important;font-size:12px!important;border-radius:15px!important;flex:0 0 42px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;white-space:nowrap!important}
  .gacha-screen .gacha-header .header-right .wallet-rate{display:none!important}
- .gacha-screen>.collection-peek{top:calc(108px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,33vw,150px)!important;min-width:0!important;max-width:none!important;height:146px!important;min-height:0!important;max-height:146px!important;box-sizing:border-box!important;padding:8px!important;gap:4px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:stretch!important;overflow:hidden!important;border-radius:16px!important}
+ .gacha-screen>.collection-peek{top:calc(108px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,33cqw,150px)!important;min-width:0!important;max-width:none!important;height:146px!important;min-height:0!important;max-height:146px!important;box-sizing:border-box!important;padding:8px!important;gap:4px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:stretch!important;overflow:hidden!important;border-radius:16px!important}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important}
  .gacha-screen>.collection-peek .collection-count,.gacha-screen>.collection-peek .deco-count{font-size:12px!important;line-height:1.15!important;margin:0!important;flex:0 0 auto!important}
  .gacha-screen>.collection-peek .soft-button{box-sizing:border-box!important;width:100%!important;min-height:28px!important;height:28px!important;max-height:28px!important;flex:0 0 28px!important;font-size:11px!important;line-height:1.1!important;padding:3px 2px!important;margin:0!important}
- .gacha-screen>.top-rewards{top:calc(268px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,33vw,150px)!important;max-width:none!important;gap:7px!important;box-sizing:border-box!important}
+ .gacha-screen>.top-rewards{top:calc(268px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,33cqw,150px)!important;max-width:none!important;gap:7px!important;box-sizing:border-box!important}
  .gacha-screen>.top-rewards .reward-chip{box-sizing:border-box!important;width:100%!important;min-width:0!important;min-height:42px!important;margin:0!important;padding:6px!important}
  .gacha-screen>.top-rewards .reward-chip b{font-size:11px!important}
- .gacha-screen>.gacha-nav{max-width:calc(100vw - 180px)!important}
+ .gacha-screen>.gacha-nav{max-width:calc(100cqw - 180px)!important}
 }
 @media(max-width:360px){
  .gacha-screen .gacha-header .header-right,.gacha-screen>.collection-peek,.gacha-screen>.top-rewards{width:112px!important;right:6px!important}
- .gacha-screen>.gacha-nav{max-width:calc(100vw - 132px)!important}
+ .gacha-screen>.gacha-nav{max-width:calc(100cqw - 132px)!important}
 }
-@media(min-width:761px){
+@media(min-width:99999px){
  .gacha-screen .gacha-header .header-right{gap:8px!important}
  .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{height:48px!important;min-height:48px!important;max-height:48px!important;flex:0 0 48px!important}
  .gacha-screen>.collection-peek{top:calc(136px)!important;height:174px!important;min-height:0!important;max-height:174px!important;padding:10px!important;gap:5px!important;justify-content:space-between!important;overflow:hidden!important}
@@ -1564,8 +1564,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* Compact mobile controls, aligned in a narrow right rail. */
-@media(max-width:760px){
- .gacha-screen .gacha-header .header-right,.gacha-screen>.collection-peek,.gacha-screen>.top-rewards{right:6px!important;width:clamp(98px,27vw,116px)!important;max-width:116px!important;box-sizing:border-box!important}
+@media(max-width:99998px){
+ .gacha-screen .gacha-header .header-right,.gacha-screen>.collection-peek,.gacha-screen>.top-rewards{right:6px!important;width:clamp(98px,27cqw,116px)!important;max-width:116px!important;box-sizing:border-box!important}
  .gacha-screen .gacha-header .header-right{top:calc(5px + var(--safe-t,0px))!important;gap:4px!important}
  .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{width:100%!important;height:30px!important;min-height:30px!important;max-height:30px!important;flex:0 0 30px!important;padding:3px 5px!important;border-radius:12px!important;font-size:10px!important;gap:2px!important;box-sizing:border-box!important}
  .gacha-screen>.collection-peek{top:calc(75px + var(--safe-t,0px))!important;height:110px!important;min-height:110px!important;max-height:110px!important;padding:5px!important;gap:2px!important;border-radius:12px!important;justify-content:space-between!important}
@@ -1575,15 +1575,15 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen>.top-rewards .reward-chip{min-height:34px!important;max-width:100%!important;padding:4px!important;border-radius:12px!important;gap:3px!important}
  .gacha-screen>.top-rewards .reward-chip b{font-size:10px!important}
  .gacha-screen>.top-rewards .reward-chip small{font-size:9px!important;line-height:1.15!important}
- .gacha-screen>.gacha-nav{max-width:calc(100vw - 128px)!important}
+ .gacha-screen>.gacha-nav{max-width:calc(100cqw - 128px)!important}
 }
 
 /* Final mobile right rail: explicitly constrain every card to the same viewport edge. */
-@media screen and (max-width:760px){
+@media screen and (max-width:99998px){
  .gacha-screen .gacha-header .header-right{
   position:fixed!important;top:calc(5px + var(--safe-t,0px))!important;
   right:6px!important;left:auto!important;bottom:auto!important;
-  width:clamp(98px,27vw,116px)!important;min-width:0!important;max-width:116px!important;
+  width:clamp(98px,27cqw,116px)!important;min-width:0!important;max-width:116px!important;
   margin:0!important;padding:0!important;transform:none!important;
   display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:4px!important;
   box-sizing:border-box!important;z-index:40!important;
@@ -1600,7 +1600,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   position:fixed!important;top:calc(74px + var(--safe-t,0px))!important;
   right:6px!important;left:auto!important;bottom:auto!important;
   transform:none!important;translate:none!important;
-  width:clamp(98px,27vw,116px)!important;min-width:0!important;max-width:116px!important;
+  width:clamp(98px,27cqw,116px)!important;min-width:0!important;max-width:116px!important;
   height:108px!important;min-height:108px!important;max-height:108px!important;
   margin:0!important;padding:5px!important;box-sizing:border-box!important;
   display:flex!important;flex-direction:column!important;align-items:stretch!important;
@@ -1612,7 +1612,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen>.top-rewards{
   position:fixed!important;top:calc(191px + var(--safe-t,0px))!important;
   right:6px!important;left:auto!important;bottom:auto!important;transform:none!important;
-  width:clamp(98px,27vw,116px)!important;min-width:0!important;max-width:116px!important;
+  width:clamp(98px,27cqw,116px)!important;min-width:0!important;max-width:116px!important;
   margin:0!important;padding:0!important;box-sizing:border-box!important;
   display:flex!important;flex-direction:column!important;gap:5px!important;z-index:38!important;
  }
@@ -1644,8 +1644,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-app > .pop-reveal {
   position: fixed !important;
   inset: 0 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
+  width: 100cqw !important;
+  height: 100cqh !important;
   z-index: 2147483646 !important;
   isolation: isolate !important;
   place-items: center !important;
@@ -1662,17 +1662,17 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 #ui > .pop-reveal .pop-card,
 .gacha-app > .pop-reveal .pop-card {
-  max-width: calc(100vw - 28px);
-  max-height: calc(100dvh - 28px);
+  max-width: calc(100cqw - 28px);
+  max-height: calc(100cqh - 28px);
   box-sizing: border-box;
 }
 
 /* Two-fighter boss raid layout */
-.battle-field .bf-enemy {left:4%;width:clamp(180px,31vw,390px);bottom:12%;z-index:2}
-.battle-field .bf-friend {right:3%;width:clamp(95px,16vw,185px);bottom:10%;z-index:3}
+.battle-field .bf-enemy {left:4%;width:clamp(180px,31cqw,390px);bottom:12%;z-index:2}
+.battle-field .bf-friend {right:3%;width:clamp(95px,16cqw,185px);bottom:10%;z-index:3}
 .battle-field .bf-friend-second {right:20%;bottom:11%;z-index:2}
 .battle-field .bf-enemy-body {filter:drop-shadow(0 6px 2px rgba(75,60,50,.2))}
-@media(max-width:600px){.battle-field .bf-enemy{left:1%;width:43vw;bottom:19%}.battle-field .bf-friend{right:1%;width:24vw;bottom:15%}.battle-field .bf-friend-second{right:23%;bottom:15%}.battle-field .bf-bar{max-width:100%}}
+@media(max-width:600px){.battle-field .bf-enemy{left:1%;width:43cqw;bottom:19%}.battle-field .bf-friend{right:1%;width:24cqw;bottom:15%}.battle-field .bf-friend-second{right:23%;bottom:15%}.battle-field .bf-bar{max-width:100%}}
 
 /* Keep both assigned battle fighters visible as independent units. */
 .battle-field .bf-friend:not(.bf-friend-second) { right:3%; z-index:4; }
@@ -1686,14 +1686,14 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .battle-field .bf-friend.bf-friend-second {
   right:3%;
   bottom:53%;
-  width:clamp(85px,13vw,155px);
+  width:clamp(85px,13cqw,155px);
   z-index:3;
 }
 @media (max-width:600px) {
   .battle-field .bf-friend.bf-friend-second {
     right:1%;
     bottom:51%;
-    width:21vw;
+    width:21cqw;
   }
 }
 
@@ -1706,7 +1706,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .announcement-dot:not([hidden]) { position:absolute; top:5px; right:7px; width:10px; height:10px; border-radius:50%; background:#f13e50; border:2px solid white; box-shadow:0 0 0 1px #e65a65; pointer-events:none; }
 .announcement-compose { display:grid; gap:10px; margin:12px 0 18px; }
 .announcement-input { width:100%; box-sizing:border-box; border:1px solid #e8cdd9; border-radius:12px; padding:12px; font:inherit; resize:vertical; background:#fffafc; color:#3d3039; }
-.announcement-list { display:grid; gap:10px; max-height:52vh; overflow:auto; }
+.announcement-list { display:grid; gap:10px; max-height:52cqh; overflow:auto; }
 .announcement-item { padding:13px; border:1px solid #f0dce5; border-radius:13px; background:#fff9fc; overflow-wrap:anywhere; }
 .announcement-item small { color:#927d8c; }
 .announcement-item p { white-space:pre-wrap; margin:7px 0 0; }
@@ -1729,8 +1729,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .house-lot.house-visit .house-friend { width:7.6cqw !important; }
 
 /* Shared chat: modal stays above title UI on desktop and mobile. */
-.global-chat-card { display:flex; flex-direction:column; max-height:min(86dvh,760px); }
-.global-chat-messages { flex:1 1 auto; min-height:200px; height:min(48dvh,430px); overflow-y:auto; overscroll-behavior:contain; padding:12px; border-radius:16px; background:#fff9f7; border:1px solid #f0dfe2; }
+.global-chat-card { display:flex; flex-direction:column; max-height:min(86cqh,760px); }
+.global-chat-messages { flex:1 1 auto; min-height:200px; height:min(48cqh,430px); overflow-y:auto; overscroll-behavior:contain; padding:12px; border-radius:16px; background:#fff9f7; border:1px solid #f0dfe2; }
 .global-chat-message { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 9px; padding:9px 3px; border-bottom:1px solid #f2e6e7; overflow-wrap:anywhere; }
 .global-chat-name { color:#c36d8a; font-weight:800; flex:0 0 auto; }
 .global-chat-text { flex:1 1 150px; min-width:0; color:#493c41; }
@@ -1758,15 +1758,15 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .house-screen .house-lot .house-piece {width:calc(7cqw * var(--s,1)) !important;}
 .house-screen .house-lot .house-friend {width:7.6cqw !important;}
 .house-screen .house-lot.house-visit {touch-action:auto;}
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .house-screen .house-lot {min-height:0 !important;}
   .house-screen .house-panel {flex:1 1 auto; min-height:110px; height:auto; max-height:none;}
-  .house-screen .house-tools {bottom:calc(min(38dvh,320px) + 8px);}
+  .house-screen .house-tools {bottom:calc(min(38cqh,320px) + 8px);}
 }
 
 /* v0.06 — Mobile house editor uses a full-sized horizontal canvas. */
 .house-screen .house-scroll-viewport { position:relative; flex:0 0 auto; width:100%; overflow:hidden; min-height:0; }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .house-screen .house-scroll-viewport {
     flex:1 1 auto !important; min-height:150px !important;
     overflow-x:auto !important; overflow-y:hidden !important;
@@ -1780,7 +1780,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     touch-action:pan-x !important;
   }
   .house-screen .house-scroll-viewport .house-piece { touch-action:none !important; }
-  .house-screen .house-panel { flex:0 0 clamp(190px,34dvh,290px) !important; height:clamp(190px,34dvh,290px) !important; }
+  .house-screen .house-panel { flex:0 0 clamp(190px,34cqh,290px) !important; height:clamp(190px,34cqh,290px) !important; }
 }
 
 /* v0.08 — house friends can be resized exactly like deco, in editor and visitor view. */
@@ -1799,14 +1799,14 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .house-zoom-label { min-width:48px; text-align:center; font-weight:800; color:#75485a; }
 .user-detail-avatar { display:block; width:40px; height:40px; object-fit:contain; border-radius:50%; background:#fff1f6; flex:0 0 auto; }
 .privacy-hidden-notice { padding:30px 12px; line-height:2; }
-@media(max-width:760px) {
+@media(max-width:99998px) {
  .house-screen .house-scroll-viewport > .house-lot { width:calc(1100px * var(--house-zoom)) !important; min-width:0 !important; height:100% !important; }
  .house-zoom-controls { padding:4px; }
  .house-zoom-controls button { padding:5px 10px; }
 }
 
 /* v0.10: privacy settings have their own scrolling area and no competing footer. */
-.gacha-modal .users-card.privacy-mode {display:flex;flex-direction:column;overflow:hidden;max-height:min(90dvh,760px);}
+.gacha-modal .users-card.privacy-mode {display:flex;flex-direction:column;overflow:hidden;max-height:min(90cqh,760px);}
 .gacha-modal .users-card.privacy-mode .users-body {flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:18px;}
 .gacha-modal .users-card.privacy-mode > [data-action="close"].modal-primary {display:none!important;}
 .gacha-modal .users-card.privacy-mode .privacy-save-actions {display:grid;gap:10px;margin:20px 0 8px;position:relative;}
@@ -1830,7 +1830,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   background:transparent !important;
   margin-inline:auto;
 }
-@media (max-width:760px) {
+@media (max-width:99998px) {
   .house-screen .house-scroll-viewport > .house-lot {
     margin-inline:0;
   }
@@ -1866,10 +1866,10 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .house-screen .house-lot .house-friend, .house-lot.house-visit .house-friend {
   width:calc(21cqw * var(--s,1)) !important;
 }
-@media(max-width:760px) {
+@media(max-width:99998px) {
   .house-screen .house-scroll-viewport { flex:1 1 auto !important; min-height:0 !important; }
-  .house-screen .house-panel { flex:0 0 clamp(175px,28dvh,240px) !important; height:clamp(175px,28dvh,240px) !important; }
-  .house-screen .house-tools { bottom:calc(clamp(175px,28dvh,240px) + 8px) !important; }
+  .house-screen .house-panel { flex:0 0 clamp(175px,28cqh,240px) !important; height:clamp(175px,28cqh,240px) !important; }
+  .house-screen .house-tools { bottom:calc(clamp(175px,28cqh,240px) + 8px) !important; }
 }
 
 
@@ -1933,7 +1933,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 .gacha-modal[data-screen="users"] .users-body .user-house > .house-lot.house-visit {
   flex:0 0 auto !important;
-  width:min(100%, 340px, calc(46dvh * 941 / 1672)) !important;
+  width:min(100%, 340px, calc(46cqh * 941 / 1672)) !important;
   min-width:0 !important; max-width:100% !important;
   height:auto !important; max-height:none !important;
   aspect-ratio:941 / 1672 !important;
@@ -1952,7 +1952,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 
 /* v0.15: Keep currency/error toast above navigation and side controls. */
-.gacha-screen > .toast { z-index: 100 !important; top: 36% !important; bottom: auto !important; max-width: calc(100vw - 28px); white-space: normal; text-align: center; line-height: 1.45; box-sizing: border-box; }
+.gacha-screen > .toast { z-index: 100 !important; top: 36% !important; bottom: auto !important; max-width: calc(100cqw - 28px); white-space: normal; text-align: center; line-height: 1.45; box-sizing: border-box; }
 
 /* v0.16: The falling capsule must render over the left nav and right rail.
    Raise the whole stage only during the machine animation to escape its stacking context. */
@@ -1998,7 +1998,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* v0.18: Keep user modal footer visible while only the user list/detail scrolls. */
 .gacha-modal[data-screen="users"] .users-card:not(.privacy-mode) {
   display:flex !important; flex-direction:column !important;
-  height:min(90dvh, 760px) !important; max-height:min(90dvh, 760px) !important;
+  height:min(90cqh, 760px) !important; max-height:min(90cqh, 760px) !important;
   overflow:hidden !important; box-sizing:border-box !important;
 }
 .gacha-modal[data-screen="users"] .users-card:not(.privacy-mode) > .modal-kicker,
@@ -2022,8 +2022,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 .battle-screen .battle-diamond-wallet strong {font-size:16px;font-variant-numeric:tabular-nums;}
 .battle-screen .battle-hourly-rate {margin:5px 0 10px;text-align:center;font-size:13px;font-weight:800;color:#8260aa;}
-@media(max-width:760px) {
-  .gacha-modal[data-screen="users"] .users-card:not(.privacy-mode) {height:calc(100dvh - 32px) !important;max-height:calc(100dvh - 32px) !important;}
+@media(max-width:99998px) {
+  .gacha-modal[data-screen="users"] .users-card:not(.privacy-mode) {height:calc(100cqh - 32px) !important;max-height:calc(100cqh - 32px) !important;}
   .battle-screen .battle-diamond-wallet {font-size:10px;padding:5px 8px;gap:3px;}
   .battle-screen .battle-diamond-wallet strong {font-size:13px;}
 }
@@ -2034,7 +2034,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .battle-screen .battle-wallet-stack { display:flex; flex-direction:column; align-items:flex-end; justify-content:center; gap:3px; flex:0 0 auto; }
 .battle-screen .battle-wallet-stack .battle-hourly-rate { display:block; margin:0 !important; padding:0 7px; font-size:11px; font-weight:800; color:#72539a; line-height:1.15; white-space:nowrap; text-align:right; }
 /* v0.20: single portrait design system; desktop is a scaled phone canvas. */
-@media(min-width:761px) {
+@media(min-width:99999px) {
   #ui { position:fixed !important; inset:auto !important; left:50% !important; top:50% !important; width:390px !important; height:844px !important; transform:translate(-50%,-50%) scale(var(--desktop-ui-scale,1)) !important; transform-origin:center center !important; overflow:hidden !important; box-sizing:border-box !important; container-type:inline-size; }
   #game {display:none !important;}
   .gacha-modal {padding:10px !important;}
@@ -2042,22 +2042,22 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .house-screen .house-zoom-controls {display:none !important;}
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 .gacha-screen{background:linear-gradient(180deg,rgba(255,250,242,.65),rgba(255,250,242,.08) 37%,rgba(255,248,240,.28) 56%,rgba(255,248,240,.97) 100%)}.gacha-header{top:calc(13px + var(--safe-t));left:14px;right:14px}.brand-icon{width:38px;height:38px;border-radius:13px;font-size:21px}.brand b{font-size:14px}.brand small{font-size:9px}.wallet{padding:8px 12px;font-size:11px}.wallet strong{font-size:15px}.hero-copy{left:22px;top:31%;width:min(304.2px,430px);transform:none}.hero-copy h2{margin:8px 0;font-size:clamp(30px,31.2px,52px)}.hero-copy p{font-size:12px}.rate-note{margin-top:8px;font-size:9px}.collection-peek{top:auto;right:17px;bottom:calc(145px + var(--safe-b));width:93px;padding:10px 6px;border-radius:18px}.peek-flowers{font-size:11px;letter-spacing:2px}.collection-count{font-size:18px}.collection-peek small{font-size:9px}.soft-button{margin-top:4px;padding:7px 8px;font-size:9px}.gacha-actions{left:13px;right:13px;bottom:calc(29px + var(--safe-b));display:grid;grid-template-columns:1fr 1fr;gap:8px}.gacha-actions button{min-height:56px;border-radius:16px}.daily-button{grid-column:1/-1;min-height:46px!important;padding:6px 12px}.daily-button b{font-size:11px}.daily-button small{font-size:9px}.gift-icon{width:29px;height:29px}.pull-button{min-width:0;padding:8px 11px;gap:8px}.pull-button b{font-size:12px}.pull-button small{font-size:9px}.button-arrow{font-size:16px}.button-star{font-size:17px}.free-note{bottom:calc(8px + var(--safe-b));font-size:8px}.toast{bottom:calc(165px + var(--safe-b));max-width:calc(390.0px - 24px);font-size:11px}.modal-card{padding:30px 16px 18px;border-radius:24px}.friend-card{padding:10px 5px}.friend-card>b{font-size:12px}.friend-card>small{font-size:8px}.friend-select{padding:7px 6px;font-size:8px}.friend-avatar{font-size:28px}.collection-grid{gap:7px}
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .collection-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .friend-avatar { width: min(100%, 84px); }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
  .account-chip { padding:5px 6px 5px 10px; font-size:10px; } .account-name { max-width:6em; } .header-right { gap:6px; } .brand small { display:none; } 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-actions { grid-template-columns:repeat(4,1fr); }
   .pull-button { padding:6px 4px; }
@@ -2065,7 +2065,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-nav { top:calc(70px + var(--safe-t)); left:12px; flex-direction:row; }
   .nav-button { padding:7px 11px; font-size:12px; }
@@ -2080,7 +2080,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .collection-peek { top:calc(70px + var(--safe-t)); right:12px; padding:4px 4px 4px 10px; }
   .collection-peek small { display:none; }
@@ -2089,14 +2089,14 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .bf-title { top:calc(58px + var(--safe-t)); }
   .bf-unit { bottom:12%; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-actions .pull-mode { grid-column:1/-1; }
   .gacha-actions .pull-mode-button { min-height:30px; padding:4px 12px; font-size:12px; }
@@ -2104,7 +2104,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-nav { left:10px; right:10px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
   .gacha-nav .nav-button { justify-content:center; gap:4px; padding:7px 4px; font-size:12px; min-width:0; }
@@ -2115,7 +2115,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .top-rewards { top:calc(162px + var(--safe-t)); left:10px; right:auto; flex-direction:column; gap:6px; }
   .reward-chip { padding:5px 10px 5px 5px; gap:5px; }
@@ -2124,14 +2124,14 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-header { position:absolute; }
   .gacha-header .top-rewards { position:absolute !important; top:calc(150px - 13px); left:-4px; right:auto; flex-direction:column; align-items:flex-start; gap:6px; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .profile-chip { position:relative; left:auto; top:auto; transform:none; margin:2px auto 6px; padding:4px 12px 4px 4px; }
   .profile-chip:active { transform:translateY(2px); }
@@ -2141,7 +2141,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .profile-chip { position:absolute; left:50%; top:calc(10px + var(--safe-t, 0px)); transform:translateX(-50%); margin:0; }
   .profile-chip:active { transform:translateX(-50%) translateY(2px); }
@@ -2150,7 +2150,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .collection-peek { top:calc(150px + var(--safe-t)); }
@@ -2159,7 +2159,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-header .top-rewards { top:calc(198px - 13px) !important; flex-direction:row !important; align-items:center; gap:6px; left:-2px; }
   /* The character stage starts below the menu, collection box and reward buttons so nothing covers it. */
@@ -2167,28 +2167,28 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .wallet { display:inline-grid; grid-template-columns:auto auto auto; align-items:center; justify-content:center; column-gap:6px; row-gap:1px; padding-top:6px; padding-bottom:6px; width:max-content; }
   .wallet .wallet-rate { position:static; grid-column:1 / -1; text-align:center; background:none; padding:0; font-size:10px; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .collection-grid .friend-avatar { width:min(100%,84px); }
   .collection-grid .friend-card > b { min-height:18px; line-height:18px; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .collection-card .collection-info-sticky { top: -30px; margin-top: -14px; padding-top: 14px; padding-right: 34px; }
   .collection-card .modal-close { margin: -14px -8px 0 0; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-modal { padding:10px; }
   .gacha-modal .modal-card.collection-card {
@@ -2202,7 +2202,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .weed-screen .weed-panel,
   .weed-screen .weed-panel.battle-panel,
@@ -2211,7 +2211,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     display:flex;
     flex-direction:column;
     flex:0 0 auto;
-    height:clamp(210px, 36dvh, 280px);
+    height:clamp(210px, 36cqh, 280px);
     max-height:calc(844px - 155px - var(--safe-t, 0px) - var(--safe-b, 0px));
     min-height:0;
     overflow:hidden;
@@ -2255,13 +2255,13 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .weed-screen .weed-panel .house-panel-head {margin:0;gap:4px;}
   .weed-screen .weed-panel .house-tabs .auth-tab {padding:5px 8px;}
   .weed-screen .weed-panel .house-meta {font-size:10px;}
-  .weed-screen .house-tools {bottom:calc(clamp(210px,36dvh,280px) + 8px);}
+  .weed-screen .house-tools {bottom:calc(clamp(210px,36cqh,280px) + 8px);}
   .weed-screen .battle-field {min-height:120px;}
   .weed-screen .weed-field {min-height:120px;}
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .weed-screen .weed-field {
     --horizon:18%;
@@ -2290,7 +2290,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .weed-screen .weed-panel,
   .weed-screen .weed-panel.battle-panel,
   .weed-screen.house-screen .weed-panel.house-panel {
-    height:clamp(290px,43dvh,380px) !important;
+    height:clamp(290px,43cqh,380px) !important;
     max-height:calc(844px - 140px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
     min-height:0;
     padding:7px 10px calc(7px + var(--safe-b)) !important;
@@ -2319,18 +2319,18 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   }
   .weed-screen .weed-panel .weed-pick,
   .weed-screen .weed-panel .house-slot {height:86px !important;}
-  .weed-screen .house-tools {bottom:calc(clamp(290px,43dvh,380px) + 8px) !important;}
+  .weed-screen .house-tools {bottom:calc(clamp(290px,43cqh,380px) + 8px) !important;}
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-header .header-right .diamond-wallet {padding:5px 8px;font-size:10px;gap:3px;}
   .diamond-wallet strong {font-size:13px;}
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-screen > .profile-chip {
     position:absolute !important;left:50% !important;top:calc(64px + var(--safe-t,0px)) !important;
@@ -2359,15 +2359,15 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
-.claw-screen .claw-card{padding:12px}.claw-machine{height:36dvh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}
+@media(min-width:99999px) {
+.claw-screen .claw-card{padding:12px}.claw-machine{height:36cqh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 .claw-single-toy{width:58px!important;height:58px!important}.claw-arm{width:55px;height:55px}.claw-head{width:51px;height:51px;line-height:34px}.claw-chute{width:52px;height:52px}
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .gacha-header .header-right .wallet,.gacha-header .header-right .diamond-wallet{position:relative;top:auto;left:auto;right:auto;bottom:auto}
  .gacha-header .header-right{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:5px}
@@ -2376,7 +2376,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-modal .modal-card.profile-modal-card {
     box-sizing:border-box;max-height:calc(844px - 20px - var(--safe-t,0px) - var(--safe-b,0px));
@@ -2407,7 +2407,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-screen > .top-rewards {
     top:calc(105px + var(--safe-t,0px)) !important;
@@ -2436,11 +2436,11 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 .claw-card .claw-back{position:sticky;top:0;left:0;margin-bottom:8px;z-index:20}
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .gacha-screen>.collection-peek{top:calc(80px + var(--safe-t,0px))!important;gap:2px!important;padding:5px!important;}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important;}
@@ -2453,7 +2453,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,93.6px,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(844px - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
  .gacha-screen>.gacha-nav .nav-button{width:100%!important;min-height:34px!important;padding:6px 3px!important;font-size:10px!important;line-height:1.15!important;flex-shrink:0!important}
@@ -2476,7 +2476,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .gacha-screen>.collection-peek{top:calc(86px + var(--safe-t,0px))!important;min-height:0!important}
  .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important}
@@ -2485,7 +2485,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .gacha-screen .gacha-header .header-right{top:calc(8px + var(--safe-t,0px))!important;right:8px!important;width:clamp(116px,128.7px,150px)!important;max-width:calc(390.0px - 16px)!important;gap:6px!important;align-items:stretch!important}
  .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{width:100%!important;min-width:0!important;max-width:none!important;height:42px!important;min-height:42px!important;max-height:42px!important;padding:5px 7px!important;margin:0!important;font-size:12px!important;border-radius:15px!important;flex:0 0 42px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;white-space:nowrap!important}
@@ -2501,7 +2501,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .gacha-screen .gacha-header .header-right,.gacha-screen>.collection-peek,.gacha-screen>.top-rewards{right:6px!important;width:clamp(98px,105.3px,116px)!important;max-width:116px!important;box-sizing:border-box!important}
  .gacha-screen .gacha-header .header-right{top:calc(5px + var(--safe-t,0px))!important;gap:4px!important}
@@ -2517,15 +2517,15 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .house-screen .house-lot {min-height:0 !important;}
   .house-screen .house-panel {flex:1 1 auto; min-height:110px; height:auto; max-height:none;}
-  .house-screen .house-tools {bottom:calc(min(38dvh,320px) + 8px);}
+  .house-screen .house-tools {bottom:calc(min(38cqh,320px) + 8px);}
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .house-screen .house-scroll-viewport {
     flex:1 1 auto !important; min-height:150px !important;
@@ -2540,11 +2540,11 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     touch-action:pan-x !important;
   }
   .house-screen .house-scroll-viewport .house-piece { touch-action:none !important; }
-  .house-screen .house-panel { flex:0 0 clamp(190px,34dvh,290px) !important; height:clamp(190px,34dvh,290px) !important; }
+  .house-screen .house-panel { flex:0 0 clamp(190px,34cqh,290px) !important; height:clamp(190px,34cqh,290px) !important; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
  .house-screen .house-scroll-viewport > .house-lot { width:calc(1100px * var(--house-zoom)) !important; min-width:0 !important; height:100% !important; }
  .house-zoom-controls { padding:4px; }
@@ -2552,7 +2552,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .house-screen .house-scroll-viewport > .house-lot {
     margin-inline:0;
@@ -2560,15 +2560,15 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .house-screen .house-scroll-viewport { flex:1 1 auto !important; min-height:0 !important; }
-  .house-screen .house-panel { flex:0 0 clamp(175px,28dvh,240px) !important; height:clamp(175px,28dvh,240px) !important; }
-  .house-screen .house-tools { bottom:calc(clamp(175px,28dvh,240px) + 8px) !important; }
+  .house-screen .house-panel { flex:0 0 clamp(175px,28cqh,240px) !important; height:clamp(175px,28cqh,240px) !important; }
+  .house-screen .house-tools { bottom:calc(clamp(175px,28cqh,240px) + 8px) !important; }
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
 
   .gacha-modal[data-screen="users"] .users-card:not(.privacy-mode) {height:calc(844px - 32px) !important;max-height:calc(844px - 32px) !important;}
   .battle-screen .battle-diamond-wallet {font-size:10px;padding:5px 8px;gap:3px;}
@@ -2576,9 +2576,47 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 }
 
-@media(min-width:761px) {
+@media(min-width:99999px) {
  #ui {position:fixed !important;inset:auto !important;left:50% !important;top:50% !important;width:390px !important;height:844px !important;transform:translate(-50%,-50%) scale(var(--desktop-ui-scale,1)) !important;transform-origin:center center !important;overflow:hidden !important;}
  .gacha-screen .toon-stage {width:100% !important;}
  .gacha-modal[data-screen="users"] .users-card:not(.privacy-mode) {height:calc(844px - 32px) !important;max-height:calc(844px - 32px) !important;}
  .house-screen .house-zoom-controls {display:none !important;}
+}
+
+/* v0.21: one mobile design at all widths; only the complete canvas scales on desktop.
+   Legacy desktop media rules are disabled above, mobile media rules are shared. */
+@media (min-width:761px) {
+  #ui {
+    position:fixed !important; inset:auto !important;
+    left:50% !important; top:50% !important;
+    width:390px !important; height:844px !important;
+    transform:translate(-50%,-50%) scale(var(--desktop-ui-scale,1)) !important;
+    transform-origin:center center !important;
+    container-type:size !important;
+    overflow:hidden !important;
+    box-sizing:border-box !important;
+  }
+  #game {display:none !important;}
+  /* All game scenes and modal layers share the same 390x844 phone coordinate space. */
+  .gacha-screen,.gacha-modal,.gacha-boot,.weed-screen,.house-screen {max-width:100% !important;}
+}
+/* Diamond count and hourly production are a single readable wallet card. */
+.battle-screen .battle-wallet-stack {
+  display:flex !important; flex-direction:column !important; align-items:center !important;
+  justify-content:center !important; gap:2px !important;
+  flex:0 0 auto; min-width:116px; padding:6px 10px !important;
+  border:1px solid rgba(210,192,229,.85) !important;
+  border-radius:18px !important; background:rgba(255,255,255,.96) !important;
+  box-shadow:0 5px 14px rgba(88,65,104,.14) !important;
+}
+.battle-screen .battle-wallet-stack .battle-diamond-wallet {
+  padding:0 !important; background:transparent !important; border:0 !important;
+  box-shadow:none !important; backdrop-filter:none !important;
+  justify-content:center !important; font-size:11px !important;
+}
+.battle-screen .battle-wallet-stack .battle-diamond-wallet strong {font-size:16px !important;}
+.battle-screen .battle-wallet-stack .battle-hourly-rate {
+  display:block !important; margin:0 !important; padding:0 !important;
+  color:#65458b !important; font-size:12px !important; font-weight:900 !important;
+  line-height:1.3 !important; text-align:center !important; white-space:nowrap !important;
 }
