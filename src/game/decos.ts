@@ -180,4 +180,4 @@ const managedUrls: Record<DecoId, string> = {
   d49: '/manus-storage/game/sha256/a41ef357ead9ea7877325789a962d72893690b10b7dbb6b1722962955a0defdf.png',
   d50: '/manus-storage/game/sha256/efd90a069acac997fc8dd23ed78007006353db2a23970a5cf3d2d3ff68f5d776.png',
 }
-export const DECO_IMAGE_URLS = import.meta.env.DEV ? previewUrls : managedUrls
+export const DECO_IMAGE_URLS = previewUrls

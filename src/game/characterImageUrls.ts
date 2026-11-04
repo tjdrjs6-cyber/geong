@@ -65,4 +65,4 @@ const managedUrls: Record<CharacterId, string> = {
   siren: '/manus-storage/game/sha256/73d92496a8c33d278e49afdad08df1a4d3342292ef9bd7abd2fc3c99827c3174.png',
   usagi: '/manus-storage/game/sha256/7f39a9a2cf18bdd471da044f1efc2884ba7088073f407017518a72fbc51fac87.png',
 }
-export const CHARACTER_IMAGE_URLS = import.meta.env.DEV ? previewUrls : managedUrls
+export const CHARACTER_IMAGE_URLS = previewUrls

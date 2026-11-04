@@ -8,7 +8,7 @@ type Selection = { kind: 'piece' | 'friend'; index: number } | null
 const FRIEND_LAYER = 5000
 type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void }
 
-const HOUSE_BG_URL = import.meta.env.DEV ? '/assets/bg/house.webp?v=4' : '/manus-storage/game/sha256/a34aebf3a2fb996d9dbe33783c31dfd46dd27fa791b0ded13fd6a6fcfdc85af0.webp'
+const HOUSE_BG_URL = '/assets/bg/house.webp?v=4'
 
 /** House background: the user's hand-drawn stone room with a window to the forest. */
 export function houseLotMarkup(): string {
