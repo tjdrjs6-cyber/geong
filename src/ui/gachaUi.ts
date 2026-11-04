@@ -14,7 +14,7 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
 const bonusTag = (character: Character): string => character.weedBonus ? `제초 +${character.weedBonus}%` : ''
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -40,6 +40,8 @@ export class GachaUi {
   private mailTab: 'in' | 'sent' = 'in'
   private storageTab: 'char' | 'deco' = 'char'
   private noticeTimer = 0
+  private chatTimer = 0
+  private chatNextAt = 0
   private revealing = false
   private revealSequence = 0
   private busy = false
@@ -91,6 +93,8 @@ export class GachaUi {
     if (screen === 'claw') { this.randomizeClawToy(); this.clawX = 50; this.clawY = 50; this.renderClaw() }
     if (screen === 'mail') void this.loadMail()
     if (screen === 'announcements') void this.loadAnnouncements()
+    window.clearInterval(this.chatTimer)
+    if (screen === 'global-chat') { void this.loadGlobalChat(); this.chatTimer = window.setInterval(() => void this.loadGlobalChat(true), 4000) }
     if (screen === 'storage') this.renderStorage()
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
@@ -214,7 +218,7 @@ export class GachaUi {
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span>📢</span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span>📢</span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span>💬</span>전체채팅</button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -267,6 +271,16 @@ export class GachaUi {
           <div class="modal-kicker">GEONGI MARKET NEWS</div><h2>📢 공지사항</h2>
           <p class="collection-summary">최신 공지 10개 · 새로운 공지는 빨간 점으로 알려드려요.</p>
           <div class="announcements-body"></div>
+        </div>
+      </section>
+      <section class="gacha-modal" data-screen="global-chat" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card collection-card users-card global-chat-card">
+          <button class="modal-close" data-action="close" aria-label="닫기">×</button>
+          <div class="modal-kicker">GEONGI MARKET CHAT</div><h2>💬 전체채팅</h2>
+          <p class="collection-summary">모든 유저와 대화해요 · 최대 30자 · 10초에 1회</p>
+          <div class="global-chat-messages" role="log" aria-live="polite"></div>
+          <div class="global-chat-compose"><input class="global-chat-input" maxlength="60" placeholder="메시지 입력 (최대 30자)" aria-label="전체채팅 메시지" /><button class="modal-primary" data-action="global-chat-send">전송</button></div>
+          <p class="global-chat-hint" aria-live="polite"></p>
         </div>
       </section>
       <section class="gacha-modal" data-screen="users" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="users-title">
@@ -363,6 +377,8 @@ export class GachaUi {
     if (action === 'weed') { this.show('weed'); return }
     if (action === 'battle') { this.show('battle'); void this.syncBattle(); return }
     if (action === 'announcements') { this.show('announcements'); return }
+    if (action === 'global-chat') { this.show('global-chat'); return }
+    if (action === 'global-chat-send') { await this.sendGlobalChat(); return }
     if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'users') { this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
@@ -878,6 +894,43 @@ export class GachaUi {
     const id = this.store.featured
     return id && owned.includes(id) ? id : owned[0] ?? 'chiikawa'
   }
+  private async loadGlobalChat(silent = false): Promise<void> {
+    if (this.screen !== 'global-chat') return
+    const body = this.root.querySelector<HTMLElement>('.global-chat-messages')
+    if (!body) return
+    try {
+      const data = await this.store.globalChat()
+      if (this.screen !== 'global-chat') return
+      this.chatNextAt = data.nextAt
+      const wasBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 65
+      const oldLast = body.dataset.last || ''
+      const newLast = String(data.items.at(-1)?.id || '')
+      if (!silent || oldLast !== newLast) {
+        body.innerHTML = data.items.length ? data.items.map(item => `<div class="global-chat-message"><span class="global-chat-name">${escapeHtml(item.nickname)}</span><span class="global-chat-text">${escapeHtml(item.message)}</span><small>${new Date(item.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</small></div>`).join('') : '<p class="users-empty">첫 번째 메시지를 남겨보세요!</p>'
+        body.dataset.last = newLast
+        if (!silent || wasBottom) body.scrollTop = body.scrollHeight
+      }
+      const hint = this.root.querySelector<HTMLElement>('.global-chat-hint')
+      if (hint) hint.textContent = Date.now() < this.chatNextAt ? `다음 전송까지 ${Math.ceil((this.chatNextAt - Date.now()) / 1000)}초` : '메시지를 보낼 수 있어요.'
+    } catch (error) { if (!silent) this.handleError(error) }
+  }
+
+  private async sendGlobalChat(): Promise<void> {
+    const input = this.root.querySelector<HTMLInputElement>('.global-chat-input')
+    const message = input?.value.trim() || ''
+    if (!message || [...message].length > 30) { this.toast('메시지는 1~30자로 입력해 주세요.'); return }
+    if (Date.now() < this.chatNextAt) { this.toast('10초마다 한 번씩 보낼 수 있어요.'); return }
+    const button = this.root.querySelector<HTMLButtonElement>('[data-action="global-chat-send"]')
+    if (button) button.disabled = true
+    try {
+      const result = await this.store.sendGlobalChat(message)
+      this.chatNextAt = result.nextAt
+      if (input) input.value = ''
+      await this.loadGlobalChat()
+    } catch (error) { this.handleError(error); await this.loadGlobalChat(true) }
+    finally { if (button) button.disabled = false }
+  }
+
   private async refreshAnnouncementDot(): Promise<void> {
     if (!this.store.user) return
     try {

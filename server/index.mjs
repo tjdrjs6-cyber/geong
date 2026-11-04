@@ -106,6 +106,17 @@ async function prepareDatabase() {
     message VARCHAR(400) NOT NULL,
     created_ms BIGINT NOT NULL
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_global_chat (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    account_id BIGINT UNSIGNED NOT NULL,
+    message VARCHAR(120) NOT NULL,
+    created_ms BIGINT NOT NULL,
+    KEY ix_gm_global_chat_time (id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_global_chat_cooldown (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    last_sent_ms BIGINT NOT NULL DEFAULT 0
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_announcement_seen (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     last_seen_id BIGINT UNSIGNED NOT NULL DEFAULT 0
@@ -501,6 +512,36 @@ const getAnnouncements = async (accountId) => {
 }
 
 const routes = {
+  'GET /api/global-chat': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const [rows] = await pool.query(`SELECT c.id, c.message, c.created_ms, a.nickname, a.username
+      FROM gm_global_chat c JOIN gm_accounts a ON a.id = c.account_id
+      ORDER BY c.id DESC LIMIT 100`)
+    const [last] = await pool.query('SELECT last_sent_ms FROM gm_global_chat_cooldown WHERE account_id = ?', [account.id])
+    send(res, 200, { items: rows.reverse().map(x => ({ id: Number(x.id), message: x.message, at: Number(x.created_ms), nickname: x.nickname || x.username })), nextAt: Number(last[0]?.last_sent_ms || 0) + 10000, now: Date.now() })
+  },
+  'POST /api/global-chat': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const body = await readBody(req)
+    const message = String(body?.message || '').trim()
+    if (!message || [...message].length > 30) return send(res, 400, { error: 'chat_invalid' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_global_chat_cooldown (account_id, last_sent_ms) VALUES (?, 0)', [account.id])
+      const [last] = await conn.query('SELECT last_sent_ms FROM gm_global_chat_cooldown WHERE account_id = ? FOR UPDATE', [account.id])
+      const now = Date.now()
+      const nextAt = Number(last[0]?.last_sent_ms || 0) + 10000
+      if (now < nextAt) { await conn.rollback(); return send(res, 429, { error: 'chat_cooldown', nextAt, now }) }
+      await conn.query('UPDATE gm_global_chat_cooldown SET last_sent_ms = ? WHERE account_id = ?', [now, account.id])
+      await conn.query('INSERT INTO gm_global_chat (account_id, message, created_ms) VALUES (?, ?, ?)', [account.id, message, now])
+      await conn.commit()
+      send(res, 200, { ok: true, nextAt: now + 10000, now })
+    } catch (error) { await conn.rollback().catch(() => {}); throw error }
+    finally { conn.release() }
+  },
   'GET /api/announcements': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })

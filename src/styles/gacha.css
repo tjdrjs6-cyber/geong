@@ -1710,3 +1710,32 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .announcement-item { padding:13px; border:1px solid #f0dce5; border-radius:13px; background:#fff9fc; overflow-wrap:anywhere; }
 .announcement-item small { color:#927d8c; }
 .announcement-item p { white-space:pre-wrap; margin:7px 0 0; }
+
+/* Friend-house preview: keep the same wide stage geometry as the owner's house.
+   The previous 16:10/1:1 crop distorted the room and moved furniture visually. */
+.house-lot.house-visit {
+  width:100% !important;
+  aspect-ratio: 1900 / 690 !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  container-type:inline-size;
+  overflow:hidden;
+}
+.house-lot.house-visit .house-bg { object-fit:fill !important; object-position:center !important; }
+.house-lot.house-visit .house-piece {
+  width:calc(7cqw * var(--s, 1)) !important;
+}
+.house-lot.house-visit .house-friend { width:7.6cqw !important; }
+
+/* Shared chat: modal stays above title UI on desktop and mobile. */
+.global-chat-card { display:flex; flex-direction:column; max-height:min(86dvh,760px); }
+.global-chat-messages { flex:1 1 auto; min-height:200px; height:min(48dvh,430px); overflow-y:auto; overscroll-behavior:contain; padding:12px; border-radius:16px; background:#fff9f7; border:1px solid #f0dfe2; }
+.global-chat-message { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 9px; padding:9px 3px; border-bottom:1px solid #f2e6e7; overflow-wrap:anywhere; }
+.global-chat-name { color:#c36d8a; font-weight:800; flex:0 0 auto; }
+.global-chat-text { flex:1 1 150px; min-width:0; color:#493c41; }
+.global-chat-message small { color:#998b8e; font-size:11px; }
+.global-chat-compose { display:flex; gap:8px; margin-top:12px; }
+.global-chat-input { flex:1; min-width:0; border:1px solid #e7c9d1; border-radius:13px; padding:10px 12px; font:inherit; background:#fff; }
+.global-chat-compose .modal-primary { flex:0 0 auto; width:auto; margin:0; padding:9px 16px; }
+.global-chat-hint { margin:6px 0 0; color:#9d7b86; font-size:12px; }
