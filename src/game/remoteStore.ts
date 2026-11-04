@@ -3,6 +3,7 @@ import type { CharacterId, GachaSave, PullCount, PullResult } from './collection
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
+export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
@@ -69,6 +70,7 @@ export const ERROR_TEXT: Record<string, string> = {
   suggest_daily_limit: '건의는 하루에 5개까지 쓸 수 있어요.',
   suggest_not_found: '이미 지워진 건의예요.',
   admin_only: '운영자만 할 수 있어요.',
+  announcement_invalid: '공지사항은 1~100자까지 작성할 수 있어요.',
   login_required: '다시 로그인해 주세요.',
   starting: '서버를 준비하고 있어요. 잠시 후 다시 시도해 주세요.',
   network: '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',
@@ -237,6 +239,9 @@ export class RemoteGachaStore {
   async userHouse(nickname: string): Promise<HouseLayout> {
     return (await request<{ house: HouseLayout }>('users/house', { nickname })).house
   }
+  async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
+  async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
+  async postAnnouncement(message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements', { message }) }
   async users(): Promise<PublicUser[]> {
     return (await request<{ users: PublicUser[] }>('users')).users
   }

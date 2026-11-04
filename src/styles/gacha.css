@@ -1700,3 +1700,13 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* Admin-only broadcast compose panel */
 .admin-broadcast-entry[hidden] { display: none !important; }
 .admin-broadcast-form textarea.mail-text-input { width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box; }
+
+/* Announcement feed and unread indicator */
+.nav-announcements { position: relative; }
+.announcement-dot:not([hidden]) { position:absolute; top:5px; right:7px; width:10px; height:10px; border-radius:50%; background:#f13e50; border:2px solid white; box-shadow:0 0 0 1px #e65a65; pointer-events:none; }
+.announcement-compose { display:grid; gap:10px; margin:12px 0 18px; }
+.announcement-input { width:100%; box-sizing:border-box; border:1px solid #e8cdd9; border-radius:12px; padding:12px; font:inherit; resize:vertical; background:#fffafc; color:#3d3039; }
+.announcement-list { display:grid; gap:10px; max-height:52vh; overflow:auto; }
+.announcement-item { padding:13px; border:1px solid #f0dce5; border-radius:13px; background:#fff9fc; overflow-wrap:anywhere; }
+.announcement-item small { color:#927d8c; }
+.announcement-item p { white-space:pre-wrap; margin:7px 0 0; }

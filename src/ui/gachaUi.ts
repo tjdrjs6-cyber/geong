@@ -14,7 +14,7 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
 const bonusTag = (character: Character): string => character.weedBonus ? `제초 +${character.weedBonus}%` : ''
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -90,11 +90,12 @@ export class GachaUi {
     if (screen === 'decos') this.renderDecoCollection()
     if (screen === 'claw') { this.randomizeClawToy(); this.clawX = 50; this.clawY = 50; this.renderClaw() }
     if (screen === 'mail') void this.loadMail()
+    if (screen === 'announcements') void this.loadAnnouncements()
     if (screen === 'storage') this.renderStorage()
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge() }
+    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); this.weedTimer = window.setInterval(() => this.renderWeedStatus(), 1000) }
     if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 1000) }
@@ -213,7 +214,7 @@ export class GachaUi {
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span>📢</span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -258,6 +259,14 @@ export class GachaUi {
           <div class="collection-grid deco-grid"></div>
           <div class="duplicate-note">새 데코 등록 +${DECO_NEW_BONUS}코인 · 중복 데코는 하우스에 하나 더 놓을 수 있어요</div>
           <button class="modal-primary" data-action="house">🏠 하우스 꾸미러 가기</button>
+        </div>
+      </section>
+      <section class="gacha-modal" data-screen="announcements" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card collection-card users-card">
+          <button class="modal-close" data-action="close" aria-label="닫기">×</button>
+          <div class="modal-kicker">GEONGI MARKET NEWS</div><h2>📢 공지사항</h2>
+          <p class="collection-summary">최신 공지 10개 · 새로운 공지는 빨간 점으로 알려드려요.</p>
+          <div class="announcements-body"></div>
         </div>
       </section>
       <section class="gacha-modal" data-screen="users" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="users-title">
@@ -353,6 +362,8 @@ export class GachaUi {
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
     if (action === 'weed') { this.show('weed'); return }
     if (action === 'battle') { this.show('battle'); void this.syncBattle(); return }
+    if (action === 'announcements') { this.show('announcements'); return }
+    if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'users') { this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
@@ -867,6 +878,40 @@ export class GachaUi {
     const id = this.store.featured
     return id && owned.includes(id) ? id : owned[0] ?? 'chiikawa'
   }
+  private async refreshAnnouncementDot(): Promise<void> {
+    if (!this.store.user) return
+    try {
+      const box = await this.store.announcements()
+      const dot = this.root.querySelector<HTMLElement>('.announcement-dot')
+      if (dot) dot.hidden = !box.unread
+    } catch { /* Retry on next title visit */ }
+  }
+
+  private async loadAnnouncements(): Promise<void> {
+    const body = this.root.querySelector<HTMLElement>('.announcements-body')
+    if (!body) return
+    body.innerHTML = '<p class="users-empty">공지를 불러오는 중이에요…</p>'
+    try {
+      const data = await this.store.announcements()
+      const admin = Boolean(this.store.user?.admin && this.store.user?.username === 'tjdrjs885')
+      body.innerHTML = `${admin ? `<div class="announcement-compose"><textarea class="announcement-input" maxlength="100" rows="3" placeholder="모든 유저에게 보낼 공지 (100자 이내)"></textarea><button class="modal-primary" data-action="announcement-send">📢 전체 공지 등록</button></div>` : ''}
+        <div class="announcement-list">${data.items.length ? data.items.map(item => `<article class="announcement-item"><small>${new Date(item.at).toLocaleString('ko-KR')}</small><p>${escapeHtml(item.message)}</p></article>`).join('') : '<p class="users-empty">아직 공지사항이 없어요.</p>'}</div>`
+      await this.store.announcementsSeen()
+      const dot = this.root.querySelector<HTMLElement>('.announcement-dot')
+      if (dot) dot.hidden = true
+    } catch (error) { this.handleError(error); body.innerHTML = '<p class="users-empty">공지를 불러오지 못했어요.</p>' }
+  }
+
+  private async sendAnnouncement(): Promise<void> {
+    if (!this.store.user?.admin || this.store.user.username !== 'tjdrjs885') return
+    const input = this.root.querySelector<HTMLTextAreaElement>('.announcement-input')
+    const message = input?.value.trim() || ''
+    if (!message || [...message].length > 100) { this.toast('공지는 1~100자로 작성해 주세요.'); return }
+    if (!window.confirm('모든 유저에게 새 공지를 게시할까요?')) return
+    try { await this.store.postAnnouncement(message); this.toast('전체 공지가 등록되었습니다.'); await this.loadAnnouncements() }
+    catch (error) { this.handleError(error) }
+  }
+
   private renderProfile(): void {
     const id = this.heroId()
     const has = this.store.data.owned.length > 0

@@ -101,6 +101,15 @@ async function prepareDatabase() {
     KEY ix_gm_mail_to (to_id, id),
     KEY ix_gm_mail_from_day (from_id, sent_day)
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_announcements (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    message VARCHAR(400) NOT NULL,
+    created_ms BIGINT NOT NULL
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_announcement_seen (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    last_seen_id BIGINT UNSIGNED NOT NULL DEFAULT 0
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_dupes (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     items JSON NOT NULL
@@ -484,7 +493,42 @@ async function updateWeed(accountId, op = {}) {
   }
 }
 
+const getAnnouncements = async (accountId) => {
+  const [items] = await pool.query('SELECT id, message, created_ms FROM gm_announcements ORDER BY id DESC LIMIT 10')
+  const [seen] = await pool.query('SELECT last_seen_id FROM gm_announcement_seen WHERE account_id = ?', [accountId])
+  const lastSeen = Number(seen[0]?.last_seen_id || 0)
+  return { items: items.map(x => ({ id: Number(x.id), message: x.message, at: Number(x.created_ms) })), unread: items.some(x => Number(x.id) > lastSeen) }
+}
+
 const routes = {
+  'GET /api/announcements': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    send(res, 200, await getAnnouncements(account.id))
+  },
+  'POST /api/announcements/seen': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const [rows] = await pool.query('SELECT COALESCE(MAX(id), 0) AS id FROM gm_announcements')
+    await pool.query('INSERT INTO gm_announcement_seen (account_id, last_seen_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE last_seen_id = GREATEST(last_seen_id, VALUES(last_seen_id))', [account.id, Number(rows[0].id)])
+    send(res, 200, await getAnnouncements(account.id))
+  },
+  'POST /api/admin/announcements': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    if (!account.is_admin || account.username !== 'tjdrjs885') return send(res, 403, { error: 'admin_only' })
+    const { message } = await readJson(req)
+    const value = typeof message === 'string' ? message.trim() : ''
+    if (!value || [...value].length > 100) return send(res, 400, { error: 'announcement_invalid' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT INTO gm_announcements (message, created_ms) VALUES (?, ?)', [value, Date.now()])
+      await conn.query('DELETE FROM gm_announcements WHERE id NOT IN (SELECT id FROM (SELECT id FROM gm_announcements ORDER BY id DESC LIMIT 10) latest)')
+      await conn.commit()
+    } catch (error) { await conn.rollback(); throw error } finally { conn.release() }
+    send(res, 200, await getAnnouncements(account.id))
+  },
   'POST /api/auth/register': async (req, res) => {
     const { username, password, nickname } = await readJson(req)
     const invalid = validateCredentials(username, password) || validateNickname(nickname)
