@@ -241,7 +241,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <button class="expedition-entry" data-action="expedition"><img src="/expedition_banner.jpg" alt="원정대"/><span class="expedition-entry-label"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대</span></button>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>데코&amp;무기 인형뽑기</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -336,7 +336,7 @@ export class GachaUi {
         <div class="modal-card claw-card">
           <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 데코&amp;무기 인형뽑기</h2>
+          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 인형뽑기</h2>
           <p class="claw-desc">💎 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
           <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · 💎 2개</button>
@@ -344,7 +344,7 @@ export class GachaUi {
             <div class="claw-arm"><div class="claw-wire"></div><div class="claw-head">✦</div></div>
             <div class="claw-toys"></div><div class="claw-chute">출구 ↓</div><div class="claw-prize"></div>
           </div>
-          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play">🕹️ 뽑기!<small>💎 1개</small></button></div>
+          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small>💎 1개</small></button></div>
           <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
@@ -726,7 +726,9 @@ export class GachaUi {
         this.clawX=50; this.clawY=50
         this.renderClaw()
         this.renderWallet()
-        this.toast('💎 1개를 사용해 인형 위치를 새로 배치했어요!')
+        this.toast('💎 다이아 2개를 사용해 인형 위치를 새로 배치했어요!')
+        const clawMessage = this.root.querySelector<HTMLElement>('.claw-message')
+        if (clawMessage) clawMessage.textContent = '💎 다이아 2개를 사용해 인형 위치를 새로 배치했어요!'
       } catch(error) { this.handleError(error) }
       finally {this.clawBusy=false;if(refresh)refresh.disabled=false}
       return
@@ -769,8 +771,14 @@ export class GachaUi {
         }
         if (msg) msg.textContent = '인형을 집었어요! 출구까지 잘 버틸까요?'
         const steps = Math.max(1, result.segments)
-        const startX = originalToy?.x ?? this.clawX
-        const startY = originalToy?.y ?? this.clawY
+        // Both the claw and plush are positioned by their centers in machine coordinates.
+        // Snap the picked-up plush to the center of the claw before transport.
+        const startX = this.clawX
+        const startY = this.clawY
+        toy.style.transition = 'none'
+        toy.style.left = `${startX}%`
+        toy.style.top = `${startY}%`
+        void toy.offsetWidth
         const endStep = result.won ? steps : Math.max(1, result.dropAt)
         for (let step = 1; step <= endStep; step++) {
           const fraction = step / steps
@@ -785,10 +793,19 @@ export class GachaUi {
           if (msg) msg.textContent = '이동 중 인형이 떨어졌어요! 출구 가까이 있는 인형이 더 유리해요.'
           toy.classList.add('is-dropped')
           await new Promise(resolve => window.setTimeout(resolve, 450))
+          // A failed grab stays where it fell, including after leaving or reloading.
+          const landedFraction = endStep / steps
+          const landedX = startX + (exitX - startX) * landedFraction
+          const landedY = startY + (exitY - startY) * landedFraction
+          if (originalToy) {
+            originalToy.x = Math.max(10, Math.min(90, landedX))
+            originalToy.y = Math.max(10, Math.min(90, landedY))
+            this.saveClawToys()
+          }
           toy.classList.remove('is-lifted', 'is-dropped')
           toy.style.transition = 'none'
-          toy.style.left = `${originalToy?.x ?? 50}%`
-          toy.style.top = `${originalToy?.y ?? 50}%`
+          toy.style.left = `${landedX}%`
+          toy.style.top = `${landedY}%`
           void toy.offsetWidth
           toy.style.removeProperty('transition')
         }
@@ -824,19 +841,6 @@ export class GachaUi {
           if (msg && msg.textContent === earnedText) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
         }, 2300)
       } else {
-        if (false) {
-          toy?.classList.add('is-dropped')
-          await new Promise(resolve => window.setTimeout(resolve, 500))
-          // A failed grab returns the doll to its ORIGINAL location.
-          if (toy) {
-            toy.classList.remove('is-lifted', 'is-dropped')
-            toy.style.transition = 'none'
-            toy.style.left = `${originalToy?.x ?? 50}%`
-            toy.style.top = `${originalToy?.y ?? 50}%`
-            void toy.offsetWidth
-            toy.style.removeProperty('transition')
-          }
-        }
         if (msg && !aligned) msg.textContent = '허공이라 인형을 잡지 못했어요!'
       }
     } catch (error) { this.handleError(error) }

@@ -2843,3 +2843,44 @@ html body > #geongi-version {
 
 /* v0.57: Usagi face replaces the teddy bear in claw heading. */
 #claw-title .claw-title-usagi { display:inline-block; width:1.45em; height:1.45em; object-fit:contain; vertical-align:middle; margin-right:.1em; }
+
+
+/* v0.60: hand-drawn pastel pink paw-pad controls inspired by the supplied reference. */
+.gacha-modal.claw-screen .claw-controls { gap: clamp(16px,5vw,35px); align-items:center; padding:8px 0 5px; }
+.gacha-modal.claw-screen .claw-arrows { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.gacha-modal.claw-screen .claw-arrows>div { display:flex; gap:5px; margin-top:0; }
+.gacha-modal.claw-screen .claw-arrows button {
+  position:relative; display:inline-flex; justify-content:center; align-items:center;
+  width:49px; height:45px; min-width:0!important; min-height:0!important; padding:0;
+  border:2.5px solid #bd7797!important; border-radius:48% 52% 45% 48% / 52% 53% 45% 46%!important;
+  background:#ffeaf2!important; box-shadow:0 4px 0 #edbfd1, inset 0 3px 0 #fff8fb;
+  color:#895a70!important; font-size:21px!important; line-height:1; font-weight:900;
+  text-shadow:0 1px 0 #fff; transform:rotate(-3deg); transition:transform .12s,box-shadow .12s;
+}
+.gacha-modal.claw-screen .claw-arrows>button {transform:rotate(2deg)}
+.gacha-modal.claw-screen .claw-arrows>div button:nth-child(2) {transform:rotate(3deg)}
+.gacha-modal.claw-screen .claw-arrows button:active {transform:translateY(3px) scale(.96);box-shadow:0 1px 0 #edbfd1}
+.gacha-modal.claw-screen .claw-play {
+  position:relative; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  width:117px; min-width:117px!important; height:88px; min-height:88px!important;
+  padding:6px 10px 5px; border:3px solid #bd7797!important;
+  border-radius:43% 46% 38% 42% / 38% 40% 44% 46%!important;
+  background:#ffed9f!important; color:#88516b!important;
+  box-shadow:0 4px 0 #f2c5b8,inset 0 0 0 3px #fff6cf,inset 0 4px 0 #fffbe6;
+  transform:rotate(3deg); font-size:17px!important; line-height:1.05;
+}
+.gacha-modal.claw-screen .claw-play::before,.gacha-modal.claw-screen .claw-play::after {
+  content:'';position:absolute;top:-7px;width:18px;height:15px;background:#ffed9f;
+  border:3px solid #bd7797;border-bottom:0;border-radius:80% 80% 0 0;z-index:-1;
+}
+.gacha-modal.claw-screen .claw-play::before {left:15px;transform:rotate(-18deg)}
+.gacha-modal.claw-screen .claw-play::after {right:15px;transform:rotate(18deg)}
+.gacha-modal.claw-screen .claw-play-face {display:block;width:37px;height:32px;object-fit:contain;margin:0 auto 0;pointer-events:none}
+.gacha-modal.claw-screen .claw-play-label {display:block;font-weight:900;letter-spacing:-.5px}
+.gacha-modal.claw-screen .claw-play small {display:block;font-size:10px;line-height:1.1;margin-top:2px}
+.gacha-modal.claw-screen .claw-play:active {transform:rotate(3deg) translateY(3px) scale(.97)}
+@media(max-width:380px) {
+ .gacha-modal.claw-screen .claw-controls {gap:14px}
+ .gacha-modal.claw-screen .claw-arrows button {width:43px;height:40px;font-size:19px!important}
+ .gacha-modal.claw-screen .claw-play {width:105px;min-width:105px!important;height:82px;min-height:82px!important}
+}
