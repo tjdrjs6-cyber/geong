@@ -1,0 +1,902 @@
+import http from 'node:http'
+import { readFile, stat } from 'node:fs/promises'
+import { resolve, extname, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual } from 'node:crypto'
+import { promisify } from 'node:util'
+import mysql from 'mysql2/promise'
+import { houseCoinFor, houseCoinSlot, HOUSE_COIN_MS, BEETLE_ID, weedCoinMultiplier, WEED_MAX } from './game.mjs'
+import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, POWER, settleBattle, DECO_IDS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
+
+const scrypt = promisify(scryptCb)
+const PORT = Number(process.env.PORT || 3000)
+const COOKIE = 'gm_session'
+const SESSION_DAYS = 30
+const MAX_BODY = 16 * 1024
+
+let pool
+let ready = false
+let readyError = ''
+
+function databaseUrl() {
+  return process.env.DATABASE_URL || process.env.DRIZZLE_DATABASE_URL || ''
+}
+
+async function prepareDatabase() {
+  const url = new URL(databaseUrl())
+  pool = mysql.createPool({
+    host: url.hostname,
+    port: Number(url.port || 3306),
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    database: url.pathname.replace(/^\//, ''),
+    ...(process.env.DB_SSL === 'false' ? {} : { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }),
+    connectionLimit: 5,
+    waitForConnections: true,
+  })
+  // Additive, repeatable migration; existing accounts and saves are preserved.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_accounts (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(20) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_gm_accounts_username (username)
+  ) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_sessions (
+    token_hash CHAR(64) PRIMARY KEY,
+    account_id BIGINT UNSIGNED NOT NULL,
+    expires_at DATETIME NOT NULL,
+    KEY ix_gm_sessions_account (account_id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_saves (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    gems INT NOT NULL,
+    owned JSON NOT NULL,
+    last_daily VARCHAR(10) NOT NULL DEFAULT '',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle (
+    account_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+    character_id VARCHAR(32) NOT NULL,
+    since_ms BIGINT NOT NULL,
+    damage INT NOT NULL DEFAULT 0
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_weeding (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    character_id VARCHAR(20) NOT NULL,
+    since_ms BIGINT NOT NULL
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_decos (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    items JSON NOT NULL
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_coin (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    salt VARCHAR(64) NOT NULL,
+    last_slot BIGINT NOT NULL DEFAULT 0
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    layout JSON NOT NULL
+  )`)
+  try { await pool.query("ALTER TABLE gm_saves ADD COLUMN last_roulette VARCHAR(10) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN nickname VARCHAR(6) NULL') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('CREATE UNIQUE INDEX uq_gm_accounts_nickname ON gm_accounts (nickname)') } catch (error) { if (!error || error.code !== 'ER_DUP_KEYNAME') throw error }
+  try { await pool.query("ALTER TABLE gm_saves ADD COLUMN featured VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_mail (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    from_id BIGINT UNSIGNED NOT NULL,
+    to_id BIGINT UNSIGNED NOT NULL,
+    message VARCHAR(120) NOT NULL DEFAULT '',
+    coins INT NOT NULL DEFAULT 0,
+    sent_day VARCHAR(10) NOT NULL,
+    created_ms BIGINT NOT NULL,
+    seen TINYINT(1) NOT NULL DEFAULT 0,
+    claimed TINYINT(1) NOT NULL DEFAULT 0,
+    KEY ix_gm_mail_to (to_id, id),
+    KEY ix_gm_mail_from_day (from_id, sent_day)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_dupes (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    items JSON NOT NULL
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_suggest (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    account_id BIGINT UNSIGNED NOT NULL,
+    message VARCHAR(200) NOT NULL,
+    created_ms BIGINT NOT NULL,
+    day VARCHAR(10) NOT NULL,
+    reply VARCHAR(400) NULL,
+    reply_ms BIGINT NULL,
+    KEY ix_gm_suggest_account_day (account_id, day)
+  )`)
+  const [slotTable] = await pool.query("SHOW TABLES LIKE 'gm_weed_slots'")
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_weed_slots (
+    account_id BIGINT UNSIGNED NOT NULL,
+    character_id VARCHAR(20) NOT NULL,
+    since_ms BIGINT NOT NULL,
+    PRIMARY KEY (account_id, character_id)
+  )`)
+  // One-time move of the old single weeding friend into the 3-slot table.
+  if (!slotTable.length) await pool.query("INSERT IGNORE INTO gm_weed_slots (account_id, character_id, since_ms) SELECT account_id, character_id, since_ms FROM gm_weeding WHERE character_id <> ''")
+  try { await pool.query('ALTER TABLE gm_weeding ADD COLUMN beetle TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_mail ADD COLUMN to_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_mail ADD COLUMN from_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  ready = true
+}
+
+async function hashPassword(password) {
+  const salt = randomBytes(16)
+  const key = await scrypt(password.normalize('NFKC'), salt, 64, { N: 16384, r: 8, p: 1 })
+  return `scrypt$${salt.toString('base64')}$${key.toString('base64')}`
+}
+
+async function verifyPassword(password, stored) {
+  const [scheme, saltB64, keyB64] = String(stored).split('$')
+  if (scheme !== 'scrypt' || !saltB64 || !keyB64) return false
+  const expected = Buffer.from(keyB64, 'base64')
+  const actual = await scrypt(password.normalize('NFKC'), Buffer.from(saltB64, 'base64'), expected.length, { N: 16384, r: 8, p: 1 })
+  return actual.length === expected.length && timingSafeEqual(actual, expected)
+}
+
+// Constant-cost dummy hash so unknown usernames take as long as wrong passwords.
+const DUMMY_HASH = await hashPassword('not-a-real-password')
+
+const tokenHash = token => createHash('sha256').update(token).digest('hex')
+
+function readCookie(req, name) {
+  for (const part of String(req.headers.cookie || '').split(';')) {
+    const [key, ...rest] = part.trim().split('=')
+    if (key === name) return decodeURIComponent(rest.join('='))
+  }
+  return ''
+}
+
+function sessionCookie(token, maxAge) {
+  // SameSite=None + Secure lets the cookie work inside the Manus Preview iframe; JSON-only POSTs block cross-site forms.
+  return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${maxAge}`
+}
+
+function send(res, status, body, headers = {}) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers })
+  res.end(JSON.stringify(body))
+}
+
+async function readJson(req) {
+  if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) throw Object.assign(new Error('json_required'), { status: 415 })
+  let size = 0
+  const chunks = []
+  for await (const chunk of req) {
+    size += chunk.length
+    if (size > MAX_BODY) throw Object.assign(new Error('body_too_large'), { status: 413 })
+    chunks.push(chunk)
+  }
+  try { return chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {} } catch { throw Object.assign(new Error('invalid_json'), { status: 400 }) }
+}
+
+// Simple in-memory throttle for failed logins (per IP + username).
+const failures = new Map()
+function throttleKey(req, username) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim()
+  return `${ip}|${String(username).toLowerCase()}`
+}
+function isThrottled(key) {
+  const entry = failures.get(key)
+  if (!entry) return false
+  if (Date.now() - entry.first > 10 * 60_000) { failures.delete(key); return false }
+  return entry.count >= 8
+}
+function recordFailure(key) {
+  const entry = failures.get(key)
+  if (!entry || Date.now() - entry.first > 10 * 60_000) failures.set(key, { first: Date.now(), count: 1 })
+  else entry.count += 1
+}
+
+function saveView(row) {
+  const owned = typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned
+  return { version: 1, gems: Number(row.gems), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '' }
+}
+
+async function startSession(res, accountId, username, nickname, save, admin = false) {
+  const token = randomBytes(32).toString('base64url')
+  await pool.query('INSERT INTO gm_sessions (token_hash, account_id, expires_at) VALUES (?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))', [tokenHash(token), accountId, SESSION_DAYS])
+  send(res, 200, { user: { username, nickname: nickname || null, admin: Boolean(admin) }, ...(await accountState(accountId)), save }, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) })
+}
+
+async function currentAccount(req) {
+  const token = readCookie(req, COOKIE)
+  if (!token || token.length > 100) return null
+  const [rows] = await pool.query(
+    'SELECT a.id, a.username, a.nickname, a.is_admin FROM gm_sessions s JOIN gm_accounts a ON a.id = s.account_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP()',
+    [tokenHash(token)],
+  )
+  return rows[0] ?? null
+}
+
+/** Runs a read-modify-write of one account's save inside a row-locked transaction. */
+async function withSave(accountId, change) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const [rows] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const state = rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+    const outcome = change(state)
+    if (outcome.ok) {
+      await conn.query(
+        'INSERT INTO gm_saves (account_id, gems, owned, last_daily, last_roulette) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems), owned = VALUES(owned), last_daily = VALUES(last_daily), last_roulette = VALUES(last_roulette)',
+        [accountId, outcome.state.gems, JSON.stringify(outcome.state.owned), outcome.state.lastDaily, outcome.state.lastRoulette || ''],
+      )
+      if (outcome.after) await outcome.after(conn)
+    }
+    await conn.commit()
+    return outcome
+  } catch (error) {
+    await conn.rollback().catch(() => {})
+    throw error
+  } finally {
+    conn.release()
+  }
+}
+
+/** Per-account house-coin row (created with a secret random salt on first use). */
+async function houseCoinRow(db, accountId, lock = false) {
+  await db.query('INSERT IGNORE INTO gm_house_coin (account_id, salt, last_slot) VALUES (?, ?, 0)', [accountId, randomBytes(16).toString('hex')])
+  const [rows] = await db.query(`SELECT salt, last_slot FROM gm_house_coin WHERE account_id = ?${lock ? ' FOR UPDATE' : ''}`, [accountId])
+  return rows[0]
+}
+
+async function getSave(accountId) {
+  const [rows] = await pool.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ?', [accountId])
+  return rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+}
+
+const parseJson = value => (typeof value === 'string' ? JSON.parse(value) : value)
+
+async function getDecos(accountId) {
+  const [rows] = await pool.query('SELECT items FROM gm_decos WHERE account_id = ?', [accountId])
+  return rows[0] ? normalizeDecos(parseJson(rows[0].items)) : {}
+}
+
+async function getHouse(accountId) {
+  const [rows] = await pool.query('SELECT layout FROM gm_house WHERE account_id = ?', [accountId])
+  return normalizeHouse(rows[0] ? parseJson(rows[0].layout) : null)
+}
+
+/** Everything the client needs after login or refresh. */
+async function getFeatured(accountId) {
+  const [rows] = await pool.query('SELECT featured FROM gm_saves WHERE account_id = ?', [accountId])
+  return rows[0]?.featured || null
+}
+async function sentToday(conn, accountId) {
+  const [rows] = await conn.query('SELECT COALESCE(SUM(coins), 0) AS total FROM gm_mail WHERE from_id = ? AND sent_day = ?', [accountId, checkInDay()])
+  return Number(rows[0].total)
+}
+async function mailbox(accountId) {
+  const [rows] = await pool.query('SELECT m.id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const mail = rows.map(row => ({ id: Number(row.id), from: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  return { mail, sent, max: MAILBOX_MAX, unread: mail.filter(item => !item.seen).length, sentToday: await sentToday(pool, accountId), dailyLimit: MAIL_DAILY_COINS }
+}
+/** Hides a recipient's inbox letters beyond the newest MAILBOX_MAX; coins still waiting in them go to the recipient. */
+async function trimInbox(conn, toId) {
+  const [old] = await conn.query('SELECT id, coins, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
+  if (!old.length) return
+  const coins = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.coins)), 0)
+  await conn.query(`UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
+  if (coins > 0) await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, toId])
+}
+async function trimSent(conn, fromId) {
+  const [old] = await conn.query('SELECT id FROM gm_mail WHERE from_id = ? AND from_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [fromId, MAILBOX_MAX])
+  if (old.length) await conn.query(`UPDATE gm_mail SET from_deleted = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
+}
+async function getDupes(accountId) {
+  const [rows] = await pool.query('SELECT items FROM gm_dupes WHERE account_id = ?', [accountId])
+  return rows[0] ? normalizeDupes(parseJson(rows[0].items)) : {}
+}
+async function inTransaction(work) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const result = await work(conn)
+    if (result && result.error) await conn.rollback(); else await conn.commit()
+    return result
+  } catch (error) {
+    await conn.rollback().catch(() => {})
+    throw error
+  } finally {
+    conn.release()
+  }
+}
+async function suggestions(account) {
+  const [rows] = await pool.query('SELECT s.id, s.account_id, s.message, s.created_ms, s.reply, s.reply_ms, a.nickname FROM gm_suggest s LEFT JOIN gm_accounts a ON a.id = s.account_id ORDER BY s.id DESC LIMIT 100')
+  const [today] = await pool.query('SELECT COUNT(*) AS n FROM gm_suggest WHERE account_id = ? AND day = ?', [account.id, checkInDay()])
+  return {
+    items: rows.map(row => ({ id: Number(row.id), from: row.nickname || '알 수 없음', message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
+    admin: Boolean(account.is_admin), todayCount: Number(today[0].n), dailyMax: SUGGEST_DAILY_MAX,
+  }
+}
+async function accountState(accountId) {
+  const box = await mailbox(accountId)
+  return { dupes: await getDupes(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
+}
+
+async function getWeed(accountId) {
+  return readWeed(pool, accountId)
+}
+
+async function getBattle(accountId) {
+  const [rows] = await pool.query('SELECT character_id, since_ms, damage FROM gm_battle WHERE account_id = ?', [accountId])
+  return rows[0] ? { id: rows[0].character_id, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+}
+
+/** Settles defeated enemies into coins and optionally switches the fighting friend, atomically with the save. */
+async function updateBattle(accountId, nextCharacter) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const [saves] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+    const [rows] = await conn.query('SELECT character_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
+    const now = Date.now()
+    let battle = rows[0] ? { id: rows[0].character_id, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+    if (nextCharacter && !state.owned.includes(nextCharacter)) { await conn.rollback(); return { error: 'not_owned' } }
+    if (nextCharacter) {
+      const [busy] = await conn.query('SELECT 1 FROM gm_weed_slots WHERE account_id = ? AND character_id = ? UNION ALL SELECT 1 FROM gm_weeding WHERE account_id = ? AND beetle = 1 AND ? = ?', [accountId, nextCharacter, accountId, nextCharacter, BEETLE_ID])
+      if (busy.length) { await conn.rollback(); return { error: 'busy_weed' } }
+    }
+    let earned = 0
+    if (battle) {
+      const settled = settleBattle(battle.since, battle.damage, now, POWER[battle.id] ?? 10)
+      earned = settled.kills
+      battle = { id: battle.id, since: settled.since, damage: settled.damage }
+    }
+    if (nextCharacter) battle = battle ? { ...battle, id: nextCharacter } : { id: nextCharacter, since: now, damage: 0 }
+    if (!battle) { await conn.rollback(); return { error: 'not_fighting' } }
+    state.gems += earned
+    await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems)', [accountId, state.gems, JSON.stringify(state.owned), state.lastDaily])
+    await conn.query('INSERT INTO gm_battle (account_id, character_id, since_ms, damage) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.since, battle.damage])
+    await conn.commit()
+    return { save: state, battle, earned, now }
+  } catch (error) {
+    await conn.rollback().catch(() => {})
+    throw error
+  } finally {
+    conn.release()
+  }
+}
+
+/** Weeding view: up to 3 members (each with its own timer) plus the 풍뎅이 helper flag. */
+async function readWeed(db, accountId, lock = false) {
+  const [slots] = await db.query(`SELECT character_id, since_ms FROM gm_weed_slots WHERE account_id = ? ORDER BY since_ms, character_id${lock ? ' FOR UPDATE' : ''}`, [accountId])
+  const [rows] = await db.query(`SELECT beetle FROM gm_weeding WHERE account_id = ?${lock ? ' FOR UPDATE' : ''}`, [accountId])
+  const members = slots.map(r => ({ id: r.character_id, since: Number(r.since_ms) }))
+  const beetle = Boolean(rows[0]?.beetle) && members.length > 0 && !members.some(m => m.id === BEETLE_ID)
+  return members.length ? { members, beetle } : null
+}
+/** Settles weeding coins and optionally switches the weeding friend, atomically with the save. */
+/** Credits weeding + battle coins automatically, so nobody has to open the fields to collect. */
+async function autoSettle(accountId) {
+  let earned = 0
+  const weed = await updateWeed(accountId, {})
+  if (!weed.error) earned += weed.earned
+  const battle = await updateBattle(accountId, null)
+  if (!battle.error) earned += battle.earned
+  return earned
+}
+/** op: { add?: id, remove?: id, beetle?: boolean } — settles every member's coins first, then applies the change. */
+async function updateWeed(accountId, op = {}) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const [saves] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+    const current = await readWeed(conn, accountId, true)
+    const now = Date.now()
+    let members = current ? current.members : []
+    let beetle = current ? current.beetle : false
+    const fail = async error => { await conn.rollback(); return { error } }
+    if (op.add) {
+      if (!state.owned.includes(op.add)) return fail('not_owned')
+      if (members.some(m => m.id === op.add)) return fail('already_weeding')
+      if (members.length >= WEED_MAX) return fail('weed_full')
+      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND character_id = ?', [accountId, op.add])
+      if (busy.length) return fail('busy_battle')
+    }
+    if (op.remove && !members.some(m => m.id === op.remove)) return fail('not_weeding')
+    // Settle every member at the multiplier that applied until now.
+    let earned = 0
+    members = members.map(m => {
+      const settled = settleWeed(m.since, now, weedIntervalMs(m.id))
+      earned += settled.coins * weedCoinMultiplier(beetle)
+      return { id: m.id, since: settled.since }
+    })
+    if (op.add) { members.push({ id: op.add, since: now }); if (op.add === BEETLE_ID) beetle = false }
+    if (op.remove) members = members.filter(m => m.id !== op.remove)
+    if (op.beetle !== undefined) {
+      if (op.beetle) {
+        if (!state.owned.includes(BEETLE_ID)) return fail('not_owned')
+        if (!members.length) return fail('not_weeding')
+        if (members.some(m => m.id === BEETLE_ID)) return fail('beetle_is_weeder')
+        const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND character_id = ?', [accountId, BEETLE_ID])
+        if (busy.length) return fail('busy_battle')
+      }
+      beetle = Boolean(op.beetle)
+    }
+    if (!members.length) beetle = false
+    if (!op.add && !op.remove && op.beetle === undefined && !current) return fail('not_weeding')
+    state.gems += earned
+    await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems)', [accountId, state.gems, JSON.stringify(state.owned), state.lastDaily])
+    await conn.query('DELETE FROM gm_weed_slots WHERE account_id = ?', [accountId])
+    for (const m of members) await conn.query('INSERT INTO gm_weed_slots (account_id, character_id, since_ms) VALUES (?, ?, ?)', [accountId, m.id, m.since])
+    await conn.query("INSERT INTO gm_weeding (account_id, character_id, since_ms, beetle) VALUES (?, '', ?, ?) ON DUPLICATE KEY UPDATE character_id = '', beetle = VALUES(beetle)", [accountId, now, beetle ? 1 : 0])
+    await conn.commit()
+    return { save: state, weed: members.length ? { members, beetle } : null, earned, now }
+  } catch (error) {
+    await conn.rollback().catch(() => {})
+    throw error
+  } finally {
+    conn.release()
+  }
+}
+
+const routes = {
+  'POST /api/auth/register': async (req, res) => {
+    const { username, password, nickname } = await readJson(req)
+    const invalid = validateCredentials(username, password) || validateNickname(nickname)
+    if (invalid) return send(res, 400, { error: invalid })
+    const nick = nickname.trim()
+    const passwordHash = await hashPassword(password)
+    let accountId
+    try {
+      const [result] = await pool.query('INSERT INTO gm_accounts (username, password_hash, nickname) VALUES (?, ?, ?)', [username, passwordHash, nick])
+      accountId = result.insertId
+    } catch (error) {
+      if (error && error.code === 'ER_DUP_ENTRY') return send(res, 409, { error: String(error.message).includes('nickname') ? 'nickname_taken' : 'username_taken' })
+      throw error
+    }
+    const save = { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+    await pool.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?)', [accountId, save.gems, '[]', ''])
+    return startSession(res, accountId, username, nick, save)
+  },
+  'POST /api/auth/login': async (req, res) => {
+    const { username, password } = await readJson(req)
+    if (typeof username !== 'string' || typeof password !== 'string' || password.length > 72) return send(res, 400, { error: 'invalid_credentials' })
+    const key = throttleKey(req, username)
+    if (isThrottled(key)) return send(res, 429, { error: 'too_many_attempts' })
+    const [rows] = await pool.query('SELECT id, username, nickname, is_admin, password_hash FROM gm_accounts WHERE username = ?', [username])
+    const account = rows[0]
+    const valid = await verifyPassword(password, account ? account.password_hash : DUMMY_HASH)
+    if (!account || !valid) { recordFailure(key); return send(res, 401, { error: 'invalid_credentials' }) }
+    failures.delete(key)
+    return startSession(res, account.id, account.username, account.nickname, await getSave(account.id), account.is_admin)
+  },
+  'POST /api/auth/logout': async (req, res) => {
+    await readJson(req)
+    const token = readCookie(req, COOKIE)
+    if (token) await pool.query('DELETE FROM gm_sessions WHERE token_hash = ?', [tokenHash(token)])
+    send(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) })
+  },
+  'GET /api/me': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 200, { user: null })
+    const autoEarned = await autoSettle(account.id)
+    send(res, 200, { autoEarned, user: { username: account.username, nickname: account.nickname || null, admin: Boolean(account.is_admin) }, ...(await accountState(account.id)) })
+  },
+  'POST /api/nickname': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { nickname } = await readJson(req)
+    const invalid = validateNickname(nickname)
+    if (invalid) return send(res, 400, { error: invalid })
+    try { await pool.query('UPDATE gm_accounts SET nickname = ? WHERE id = ?', [nickname.trim(), account.id]) } catch (error) {
+      if (error && error.code === 'ER_DUP_ENTRY') return send(res, 409, { error: 'nickname_taken' })
+      throw error
+    }
+    send(res, 200, { user: { username: account.username, nickname: nickname.trim(), admin: Boolean(account.is_admin) } })
+  },
+  'GET /api/users': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const [rows] = await pool.query('SELECT a.nickname, s.owned, s.featured, d.items FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 ORDER BY a.created_at DESC LIMIT 300')
+    const users = rows.map(row => {
+      const owned = normalizeOwned(typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned)
+      const decos = Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {}))
+      const featured = row.featured && owned.includes(row.featured) ? row.featured : null
+      return { nickname: row.nickname, owned, decos, featured, me: row.nickname === account.nickname }
+    })
+    send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
+  },
+  'GET /api/house/coin': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const now = Date.now()
+    const slot = houseCoinSlot(now)
+    const row = await houseCoinRow(pool, account.id)
+    const coin = Number(row.last_slot) >= slot ? null : houseCoinFor(row.salt, slot)
+    send(res, 200, { coin, nextAt: (slot + 1) * HOUSE_COIN_MS, now })
+  },
+  'POST /api/house/coin': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { slot } = await readJson(req)
+    const now = Date.now()
+    const current = houseCoinSlot(now)
+    if (Number(slot) !== current) return send(res, 400, { error: 'house_coin_gone' })
+    const conn = await pool.getConnection()
+    let coins = 0
+    try {
+      await conn.beginTransaction()
+      await conn.query('SELECT gems FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const row = await houseCoinRow(conn, account.id, true)
+      if (Number(row.last_slot) >= current) { await conn.rollback(); return send(res, 400, { error: 'house_coin_taken' }) }
+      coins = houseCoinFor(row.salt, current).coins
+      await conn.query('UPDATE gm_house_coin SET last_slot = ? WHERE account_id = ?', [current, account.id])
+      const [updated] = await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, account.id])
+      if (!updated.affectedRows) await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?)', [account.id, STARTING_COINS + coins, '[]', ''])
+      await conn.commit()
+    } catch (error) {
+      await conn.rollback().catch(() => {})
+      throw error
+    } finally {
+      conn.release()
+    }
+    send(res, 200, { coins, save: await getSave(account.id), nextAt: (current + 1) * HOUSE_COIN_MS, now })
+  },
+  'POST /api/users/house': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { nickname } = await readJson(req)
+    if (typeof nickname !== 'string' || !nickname.trim()) return send(res, 404, { error: 'mail_no_user' })
+    const [rows] = await pool.query('SELECT id, nickname FROM gm_accounts WHERE nickname = ? AND is_admin = 0', [nickname.trim()])
+    if (!rows[0]) return send(res, 404, { error: 'mail_no_user' })
+    send(res, 200, { nickname: rows[0].nickname, house: await getHouse(rows[0].id) })
+  },
+  'POST /api/weed/start': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { id } = await readJson(req)
+    if (typeof id !== 'string' || !CHARACTER_IDS.includes(id)) return send(res, 400, { error: 'not_owned' })
+    const outcome = await updateWeed(account.id, { add: id })
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, outcome)
+  },
+  'POST /api/weed/beetle': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { on } = await readJson(req)
+    const outcome = await updateWeed(account.id, { beetle: Boolean(on) })
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, outcome)
+  },
+  'POST /api/weed/stop': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { id } = await readJson(req)
+    if (typeof id !== 'string' || !CHARACTER_IDS.includes(id)) return send(res, 400, { error: 'not_weeding' })
+    const outcome = await updateWeed(account.id, { remove: id })
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, outcome)
+  },
+  'POST /api/weed/claim': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    const outcome = await updateWeed(account.id, {})
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, outcome)
+  },
+  'POST /api/battle/start': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { id } = await readJson(req)
+    if (typeof id !== 'string' || !CHARACTER_IDS.includes(id)) return send(res, 400, { error: 'not_owned' })
+    const outcome = await updateBattle(account.id, id)
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, outcome)
+  },
+  'POST /api/settle': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    const earned = await autoSettle(account.id)
+    send(res, 200, { earned, save: await getSave(account.id), weed: await getWeed(account.id), battle: await getBattle(account.id), now: Date.now() })
+  },
+  'POST /api/battle/claim': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    const outcome = await updateBattle(account.id, null)
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, outcome)
+  },
+  'POST /api/featured': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { id } = await readJson(req)
+    const save = await getSave(account.id)
+    if (typeof id !== 'string' || !save.owned.includes(id)) return send(res, 400, { error: 'not_owned' })
+    await pool.query('UPDATE gm_saves SET featured = ? WHERE account_id = ?', [id, account.id])
+    send(res, 200, { featured: id })
+  },
+  'GET /api/mail': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    send(res, 200, await mailbox(account.id))
+  },
+  'POST /api/mail/seen': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    await pool.query('UPDATE gm_mail SET seen = 1 WHERE to_id = ? AND seen = 0 AND to_deleted = 0', [account.id])
+    send(res, 200, { ok: true })
+  },
+  'POST /api/mail/send': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const body = await readJson(req)
+    const to = typeof body.to === 'string' ? body.to.trim() : ''
+    const [targets] = await pool.query('SELECT id FROM gm_accounts WHERE nickname = ? AND is_admin = 0', [to])
+    if (!targets[0]) return send(res, 404, { error: 'mail_no_user' })
+    const toId = targets[0].id
+    if (Number(toId) === Number(account.id)) return send(res, 400, { error: 'mail_self' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [saves] = await conn.query('SELECT gems FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const balance = saves[0] ? Number(saves[0].gems) : 0
+      const already = await sentToday(conn, account.id)
+      const checked = validateMail(body, { sentToday: already, balance, admin: Boolean(account.is_admin) })
+      if (checked.error) { await conn.rollback(); return send(res, 400, { error: checked.error }) }
+      if (checked.coins > 0 && !account.is_admin) await conn.query('UPDATE gm_saves SET gems = gems - ? WHERE account_id = ?', [checked.coins, account.id])
+      await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?)', [account.id, toId, checked.text, checked.coins, checkInDay(), Date.now()])
+      await trimInbox(conn, toId)
+      await trimSent(conn, account.id)
+      await conn.commit()
+    } catch (error) {
+      await conn.rollback().catch(() => {})
+      throw error
+    } finally {
+      conn.release()
+    }
+    send(res, 200, { save: await getSave(account.id), to, ...(await mailbox(account.id)) })
+  },
+  'POST /api/mail/claim': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { id } = await readJson(req)
+    const conn = await pool.getConnection()
+    let total = 0
+    try {
+      await conn.beginTransaction()
+      const [rows] = await conn.query(
+        id == null
+          ? 'SELECT id, coins FROM gm_mail WHERE to_id = ? AND claimed = 0 AND coins > 0 AND to_deleted = 0 FOR UPDATE'
+          : 'SELECT id, coins FROM gm_mail WHERE to_id = ? AND claimed = 0 AND coins > 0 AND to_deleted = 0 AND id = ? FOR UPDATE',
+        id == null ? [account.id] : [account.id, Number(id)],
+      )
+      total = rows.reduce((sum, row) => sum + Number(row.coins), 0)
+      if (rows.length) {
+        await conn.query(`UPDATE gm_mail SET claimed = 1, seen = 1 WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(row => row.id))
+        await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [total, account.id])
+      }
+      await conn.commit()
+    } catch (error) {
+      await conn.rollback().catch(() => {})
+      throw error
+    } finally {
+      conn.release()
+    }
+    send(res, 200, { claimed: total, save: await getSave(account.id), ...(await mailbox(account.id)) })
+  },
+  'POST /api/pull': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { count } = await readJson(req)
+    // Operator accounts have unlimited coins: pulls never spend their balance.
+    let dupes = {}
+    const outcome = await withSave(account.id, state => {
+      let result = pull(account.is_admin ? { ...state, gems: 1_000_000_000 } : state, count, n => randomInt(n))
+      if (result.ok && account.is_admin) result = { ...result, state: { ...result.state, gems: state.gems } }
+      if (!result.ok) return result
+      // Duplicate copies go to the storage box, in the same transaction as the pull.
+      return { ...result, after: async conn => {
+        const [rows] = await conn.query('SELECT items FROM gm_dupes WHERE account_id = ? FOR UPDATE', [account.id])
+        dupes = addDupes(rows[0] ? parseJson(rows[0].items) : {}, result.results)
+        await conn.query('INSERT INTO gm_dupes (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(dupes)])
+      } }
+    })
+    if (!outcome.ok) return send(res, 400, { error: outcome.error })
+    send(res, 200, { save: outcome.state, results: outcome.results, dupes })
+  },
+  'POST /api/deco/pull': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { count } = await readJson(req)
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [saves] = await conn.query('SELECT gems, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+      const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
+      const decos = rows[0] ? normalizeDecos(parseJson(rows[0].items)) : {}
+      // Operator accounts have unlimited coins: deco pulls never spend their balance.
+      const outcome = pullDecos(account.is_admin ? 1_000_000_000 : state.gems, decos, count, n => randomInt(n))
+      if (!outcome.ok) { await conn.rollback(); return send(res, 400, { error: outcome.error }) }
+      if (!account.is_admin) state.gems = outcome.gems
+      await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems)', [account.id, state.gems, JSON.stringify(state.owned), state.lastDaily])
+      await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(outcome.decos)])
+      await conn.commit()
+      send(res, 200, { save: state, decos: outcome.decos, results: outcome.results })
+    } catch (error) {
+      await conn.rollback().catch(() => {})
+      throw error
+    } finally {
+      conn.release()
+    }
+  },
+  'POST /api/house/save': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { layout } = await readJson(req)
+    const checked = validateHouse(layout, await getDecos(account.id), (await getSave(account.id)).owned)
+    if (checked.error) return send(res, 400, { error: checked.error })
+    await pool.query('INSERT INTO gm_house (account_id, layout) VALUES (?, ?) ON DUPLICATE KEY UPDATE layout = VALUES(layout)', [account.id, JSON.stringify(checked.layout)])
+    send(res, 200, { house: checked.layout })
+  },
+  'POST /api/mail/delete': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { id, box } = await readJson(req)
+    if (!Number.isInteger(id)) return send(res, 400, { error: 'mail_not_found' })
+    const outcome = await inTransaction(async conn => {
+      if (box === 'sent') {
+        const [r] = await conn.query('UPDATE gm_mail SET from_deleted = 1 WHERE id = ? AND from_id = ? AND from_deleted = 0', [id, account.id])
+        return r.affectedRows ? { claimed: 0 } : { error: 'mail_not_found' }
+      }
+      const [rows] = await conn.query('SELECT coins, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
+      if (!rows[0]) return { error: 'mail_not_found' }
+      // Deleting a letter never loses its coins: unclaimed coins are received first.
+      const claimed = rows[0].claimed ? 0 : Number(rows[0].coins)
+      await conn.query('UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id = ?', [id])
+      if (claimed > 0) await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [claimed, account.id])
+      return { claimed }
+    })
+    if (outcome.error) return send(res, 404, { error: outcome.error })
+    send(res, 200, { claimed: outcome.claimed, save: await getSave(account.id), ...(await mailbox(account.id)) })
+  },
+  'POST /api/sell': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { kind, id, count } = await readJson(req)
+    if (typeof id !== 'string' || (kind !== 'char' && kind !== 'deco')) return send(res, 400, { error: 'sell_invalid' })
+    const outcome = await inTransaction(async conn => {
+      await conn.query('SELECT gems FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      let coins = 0
+      if (kind === 'char') {
+        const [rows] = await conn.query('SELECT items FROM gm_dupes WHERE account_id = ? FOR UPDATE', [account.id])
+        const sold = sellCharacter(rows[0] ? parseJson(rows[0].items) : {}, id, count)
+        if (sold.error) return sold
+        await conn.query('INSERT INTO gm_dupes (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(sold.dupes)])
+        coins = sold.coins
+      } else {
+        const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
+        const [house] = await conn.query('SELECT layout FROM gm_house WHERE account_id = ?', [account.id])
+        const placed = normalizeHouse(house[0] ? parseJson(house[0].layout) : null).pieces.filter(piece => piece.id === id).length
+        const sold = sellDeco(rows[0] ? parseJson(rows[0].items) : {}, id, count, placed)
+        if (sold.error) return sold
+        await conn.query('UPDATE gm_decos SET items = ? WHERE account_id = ?', [JSON.stringify(sold.decos), account.id])
+        coins = sold.coins
+      }
+      await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, account.id])
+      return { coins }
+    })
+    if (outcome.error) return send(res, 400, { error: outcome.error })
+    send(res, 200, { coins: outcome.coins, save: await getSave(account.id), dupes: await getDupes(account.id), decos: await getDecos(account.id) })
+  },
+  'GET /api/suggest': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    send(res, 200, await suggestions(account))
+  },
+  'POST /api/suggest': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { message } = await readJson(req)
+    const checked = validateSuggestion(message)
+    if (checked.error) return send(res, 400, { error: checked.error })
+    const outcome = await inTransaction(async conn => {
+      await conn.query('SELECT id FROM gm_accounts WHERE id = ? FOR UPDATE', [account.id])
+      const [today] = await conn.query('SELECT COUNT(*) AS n FROM gm_suggest WHERE account_id = ? AND day = ?', [account.id, checkInDay()])
+      if (!account.is_admin && Number(today[0].n) >= SUGGEST_DAILY_MAX) return { error: 'suggest_daily_limit' }
+      await conn.query('INSERT INTO gm_suggest (account_id, message, created_ms, day) VALUES (?, ?, ?, ?)', [account.id, checked.text, Date.now(), checkInDay()])
+      return { ok: true }
+    })
+    if (outcome.error) return send(res, 429, { error: outcome.error })
+    send(res, 200, await suggestions(account))
+  },
+  'POST /api/suggest/reply': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    if (!account.is_admin) return send(res, 403, { error: 'admin_only' })
+    const { id, reply } = await readJson(req)
+    const checked = validateSuggestion(reply, SUGGEST_REPLY_MAX_CHARS)
+    if (checked.error) return send(res, 400, { error: checked.error })
+    const [r] = await pool.query('UPDATE gm_suggest SET reply = ?, reply_ms = ? WHERE id = ?', [checked.text, Date.now(), Number(id)])
+    if (!r.affectedRows) return send(res, 404, { error: 'suggest_not_found' })
+    send(res, 200, await suggestions(account))
+  },
+  'POST /api/suggest/delete': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    if (!account.is_admin) return send(res, 403, { error: 'admin_only' })
+    const { id } = await readJson(req)
+    const [r] = await pool.query('DELETE FROM gm_suggest WHERE id = ?', [Number(id)])
+    if (!r.affectedRows) return send(res, 404, { error: 'suggest_not_found' })
+    send(res, 200, await suggestions(account))
+  },
+  'POST /api/roulette': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    const outcome = await withSave(account.id, state => spinRoulette(state))
+    if (!outcome.ok) return send(res, 409, { error: outcome.error, save: outcome.state })
+    send(res, 200, { index: outcome.index, prize: outcome.prize, save: outcome.state })
+  },
+  'POST /api/daily': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    const outcome = await withSave(account.id, state => claimDaily(state))
+    send(res, 200, { claimed: outcome.ok, save: outcome.state })
+  },
+}
+
+const WEB_ROOT = resolve(fileURLToPath(new URL('../dist/', import.meta.url)))
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.ico': 'image/x-icon', '.json': 'application/json' }
+async function serveFrontend(req, res, path) {
+  let decoded
+  try { decoded = decodeURIComponent(path) } catch { return send(res, 400, { error: 'bad_path' }) }
+  const file = resolve(WEB_ROOT, '.' + decoded)
+  if (file !== WEB_ROOT && !file.startsWith(WEB_ROOT + sep)) return send(res, 403, { error: 'forbidden' })
+  try {
+    const info = await stat(file)
+    if (!info.isFile()) throw new Error('not_file')
+    const data = await readFile(file)
+    res.writeHead(200, { 'Content-Type': MIME[extname(file)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff' })
+    return res.end(req.method === 'HEAD' ? undefined : data)
+  } catch { return send(res, 404, { error: 'not_found' }) }
+}
+
+const server = http.createServer(async (req, res) => {
+  const path = new URL(req.url || '/', 'http://local').pathname
+  if (path === '/api/health') return send(res, 200, { ok: true, database: ready ? 'ready' : 'starting' })
+  const handler = routes[`${req.method} ${path}`]
+  if (!handler) {
+    if (req.method === 'GET' || req.method === 'HEAD') return serveFrontend(req, res, path)
+    return send(res, 404, { error: 'not_found' })
+  }
+  if (!ready) return send(res, 503, { error: 'starting' })
+  try {
+    await handler(req, res)
+  } catch (error) {
+    const status = error && error.status
+    if (status) return send(res, status, { error: error.message })
+    console.error('[api]', req.method, path, error && error.code ? error.code : error)
+    send(res, 500, { error: 'server_error' })
+  }
+})
+
+server.listen(PORT, () => {
+  console.log(`[api] listening on ${PORT}`)
+  // Bind first, then prepare the database so health checks answer during startup.
+  const attempt = async (tries) => {
+    try { await prepareDatabase(); console.log('[api] database ready') } catch (error) {
+      readyError = error && error.code ? error.code : String(error)
+      console.error('[api] database not ready:', readyError)
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 3000)
+    }
+  }
+  attempt(20)
+})

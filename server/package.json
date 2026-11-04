@@ -1,0 +1,11 @@
+{
+  "name": "geongi-market-server",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "mysql2": "^3.24.6"
+  }
+}
