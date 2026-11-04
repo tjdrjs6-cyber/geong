@@ -606,6 +606,7 @@ export class GachaUi {
     let wonToy = false
     try {
       const aligned = this.clawTouchesToy()
+      const previousDecos = { ...this.store.decos }
       const result = await this.store.playClaw(aligned)
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
@@ -646,6 +647,18 @@ export class GachaUi {
         const earnedText = `🎉 ${deco?.name ?? '데코 아이템'} 획득! 보관함에 저장됐어요!`
         if (msg) msg.textContent = earnedText
         this.toast(earnedText)
+        // Show the same capsule-style reveal as normal deco pulls, without
+        // switching screens or leaving a permanent result panel behind.
+        if (deco) {
+          const duplicate = (previousDecos[deco.id] ?? 0) > 0
+          const reveal = this.decoReveal({ id: deco.id, duplicate, bonus: 0 })
+          reveal.tag = duplicate ? '중복 획득! · 보관함에 1개 추가' : '새로운 데코 발견! · 보관함에 저장'
+          this.popReveal(reveal, 0, 1)
+          const revealNode = this.root.querySelector<HTMLElement>('.pop-reveal')
+          const dismiss = () => { window.clearTimeout(hideTimer); this.hidePop(); revealNode?.removeEventListener('pointerdown', dismiss) }
+          const hideTimer = window.setTimeout(dismiss, 2200)
+          revealNode?.addEventListener('pointerdown', dismiss, { once: true })
+        }
         window.setTimeout(() => {
           if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
           if (msg && msg.textContent === earnedText) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
