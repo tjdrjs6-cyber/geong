@@ -696,11 +696,11 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .weed-beetle-helper b { position:absolute; right:-10px; top:-6px; padding:1px 7px; border-radius:999px; background:#fff; border:2px solid #e0a84f; color:#b86d22; font-family:var(--display); font-size:12px; white-space:nowrap; }
 /* Up to 3 weeding friends: hide empty walkers, shrink and stagger when 2-3 are out. */
 .weed-field .weed-walker.is-idle { display:none !important; }
-.weed-field[data-count="2"] .weed-walker, .weed-field[data-count="3"] .weed-walker { width:min(27vw,150px) !important; animation-name:weed-walk-multi !important; }
+.weed-field[data-count="2"] .weed-walker, .weed-field[data-count="3"] .weed-walker { width:min(38vw,200px) !important; animation-name:weed-walk-multi !important; }
 .weed-field[data-count="2"] .weed-walker[data-slot="1"], .weed-field[data-count="3"] .weed-walker[data-slot="1"] { animation-delay:-6s; bottom:20% !important; z-index:3 !important; }
 .weed-field[data-count="3"] .weed-walker[data-slot="2"] { animation-delay:-12s; bottom:4% !important; z-index:5 !important; }
 .weed-field[data-count="2"] .weed-walker[data-slot="0"], .weed-field[data-count="3"] .weed-walker[data-slot="0"] { bottom:10% !important; }
-@keyframes weed-walk-multi { 0%{left:4%} 45%{left:calc(96% - min(27vw,150px))} 50%{left:calc(96% - min(27vw,150px))} 95%{left:4%} 100%{left:4%} }
+@keyframes weed-walk-multi { 0%{left:4%} 45%{left:calc(96% - min(38vw,200px))} 50%{left:calc(96% - min(38vw,200px))} 95%{left:4%} 100%{left:4%} }
 .weed-field[data-count="2"] .weed-walker[data-slot="1"] .weed-friend, .weed-field[data-count="3"] .weed-walker[data-slot="1"] .weed-friend { animation-delay:-6s; }
 .weed-field[data-count="3"] .weed-walker[data-slot="2"] .weed-friend { animation-delay:-12s; }
 .weed-field .weed-beetle-helper { bottom:auto !important; top:34%; left:auto; right:6%; z-index:6; }
