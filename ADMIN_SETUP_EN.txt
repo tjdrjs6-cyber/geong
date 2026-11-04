@@ -1,0 +1,13 @@
+GEONGIMARKET ADMIN UPDATE
+
+1. In GitHub, replace server/index.mjs with the file in this ZIP.
+2. Commit changes and wait for Railway automatic deployment.
+3. Railway > geong > Variables > New Variable:
+   Name: ADMIN_USERNAME
+   Value: tjdrjs885
+4. Apply/deploy if prompted. Sign out and sign in again.
+5. Existing account must already exist. No password is required in Railway variables.
+6. Other users cannot see the admin in /api/users and cannot look up its house or send it mail, as already enforced by the original code. Public nickname may still appear in other contexts; audit any future ranking/chat features separately.
+7. Keep the repo PRIVATE. Do not expose database URLs, session cookies, or passwords.
+
+This update does not modify game saves, account credentials, or player balances.
