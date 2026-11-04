@@ -11,7 +11,7 @@ import { machineMarkup } from './toonMachine'
 
 const MACHINE_SPIN_SECONDS = 1.35
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
-const tierTag = (character: Character): string => character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
+const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
 const bonusTag = (character: Character): string => character.weedBonus ? `제초 +${character.weedBonus}%` : ''
 
 type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat'
@@ -823,7 +823,7 @@ export class GachaUi {
       const footer = has && interactive
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
-      return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
+      return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' || character.tier === 'legendary' ? ' is-super' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
         <div class="friend-chance">${tierTag(character)} · ${character.probability}%</div>
         <b>${has ? character.name : '???'}</b>${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}
@@ -864,7 +864,7 @@ export class GachaUi {
 
   private characterReveal(result: PullResult): RevealItem {
     const character = characterById(result.id)
-    return { image: CHARACTER_IMAGE_URLS[character.id], name: character.name, variant: character.variant, rare: character.tier === 'rare' || character.tier === 'super', grade: tierTag(character), chance: character.probability, color: character.color, accent: character.accent,
+    return { image: CHARACTER_IMAGE_URLS[character.id], name: character.name, variant: character.variant, rare: character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary', grade: tierTag(character), chance: character.probability, color: character.color, accent: character.accent,
       tag: result.duplicate ? '또 만났어요!' : `새 친구 등록 · +${result.bonus} 코인`, sub: result.duplicate ? '중복 · 이미 도감에 있어요' : `새 친구 · 도감 등록 +${result.bonus} 코인` }
   }
 
@@ -1180,7 +1180,7 @@ export class GachaUi {
       if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 중복 판매: 노말 3 · 레어 5 · 에픽 10 · 유니크 30코인 (원본 1개는 남아요).`
       grid.innerHTML = owned.length ? owned.map(c => {
         const extra = this.store.dupes[c.id] ?? 0
-        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small>${sellButtons('char', c.id, extra, CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' ? 'unique' : 'normal'])}</article>`
+        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small>${sellButtons('char', c.id, extra, CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' || c.tier === 'legendary' ? 'unique' : 'normal'])}</article>`
       }).join('') : '<p class="users-empty">아직 뽑은 캐릭터가 없어요.</p>'
     } else {
       const placed: Record<string, number> = {}
@@ -1421,7 +1421,7 @@ export class GachaUi {
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
-    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP).toFixed(2)}개/시간`
+    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 합산 공격력 ⚔ ${view.power} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
     const hp = this.root.querySelector<HTMLElement>('.battle-hp')

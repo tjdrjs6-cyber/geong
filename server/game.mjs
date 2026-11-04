@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
 // Server-authoritative gacha rules. Keep these values in sync with src/game/collection.ts (tests verify).
-export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'beetle']
+export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'beetle']
 /** Draw weights out of 100000 (operator table): 노말 6.07%/6.06%, 레어 2.20%, 에픽 1.00%, 유니크 0.30%. */
-export const WEIGHTS = {chiikawa: 6040, hachiware: 6040, usagi: 6040, momonga: 6040, kurimanju: 6040, shisa: 6040, kani: 6040, goblin: 6040, rakko: 6040, armor1: 6040, armor2: 6050, armor3: 6050, m_chiikawa: 2200, m_hachiware: 2200, m_usagi: 2200, m_momonga: 2200, m_kurimanju: 2200, m_shisa: 2200, m_kani: 2200, m_rakko: 2200, hanip: 2200, duip: 2200, siren: 1000, shimajiro: 1000, anoko: 1000, dekatsuyo: 1000, c_curry: 300, h_curry: 300, u_curry: 300, ginger_chiikawa: 300, beetle: 300}
+export const WEIGHTS = {chiikawa: 6080, hachiware: 6070, usagi: 6070, momonga: 6070, kurimanju: 6070, shisa: 6070, kani: 6070, goblin: 6070, rakko: 6070, armor1: 6070, armor2: 6070, armor3: 6070, m_chiikawa: 2100, m_hachiware: 2100, m_usagi: 2100, m_momonga: 2100, m_kurimanju: 2100, m_shisa: 2100, m_kani: 2100, m_rakko: 2100, hanip: 2100, duip: 2100, siren: 1000, shimajiro: 1000, anoko: 1000, dekatsuyo: 1000, c_curry: 300, h_curry: 300, u_curry: 300, ginger_chiikawa: 300, beetle: 300, ginger_hachiware: 300, ginger_usagi: 300, beetle_berserk: 50}
 /** Weeding speed bonus in percent. */
-export const WEED_BONUS = {chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0}
-export const RARE_IDS = ['siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'beetle']
+export const WEED_BONUS = {chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0}
+export const RARE_IDS = ['siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'beetle']
 export const TOTAL_WEIGHT = 100000
 export const STARTING_COINS = 100
 export const PULL_COST = 10
@@ -91,13 +91,17 @@ export function settleWeed(since, now, interval = WEED_HOUR_MS) {
 /** Hunting ground: the enemy has 100 HP and takes the friend's power as damage every 5 minutes. */
 export const ENEMY_HP = 100
 export const BATTLE_TICK_MS = 5 * 60_000
+export const BATTLE_DIAMOND_CHANCE = 0.4
 /** Battle power per friend. */
-export const POWER = {chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 5, beetle: 1}
+export const POWER = {chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 5, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50}
 /** Settles elapsed attacks: returns defeated enemies (1 coin each), the leftover damage and the new tick anchor. */
 export function settleBattle(since, damage, now, power) {
   const ticks = Math.max(0, Math.floor((now - since) / BATTLE_TICK_MS))
   const total = damage + ticks * power
-  return { kills: Math.floor(total / ENEMY_HP), damage: total % ENEMY_HP, since: since + ticks * BATTLE_TICK_MS }
+  const defeated = Math.floor(total / ENEMY_HP)
+  let diamonds = 0
+  for (let i = 0; i < defeated; i += 1) if (Math.random() < BATTLE_DIAMOND_CHANCE) diamonds += 1
+  return { kills: diamonds, damage: total % ENEMY_HP, since: since + ticks * BATTLE_TICK_MS }
 }
 
 /** 데코 뽑기: 50 decorations with equal chance; 20 coins each, 10 pulls for 180. */
@@ -216,7 +220,7 @@ export const characterSellPrice = id => id.startsWith('m_') || id === 'hanip' ||
   ? CHAR_SELL_PRICES.rare
   : ['siren', 'shimajiro', 'anoko', 'dekatsuyo'].includes(id)
     ? CHAR_SELL_PRICES.epic
-    : ['c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'beetle'].includes(id)
+    : ['c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'beetle'].includes(id)
       ? CHAR_SELL_PRICES.unique
       : CHAR_SELL_PRICES.normal
 export const DECO_SELL_PRICE = 5

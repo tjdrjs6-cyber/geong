@@ -1,6 +1,9 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art (transparent PNG), served locally in dev and from managed storage in builds. */
 const previewUrls: Record<CharacterId, string> = {
+  ginger_hachiware: '/assets/chars/ginger_hachiware.png',
+  ginger_usagi: '/assets/chars/ginger_usagi.png',
+  beetle_berserk: '/assets/chars/beetle_berserk.png',
   anoko: '/assets/chars/anoko.png',
   c_curry: '/assets/chars/c_curry.png',
   ginger_chiikawa: '/assets/chars/ginger_chiikawa.png',
@@ -35,6 +38,9 @@ const previewUrls: Record<CharacterId, string> = {
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
+  ginger_hachiware: '/assets/chars/ginger_hachiware.png',
+  ginger_usagi: '/assets/chars/ginger_usagi.png',
+  beetle_berserk: '/assets/chars/beetle_berserk.png',
   ginger_chiikawa: '/assets/chars/ginger_chiikawa.png',
   dekatsuyo: '/manus-storage/game/sha256/2b2af33e3f7f14f712d848dbe512b274dcd0dbb8a6d410039ad1e5339e40e727.png',
   h_curry: '/manus-storage/game/sha256/279d4d3e118d9fcc04876a4da23c63f0c9c9c8732075966692c14496891df51c.png',
