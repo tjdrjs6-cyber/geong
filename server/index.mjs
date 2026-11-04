@@ -419,8 +419,14 @@ async function updateBattle(accountId, nextCharacter) {
       earned = settled.kills
       battle = { ...battle, since: settled.since, damage: settled.damage }
     }
-    if (nextCharacter) battle = battle ? (battle.id === nextCharacter || battle.secondId === nextCharacter ? (battle.secondId === nextCharacter ? { ...battle, secondId: null } : battle.secondId ? { ...battle, id: battle.secondId, secondId: null } : battle) : battle.secondId ? { ...battle, secondId: nextCharacter } : { ...battle, secondId: nextCharacter }) : { id: nextCharacter, secondId: null, since: now, damage: 0 }
-    if (!battle) { await conn.rollback(); return { error: 'not_fighting' } }
+    if (nextCharacter) battle = battle ? (battle.id === nextCharacter || battle.secondId === nextCharacter ? (battle.secondId === nextCharacter ? { ...battle, secondId: null } : battle.secondId ? { ...battle, id: battle.secondId, secondId: null } : null) : battle.secondId ? { ...battle, secondId: nextCharacter } : { ...battle, secondId: nextCharacter }) : { id: nextCharacter, secondId: null, since: now, damage: 0 }
+    if (!battle) {
+      if (earned > 0) await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [earned, accountId])
+      state.diamonds = (state.diamonds ?? 0) + earned
+      await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
+      await conn.commit()
+      return { save: state, battle: null, earned, now }
+    }
     state.diamonds = (state.diamonds ?? 0) + earned
     if (earned > 0) await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [earned, accountId])
     await conn.query('INSERT INTO gm_battle (account_id, character_id, second_id, since_ms, damage) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), second_id = VALUES(second_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.secondId || '', battle.since, battle.damage])

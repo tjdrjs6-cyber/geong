@@ -501,9 +501,14 @@ export class GachaUi {
       if (this.weedBusy(id)) { this.toast(ERROR_TEXT.busy_weed); return }
       this.busy = true
       try {
+        const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id
         const earned = await this.store.startBattle(id)
         const name = fullName(characterById(id))
-        this.toast(earned > 0 ? `몬스터 ${earned}마리 처치 보상 다이아 ${earned}개! ${withJosa(name, '이', '가')} 토벌에 나섰어요!` : `${withJosa(name, '이', '가')} 토벌에 나섰어요! (전투력 ${battlePower(id)})`)
+        if (wasDeployed) {
+          this.toast(earned > 0 ? `${withJosa(name, '이', '가')} 토벌에서 돌아왔어요! · 처치 보상 다이아 +${earned}개` : `${withJosa(name, '이', '가')} 토벌에서 돌아왔어요!`)
+        } else {
+          this.toast(earned > 0 ? `몬스터 ${earned}마리 처치 보상 다이아 ${earned}개! ${withJosa(name, '이', '가')} 토벌에 나섰어요!` : `${withJosa(name, '이', '가')} 토벌에 나섰어요! (전투력 ${battlePower(id)})`)
+        }
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.lastEnemyHp = -1
       this.renderBattle()
