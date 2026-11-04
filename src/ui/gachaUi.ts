@@ -14,7 +14,7 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
 const bonusTag = (character: Character): string => character.weedBonus ? `제초 +${character.weedBonus}%` : ''
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -47,6 +47,9 @@ export class GachaUi {
   private weedTimer = 0
   private lastEnemyHp = -1
   private battleSyncing = false
+  private clawX = 50
+  private clawY = 12
+  private clawBusy = false
   private users: PublicUser[] = []
 
   constructor(private readonly store: RemoteGachaStore, private readonly audio: Audio, private readonly actions: Actions) {
@@ -76,13 +79,14 @@ export class GachaUi {
     this.screen = screen
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
-      const active = node.dataset.screen === screen || (node.dataset.screen === 'title' && (screen === 'collection' || screen === 'decos' || screen === 'result' || screen === 'users' || screen === 'roulette' || screen === 'mail' || screen === 'featured' || screen === 'storage' || screen === 'suggest'))
+      const active = node.dataset.screen === screen || (node.dataset.screen === 'title' && (screen === 'claw' || screen === 'collection' || screen === 'decos' || screen === 'result' || screen === 'users' || screen === 'roulette' || screen === 'mail' || screen === 'featured' || screen === 'storage' || screen === 'suggest'))
       node.classList.toggle('is-active', active)
       node.setAttribute('aria-hidden', String(!active))
     })
     this.root.dataset.activeScreen = screen
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
+    if (screen === 'claw') this.renderClaw()
     if (screen === 'mail') void this.loadMail()
     if (screen === 'storage') this.renderStorage()
     if (screen === 'suggest') void this.loadSuggest()
@@ -206,7 +210,7 @@ export class GachaUi {
           <div class="header-right"><div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아 코인"><span>💎</span><strong class="diamond-value">0</strong><span>다이아 코인</span></div></div>
         </header>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-storage" data-action="storage"><span>🎒</span>보관함</button><button class="nav-button nav-suggest" data-action="suggest"><span>💌</span>건의함</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-storage" data-action="storage"><span>🎒</span>보관함</button><button class="nav-button nav-suggest" data-action="suggest"><span>💌</span>건의함</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -237,10 +241,10 @@ export class GachaUi {
         <div class="modal-card roulette-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">DAILY ROULETTE</div><h2 id="roulette-title">오늘의 룰렛</h2>
-          <p class="collection-summary">하루에 한 번 돌릴 수 있어요. 밤 12시(한국 시간)에 다시 열려요.</p>
+          <p class="collection-summary">한국 시간 오전·오후 각 1회, 하루 최대 2회 돌릴 수 있어요.</p>
           <div class="roulette-wrap"><i class="roulette-pointer" aria-hidden="true"></i>${rouletteWheel()}</div>
           <ul class="roulette-odds">${ROULETTE_PRIZES.map(p => `<li><b>${p.coins}코인</b><span>${p.percent}%</span></li>`).join('')}</ul>
-          <button class="modal-primary roulette-spin" data-action="roulette-spin">룰렛 돌리기</button>
+          <button class="modal-primary roulette-spin" data-action="roulette-spin">룰렛 돌리기</button><div class="roulette-pop-reward" role="status" aria-live="polite" hidden></div>
         </div>
       </section>
       <section class="gacha-modal" data-screen="decos" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decos-title">
@@ -269,6 +273,20 @@ export class GachaUi {
           <p class="collection-summary mail-summary">유저 목록에서 유저를 골라 편지와 코인을 보낼 수 있어요.</p>
           <div class="mail-list" role="list"></div>
           <div class="mail-actions"><button class="modal-primary mail-claim-all" data-action="mail-claim-all">코인 모두 받기</button><button class="modal-secondary" data-action="users">✉ 편지 쓰러 가기</button></div>
+        </div>
+      </section>
+      <section class="gacha-modal claw-screen" data-screen="claw" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="claw-title">
+        <div class="modal-card claw-card">
+          <button class="modal-close" data-action="close" aria-label="닫기">×</button>
+          <h2 id="claw-title">🧸 치이카와 인형뽑기</h2>
+          <p class="claw-desc">💎 1회 1다이아 코인 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
+          <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 성공 확률은 매번 0~50% 랜덤</p>
+          <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
+            <div class="claw-rail"></div><div class="claw-arm"><div class="claw-wire"></div><div class="claw-head">⌄</div></div>
+            <div class="claw-toys"></div><div class="claw-chute">출구 ↓</div><div class="claw-prize"></div>
+          </div>
+          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play">🕹️ 뽑기!<small>💎 1개</small></button></div>
+          <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
       <section class="gacha-modal" data-screen="storage" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="storage-title">
@@ -322,6 +340,8 @@ export class GachaUi {
     if (!action) return
     this.audio.unlock()
     this.audio.play('ui')
+    if (action === 'claw') { this.show('claw'); return }
+    if (action?.startsWith('claw-')) { await this.handleClaw(action); return }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
@@ -514,6 +534,58 @@ export class GachaUi {
 
   /** Operator accounts have unlimited coins (the server never charges them). */
   private get isAdmin(): boolean { return Boolean(this.store.user?.admin) }
+
+  private renderClaw(): void {
+    this.renderWallet()
+    const toys = this.root.querySelector<HTMLElement>('.claw-toys')
+    if (toys && !toys.children.length) toys.innerHTML = DECOS.slice(0, 12).map((deco, i) => `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="" style="--i:${i}"/>`).join('')
+    this.updateClawPosition()
+  }
+
+  private updateClawPosition(): void {
+    const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+    if (arm) { arm.style.left = `${this.clawX}%`; arm.style.top = `${this.clawY}%` }
+  }
+
+  private async handleClaw(action: string): Promise<void> {
+    if (this.clawBusy) return
+    const directions: Record<string, [number, number]> = { 'claw-up':[0,-8], 'claw-down':[0,8], 'claw-left':[-10,0], 'claw-right':[10,0] }
+    if (directions[action]) {
+      const [dx,dy] = directions[action]
+      this.clawX = Math.max(12,Math.min(88,this.clawX+dx))
+      this.clawY = Math.max(8,Math.min(34,this.clawY+dy))
+      this.updateClawPosition()
+      return
+    }
+    if (action !== 'claw-play') return
+    this.clawBusy = true
+    const btn = this.root.querySelector<HTMLButtonElement>('.claw-play')
+    const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+    const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
+    const msg = this.root.querySelector<HTMLElement>('.claw-message')
+    if (btn) btn.disabled = true
+    try {
+      // The server decides the result and debits the diamond atomically.
+      const result = await this.store.playClaw()
+      this.renderWallet()
+      if (msg) msg.textContent = '집게가 내려갑니다…'
+      arm?.classList.add('is-dropping')
+      await new Promise(resolve => window.setTimeout(resolve, 900))
+      arm?.classList.remove('is-dropping')
+      if (result.won && result.prize) {
+        const deco = DECOS.find(item => item.id === result.prize)
+        if (arm) { arm.style.left = '88%'; arm.style.top = '8%' }
+        await new Promise(resolve => window.setTimeout(resolve, 650))
+        if (deco && prizeEl) {
+          prizeEl.innerHTML = `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="${deco.name}"/>`
+          prizeEl.classList.remove('is-delivered'); void prizeEl.offsetWidth
+          prizeEl.classList.add('is-delivered')
+        }
+        if (msg) msg.textContent = `🎉 성공! ${deco?.name ?? '데코'} 획득! (이번 확률 ${result.chance}%) · 보관함에 지급됐어요.`
+      } else if (msg) msg.textContent = `아쉽게 실패했어요! (이번 확률 ${result.chance}%) 다음에 다시 도전해요.`
+    } catch (error) { this.handleError(error) }
+    finally { this.clawBusy = false; if (btn) btn.disabled = false; this.updateClawPosition() }
+  }
 
   private renderWallet(): void {
     this.root.querySelectorAll<HTMLElement>('.wallet-value').forEach(balance => { balance.textContent = this.isAdmin ? '∞' : this.store.data.gems.toLocaleString('ko-KR') })
@@ -1215,6 +1287,8 @@ export class GachaUi {
     if (this.wheelSpinning) return
     const wheel = this.root.querySelector<SVGGElement>('.roulette-wheel')
     const button = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
+    const rewardMessage = this.root.querySelector<HTMLElement>('.roulette-pop-reward')
+    if (rewardMessage) { rewardMessage.hidden = true; rewardMessage.textContent = '' }
     this.wheelSpinning = true
     if (button) { button.disabled = true; button.textContent = '빙글빙글…' }
     try {
@@ -1228,7 +1302,15 @@ export class GachaUi {
       this.audio.play('ui')
       await new Promise(resolve => window.setTimeout(resolve, 4200))
       this.audio.play('pickup')
-      this.toast(`🎉 룰렛 당첨! ${result.prize}코인을 받았어요.`)
+      
+      if (rewardMessage) {
+        rewardMessage.textContent = `🎉 ${result.prize}코인 획득!!`
+        rewardMessage.hidden = false
+        rewardMessage.classList.remove('pop-in')
+        void rewardMessage.offsetWidth
+        rewardMessage.classList.add('pop-in')
+        window.setTimeout(() => { rewardMessage.hidden = true; rewardMessage.classList.remove('pop-in') }, 2300)
+      }
       this.root.querySelector('.roulette-wrap')?.classList.add('is-win')
       window.setTimeout(() => this.root.querySelector('.roulette-wrap')?.classList.remove('is-win'), 1600)
     } catch (error) { this.handleError(error) } finally {

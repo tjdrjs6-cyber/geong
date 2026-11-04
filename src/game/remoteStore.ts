@@ -47,6 +47,7 @@ export const ERROR_TEXT: Record<string, string> = {
   house_friends_full: '친구는 최대 3명까지 데려올 수 있어요.',
   invalid_house: '배치를 저장하지 못했어요. 다시 시도해 주세요.',
   not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',
+  not_enough_diamonds: '다이아 코인이 부족해요. 토벌장에서 모아보세요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
   mail_empty: '편지 내용이나 보낼 코인을 적어 주세요.',
@@ -276,6 +277,13 @@ export class RemoteGachaStore {
     this.data = result.save
     if (result.dupes) this.dupes = result.dupes
     return result.results
+  }
+
+  async playClaw(): Promise<{ won: boolean; chance: number; prize: string | null }> {
+    const result = await request<{ won: boolean; chance: number; prize: string | null; save: GachaSave; decos: DecoCounts }>('claw/play', {})
+    this.data = result.save
+    this.decos = result.decos
+    return { won: result.won, chance: result.chance, prize: result.prize }
   }
 
   async pullDecos(count: DecoPullCount): Promise<DecoPullResult[]> {

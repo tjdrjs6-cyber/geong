@@ -1140,3 +1140,56 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .gacha-nav .nav-button {font-size:8px !important;gap:1px !important;}
   .gacha-nav .nav-button span {font-size:10px !important;}
 }
+
+/* Responsive claw-machine minigame (PC and mobile) */
+.claw-screen .claw-card{width:min(96vw,540px);max-height:94dvh;overflow-y:auto;padding:18px;box-sizing:border-box;text-align:center}
+.claw-card h2{margin:5px 0 8px;font-size:clamp(20px,4vw,27px)}
+.claw-desc,.claw-balance{font-size:12px;line-height:1.5;margin:6px 0;color:#79515b}
+.claw-machine{height:clamp(220px,42dvh,390px);position:relative;overflow:hidden;border:12px solid #f2a5bf;border-radius:24px;background:linear-gradient(140deg,#cceaff,#fff1fa 75%);box-shadow:inset 0 0 0 3px #fff,0 8px 0 #e8b1b6}
+.claw-rail{position:absolute;top:6%;left:5%;right:5%;height:6px;border-radius:5px;background:#9c7287}
+.claw-arm{position:absolute;top:12%;left:50%;z-index:4;transform:translateX(-50%);transition:left .23s,top .23s;pointer-events:none}
+.claw-wire{height:40px;width:4px;background:#72545d;margin:auto;transition:height .5s}
+.claw-head{width:62px;height:45px;border:8px solid #f6c1d1;border-top:12px solid #f6c1d1;border-bottom:0;border-radius:50% 50% 12px 12px;color:#674e58;font-size:40px;line-height:20px}
+.claw-arm.is-dropping .claw-wire{height:145px}
+.claw-toys{position:absolute;bottom:10%;left:5%;right:5%;height:52%;display:grid;grid-template-columns:repeat(6,1fr);align-items:end;gap:0}
+.claw-toys img{width:100%;height:75px;object-fit:contain;filter:drop-shadow(0 3px 2px #c8a7b0);transform:translateY(calc((var(--i) % 3) * 7px))}
+.claw-chute{position:absolute;bottom:0;right:2%;background:#fff0bc;border:3px solid #c77d96;border-radius:9px;padding:8px;font-size:12px;font-weight:bold}
+.claw-prize{position:absolute;bottom:2%;right:12%;z-index:5;opacity:0;transform:translateY(-70px);transition:transform .8s,opacity .3s}
+.claw-prize img{width:65px;height:65px;object-fit:contain}
+.claw-prize.is-delivered{opacity:1;transform:translateY(0)}
+.claw-controls{display:flex;justify-content:center;align-items:center;gap:20px;margin-top:16px}
+.claw-arrows{text-align:center}.claw-arrows>div{display:flex;gap:5px;margin-top:5px}
+.claw-controls button{touch-action:manipulation;border:2px solid #d9a3b6;border-radius:14px;background:#fff4f8;color:#845269;min-width:45px;min-height:43px;font-weight:bold;cursor:pointer}
+.claw-play{background:#ffe18c!important;min-width:115px!important;min-height:70px!important;font-size:18px!important}.claw-play small{display:block;font-size:11px}
+.claw-message{min-height:40px;font-weight:700;font-size:13px;margin:10px 0 0}
+@media(max-width:760px){.claw-screen .claw-card{padding:12px}.claw-machine{height:36dvh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}}
+
+/* Persistent roulette reward notice, visible on PC and mobile. */
+.roulette-reward-message:not([hidden]) {display:block;margin:12px auto 0;padding:12px 14px;border-radius:14px;background:#fff1ce;border:1px solid #e7c77d;color:#68471e;font-weight:800;font-size:14px;line-height:1.5;text-align:center;}
+
+/* Profile requested at the top center on mobile; keep wallets out of its row. */
+@media screen and (max-width:760px) {
+  .gacha-screen > .profile-chip {
+    position:absolute !important;
+    top:calc(9px + var(--safe-t,0px)) !important;
+    left:50% !important;
+    right:auto !important;
+    transform:translateX(-50%) !important;
+    max-width:min(44vw,180px) !important;
+    z-index:30 !important;
+  }
+  .gacha-screen > .profile-chip:active {transform:translateX(-50%) translateY(1px) !important;}
+  .gacha-header .header-right {
+    position:absolute !important;
+    top:calc(52px + var(--safe-t,0px)) !important;
+    right:max(8px,env(safe-area-inset-right,0px)) !important;
+    max-width:calc(100% - 16px) !important;
+    justify-content:flex-end !important;
+  }
+}
+
+/* Roulette reward: short pop-up over wheel on desktop and mobile. */
+.roulette-pop-reward:not([hidden]) {display:block;position:absolute;top:42%;left:50%;width:max-content;max-width:90%;transform:translate(-50%,-50%);padding:15px 23px;border:2px solid #f4c969;border-radius:24px;background:#fff5d6;color:#78441e;box-shadow:0 12px 35px #68432955;font-size:clamp(18px,4.5vw,26px);font-weight:900;z-index:25;pointer-events:none;text-align:center;}
+.roulette-pop-reward.pop-in {animation:roulette-reward-pop 2.3s ease-in-out both;}
+@keyframes roulette-reward-pop {0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}13%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}23%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%) scale(1.03)}}
+@media(prefers-reduced-motion:reduce){.roulette-pop-reward.pop-in{animation:none;}}
