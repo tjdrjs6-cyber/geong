@@ -33,8 +33,8 @@ export const CHARACTERS = [
   { id: 'ginger_chiikawa', name: '치이카와', variant: '진저맨', probability: 0.3, tier: 'super', weedBonus: 50, power: 5, color: '#ffe5ca', accent: '#c78c55' },
   { id: 'ginger_hachiware', name: '하치와레', variant: '진저맨', probability: 0.3, tier: 'super', weedBonus: 50, power: 10, color: '#ffe5ca', accent: '#c78c55' },
   { id: 'ginger_usagi', name: '우사기', variant: '진저맨', probability: 0.3, tier: 'super', weedBonus: 50, power: 10, color: '#ffe5ca', accent: '#c78c55' },
-  { id: 'beetle_berserk', name: '풍뎅이', variant: '광폭', probability: 0.05, tier: 'legendary', weedBonus: 0, power: 50, color: '#c9a494', accent: '#75452e' },
   { id: 'beetle', name: '풍뎅이', variant: '', probability: 0.3, tier: 'super', weedBonus: 0, power: 1, color: '#f6e6dc', accent: '#a8705a' },
+  { id: 'beetle_berserk', name: '풍뎅이', variant: '광폭', probability: 0.05, tier: 'legendary', weedBonus: 0, power: 50, color: '#c9a494', accent: '#75452e' },
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']

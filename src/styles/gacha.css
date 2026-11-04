@@ -2620,3 +2620,12 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   color:#65458b !important; font-size:12px !important; font-weight:900 !important;
   line-height:1.3 !important; text-align:center !important; white-space:nowrap !important;
 }
+
+/* v0.25: legendary is always gold, not the unique purple. */
+.friend-card.is-legendary .friend-chance { color:#b77a00!important; font-weight:900; }
+.friend-card.is-legendary.is-owned { border-color:#e7b53b!important; background:linear-gradient(160deg,#fff7d8,#fffdf3)!important;box-shadow:0 0 0 2px rgba(244,195,55,.65),0 10px 26px rgba(186,133,16,.18)!important; }
+.friend-card.is-legendary .friend-avatar { background:radial-gradient(circle at 30% 25%,#fffdf2,#ffe59a 78%,#edbd48)!important; }
+.collection-grid .friend-card.is-legendary .friend-select {background:#ffe49a;color:#865600;}
+/* Keep entire gingerbread costume visible, including both feet. */
+.collection-grid .friend-card .friend-avatar img[src*="ginger_hachiware"],
+.collection-grid .friend-card .friend-avatar img[src*="ginger_usagi"] {object-fit:contain!important;object-position:center!important; padding:3px;box-sizing:border-box;}
