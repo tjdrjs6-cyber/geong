@@ -449,7 +449,7 @@ export class GachaUi {
       const id = button.dataset.id as CharacterId
       const name = fullName(characterById(id))
       const leaving = this.store.isWeeding(id)
-      if (!leaving && this.store.battle?.id === id) { this.toast(ERROR_TEXT.busy_battle); return }
+      if (!leaving && (this.store.battle?.id === id || this.store.battle?.secondId === id)) { this.toast(ERROR_TEXT.busy_battle); return }
       if (!leaving && (this.store.weed?.members.length ?? 0) >= WEED_MAX) { this.toast(ERROR_TEXT.weed_full); return }
       this.busy = true
       try {
@@ -467,7 +467,6 @@ export class GachaUi {
     }
     if (action === 'battle-pick' && button.dataset.id) {
       const id = button.dataset.id as CharacterId
-      if (this.store.battle?.id === id) return
       if (this.weedBusy(id)) { this.toast(ERROR_TEXT.busy_weed); return }
       this.busy = true
       try {
@@ -1118,8 +1117,8 @@ export class GachaUi {
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
     if (picker) {
       picker.innerHTML = owned.length
-        ? owned.map(character => `<button class="weed-pick${this.store.isWeeding(character.id) ? ' is-active' : ''}${this.store.battle?.id === character.id ? ' is-busy' : ''}" role="listitem" data-action="weed-pick" data-id="${character.id}" aria-pressed="${this.store.isWeeding(character.id)}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}${character.weedBonus ? `<em class="is-bonus">+${character.weedBonus}%</em>` : ''}${this.store.battle?.id === character.id ? '<em class="is-busy-tag">토벌 중</em>' : ''}${character.id === 'beetle' && this.store.weed?.beetle ? '<em class="is-bonus">도우미</em>' : ''}</button>`).join('')
+        ? owned.map(character => `<button class="weed-pick${this.store.isWeeding(character.id) ? ' is-active' : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? ' is-busy' : ''}" role="listitem" data-action="weed-pick" data-id="${character.id}" aria-pressed="${this.store.isWeeding(character.id)}">
+            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}${character.weedBonus ? `<em class="is-bonus">+${character.weedBonus}%</em>` : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? '<em class="is-busy-tag">토벌 중</em>' : ''}${character.id === 'beetle' && this.store.weed?.beetle ? '<em class="is-bonus">도우미</em>' : ''}</button>`).join('')
         : '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'
     }
     const members = this.store.weed?.members ?? []
@@ -1143,11 +1142,22 @@ export class GachaUi {
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
     if (picker) {
       picker.innerHTML = owned.length
-        ? owned.map(character => `<button class="weed-pick${this.store.battle?.id === character.id ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id}">
+        ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id}">
             <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}<em class="is-power">⚔ ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
+    const second = this.store.battle?.secondId ? characterById(this.store.battle.secondId) : undefined
+    const secondUnit = this.root.querySelector<HTMLElement>('.bf-friend-second')
+    if (secondUnit) {
+      secondUnit.classList.toggle('is-empty', !second)
+      const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
+      const icon = secondUnit.querySelector<HTMLElement>('.bf-friend-icon')
+      const power = secondUnit.querySelector<HTMLElement>('.bf-friend-power')
+      if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : ''
+      if (icon) icon.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="" />` : ''
+      if (power) power.textContent = second ? `⚔ ${battlePower(second.id)}` : ''
+    }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
@@ -1182,7 +1192,7 @@ export class GachaUi {
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
     const status = this.root.querySelector<HTMLElement>('.battle-status')
-    if (status) status.textContent = fighter ? `${withJosa(fighter.name, '이', '가')} 몬스터와 싸우는 중이에요! (전투력 ${view.power})` : '아래에서 토벌할 친구를 한 명 골라 주세요.'
+    if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 합산 공격력 ⚔ ${view.power} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
     const hp = this.root.querySelector<HTMLElement>('.battle-hp')
     if (hp) hp.textContent = `${view.hp} / ${ENEMY_HP}`
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')

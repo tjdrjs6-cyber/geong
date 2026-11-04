@@ -8,7 +8,7 @@ export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; since: number; damage: number }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean }
 export type MailItem = { id: number; from: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
 export type SentItem = { id: number; to: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
@@ -125,7 +125,7 @@ export class RemoteGachaStore {
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; nextIn: number; power: number } {
     if (!this.battle) return { kills: 0, hp: ENEMY_HP, nextIn: BATTLE_TICK_MS, power: 0 }
-    const power = battlePower(this.battle.id)
+    const power = battlePower(this.battle.id) + (this.battle.secondId ? battlePower(this.battle.secondId) : 0)
     const elapsed = Math.max(0, this.serverNow() - this.battle.since)
     const total = this.battle.damage + Math.floor(elapsed / BATTLE_TICK_MS) * power
     return { kills: Math.floor(total / ENEMY_HP), hp: ENEMY_HP - (total % ENEMY_HP), nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power }

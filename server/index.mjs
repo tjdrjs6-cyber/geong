@@ -61,6 +61,7 @@ async function prepareDatabase() {
     since_ms BIGINT NOT NULL,
     damage INT NOT NULL DEFAULT 0
   )`)
+  try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_weeding (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     character_id VARCHAR(20) NOT NULL,
@@ -369,8 +370,8 @@ async function getWeed(accountId) {
 }
 
 async function getBattle(accountId) {
-  const [rows] = await pool.query('SELECT character_id, since_ms, damage FROM gm_battle WHERE account_id = ?', [accountId])
-  return rows[0] ? { id: rows[0].character_id, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+  const [rows] = await pool.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ?', [accountId])
+  return rows[0] ? { id: rows[0].character_id, secondId: rows[0].second_id || null, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
 }
 
 /** Settles defeated enemies into coins and optionally switches the fighting friend, atomically with the save. */
@@ -380,9 +381,9 @@ async function updateBattle(accountId, nextCharacter) {
     await conn.beginTransaction()
     const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
-    const [rows] = await conn.query('SELECT character_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
+    const [rows] = await conn.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
     const now = Date.now()
-    let battle = rows[0] ? { id: rows[0].character_id, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+    let battle = rows[0] ? { id: rows[0].character_id, secondId: rows[0].second_id || null, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
     if (nextCharacter && !state.owned.includes(nextCharacter)) { await conn.rollback(); return { error: 'not_owned' } }
     if (nextCharacter) {
       const [busy] = await conn.query('SELECT 1 FROM gm_weed_slots WHERE account_id = ? AND character_id = ? UNION ALL SELECT 1 FROM gm_weeding WHERE account_id = ? AND beetle = 1 AND ? = ?', [accountId, nextCharacter, accountId, nextCharacter, BEETLE_ID])
@@ -390,15 +391,15 @@ async function updateBattle(accountId, nextCharacter) {
     }
     let earned = 0
     if (battle) {
-      const settled = settleBattle(battle.since, battle.damage, now, POWER[battle.id] ?? 10)
+      const settled = settleBattle(battle.since, battle.damage, now, (POWER[battle.id] ?? 10) + (battle.secondId ? (POWER[battle.secondId] ?? 10) : 0))
       earned = settled.kills
-      battle = { id: battle.id, since: settled.since, damage: settled.damage }
+      battle = { ...battle, since: settled.since, damage: settled.damage }
     }
-    if (nextCharacter) battle = battle ? { ...battle, id: nextCharacter } : { id: nextCharacter, since: now, damage: 0 }
+    if (nextCharacter) battle = battle ? (battle.id === nextCharacter || battle.secondId === nextCharacter ? (battle.secondId === nextCharacter ? { ...battle, secondId: null } : battle.secondId ? { ...battle, id: battle.secondId, secondId: null } : battle) : battle.secondId ? { ...battle, secondId: nextCharacter } : { ...battle, secondId: nextCharacter }) : { id: nextCharacter, secondId: null, since: now, damage: 0 }
     if (!battle) { await conn.rollback(); return { error: 'not_fighting' } }
     state.diamonds = (state.diamonds ?? 0) + earned
     if (earned > 0) await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [earned, accountId])
-    await conn.query('INSERT INTO gm_battle (account_id, character_id, since_ms, damage) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.since, battle.damage])
+    await conn.query('INSERT INTO gm_battle (account_id, character_id, second_id, since_ms, damage) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), second_id = VALUES(second_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.secondId || '', battle.since, battle.damage])
     await conn.commit()
     return { save: state, battle, earned, now }
   } catch (error) {
@@ -443,7 +444,7 @@ async function updateWeed(accountId, op = {}) {
       if (!state.owned.includes(op.add)) return fail('not_owned')
       if (members.some(m => m.id === op.add)) return fail('already_weeding')
       if (members.length >= WEED_MAX) return fail('weed_full')
-      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND character_id = ?', [accountId, op.add])
+      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND (character_id = ? OR second_id = ?)', [accountId, op.add, op.add])
       if (busy.length) return fail('busy_battle')
     }
     if (op.remove && !members.some(m => m.id === op.remove)) return fail('not_weeding')
