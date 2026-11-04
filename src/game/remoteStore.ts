@@ -198,6 +198,9 @@ export class RemoteGachaStore {
     this.data = result.save
     return result
   }
+  async broadcastMail(message: string, coins: number): Promise<{ count: number; coins: number }> {
+    return request<{ count: number; coins: number }>('admin/mail/broadcast', { message, coins })
+  }
   async deleteMail(id: number, box: 'in' | 'sent'): Promise<{ claimed: number; box: Mailbox }> {
     const result = await request<Mailbox & { claimed: number; save: GachaSave }>('mail/delete', { id, box })
     this.data = result.save

@@ -318,7 +318,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">MY PROFILE</div><h2 id="featured-title">내 프로필</h2>
           <div class="profile-card"><span class="profile-big"><img alt="" /></span><b class="profile-big-name"></b><small class="profile-stats"></small></div>
-          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">📮 우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">✉ 우편 보내기</button><button class="modal-secondary" data-action="storage">🎒 보관함</button><button class="modal-secondary" data-action="suggest">💌 건의함</button></div>
+          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">📮 우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">✉ 우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="storage">🎒 보관함</button><button class="modal-secondary" data-action="suggest">💌 건의함</button></div>
           <h3 class="profile-sub">대표 사진 바꾸기</h3>
           <p class="collection-summary">내가 뽑은 친구 중에서 골라요. 대표 사진은 가챠 무대와 유저 목록에 보여요.</p>
           <div class="collection-grid featured-grid" role="list"></div>
@@ -355,6 +355,8 @@ export class GachaUi {
     if (action === 'battle') { this.show('battle'); void this.syncBattle(); return }
     if (action === 'users') { this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
+    if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
+    if (action === 'admin-broadcast-send') { await this.sendBroadcast(); return }
     if (action === 'storage') { this.show('storage'); return }
     if (action === 'suggest') { this.show('suggest'); return }
     if (action === 'featured') { this.show('featured'); return }
@@ -874,6 +876,7 @@ export class GachaUi {
       img.classList.toggle('is-placeholder', !has)
     })
     const name = this.root.querySelector<HTMLElement>('.profile-name'); if (name) name.textContent = nick
+    this.root.querySelectorAll<HTMLButtonElement>('.admin-broadcast-entry').forEach(el => { el.hidden = !this.isAdmin })
     const sub = this.root.querySelector<HTMLElement>('.profile-text small'); if (sub) sub.textContent = this.store.user?.admin ? '운영자 · 우편함' : '대표 · 우편함'
     const bigName = this.root.querySelector<HTMLElement>('.profile-big-name'); if (bigName) bigName.textContent = `${nick}${has ? ` · 대표 ${fullName(characterById(id))}` : ''}`
     const stats = this.root.querySelector<HTMLElement>('.profile-stats')
@@ -1059,6 +1062,40 @@ export class GachaUi {
   private async deleteSuggestion(id: number): Promise<void> {
     if (!window.confirm('이 건의를 삭제할까요?')) return
     try { this.renderSuggest(await this.store.deleteSuggestion(id)); this.toast('건의를 삭제했어요.') } catch (error) { this.handleError(error) }
+  }
+
+  private renderBroadcast(): void {
+    if (!this.isAdmin || this.store.user?.username !== 'tjdrjs885') return
+    const body = this.root.querySelector<HTMLElement>('.users-body')
+    if (!body) return
+    body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="users">← 유저 목록</button><b>📢 전체 우편 발송</b><span></span></div>
+      <div class="mail-form admin-broadcast-form">
+        <p>가입한 일반 유저 모두에게 같은 편지와 코인을 보냅니다. 코인은 유저 1명당 지급할 수량입니다.</p>
+        <label for="broadcast-message">편지 내용 (필수 · 최대 200자)</label>
+        <textarea id="broadcast-message" class="mail-text-input" maxlength="200" rows="4" placeholder="전체 유저에게 보낼 내용을 적어 주세요"></textarea>
+        <label for="broadcast-coins">유저 1명당 지급할 코인 (0~1,000,000)</label>
+        <input id="broadcast-coins" class="mail-coin-input" type="number" min="0" max="1000000" step="1" value="0" />
+        <button class="modal-primary" data-action="admin-broadcast-send">📨 전체 유저에게 보내기</button>
+      </div>`
+  }
+
+  private async sendBroadcast(): Promise<void> {
+    if (!this.isAdmin || this.store.user?.username !== 'tjdrjs885') return
+    const body = this.root.querySelector<HTMLElement>('.users-body')
+    const message = body?.querySelector<HTMLTextAreaElement>('#broadcast-message')?.value.trim() ?? ''
+    const coins = Number(body?.querySelector<HTMLInputElement>('#broadcast-coins')?.value)
+    if (!message || message.length > 200 || !Number.isSafeInteger(coins) || coins < 0 || coins > 1000000) {
+      this.toast('편지 내용과 코인 수량을 확인해 주세요.'); return
+    }
+    if (!window.confirm(`전체 일반 유저에게 편지와 1인당 ${coins.toLocaleString()}코인을 보내시겠어요? 발송은 취소할 수 없습니다.`)) return
+    const button = body?.querySelector<HTMLButtonElement>('[data-action="admin-broadcast-send"]')
+    if (button) button.disabled = true
+    try {
+      const result = await this.store.broadcastMail(message, coins)
+      this.notice('전체 우편 발송 완료', `${result.count}명에게 편지와 1인당 ${coins.toLocaleString()}코인을 보냈어요.`)
+      this.audio.play('win')
+      this.show('featured')
+    } catch (error) { this.handleError(error); if (button) button.disabled = false }
   }
 
   private async renderCompose(nickname: string): Promise<void> {

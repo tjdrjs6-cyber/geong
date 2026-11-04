@@ -707,6 +707,37 @@ const routes = {
     }
     send(res, 200, { save: await getSave(account.id), to, ...(await mailbox(account.id)) })
   },
+  'POST /api/admin/mail/broadcast': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    // The permission is enforced on the server, not merely hidden in the UI.
+    if (!account.is_admin || account.username !== 'tjdrjs885') return send(res, 403, { error: 'admin_only' })
+    const body = await readJson(req)
+    const message = typeof body.message === 'string' ? body.message.trim() : ''
+    const coins = Number(body.coins)
+    if (!message || message.length > 200 || !Number.isSafeInteger(coins) || coins < 0 || coins > 1000000) {
+      return send(res, 400, { error: 'invalid_broadcast' })
+    }
+    const conn = await pool.getConnection()
+    let count = 0
+    try {
+      await conn.beginTransaction()
+      const [recipients] = await conn.query('SELECT id FROM gm_accounts WHERE is_admin = 0 ORDER BY id')
+      count = recipients.length
+      if (count > 10000) { await conn.rollback(); return send(res, 400, { error: 'too_many_recipients' }) }
+      const now = Date.now()
+      for (const recipient of recipients) {
+        await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?)', [account.id, recipient.id, message, coins, checkInDay(), now])
+        await trimInbox(conn, recipient.id)
+      }
+      await trimSent(conn, account.id)
+      await conn.commit()
+    } catch (error) {
+      await conn.rollback().catch(() => {})
+      throw error
+    } finally { conn.release() }
+    send(res, 200, { count, coins })
+  },
   'POST /api/mail/claim': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })

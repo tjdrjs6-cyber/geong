@@ -1696,3 +1696,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     width:21vw;
   }
 }
+
+/* Admin-only broadcast compose panel */
+.admin-broadcast-entry[hidden] { display: none !important; }
+.admin-broadcast-form textarea.mail-text-input { width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box; }
