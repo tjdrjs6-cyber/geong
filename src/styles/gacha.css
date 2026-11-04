@@ -1562,3 +1562,18 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen>.collection-peek .soft-button{height:34px!important;min-height:34px!important;max-height:34px!important;margin:0!important;padding:4px!important}
  .gacha-screen>.top-rewards{top:324px!important}
 }
+
+/* Compact mobile controls, aligned in a narrow right rail. */
+@media(max-width:760px){
+ .gacha-screen .gacha-header .header-right,.gacha-screen>.collection-peek,.gacha-screen>.top-rewards{right:6px!important;width:clamp(98px,27vw,116px)!important;max-width:116px!important;box-sizing:border-box!important}
+ .gacha-screen .gacha-header .header-right{top:calc(5px + var(--safe-t,0px))!important;gap:4px!important}
+ .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{width:100%!important;height:30px!important;min-height:30px!important;max-height:30px!important;flex:0 0 30px!important;padding:3px 5px!important;border-radius:12px!important;font-size:10px!important;gap:2px!important;box-sizing:border-box!important}
+ .gacha-screen>.collection-peek{top:calc(75px + var(--safe-t,0px))!important;height:110px!important;min-height:110px!important;max-height:110px!important;padding:5px!important;gap:2px!important;border-radius:12px!important;justify-content:space-between!important}
+ .gacha-screen>.collection-peek .collection-count,.gacha-screen>.collection-peek .deco-count{font-size:11px!important;line-height:1!important}
+ .gacha-screen>.collection-peek .soft-button{height:22px!important;min-height:22px!important;max-height:22px!important;flex:0 0 22px!important;font-size:10px!important;padding:2px!important;border-radius:10px!important}
+ .gacha-screen>.top-rewards{top:calc(194px + var(--safe-t,0px))!important;gap:5px!important}
+ .gacha-screen>.top-rewards .reward-chip{min-height:34px!important;max-width:100%!important;padding:4px!important;border-radius:12px!important;gap:3px!important}
+ .gacha-screen>.top-rewards .reward-chip b{font-size:10px!important}
+ .gacha-screen>.top-rewards .reward-chip small{font-size:9px!important;line-height:1.15!important}
+ .gacha-screen>.gacha-nav{max-width:calc(100vw - 128px)!important}
+}
