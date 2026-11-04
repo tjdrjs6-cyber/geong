@@ -1,0 +1,6 @@
+룰렛 서버 오류 ER_DATA_TOO_LONG 수정
+
+원인: last_roulette 컬럼이 VARCHAR(10)인데 룰렛 시간대 값은 YYYY-MM-DD + A/B로 11글자입니다.
+수정: 신규 컬럼은 VARCHAR(16), 기존 DB는 서버 시작 시 ALTER TABLE로 VARCHAR(16) 자동 확장합니다.
+기존 계정/코인/캐릭터 데이터는 삭제하지 않습니다.
+Railway에 기존 프로젝트 파일을 덮어쓰기 업로드한 뒤 재배포하세요.

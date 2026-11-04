@@ -79,7 +79,9 @@ async function prepareDatabase() {
     account_id BIGINT UNSIGNED PRIMARY KEY,
     layout JSON NOT NULL
   )`)
-  try { await pool.query("ALTER TABLE gm_saves ADD COLUMN last_roulette VARCHAR(10) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query("ALTER TABLE gm_saves ADD COLUMN last_roulette VARCHAR(16) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  // Existing databases may already have last_roulette VARCHAR(10); the slot value is 11 chars (YYYY-MM-DD + A/B).
+  await pool.query("ALTER TABLE gm_saves MODIFY COLUMN last_roulette VARCHAR(16) NOT NULL DEFAULT ''")
   try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN nickname VARCHAR(6) NULL') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('CREATE UNIQUE INDEX uq_gm_accounts_nickname ON gm_accounts (nickname)') } catch (error) { if (!error || error.code !== 'ER_DUP_KEYNAME') throw error }
@@ -130,7 +132,39 @@ async function prepareDatabase() {
     const [result] = await pool.query('UPDATE gm_accounts SET is_admin = 1 WHERE username = ?', [adminUsername])
     if (result.affectedRows === 0) console.warn('[api] configured administrator account does not exist yet')
   }
+  // Keep the designated administrator's collection complete on every deployment.
+  if (adminUsername) {
+    const [admins] = await pool.query('SELECT id FROM gm_accounts WHERE username = ? AND is_admin = 1', [adminUsername])
+    for (const admin of admins) await grantAdminCollection(admin.id)
+  }
   ready = true
+}
+
+/** Grants every existing character and decoration without deleting any user data. */
+async function grantAdminCollection(accountId) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const [saves] = await conn.query('SELECT owned FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const oldOwned = saves[0] ? normalizeOwned(typeof saves[0].owned === 'string' ? JSON.parse(saves[0].owned) : saves[0].owned) : []
+    const allOwned = [...new Set([...oldOwned, ...CHARACTER_IDS])]
+    if (saves.length) {
+      await conn.query('UPDATE gm_saves SET owned = ? WHERE account_id = ?', [JSON.stringify(allOwned), accountId])
+    } else {
+      await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?)', [accountId, STARTING_COINS, JSON.stringify(allOwned), ''])
+    }
+    const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [accountId])
+    const current = rows[0] ? normalizeDecos(typeof rows[0].items === 'string' ? JSON.parse(rows[0].items) : rows[0].items) : {}
+    const complete = { ...current }
+    for (const id of DECO_IDS) complete[id] = Math.max(1, complete[id] || 0)
+    await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [accountId, JSON.stringify(complete)])
+    await conn.commit()
+  } catch (error) {
+    await conn.rollback().catch(() => {})
+    throw error
+  } finally {
+    conn.release()
+  }
 }
 
 async function hashPassword(password) {
@@ -477,6 +511,7 @@ const routes = {
     const valid = await verifyPassword(password, account ? account.password_hash : DUMMY_HASH)
     if (!account || !valid) { recordFailure(key); return send(res, 401, { error: 'invalid_credentials' }) }
     failures.delete(key)
+    if (account.is_admin) await grantAdminCollection(account.id)
     return startSession(res, account.id, account.username, account.nickname, await getSave(account.id), account.is_admin)
   },
   'POST /api/auth/logout': async (req, res) => {
@@ -488,6 +523,7 @@ const routes = {
   'GET /api/me': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 200, { user: null })
+    if (account.is_admin) await grantAdminCollection(account.id)
     const autoEarned = await autoSettle(account.id)
     send(res, 200, { autoEarned, user: { username: account.username, nickname: account.nickname || null, admin: Boolean(account.is_admin) }, ...(await accountState(account.id)) })
   },
