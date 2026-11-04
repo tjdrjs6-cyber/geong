@@ -858,7 +858,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 async function serveFrontend(req, res, path) {
   let decoded
   try { decoded = decodeURIComponent(path) } catch { return send(res, 400, { error: 'bad_path' }) }
-  const file = resolve(WEB_ROOT, '.' + decoded)
+  const file = resolve(WEB_ROOT, '.' + (decoded === '/' ? '/index.html' : decoded))
   if (file !== WEB_ROOT && !file.startsWith(WEB_ROOT + sep)) return send(res, 403, { error: 'forbidden' })
   try {
     const info = await stat(file)
