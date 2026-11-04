@@ -542,7 +542,7 @@ const routes = {
     await ensureGlobalChatTables()
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const body = await readBody(req)
+    const body = await readJson(req)
     const message = String(body?.message || '').trim()
     if (!message || [...message].length > 30) return send(res, 400, { error: 'chat_invalid' })
     const conn = await pool.getConnection()
