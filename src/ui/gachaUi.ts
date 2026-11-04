@@ -360,8 +360,8 @@ export class GachaUi {
           <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · 💎 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
-            <div class="claw-arm"><div class="claw-wire"></div><div class="claw-head">✦</div></div>
-            <div class="claw-toys"></div><div class="claw-chute">출구 ↓</div><div class="claw-prize"></div>
+            <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw.png" alt="" /></div>
+            <div class="claw-toys"></div><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
           <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small>💎 1개</small></button></div>
           <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>

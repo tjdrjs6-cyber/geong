@@ -2894,3 +2894,21 @@ html body > #geongi-version {
 /* v0.62: fast press-and-hold claw arrows, without touch page scrolling */
 .gacha-modal.claw-screen .claw-arrows button {touch-action:none;user-select:none;-webkit-user-select:none;}
 .gacha-modal.claw-screen .claw-arm {transition:left .09s linear,top .09s linear;}
+
+/* v0.63: user-supplied claw and machine illustration */
+.gacha-modal.claw-screen .claw-machine {
+ background:#ffe8ee url('/assets/claw/machine.png') center center / 100% 100% no-repeat!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ aspect-ratio:1448 / 1086;height:auto!important;min-height:0!important;
+}
+.gacha-modal.claw-screen.is-active .claw-machine {height:auto!important;min-height:0!important;}
+.gacha-modal.claw-screen .claw-chute {
+ position:absolute!important;left:71%!important;top:17%!important;right:auto!important;bottom:auto!important;
+ width:17%!important;height:18%!important;border:0!important;padding:0!important;
+ background:transparent!important;box-shadow:none!important;color:transparent!important;
+ pointer-events:none!important;
+}
+.gacha-modal.claw-screen .claw-arm {width:13%!important;height:20%!important;z-index:8!important;display:block!important;overflow:visible!important;}
+.gacha-modal.claw-screen .claw-graphic {display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 2px #8c566555);}
+.gacha-modal.claw-screen .claw-single-toy {z-index:3;}
+.gacha-modal.claw-screen .claw-single-toy.is-lifted {z-index:9;}
