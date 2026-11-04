@@ -1087,3 +1087,56 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .gacha-header .wallet span:last-child {font-size:9px;}
   .gacha-header .header-right .diamond-wallet {font-size:8px !important;}
 }
+
+/* Mobile Safari: six compact navigation buttons in one horizontal row. */
+@media screen and (max-width:760px) {
+  .gacha-screen > .profile-chip {
+    left:max(10px,env(safe-area-inset-left,0px)) !important;
+    right:auto !important;
+    top:calc(59px + var(--safe-t,0px)) !important;
+    transform:none !important;
+    max-width:min(46vw,190px) !important;
+    min-height:30px;
+    padding:2px 8px 2px 2px !important;
+    gap:4px !important;
+  }
+  .gacha-screen > .profile-chip:active {transform:translateY(1px) !important;}
+  .gacha-screen > .profile-chip .profile-avatar {width:25px !important;height:25px !important;flex:none;}
+  .gacha-screen > .profile-chip .profile-text {min-width:0;overflow:hidden;}
+  .gacha-screen > .profile-chip .profile-name {display:block;max-width:100%;font-size:10px !important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .gacha-screen > .profile-chip .profile-text small {display:none !important;}
+  .gacha-nav {
+    top:calc(104px + var(--safe-t,0px)) !important;
+    display:grid !important;
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+    gap:3px !important;
+    left:max(7px,env(safe-area-inset-left,0px)) !important;
+    right:max(7px,env(safe-area-inset-right,0px)) !important;
+    max-width:calc(100% - 14px) !important;
+  }
+  .gacha-nav .nav-button {
+    min-width:0 !important;
+    width:100% !important;
+    min-height:33px !important;
+    height:33px !important;
+    padding:3px 0 !important;
+    border-radius:12px !important;
+    font-size:clamp(8px,2.1vw,10px) !important;
+    line-height:1.1 !important;
+    gap:2px !important;
+    letter-spacing:-.06em;
+    white-space:nowrap !important;
+    overflow:hidden;
+    text-overflow:clip;
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+  }
+  .gacha-nav .nav-button span {font-size:clamp(9px,2.4vw,12px) !important;flex:none;}
+  .collection-peek {top:calc(151px + var(--safe-t,0px)) !important;}
+  .gacha-header .top-rewards {top:calc(201px - 9px) !important;}
+}
+@media screen and (max-width:390px) {
+  .gacha-nav .nav-button {font-size:8px !important;gap:1px !important;}
+  .gacha-nav .nav-button span {font-size:10px !important;}
+}
