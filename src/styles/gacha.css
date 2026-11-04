@@ -2629,3 +2629,38 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* Keep entire gingerbread costume visible, including both feet. */
 .collection-grid .friend-card .friend-avatar img[src*="ginger_hachiware"],
 .collection-grid .friend-card .friend-avatar img[src*="ginger_usagi"] {object-fit:contain!important;object-position:center!important; padding:3px;box-sizing:border-box;}
+
+/* v0.26 square full-body portraits */
+.collection-grid .friend-card .friend-avatar img[src*="ginger_hachiware"],
+.collection-grid .friend-card .friend-avatar img[src*="ginger_usagi"] {width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;transform:none!important;}
+
+/* v0.27: Both deployed fighters stand on the moving red arena circle.
+   Override the obsolete rule that floated fighter #2 above the arena. */
+.battle-field .bf-enemy {
+  left: 10% !important;
+  bottom: 11% !important;
+  width: 29cqw !important;
+  max-width: 165px !important;
+  min-width: 0 !important;
+}
+.battle-field .bf-friend:not(.bf-friend-second) {
+  right: 7% !important;
+  bottom: 10% !important;
+  width: 20cqw !important;
+  max-width: 112px !important;
+  min-width: 0 !important;
+  z-index: 4 !important;
+}
+.battle-field .bf-friend.bf-friend-second {
+  right: 28% !important;
+  bottom: 10% !important;
+  width: 20cqw !important;
+  max-width: 112px !important;
+  min-width: 0 !important;
+  z-index: 3 !important;
+}
+
+/* v0.28: unified user-provided Chiikawa face icon for sidebar and gacha tabs */
+.gacha-screen .gacha-nav .nav-button .chiikawa-tab-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:17px!important;height:17px!important;flex:0 0 17px!important;}
+.gacha-screen .gacha-nav .nav-button .chiikawa-tab-icon img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}
+.gacha-screen .pull-mode-button .chiikawa-pull-icon{display:inline-block!important;width:17px!important;height:17px!important;object-fit:contain!important;vertical-align:middle!important;margin-right:3px!important;}
