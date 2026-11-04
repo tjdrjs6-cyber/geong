@@ -188,13 +188,14 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title">토벌장</b>
-          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
+          <div class="diamond-wallet battle-diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-reward-hint">💎 몬스터 1마리 처치 시 다이아 1개! 보관함에 자동 지급돼요.</p>
           <p class="battle-status"></p>
+          <p class="battle-hourly-rate" aria-live="polite">💎 예상 0.00개/시간</p>
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
           <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 다이아 1개가 인벤토리에 자동 지급돼요. 앱을 닫아도 계속 싸워요.</p>
                     </div>
@@ -556,7 +557,7 @@ export class GachaUi {
     }
     if (action === 'choose' && button?.dataset.id) {
       const id = button.dataset.id as CharacterId
-      if (!this.store.data.owned.includes(id)) return
+      if (!this.store.data.owned.includes(id) || id === this.heroId()) return
       await this.chooseFeatured(id)
     }
   }
@@ -793,8 +794,9 @@ export class GachaUi {
   private collectionCards(owned: readonly CharacterId[], interactive: boolean): string {
     return CHARACTERS.map(character => {
       const has = owned.includes(character.id)
+      const isFeatured = has && character.id === this.heroId()
       const footer = has && interactive
-        ? `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
+        ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
@@ -921,10 +923,12 @@ export class GachaUi {
     box.innerHTML = `${houseVisitMarkup(layout)}<p class="user-house-note">데코 ${layout.pieces.length}개 · 친구 ${layout.friends.length}명 · 구경만 할 수 있어요</p>`
   }
   private async chooseFeatured(id: CharacterId): Promise<void> {
+    if (id === this.heroId()) return
     try { await this.store.setFeatured(id) } catch (error) { this.handleError(error); return }
     this.renderHero()
     this.renderProfile()
     this.renderFeaturedPicker()
+    this.renderCollection()
     if (this.screen !== 'featured') this.show('title')
     this.toast(`${withJosa(fullName(characterById(id)), '을', '를')} 대표 친구로 세웠어요!`)
   }
@@ -935,7 +939,7 @@ export class GachaUi {
     if (!grid) return
     const current = this.heroId()
     if (!this.store.data.owned.length) { grid.innerHTML = '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'; return }
-    grid.innerHTML = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).map(character => `<button class="featured-pick${current === character.id ? ' is-active' : ''}" role="listitem" data-action="featured-pick" data-id="${character.id}" aria-pressed="${current === character.id}">
+    grid.innerHTML = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).map(character => `<button class="featured-pick${current === character.id ? ' is-active' : ''}" role="listitem" data-action="featured-pick" data-id="${character.id}" aria-pressed="${current === character.id}" ${current === character.id ? 'disabled aria-disabled="true"' : ''}>
         <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><b>${character.name}</b>${character.variant ? `<em>${character.variant}</em>` : ''}${current === character.id ? '<small class="featured-selected-label">✓ 선택됨</small>' : ''}</button>`).join('')
   }
 
@@ -1391,6 +1395,8 @@ export class GachaUi {
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
+    const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
+    if (hourlyRate) hourlyRate.textContent = `💎 예상 ${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP).toFixed(2)}개/시간 · 처치 시 지급`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 합산 공격력 ⚔ ${view.power} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
     const hp = this.root.querySelector<HTMLElement>('.battle-hp')
