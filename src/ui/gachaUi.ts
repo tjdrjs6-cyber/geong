@@ -229,7 +229,7 @@ export class GachaUi {
       <section class="weed-screen expedition-screen" data-screen="expedition" aria-hidden="true">
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
-        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">10,000,000</b> / 10,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
+        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">10,000,000</b> / 10,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
         <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 모두 500코인 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
@@ -1090,15 +1090,25 @@ export class GachaUi {
     const hp=Math.max(0,room.hp)
     const label=this.root.querySelector<HTMLElement>('.exp-hp');if(label)label.textContent=hp.toLocaleString('ko-KR')
     const fill=this.root.querySelector<HTMLElement>('.expedition-hp-fill');if(fill)fill.style.width=`${hp/10000000*100}%`
-    const boss=this.root.querySelector<HTMLElement>('.expedition-boss');if(boss)boss.classList.toggle('defeated',hp===0)
+    const percent=this.root.querySelector<HTMLElement>('.expedition-hp-percent');if(percent)percent.textContent=`${(hp/10000000*100).toFixed(2)}%`
+    const boss=this.root.querySelector<HTMLElement>('.expedition-boss');if(boss){boss.classList.toggle('defeated',hp===0);boss.classList.toggle('under-attack',hp>0 && room.members.length>0)}
     const status=this.root.querySelector<HTMLElement>('.expedition-status')
     if(status)status.textContent=hp===0?'보스 처치 완료! 참여한 유저 모두 500코인 지급 🎉':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
-    if(members)members.innerHTML=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))}</span>`).join('')
+    if(members){const html=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party)party.innerHTML=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--delay:${i*.13}s"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('')
+    if(party){const html=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-230:-295}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker)picker.innerHTML=hp===0?'보스가 처치됐어요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+    if(picker){const html=hp===0?'보스가 처치됐어요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+      // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
+      if(picker.innerHTML!==html){
+        const choices=picker.querySelector<HTMLElement>('.expedition-choices')
+        const previousScroll=choices?.scrollTop ?? 0
+        picker.innerHTML=html
+        const updated=picker.querySelector<HTMLElement>('.expedition-choices')
+        if(updated)updated.scrollTop=previousScroll
+      }
+    }
     this.renderWallet()
   }
 

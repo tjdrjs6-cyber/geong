@@ -2768,3 +2768,22 @@ html body > #geongi-version {
 @keyframes exp-boss-wiggle{0%,100%{transform:translateX(-50%) rotate(-2deg) scale(1)}50%{transform:translateX(-50%) rotate(2deg) scale(1.035)}}
 @keyframes exp-fighter-strike{0%,78%,100%{transform:translateY(0)}84%{transform:translateY(-9px)}90%{transform:translateY(0)}}
 @keyframes exp-projectile{0%,77%{opacity:0;transform:translate(-50%,0)}79%{opacity:1}94%{opacity:1;transform:translate(-50%,-125px)}97%,100%{opacity:0;transform:translate(-50%,-150px)}}
+
+/* v0.35 - name legibility, boss hit reaction, accurate center-targeted projectiles */
+.expedition-party{height:32%!important;bottom:3%!important;row-gap:10px!important;overflow:visible!important}
+.expedition-combatant{overflow:visible!important;justify-content:flex-end!important;gap:4px!important}
+.expedition-name{position:relative!important;display:block!important;flex-shrink:0!important;overflow:visible!important;max-width:none!important;min-width:max-content!important;padding:3px 6px!important;border:1.5px solid #e5f8ff!important;border-radius:8px!important;background:#142749ed!important;font-size:clamp(10px,2.5vw,13px)!important;line-height:1.15!important;color:white!important;box-shadow:0 2px 4px #001b3b99!important;z-index:12!important;white-space:nowrap!important;text-overflow:clip!important}
+.expedition-combatant .expedition-fighter{flex-shrink:0!important;height:52px!important}
+.expedition-hp-track{height:21px!important;box-sizing:content-box!important;overflow:hidden!important}
+.expedition-hp-percent{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;text-shadow:0 1px 3px #331b33,0 0 4px #331b33;pointer-events:none}
+
+@keyframes exp-boss-hit{0%,76%,100%{transform:translateX(-50%) scale(1) rotate(-1deg);filter:drop-shadow(0 6px 5px #001a46aa)}80%{transform:translateX(-50%) scale(.96,1.04) rotate(2deg);filter:brightness(1.7) drop-shadow(0 0 12px #ff6464)}84%{transform:translateX(-50%) scale(1.04,.96) rotate(-2deg);filter:brightness(1.25) drop-shadow(0 0 8px #ff9696)}91%{transform:translateX(-50%) scale(1) rotate(0deg);filter:drop-shadow(0 6px 5px #001a46aa)}}
+.expedition-projectile{bottom:32px!important;width:9px!important;height:9px!important;border-radius:50%!important;background:#fffce4!important;box-shadow:0 0 6px 3px #7df8ff,0 0 13px 5px #45aaff!important;animation:exp-shot-to-boss 3s ease-in infinite!important;animation-delay:var(--delay)!important}
+@keyframes exp-shot-to-boss{0%,65%{opacity:0;transform:translate(0,0) scale(.5)}67%{opacity:1;transform:translate(0,0) scale(1)}79%{opacity:1;transform:translate(var(--shot-x),var(--shot-y)) scale(1.5)}81%,100%{opacity:0;transform:translate(var(--shot-x),var(--shot-y)) scale(.2)}}
+
+/* v0.37: All expedition fighters strike on the same three-second beat.
+   An empty server must never display the boss damage reaction. */
+.expedition-combatant{animation-delay:0s!important}
+.expedition-projectile{animation-delay:0s!important}
+.expedition-boss:not(.defeated):not(.under-attack){animation:exp-boss-wiggle 3.8s ease-in-out infinite!important}
+.expedition-boss.under-attack:not(.defeated){animation:exp-boss-hit 3s ease-in-out infinite!important}
