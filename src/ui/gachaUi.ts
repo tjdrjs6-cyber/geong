@@ -1158,7 +1158,7 @@ export class GachaUi {
       if (icon) icon.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="" />` : ''
       if (power) power.textContent = second ? `⚔ ${battlePower(second.id)}` : ''
     }
-    const unit = this.root.querySelector<HTMLElement>('.bf-friend')
+    const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
