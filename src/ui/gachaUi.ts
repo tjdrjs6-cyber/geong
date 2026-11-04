@@ -703,14 +703,23 @@ export class GachaUi {
     const daily = this.root.querySelector<HTMLButtonElement>('[data-action="daily"]')
     if (daily) {
       daily.disabled = alreadyClaimed
+      daily.classList.toggle('is-used', alreadyClaimed)
+      const dailyLabel = daily.querySelector<HTMLElement>('b')
+      if (dailyLabel) dailyLabel.textContent = alreadyClaimed ? '출석 완료 ✓' : '출석 체크'
       const copy = daily.querySelector<HTMLElement>('.daily-copy')
-      if (copy) copy.textContent = alreadyClaimed ? '내일 다시 받을 수 있어요' : `+${DAILY_GIFT} 코인 받기`
+      if (copy) copy.textContent = alreadyClaimed ? '수령 완료 · 내일 다시' : `+${DAILY_GIFT} 코인 받기`
     }
     const rouletteSlot = `${today}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}`
     const spun = this.store.data.lastRoulette === rouletteSlot
     const rouletteCopy = this.root.querySelector<HTMLElement>('.roulette-copy')
     if (rouletteCopy) rouletteCopy.textContent = spun ? '다음 12시간 구간에 다시!' : '하루 2회 · 12시간 간격'
-    this.root.querySelector('.roulette-chip')?.classList.toggle('is-used', spun)
+    const rouletteChip = this.root.querySelector<HTMLButtonElement>('.roulette-chip')
+    if (rouletteChip) {
+      rouletteChip.classList.toggle('is-used', spun)
+      rouletteChip.disabled = spun
+      const rouletteLabel = rouletteChip.querySelector<HTMLElement>('b')
+      if (rouletteLabel) rouletteLabel.textContent = spun ? '룰렛 완료 ✓' : '룰렛'
+    }
     const spinButton = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
     if (spinButton && !this.wheelSpinning) { spinButton.disabled = spun; spinButton.textContent = spun ? '다음 시간대에 다시 돌려주세요' : '룰렛 돌리기' }
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {

@@ -1618,3 +1618,17 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  }
  .gacha-screen>.top-rewards .reward-chip{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;min-height:34px!important;padding:3px 4px!important}
 }
+
+/* Claimed attendance and used roulette: visible grey completed state on desktop/mobile */
+.gacha-screen > .top-rewards .reward-chip.is-used,
+.gacha-screen > .top-rewards .reward-chip:disabled {
+  background:#e1e2e5 !important; border-color:#bfc2c7 !important;
+  box-shadow:none !important; color:#73777e !important; opacity:1 !important;
+  filter:grayscale(1) !important; cursor:default !important;
+}
+.gacha-screen > .top-rewards .reward-chip.is-used .reward-icon,
+.gacha-screen > .top-rewards .reward-chip:disabled .reward-icon {
+  background:#cfd1d5 !important; animation:none !important;
+}
+.gacha-screen > .top-rewards .reward-chip.is-used small,
+.gacha-screen > .top-rewards .reward-chip:disabled small {color:#777b82 !important;}
