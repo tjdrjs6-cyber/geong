@@ -81,7 +81,7 @@ export class GachaUi {
     this.screen = screen
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
-      const active = node.dataset.screen === screen || (node.dataset.screen === 'title' && (screen === 'claw' || screen === 'collection' || screen === 'decos' || screen === 'result' || screen === 'users' || screen === 'roulette' || screen === 'mail' || screen === 'featured'))
+      const active = node.dataset.screen === screen
       node.classList.toggle('is-active', active)
       node.setAttribute('aria-hidden', String(!active))
     })
@@ -221,7 +221,7 @@ export class GachaUi {
           <span class="toon-hero-name"></span>
           <i class="toon-capsule"></i>
         </section>
-        <aside class="collection-peek"><span class="peek-flowers">✿　✿　✿</span><b class="collection-count">0 / ${CHARACTERS.length}</b><small>도감 수집</small><button class="soft-button" data-action="collection">도감 보기 <span>↗</span></button><b class="deco-count">0 / ${DECOS.length}</b><button class="soft-button" data-action="decos">데코 도감</button></aside>
+        <aside class="collection-peek"><span class="peek-flowers">✿　✿　✿</span><b class="collection-count">0 / ${CHARACTERS.length}</b><small>도감 수집</small><button class="soft-button" data-action="collection">캐릭터 도감 <span>↗</span></button><b class="deco-count">0 / ${DECOS.length}</b><button class="soft-button" data-action="decos">데코 도감</button></aside>
         <footer class="gacha-actions">
           <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true">🐹 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false">🎀 데코 뽑기</button></div>
           ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
