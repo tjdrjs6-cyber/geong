@@ -1,0 +1,609 @@
+{
+  "version": 2,
+  "groups": {
+    "bg": {
+      "name": "Bg",
+      "order": 40
+    },
+    "chars": {
+      "name": "Chars",
+      "order": 50
+    },
+    "collection-characters": {
+      "name": "도감 캐릭터",
+      "order": 20
+    },
+    "decos": {
+      "name": "데코 아이템",
+      "order": 25
+    },
+    "game-branding": {
+      "name": "게임 브랜딩",
+      "order": 30
+    }
+  },
+  "bundles": {},
+  "assets": {
+    "assets/bg/house.webp": {
+      "path": "/manus-storage/game/sha256/a34aebf3a2fb996d9dbe33783c31dfd46dd27fa791b0ded13fd6a6fcfdc85af0.webp",
+      "sha256": "sha256:a34aebf3a2fb996d9dbe33783c31dfd46dd27fa791b0ded13fd6a6fcfdc85af0",
+      "size": 105246,
+      "assetType": "image",
+      "groupId": "bg"
+    },
+    "assets/chars/anoko.png": {
+      "path": "/manus-storage/game/sha256/62676e6d9a30d980da3001a37a5172e960406b8283c98464e93d18b7e496ec06.png",
+      "sha256": "sha256:62676e6d9a30d980da3001a37a5172e960406b8283c98464e93d18b7e496ec06",
+      "size": 140030,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/armor1.png": {
+      "path": "/manus-storage/game/sha256/53e96b4669d36a1f30323512883780eb054617c11621f07e95d5a0f19aad7fa6.png",
+      "sha256": "sha256:53e96b4669d36a1f30323512883780eb054617c11621f07e95d5a0f19aad7fa6",
+      "size": 96948,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/armor2.png": {
+      "path": "/manus-storage/game/sha256/b9aefe6cdd4dd512f0500cde94dde742a6cbda1649409d544b3937e657d40cda.png",
+      "sha256": "sha256:b9aefe6cdd4dd512f0500cde94dde742a6cbda1649409d544b3937e657d40cda",
+      "size": 95790,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/armor3.png": {
+      "path": "/manus-storage/game/sha256/a4f7f9cc45c07be8456b6f0d397a4895dddf41356c5c0b099f0a7793dba8bb9a.png",
+      "sha256": "sha256:a4f7f9cc45c07be8456b6f0d397a4895dddf41356c5c0b099f0a7793dba8bb9a",
+      "size": 93557,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/beetle.png": {
+      "path": "/manus-storage/game/sha256/7243f6ee3114ece1d5a212e6ced246a5d9f04deba918bc2d45029b25622cc8ab.png",
+      "sha256": "sha256:7243f6ee3114ece1d5a212e6ced246a5d9f04deba918bc2d45029b25622cc8ab",
+      "size": 111068,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/c_curry.png": {
+      "path": "/manus-storage/game/sha256/93dca7aba41651ac6a591f24ed7be5e635e8617d718f07e79b6ec6de3720dee9.png",
+      "sha256": "sha256:93dca7aba41651ac6a591f24ed7be5e635e8617d718f07e79b6ec6de3720dee9",
+      "size": 130331,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/chiikawa.png": {
+      "path": "/manus-storage/game/sha256/c276455a17b3c1063d13ac6b23403e38121890ad7587a2dc2cc107afbbe650ca.png",
+      "sha256": "sha256:c276455a17b3c1063d13ac6b23403e38121890ad7587a2dc2cc107afbbe650ca",
+      "size": 123510,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/dekatsuyo.png": {
+      "path": "/manus-storage/game/sha256/2b2af33e3f7f14f712d848dbe512b274dcd0dbb8a6d410039ad1e5339e40e727.png",
+      "sha256": "sha256:2b2af33e3f7f14f712d848dbe512b274dcd0dbb8a6d410039ad1e5339e40e727",
+      "size": 157378,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/duip.png": {
+      "path": "/manus-storage/game/sha256/46748dba529b438595e1ba4a919252de872250f5e794ea0be9b9cf8ddb9415bb.png",
+      "sha256": "sha256:46748dba529b438595e1ba4a919252de872250f5e794ea0be9b9cf8ddb9415bb",
+      "size": 112286,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/goblin.png": {
+      "path": "/manus-storage/game/sha256/a1089c3b32fa2a755f5cd57dc27d33e971598bd0394057086d3ae20ec773cc84.png",
+      "sha256": "sha256:a1089c3b32fa2a755f5cd57dc27d33e971598bd0394057086d3ae20ec773cc84",
+      "size": 131175,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/h_curry.png": {
+      "path": "/manus-storage/game/sha256/279d4d3e118d9fcc04876a4da23c63f0c9c9c8732075966692c14496891df51c.png",
+      "sha256": "sha256:279d4d3e118d9fcc04876a4da23c63f0c9c9c8732075966692c14496891df51c",
+      "size": 129405,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/hachiware.png": {
+      "path": "/manus-storage/game/sha256/75c28b8744b33aabc0d86bf042c5b0d4f5acf193f6ef7ba6808832ac97e19b5f.png",
+      "sha256": "sha256:75c28b8744b33aabc0d86bf042c5b0d4f5acf193f6ef7ba6808832ac97e19b5f",
+      "size": 123816,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/hanip.png": {
+      "path": "/manus-storage/game/sha256/faff6d0d922b79597d6f38962dbb63abba783af4009f80778b1a0488ec790d32.png",
+      "sha256": "sha256:faff6d0d922b79597d6f38962dbb63abba783af4009f80778b1a0488ec790d32",
+      "size": 99680,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/kani.png": {
+      "path": "/manus-storage/game/sha256/ea1d8fb37ed28d9183abf69f0be835dcb55d16bc977a31ee521f2d353acb68d0.png",
+      "sha256": "sha256:ea1d8fb37ed28d9183abf69f0be835dcb55d16bc977a31ee521f2d353acb68d0",
+      "size": 135183,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/kurimanju.png": {
+      "path": "/manus-storage/game/sha256/7b7b6b4f875a87be75abb2e61f0387449ca736e06b2147ccaf4d979a7fee4098.png",
+      "sha256": "sha256:7b7b6b4f875a87be75abb2e61f0387449ca736e06b2147ccaf4d979a7fee4098",
+      "size": 132072,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_chiikawa.png": {
+      "path": "/manus-storage/game/sha256/f5ee42713058eaddb50b111fe39e97c6fe099ae5a26f907d8e538779e45dcff1.png",
+      "sha256": "sha256:f5ee42713058eaddb50b111fe39e97c6fe099ae5a26f907d8e538779e45dcff1",
+      "size": 139237,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_hachiware.png": {
+      "path": "/manus-storage/game/sha256/7aabe441736cda770f4ab247f3e3f4c9ceeb21c706925abff13f37fe89362ea6.png",
+      "sha256": "sha256:7aabe441736cda770f4ab247f3e3f4c9ceeb21c706925abff13f37fe89362ea6",
+      "size": 143211,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_kani.png": {
+      "path": "/manus-storage/game/sha256/84f620abc8228c1b5651d75b4522a1d251035f2bb9e52a10d45fd2c135e97b96.png",
+      "sha256": "sha256:84f620abc8228c1b5651d75b4522a1d251035f2bb9e52a10d45fd2c135e97b96",
+      "size": 150048,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_kurimanju.png": {
+      "path": "/manus-storage/game/sha256/e874cb6020f9170505753b3c936d8a133894ef9e3dc83fd007dd7e51132b596c.png",
+      "sha256": "sha256:e874cb6020f9170505753b3c936d8a133894ef9e3dc83fd007dd7e51132b596c",
+      "size": 154986,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_momonga.png": {
+      "path": "/manus-storage/game/sha256/6373e9156e54a296f5247da118651b5a2eb87b4c13be970900f103db99dd1ed3.png",
+      "sha256": "sha256:6373e9156e54a296f5247da118651b5a2eb87b4c13be970900f103db99dd1ed3",
+      "size": 155690,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_rakko.png": {
+      "path": "/manus-storage/game/sha256/5383577cb6769e139b17ff6ab7b557812a8fecbf8d1863bf389a085fbec5c67f.png",
+      "sha256": "sha256:5383577cb6769e139b17ff6ab7b557812a8fecbf8d1863bf389a085fbec5c67f",
+      "size": 132861,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_shisa.png": {
+      "path": "/manus-storage/game/sha256/fa9ccf917179b9fbf343248d357d6fcf22735b7082414aef996973dd13b1a6ea.png",
+      "sha256": "sha256:fa9ccf917179b9fbf343248d357d6fcf22735b7082414aef996973dd13b1a6ea",
+      "size": 159723,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/m_usagi.png": {
+      "path": "/manus-storage/game/sha256/fb9e86aec593d8572fb1efa1ff02c4c8f40beae41a468935b40cd22863f19384.png",
+      "sha256": "sha256:fb9e86aec593d8572fb1efa1ff02c4c8f40beae41a468935b40cd22863f19384",
+      "size": 106911,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/momonga.png": {
+      "path": "/manus-storage/game/sha256/bbe794eeced0244337d100b831ef2decfc094f7bc5852c62264f5971ed5d8716.png",
+      "sha256": "sha256:bbe794eeced0244337d100b831ef2decfc094f7bc5852c62264f5971ed5d8716",
+      "size": 133909,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/rakko.png": {
+      "path": "/manus-storage/game/sha256/0265dc3eb4f6bcf662f16cc157352f3fa24e1038808e3f600e1dbbd38b6274e9.png",
+      "sha256": "sha256:0265dc3eb4f6bcf662f16cc157352f3fa24e1038808e3f600e1dbbd38b6274e9",
+      "size": 131215,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/shimajiro.png": {
+      "path": "/manus-storage/game/sha256/d4c7c7ce6908b3aed1b5b8f1a6f4f2866c9e5194a4a31a18a8279f0ec37b0d77.png",
+      "sha256": "sha256:d4c7c7ce6908b3aed1b5b8f1a6f4f2866c9e5194a4a31a18a8279f0ec37b0d77",
+      "size": 101792,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/shisa.png": {
+      "path": "/manus-storage/game/sha256/8b290196f8ee15f532962f38dc795a351304655562a4518733db82fe54941f9f.png",
+      "sha256": "sha256:8b290196f8ee15f532962f38dc795a351304655562a4518733db82fe54941f9f",
+      "size": 153219,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/siren.png": {
+      "path": "/manus-storage/game/sha256/73d92496a8c33d278e49afdad08df1a4d3342292ef9bd7abd2fc3c99827c3174.png",
+      "sha256": "sha256:73d92496a8c33d278e49afdad08df1a4d3342292ef9bd7abd2fc3c99827c3174",
+      "size": 138771,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/chars/u_curry.png": {
+      "path": "/manus-storage/game/sha256/27b73e5c38fa0712d8ec8cee7f3f94f29aaa0f23e38caba666f6603793e233f7.png",
+      "sha256": "sha256:27b73e5c38fa0712d8ec8cee7f3f94f29aaa0f23e38caba666f6603793e233f7",
+      "size": 103113,
+      "assetType": "image",
+      "groupId": "chars"
+    },
+    "assets/chars/usagi.png": {
+      "path": "/manus-storage/game/sha256/7f39a9a2cf18bdd471da044f1efc2884ba7088073f407017518a72fbc51fac87.png",
+      "sha256": "sha256:7f39a9a2cf18bdd471da044f1efc2884ba7088073f407017518a72fbc51fac87",
+      "size": 88360,
+      "assetType": "image",
+      "groupId": "collection-characters"
+    },
+    "assets/decos/d01.png": {
+      "path": "/manus-storage/game/sha256/6e3c63d84c4574ce5f9aaa0be47bae41cf4afccca0c59db20fb89d19867eb484.png",
+      "sha256": "sha256:6e3c63d84c4574ce5f9aaa0be47bae41cf4afccca0c59db20fb89d19867eb484",
+      "size": 70188,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d02.png": {
+      "path": "/manus-storage/game/sha256/4024cb002cd90bdfd100311d0f5053bfbb9ec06a59c95993a5ca8beb11dc9b33.png",
+      "sha256": "sha256:4024cb002cd90bdfd100311d0f5053bfbb9ec06a59c95993a5ca8beb11dc9b33",
+      "size": 72106,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d03.png": {
+      "path": "/manus-storage/game/sha256/5a112eb38ddc19c70d535aa77695fde5986ce079fb5c96dbe0a175bc84400508.png",
+      "sha256": "sha256:5a112eb38ddc19c70d535aa77695fde5986ce079fb5c96dbe0a175bc84400508",
+      "size": 65259,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d04.png": {
+      "path": "/manus-storage/game/sha256/88382de8057df117e22dcef6547f32119e9a5315624c5c3e3b264f5523f83012.png",
+      "sha256": "sha256:88382de8057df117e22dcef6547f32119e9a5315624c5c3e3b264f5523f83012",
+      "size": 63137,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d05.png": {
+      "path": "/manus-storage/game/sha256/f00ad91e90202c5a5ac084d86e641f74cadbb586fb86e81d883a923c9cddb13b.png",
+      "sha256": "sha256:f00ad91e90202c5a5ac084d86e641f74cadbb586fb86e81d883a923c9cddb13b",
+      "size": 72691,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d06.png": {
+      "path": "/manus-storage/game/sha256/261ed522ddca429fc8669055f3a1a3728aeaa574fc9d1b4d2a4c55def9550c4a.png",
+      "sha256": "sha256:261ed522ddca429fc8669055f3a1a3728aeaa574fc9d1b4d2a4c55def9550c4a",
+      "size": 77589,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d07.png": {
+      "path": "/manus-storage/game/sha256/87ea9f24cbb8b2971fa549a1ada797537412a80f14bf2430b0a43760bdcd0c88.png",
+      "sha256": "sha256:87ea9f24cbb8b2971fa549a1ada797537412a80f14bf2430b0a43760bdcd0c88",
+      "size": 69232,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d08.png": {
+      "path": "/manus-storage/game/sha256/efba2192f332d51995e9530a5bbbd57cce5d9a01170f1810a396e744dcdd4b71.png",
+      "sha256": "sha256:efba2192f332d51995e9530a5bbbd57cce5d9a01170f1810a396e744dcdd4b71",
+      "size": 69394,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d09.png": {
+      "path": "/manus-storage/game/sha256/3af8b73cf16c825d42721433d6293c86160b1d09c9e3c06577540330f9b562a5.png",
+      "sha256": "sha256:3af8b73cf16c825d42721433d6293c86160b1d09c9e3c06577540330f9b562a5",
+      "size": 56023,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d10.png": {
+      "path": "/manus-storage/game/sha256/feec3f48b9fed9708c20e5b5b9a146c5230986203a57cad7758f8770da02d120.png",
+      "sha256": "sha256:feec3f48b9fed9708c20e5b5b9a146c5230986203a57cad7758f8770da02d120",
+      "size": 69278,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d11.png": {
+      "path": "/manus-storage/game/sha256/314920deb6ac2506cf4505133b17f29e37cde7c1ec1c6e72cc65718869fa73cb.png",
+      "sha256": "sha256:314920deb6ac2506cf4505133b17f29e37cde7c1ec1c6e72cc65718869fa73cb",
+      "size": 67903,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d12.png": {
+      "path": "/manus-storage/game/sha256/4f835cb5a38bc515dea034608543124776849e50f70f83f66d040b8738571a26.png",
+      "sha256": "sha256:4f835cb5a38bc515dea034608543124776849e50f70f83f66d040b8738571a26",
+      "size": 50231,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d13.png": {
+      "path": "/manus-storage/game/sha256/7745a24081989ff85bbb39147fd4f613f5d569201124282306c3c4219327534b.png",
+      "sha256": "sha256:7745a24081989ff85bbb39147fd4f613f5d569201124282306c3c4219327534b",
+      "size": 77324,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d14.png": {
+      "path": "/manus-storage/game/sha256/7b8bc7c552aa958db2df16795165feafd0ebe55089aadbbb5b178d1bbb943c2f.png",
+      "sha256": "sha256:7b8bc7c552aa958db2df16795165feafd0ebe55089aadbbb5b178d1bbb943c2f",
+      "size": 55022,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d15.png": {
+      "path": "/manus-storage/game/sha256/cfc4ecc7579e82c34dfccd0201e466da367ed70be9cb928f00618f6a5eaa5f9e.png",
+      "sha256": "sha256:cfc4ecc7579e82c34dfccd0201e466da367ed70be9cb928f00618f6a5eaa5f9e",
+      "size": 77770,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d16.png": {
+      "path": "/manus-storage/game/sha256/240ca09b148cd3845f8f8a9dd947c351068757ee3872daefacd9b53d67162149.png",
+      "sha256": "sha256:240ca09b148cd3845f8f8a9dd947c351068757ee3872daefacd9b53d67162149",
+      "size": 66915,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d17.png": {
+      "path": "/manus-storage/game/sha256/74b8f21811f428d8da42ae7d02a0140cf40006bef70b28fc0cea97b79f3673b8.png",
+      "sha256": "sha256:74b8f21811f428d8da42ae7d02a0140cf40006bef70b28fc0cea97b79f3673b8",
+      "size": 68548,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d18.png": {
+      "path": "/manus-storage/game/sha256/ca649561e80c2add40c3368e30c45ad910f51904563996bae5c011fb930e83ec.png",
+      "sha256": "sha256:ca649561e80c2add40c3368e30c45ad910f51904563996bae5c011fb930e83ec",
+      "size": 79490,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d19.png": {
+      "path": "/manus-storage/game/sha256/3f06a4696129056ad116ccf38ec5f53a5f49afa36deda2003524a4c93c0bc28d.png",
+      "sha256": "sha256:3f06a4696129056ad116ccf38ec5f53a5f49afa36deda2003524a4c93c0bc28d",
+      "size": 74300,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d20.png": {
+      "path": "/manus-storage/game/sha256/74c4172a5358efa45283ea1972d163a4fc8821e80b63660ad3191d378a973f4d.png",
+      "sha256": "sha256:74c4172a5358efa45283ea1972d163a4fc8821e80b63660ad3191d378a973f4d",
+      "size": 77432,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d21.png": {
+      "path": "/manus-storage/game/sha256/d7b0a699af729e938300de5bf19bc4445cf831f71a7bd221468f67c63277e166.png",
+      "sha256": "sha256:d7b0a699af729e938300de5bf19bc4445cf831f71a7bd221468f67c63277e166",
+      "size": 50203,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d22.png": {
+      "path": "/manus-storage/game/sha256/0c67b0af284bf844de34b9ecf5d380e7c131dc9114d1b56cda90cae2e9f332aa.png",
+      "sha256": "sha256:0c67b0af284bf844de34b9ecf5d380e7c131dc9114d1b56cda90cae2e9f332aa",
+      "size": 56098,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d23.png": {
+      "path": "/manus-storage/game/sha256/a8d3e34669d39d70fea13a391c08096b40f39daf7b9ea8c4e1c9f17d062f6c8b.png",
+      "sha256": "sha256:a8d3e34669d39d70fea13a391c08096b40f39daf7b9ea8c4e1c9f17d062f6c8b",
+      "size": 75113,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d24.png": {
+      "path": "/manus-storage/game/sha256/9ef7c000706cdd507c78da291e628cbc15f3bf4bd10e4cec494be2ac04eb3511.png",
+      "sha256": "sha256:9ef7c000706cdd507c78da291e628cbc15f3bf4bd10e4cec494be2ac04eb3511",
+      "size": 67343,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d25.png": {
+      "path": "/manus-storage/game/sha256/f89cbe2572028ee171031fa42e2786b25da03691a6fcdcf33146f7be045cf31a.png",
+      "sha256": "sha256:f89cbe2572028ee171031fa42e2786b25da03691a6fcdcf33146f7be045cf31a",
+      "size": 65897,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d26.png": {
+      "path": "/manus-storage/game/sha256/0241cec1c03b10526985ec06ac678535f24f9391dc40eb192aa20a162d9472e5.png",
+      "sha256": "sha256:0241cec1c03b10526985ec06ac678535f24f9391dc40eb192aa20a162d9472e5",
+      "size": 83171,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d27.png": {
+      "path": "/manus-storage/game/sha256/87670f01aa06479680d3fac2abb60f168d48ff3c6ce97541033006447559ce6d.png",
+      "sha256": "sha256:87670f01aa06479680d3fac2abb60f168d48ff3c6ce97541033006447559ce6d",
+      "size": 77933,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d28.png": {
+      "path": "/manus-storage/game/sha256/dcb3884eabf70e5dde4c484dc1aa6cc876746bb38ad1622ed35d0f3d5a35bcfc.png",
+      "sha256": "sha256:dcb3884eabf70e5dde4c484dc1aa6cc876746bb38ad1622ed35d0f3d5a35bcfc",
+      "size": 59705,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d29.png": {
+      "path": "/manus-storage/game/sha256/004de245f3357b7fcdd3422ca6d60aae3f83a0ce63e49975650352e282f26b69.png",
+      "sha256": "sha256:004de245f3357b7fcdd3422ca6d60aae3f83a0ce63e49975650352e282f26b69",
+      "size": 80319,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d30.png": {
+      "path": "/manus-storage/game/sha256/ca0671e1ee62e50345219d2f147052fc97fe1298e7c825d62f4090bb5fc9873a.png",
+      "sha256": "sha256:ca0671e1ee62e50345219d2f147052fc97fe1298e7c825d62f4090bb5fc9873a",
+      "size": 53219,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d31.png": {
+      "path": "/manus-storage/game/sha256/6fbfdd9853935e633bf51622edb683e5c8c8786ddd0a94246e4568d3787eea8a.png",
+      "sha256": "sha256:6fbfdd9853935e633bf51622edb683e5c8c8786ddd0a94246e4568d3787eea8a",
+      "size": 58682,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d32.png": {
+      "path": "/manus-storage/game/sha256/457defb4a56dadc6374c1187a0c0378c54afee063ae33f2a4d83af5ea63e9ef0.png",
+      "sha256": "sha256:457defb4a56dadc6374c1187a0c0378c54afee063ae33f2a4d83af5ea63e9ef0",
+      "size": 70804,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d33.png": {
+      "path": "/manus-storage/game/sha256/db5305f54b46973d97a95cc1737bab660cf25fb7c8942ae62d81277866371256.png",
+      "sha256": "sha256:db5305f54b46973d97a95cc1737bab660cf25fb7c8942ae62d81277866371256",
+      "size": 53704,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d34.png": {
+      "path": "/manus-storage/game/sha256/7daa83b16c93d554f69a02cffa9cba49d29e922f55438ab0424534a1dd780482.png",
+      "sha256": "sha256:7daa83b16c93d554f69a02cffa9cba49d29e922f55438ab0424534a1dd780482",
+      "size": 68852,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d35.png": {
+      "path": "/manus-storage/game/sha256/8a28de28b5842ec5f3ca17c63befd017d7ca6efc647b6f1199f4edac3a8186e4.png",
+      "sha256": "sha256:8a28de28b5842ec5f3ca17c63befd017d7ca6efc647b6f1199f4edac3a8186e4",
+      "size": 79416,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d36.png": {
+      "path": "/manus-storage/game/sha256/d233587fa578c2898c62cbc223aaff8697b1605a3412bb99f6cb078ffe2d3272.png",
+      "sha256": "sha256:d233587fa578c2898c62cbc223aaff8697b1605a3412bb99f6cb078ffe2d3272",
+      "size": 60619,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d37.png": {
+      "path": "/manus-storage/game/sha256/7d6990c1d087da60d27e47e4ac10232f99c79161b4fcbe9fc52a9077d93b130d.png",
+      "sha256": "sha256:7d6990c1d087da60d27e47e4ac10232f99c79161b4fcbe9fc52a9077d93b130d",
+      "size": 71534,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d38.png": {
+      "path": "/manus-storage/game/sha256/a47c6c331d6ed124bf9905cf83f7315a522fd8895776a234b51d6388fcace9e9.png",
+      "sha256": "sha256:a47c6c331d6ed124bf9905cf83f7315a522fd8895776a234b51d6388fcace9e9",
+      "size": 71978,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d39.png": {
+      "path": "/manus-storage/game/sha256/6a0df790b7c7f6313bf5c23f5371e3dfb9353b1265dfd43629f89ec3e3945678.png",
+      "sha256": "sha256:6a0df790b7c7f6313bf5c23f5371e3dfb9353b1265dfd43629f89ec3e3945678",
+      "size": 64706,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d40.png": {
+      "path": "/manus-storage/game/sha256/7c0dda446aecc93a193646c522250e20d81c1c3238b1ea04af7e1b829427d470.png",
+      "sha256": "sha256:7c0dda446aecc93a193646c522250e20d81c1c3238b1ea04af7e1b829427d470",
+      "size": 73417,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d41.png": {
+      "path": "/manus-storage/game/sha256/bf88f61532940e3e2a519201fcad1c8083b936cae74526fc6d2f29afea28bb22.png",
+      "sha256": "sha256:bf88f61532940e3e2a519201fcad1c8083b936cae74526fc6d2f29afea28bb22",
+      "size": 57238,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d42.png": {
+      "path": "/manus-storage/game/sha256/f10cbd805fa1fd16e7a5c73b32ed64b4beb7e764b0bbb5778a3f0d8ddbe884ba.png",
+      "sha256": "sha256:f10cbd805fa1fd16e7a5c73b32ed64b4beb7e764b0bbb5778a3f0d8ddbe884ba",
+      "size": 71593,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d43.png": {
+      "path": "/manus-storage/game/sha256/f10821a534ea1efffdaabc7b28e26c72278ae3f71146ddf970ca6ba41b220be6.png",
+      "sha256": "sha256:f10821a534ea1efffdaabc7b28e26c72278ae3f71146ddf970ca6ba41b220be6",
+      "size": 76884,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d44.png": {
+      "path": "/manus-storage/game/sha256/e165cdcd21ce287bbdfa3f03b72a62ff3b1628c7cb321531d0037401aa5eefd6.png",
+      "sha256": "sha256:e165cdcd21ce287bbdfa3f03b72a62ff3b1628c7cb321531d0037401aa5eefd6",
+      "size": 53783,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d45.png": {
+      "path": "/manus-storage/game/sha256/1cc7894793708a15cfe73c5ef922fc1c34fdadb3336a9aa66ce82bd7e2520031.png",
+      "sha256": "sha256:1cc7894793708a15cfe73c5ef922fc1c34fdadb3336a9aa66ce82bd7e2520031",
+      "size": 73685,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d46.png": {
+      "path": "/manus-storage/game/sha256/740aaabd922c164f9ea64040428d7d91767c43f250984b207f21c6819b07964f.png",
+      "sha256": "sha256:740aaabd922c164f9ea64040428d7d91767c43f250984b207f21c6819b07964f",
+      "size": 91923,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d47.png": {
+      "path": "/manus-storage/game/sha256/c916b0082dde6cc18245b8a2a7bdce52aecdb4c8486d86f414431c10c1f168d8.png",
+      "sha256": "sha256:c916b0082dde6cc18245b8a2a7bdce52aecdb4c8486d86f414431c10c1f168d8",
+      "size": 64609,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d48.png": {
+      "path": "/manus-storage/game/sha256/890dd02d9762aaeae8b8d0d86e2f016c1233c3d47bd8397f5e81cdfa601e05e3.png",
+      "sha256": "sha256:890dd02d9762aaeae8b8d0d86e2f016c1233c3d47bd8397f5e81cdfa601e05e3",
+      "size": 69907,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d49.png": {
+      "path": "/manus-storage/game/sha256/a41ef357ead9ea7877325789a962d72893690b10b7dbb6b1722962955a0defdf.png",
+      "sha256": "sha256:a41ef357ead9ea7877325789a962d72893690b10b7dbb6b1722962955a0defdf",
+      "size": 71646,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/decos/d50.png": {
+      "path": "/manus-storage/game/sha256/efd90a069acac997fc8dd23ed78007006353db2a23970a5cf3d2d3ff68f5d776.png",
+      "sha256": "sha256:efd90a069acac997fc8dd23ed78007006353db2a23970a5cf3d2d3ff68f5d776",
+      "size": 71383,
+      "assetType": "image",
+      "groupId": "decos"
+    },
+    "assets/share/favicon.png": {
+      "path": "/manus-storage/game/sha256/9f18ced697161117dff5e98f7a714d91fa7a3ed08db8f8eb12d479b600bd4233.png",
+      "sha256": "sha256:9f18ced697161117dff5e98f7a714d91fa7a3ed08db8f8eb12d479b600bd4233",
+      "size": 17351,
+      "assetType": "image",
+      "groupId": "game-branding"
+    },
+    "assets/share/og.png": {
+      "path": "/manus-storage/game/sha256/049c157a519a6d6fc8d3237b67bac97c4122486281c6b434d24821deebcb8d91.png",
+      "sha256": "sha256:049c157a519a6d6fc8d3237b67bac97c4122486281c6b434d24821deebcb8d91",
+      "size": 2939712,
+      "assetType": "image",
+      "groupId": "game-branding"
+    }
+  }
+}
