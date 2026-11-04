@@ -52,8 +52,8 @@ export class GachaUi {
   private battleSyncing = false
   private clawX = 50
   private clawY = 50
-  private clawToyX = 50
-  private clawToyY = 50
+  private clawToys: { id: string; name: string; x: number; y: number }[] = []
+  private clawTargetId: string | null = null
   private clawBusy = false
   private users: PublicUser[] = []
   private privacy: ProfilePrivacy = { char: true, deco: true, house: true }
@@ -591,30 +591,51 @@ export class GachaUi {
   /** Operator accounts have unlimited coins (the server never charges them). */
   private get isAdmin(): boolean { return Boolean(this.store.user?.admin) }
 
-  private randomizeClawToy(): void {
-    // Keep the plush inside the play area and away from the prize chute.
-    this.clawToyX = 18 + Math.random() * 62
-    this.clawToyY = 22 + Math.random() * 62
+  private randomizeClawToy(id?: string): void {
+    const types = [
+      { id: 'chiikawa', name: '치이카와' },
+      { id: 'hachiware', name: '하치와레' },
+      { id: 'usagi', name: '우사기' },
+    ]
+    if (!this.clawToys.length) this.clawToys = types.map(type => ({ ...type, x: 0, y: 0 }))
+    for (const toy of this.clawToys) {
+      if (id && toy.id !== id) continue
+      let x = 18, y = 28
+      for (let attempt = 0; attempt < 80; attempt++) {
+        x = 16 + Math.random() * 68
+        y = 24 + Math.random() * 57
+        if (this.clawToys.every(other => other === toy || other.id === id || Math.hypot(other.x - x, other.y - y) >= 21)) break
+      }
+      toy.x = x; toy.y = y
+    }
   }
 
   private clawTouchesToy(): boolean {
+    this.clawTargetId = null
     const head = this.root.querySelector<HTMLElement>('.claw-head')
-    const toy = this.root.querySelector<HTMLElement>('.claw-single-toy')
-    if (!head || !toy) return false
+    if (!head) return false
     const a = head.getBoundingClientRect()
-    const b = toy.getBoundingClientRect()
-    // Require a genuine overlap of the visible claw head and plush image.
-    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+    let nearest = Infinity
+    this.root.querySelectorAll<HTMLElement>('.claw-single-toy').forEach(toy => {
+      const b = toy.getBoundingClientRect()
+      if (a.left >= b.right || a.right <= b.left || a.top >= b.bottom || a.bottom <= b.top) return
+      const dist = Math.hypot((a.left+a.right-b.left-b.right)/2,(a.top+a.bottom-b.top-b.bottom)/2)
+      if (dist < nearest) { nearest = dist; this.clawTargetId = toy.dataset.toyId ?? null }
+    })
+    return this.clawTargetId !== null
   }
 
   private respawnClawToy(): void {
-    this.randomizeClawToy()
-    const toy = this.root.querySelector<HTMLElement>('.claw-single-toy')
-    if (!toy) { this.renderClaw(); return }
+    const id = this.clawTargetId
+    if (!id) return
+    this.randomizeClawToy(id)
+    const data = this.clawToys.find(toy => toy.id === id)
+    const toy = this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${id}"]`)
+    if (!toy || !data) { this.renderClaw(); return }
     toy.classList.remove('is-lifted', 'is-dropped')
     toy.style.transition = 'none'
-    toy.style.left = `${this.clawToyX}%`
-    toy.style.top = `${this.clawToyY}%`
+    toy.style.left = `${data.x}%`
+    toy.style.top = `${data.y}%`
     void toy.offsetWidth
     toy.style.removeProperty('transition')
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
@@ -624,12 +645,15 @@ export class GachaUi {
 
   private renderClaw(): void {
     this.renderWallet()
+    if (!this.clawToys.length) this.randomizeClawToy()
     const toys = this.root.querySelector<HTMLElement>('.claw-toys')
-    if (toys) toys.innerHTML = `<img class="claw-single-toy" src="/assets/chars/chiikawa_face_claw.png" alt="치이카와 얼굴 인형" style="left:${this.clawToyX}%;top:${this.clawToyY}%"/>`
+    if (toys) toys.innerHTML = this.clawToys.map(toy =>
+      `<img class="claw-single-toy" data-toy-id="${toy.id}" src="/assets/chars/${toy.id}_face_claw.png" alt="${toy.name} 얼굴 인형" style="left:${toy.x}%;top:${toy.y}%"/>`
+    ).join('')
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
-    if (msg) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
+    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 세 인형 모두 같은 확률과 보상이 적용돼요.'
     this.updateClawPosition()
   }
 
@@ -652,13 +676,14 @@ export class GachaUi {
     this.clawBusy = true
     const btn = this.root.querySelector<HTMLButtonElement>('.claw-play')
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
-    const toy = this.root.querySelector<HTMLElement>('.claw-single-toy')
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
     if (btn) btn.disabled = true
     let wonToy = false
     try {
       const aligned = this.clawTouchesToy()
+      const toy = this.clawTargetId ? this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${this.clawTargetId}"]`) : null
+      const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
       const previousDecos = { ...this.store.decos }
       const result = await this.store.playClaw(aligned)
       this.renderWallet()
@@ -724,8 +749,8 @@ export class GachaUi {
           if (toy) {
             toy.classList.remove('is-lifted', 'is-dropped')
             toy.style.transition = 'none'
-            toy.style.left = `${this.clawToyX}%`
-            toy.style.top = `${this.clawToyY}%`
+            toy.style.left = `${originalToy?.x ?? 50}%`
+            toy.style.top = `${originalToy?.y ?? 50}%`
             void toy.offsetWidth
             toy.style.removeProperty('transition')
           }
