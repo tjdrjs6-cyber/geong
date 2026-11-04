@@ -44,7 +44,7 @@ export const ERROR_TEXT: Record<string, string> = {
   busy_battle: '토벌장에 있는 친구는 제초장에 보낼 수 없어요.',
   busy_weed: '제초장에 있는 친구는 토벌장에 보낼 수 없어요.',
   deco_not_owned: '가지고 있는 데코만 배치할 수 있어요.',
-  house_full: '데코는 최대 10개까지 놓을 수 있어요.',
+  house_full: '데코는 최대 20개까지 놓을 수 있어요.',
   house_friends_full: '친구는 최대 3명까지 데려올 수 있어요.',
   invalid_house: '배치를 저장하지 못했어요. 다시 시도해 주세요.',
   not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',

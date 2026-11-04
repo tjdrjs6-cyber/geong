@@ -73,7 +73,7 @@ export type DecoPullResult = { id: DecoId; duplicate: boolean; bonus: number }
 export type HousePiece = { id: DecoId; x: number; y: number; s: number; f: boolean }
 export type HouseFriend = { id: string; x: number; y: number; f: boolean }
 export type HouseLayout = { pieces: HousePiece[]; friends: HouseFriend[] }
-export const HOUSE_MAX_PIECES = 10
+export const HOUSE_MAX_PIECES = 20
 export const HOUSE_MAX_FRIENDS = 3
 
 const previewUrls: Record<DecoId, string> = {

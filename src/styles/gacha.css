@@ -1746,3 +1746,20 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* v0.02: unread global chat indicator */
 .nav-global-chat { position: relative; }
 .global-chat-dot:not([hidden]) { position:absolute; top:5px; right:7px; width:10px; height:10px; border-radius:50%; background:#f13e50; border:2px solid #fff; box-shadow:0 0 0 1px #e65a65; pointer-events:none; }
+
+/* v0.05: owner and visitor use the SAME wide coordinate plane on all devices.
+   Deco dimensions scale with stage width rather than viewport height. */
+.house-screen .house-lot, .house-lot.house-visit {
+  width:100% !important; aspect-ratio:1900 / 690 !important;
+  height:auto !important; flex:0 0 auto !important; min-height:0 !important;
+  max-height:none !important; container-type:inline-size;
+}
+.house-screen .house-lot .house-bg {object-fit:fill !important;}
+.house-screen .house-lot .house-piece {width:calc(7cqw * var(--s,1)) !important;}
+.house-screen .house-lot .house-friend {width:7.6cqw !important;}
+.house-screen .house-lot.house-visit {touch-action:auto;}
+@media (max-width:760px) {
+  .house-screen .house-lot {min-height:0 !important;}
+  .house-screen .house-panel {flex:1 1 auto; min-height:110px; height:auto; max-height:none;}
+  .house-screen .house-tools {bottom:calc(min(38dvh,320px) + 8px);}
+}

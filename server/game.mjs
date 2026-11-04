@@ -132,7 +132,7 @@ export function pullDecos(gems, decos, count, randomInt) {
 }
 
 /** House lot layout: up to 10 owned decos (copies limited by count) and up to 3 different owned friends. */
-export const HOUSE_MAX_PIECES = 10
+export const HOUSE_MAX_PIECES = 20
 export const HOUSE_MAX_FRIENDS = 3
 /** Converts any saved layout (including the old single `friend` shape) to { pieces, friends }, trimmed to the limits. */
 export function normalizeHouse(layout) {
