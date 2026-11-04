@@ -84,6 +84,7 @@ export class GachaUi {
 
   show(screen: Screen): void {
     this.screen = screen
+    if (screen !== 'users') this.root.querySelector('.users-card')?.classList.remove('privacy-mode')
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
       const active = node.dataset.screen === screen
@@ -203,6 +204,7 @@ export class GachaUi {
           <b id="house-title">하우스</b>
           <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
+        <div class="house-zoom-controls" aria-label="하우스 화면 확대 축소"><button type="button" data-action="house-zoom-out">－</button><span class="house-zoom-label">100%</span><button type="button" data-action="house-zoom-in">＋</button><button type="button" data-action="house-zoom-reset">기본</button></div>
         <div class="house-scroll-viewport" aria-label="하우스 좌우 스크롤 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><span class="house-coin-face">✿</span><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
         <div class="weed-panel house-panel">
@@ -375,6 +377,21 @@ export class GachaUi {
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
+    if (action === 'house-zoom-in' || action === 'house-zoom-out' || action === 'house-zoom-reset') {
+      const screen = this.root.querySelector<HTMLElement>('.house-screen')
+      const viewport = screen?.querySelector<HTMLElement>('.house-scroll-viewport')
+      const lot = viewport?.querySelector<HTMLElement>('.house-lot')
+      if (screen && viewport && lot) {
+        const current = Number(screen.dataset.zoom || '100')
+        const next = action === 'house-zoom-reset' ? 100 : Math.max(60, Math.min(160, current + (action === 'house-zoom-in' ? 20 : -20)))
+        const center = (viewport.scrollLeft + viewport.clientWidth / 2) / Math.max(1, lot.offsetWidth)
+        screen.dataset.zoom = String(next)
+        screen.style.setProperty('--house-zoom', String(next / 100))
+        screen.querySelector<HTMLElement>('.house-zoom-label')!.textContent = `${next}%`
+        requestAnimationFrame(() => { viewport.scrollLeft = center * lot.offsetWidth - viewport.clientWidth / 2 })
+      }
+      return
+    }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
     if (action === 'weed') { this.show('weed'); return }
@@ -385,7 +402,7 @@ export class GachaUi {
     if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
-    if (action === 'users') { this.show('users'); void this.loadUsers(); return }
+    if (action === 'users') { this.root.querySelector('.users-card')?.classList.remove('privacy-mode'); this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
     if (action === 'admin-broadcast-send') { await this.sendBroadcast(); return }
@@ -842,21 +859,23 @@ export class GachaUi {
 
   private async openPrivacy(): Promise<void> {
     try { this.privacy = await this.store.profilePrivacy() } catch (error) { this.handleError(error); return }
-    const body = this.root.querySelector<HTMLElement>('.users-body')
     this.show('users')
+    const usersCard = this.root.querySelector<HTMLElement>('.users-card')
+    usersCard?.classList.add('privacy-mode')
+    const body = this.root.querySelector<HTMLElement>('.users-body')
     if (!body) return
-    body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="users">← 유저 목록</button><b>🔒 내 정보 공개 설정</b></div>
+    body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="featured">← 내 프로필</button><b>🔒 내 정보 공개 설정</b></div>
       <p class="collection-summary">항목별로 다른 유저에게 보여줄지 설정하세요. 비공개 정보는 서버에서도 차단됩니다.</p>
       <div class="privacy-settings">
       <label><input type="checkbox" data-privacy="char" ${this.privacy.char ? 'checked' : ''}/> 보유 캐릭터 공개</label>
       <label><input type="checkbox" data-privacy="deco" ${this.privacy.deco ? 'checked' : ''}/> 보유 데코 공개</label>
       <label><input type="checkbox" data-privacy="house" ${this.privacy.house ? 'checked' : ''}/> 마이홈 공개</label></div>
-      <button class="modal-primary" data-action="privacy-save">설정 저장</button>`
+      <div class="privacy-save-actions"><button class="modal-primary" data-action="privacy-save">설정 저장</button><button class="modal-secondary" data-action="featured">취소하고 내 프로필로</button></div>`
   }
 
   private async savePrivacy(): Promise<void> {
     const privacy = Object.fromEntries(['char','deco','house'].map(k => [k, Boolean(this.root.querySelector<HTMLInputElement>(`[data-privacy="${k}"]`)?.checked)])) as ProfilePrivacy
-    try { this.privacy = await this.store.setProfilePrivacy(privacy); this.toast('공개 설정을 저장했어요.'); this.show('profile') }
+    try { this.privacy = await this.store.setProfilePrivacy(privacy); this.root.querySelector('.users-card')?.classList.remove('privacy-mode'); this.show('featured'); this.toast('공개 설정을 저장했어요.') }
     catch (error) { this.handleError(error) }
   }
 
@@ -866,11 +885,11 @@ export class GachaUi {
     if (!this.users.length) { body.innerHTML = '<p class="users-empty">아직 닉네임을 정한 유저가 없어요.</p>'; return }
     body.innerHTML = `<p class="collection-summary">가입한 유저 ${this.users.length}명 · 닉네임을 누르면 그 유저의 도감을 볼 수 있어요.</p>
       <div class="users-list" role="list">${this.users.map(user => {
-        const percent = user.privacy.char || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
+        const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
           <span class="user-main"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b><i class="user-bar"><i style="width:${percent}%"></i></i></span>
-          <span class="user-count">${user.privacy.char || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${user.privacy.deco || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
+          <span class="user-count">${(user.privacy?.char ?? true) || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${(user.privacy?.deco ?? true) || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
         </button>`
       }).join('')}</div>`
   }
@@ -880,17 +899,19 @@ export class GachaUi {
     const user = this.users.find(item => item.nickname === nickname)
     if (!body || !user) return
     const nick = escapeHtml(user.nickname)
+    const avatarId = user.featured ?? user.owned[0]
+    const avatar = avatarId && CHARACTER_IMAGE_URLS[avatarId] ? `<img class="user-detail-avatar" src="${CHARACTER_IMAGE_URLS[avatarId]}" alt="대표 프로필 사진" />` : `<span class="user-detail-avatar user-avatar-empty">?</span>`
     const decoCounts = Object.fromEntries((user.decos ?? []).map(id => [id, 1])) as Partial<Record<DecoId, number>>
     const tab = this.userTab
     const deco = tab === 'deco'
     const title = tab === 'house' ? '하우스' : deco ? '데코 도감' : '도감'
-    const isPrivate = !user.me && !user.privacy[tab === 'house' ? 'house' : deco ? 'deco' : 'char']
+    const isPrivate = !user.me && !(user.privacy?.[tab === 'house' ? 'house' : deco ? 'deco' : 'char'] ?? true)
     const count = isPrivate ? '🔒 비공개' : tab === 'house' ? '' : deco ? `${user.decos?.length ?? 0} / ${DECOS.length}` : `${user.owned.length} / ${CHARACTERS.length}`
     const tabButton = (id: string, label: string) => `<button type="button" class="auth-tab${tab === id ? ' is-active' : ''}" data-action="user-tab" data-tab="${id}" data-nickname="${nick}" role="tab" aria-selected="${tab === id}">${label}</button>`
-    body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="user-list">← 유저 목록</button><b>${nick} 님의 ${title}</b><span>${count}</span></div>
+    body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="user-list">← 유저 목록</button>${avatar}<b>${nick} 님의 ${title}</b><span>${count}</span></div>
       ${user.me ? '' : `<button class="modal-primary mail-compose-button" data-action="mail-compose" data-nickname="${nick}">✉ ${nick} 님에게 편지 보내기</button>`}
       <div class="auth-tabs user-tabs user-tabs-3" role="tablist">${tabButton('char', '캐릭터 도감')}${tabButton('deco', '데코 도감')}${tabButton('house', '🏠 하우스')}</div>
-      ${isPrivate ? '<p class="users-empty">🔒 이 정보는 비공개로 설정되어 있어요.</p>' : tab === 'house' ? '<div class="user-house"><p class="user-house-loading">하우스를 불러오는 중…</p></div>' : `<div class="collection-grid user-grid">${deco ? this.decoCards(decoCounts, false) : this.collectionCards(user.owned, false)}</div>`}`
+      ${isPrivate ? '<p class="users-empty privacy-hidden-notice">🔒 이 정보는 비공개로 설정되어 있어요.<br>프로필 사진과 닉네임은 계속 볼 수 있어요.</p>' : tab === 'house' ? '<div class="user-house"><p class="user-house-loading">하우스를 불러오는 중…</p></div>' : `<div class="collection-grid user-grid">${deco ? this.decoCards(decoCounts, false) : this.collectionCards(user.owned, false)}</div>`}`
     if (tab === 'house' && !isPrivate) void this.loadUserHouse(user.nickname)
   }
   private async loadUserHouse(nickname: string): Promise<void> {

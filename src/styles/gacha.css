@@ -1789,3 +1789,26 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 
 /* v0.08 — profile visibility controls */
 .privacy-settings{display:grid;gap:12px;margin:18px 0}.privacy-settings label{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:#fff7fa;color:#55434a;font-weight:700}.privacy-settings input{width:19px;height:19px;accent-color:#df87a7}
+
+/* v0.09: zoom the complete house plane while retaining its 1900:690 coordinates. */
+.house-screen { --house-zoom:1; }
+.house-screen .house-scroll-viewport { overflow-x:auto !important; overflow-y:hidden !important; }
+.house-screen .house-scroll-viewport > .house-lot { width:calc(100% * var(--house-zoom)) !important; max-width:none !important; }
+.house-zoom-controls { display:flex; align-items:center; justify-content:center; gap:7px; padding:5px 8px; background:#fff9fb; flex:0 0 auto; }
+.house-zoom-controls button { border:1px solid #e9bccd; background:white; color:#73495d; border-radius:9px; padding:5px 12px; font-weight:800; cursor:pointer; }
+.house-zoom-label { min-width:48px; text-align:center; font-weight:800; color:#75485a; }
+.user-detail-avatar { display:block; width:40px; height:40px; object-fit:contain; border-radius:50%; background:#fff1f6; flex:0 0 auto; }
+.privacy-hidden-notice { padding:30px 12px; line-height:2; }
+@media(max-width:760px) {
+ .house-screen .house-scroll-viewport > .house-lot { width:calc(1100px * var(--house-zoom)) !important; min-width:0 !important; height:100% !important; }
+ .house-zoom-controls { padding:4px; }
+ .house-zoom-controls button { padding:5px 10px; }
+}
+
+/* v0.10: privacy settings have their own scrolling area and no competing footer. */
+.gacha-modal .users-card.privacy-mode {display:flex;flex-direction:column;overflow:hidden;max-height:min(90dvh,760px);}
+.gacha-modal .users-card.privacy-mode .users-body {flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:18px;}
+.gacha-modal .users-card.privacy-mode > [data-action="close"].modal-primary {display:none!important;}
+.gacha-modal .users-card.privacy-mode .privacy-save-actions {display:grid;gap:10px;margin:20px 0 8px;position:relative;}
+.gacha-modal .users-card.privacy-mode .privacy-save-actions > button {position:static!important;display:block;width:100%;min-height:46px;margin:0!important;white-space:normal;}
+.gacha-modal .users-card.privacy-mode .privacy-settings {margin:16px 0;}

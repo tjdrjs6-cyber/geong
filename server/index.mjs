@@ -694,10 +694,10 @@ const routes = {
     const users = rows.map(row => {
       const me = Number(row.id) === Number(account.id)
       const privacy = { char: row.show_char === null || row.show_char === undefined ? true : Boolean(row.show_char), deco: row.show_deco === null || row.show_deco === undefined ? true : Boolean(row.show_deco), house: row.show_house === null || row.show_house === undefined ? true : Boolean(row.show_house) }
-      const rawOwned = normalizeOwned(typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned)
+      const rawOwned = normalizeOwned(parseJson(row.owned || '[]'))
       const owned = me || privacy.char ? rawOwned : []
       const decos = me || privacy.deco ? Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {})) : []
-      const featured = (me || privacy.char) && row.featured && rawOwned.includes(row.featured) ? row.featured : null
+      const featured = row.featured && rawOwned.includes(row.featured) ? row.featured : (rawOwned[0] || null)
       return { nickname: row.nickname, owned, decos, featured, me, privacy }
     })
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
