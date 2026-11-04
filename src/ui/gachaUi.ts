@@ -155,9 +155,11 @@ export class GachaUi {
         </header>
         <div class="weed-field">${weedFieldMarkup()}</div>
         <div class="weed-panel">
+          <div class="field-info-sticky">
           <p class="weed-status"></p>
           <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 코인까지</small></span><span><b class="weed-rate">0.00</b><small>제초 코인/시간 · 자동 지급</small></span></div>
           <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 친구마다 1시간에 1코인씩(제초 속도 보너스 적용) 자동으로 지갑에 들어오고, 앱을 닫아도 계속 모여요. 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
+          </div>
           <div class="weed-beetle-slot" hidden></div>
           <div class="weed-picker" role="list" aria-label="제초할 친구 고르기"></div>
         </div>
@@ -171,9 +173,11 @@ export class GachaUi {
         </header>
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
+          <div class="field-info-sticky">
           <p class="battle-status"></p>
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
           <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 1코인을 받아요. 앱을 닫아도 계속 싸워요.</p>
+                    </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
         <div class="toast battle-toast" aria-live="polite"></div>
@@ -187,8 +191,10 @@ export class GachaUi {
         <div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><span class="house-coin-face">✿</span><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div>
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
         <div class="weed-panel house-panel">
+          <div class="field-info-sticky">
           <div class="house-panel-head"><div class="auth-tabs house-tabs" role="tablist"><button type="button" class="auth-tab is-active" data-action="house-tab" data-tab="deco" role="tab" aria-selected="true">🎀 데코</button><button type="button" class="auth-tab" data-action="house-tab" data-tab="friend" role="tab" aria-selected="false">🐾 친구 1명</button></div><span class="house-meta"><b class="house-count">0 / 60</b> · <span class="house-save">자동 저장</span></span></div>
           <p class="weed-rule">데코를 눌러 공터에 꺼내고, 끌어서 옮겨요. 놓인 데코를 누르면 뒤집기·크기·넣기를 할 수 있어요.</p>
+                    </div>
           <div class="house-inventory" role="list" aria-label="꺼낼 데코"></div>
         </div>
         <div class="toast house-toast" aria-live="polite"></div>
@@ -219,8 +225,8 @@ export class GachaUi {
       <section class="gacha-modal" data-screen="collection" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="collection-title">
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">YOUR LITTLE FRIENDS</div><h2 id="collection-title">캐릭터 도감</h2>
-          <p class="collection-summary">31명의 친구를 모아보세요. 일반 각 6.04% (갑옷씨2·3 각 6.05%) · 레어(인어의섬) 각 2.20% · 에픽 각 1.00% · 유니크(카레·진저맨·풍뎅이) 각 0.30%</p>
+          <div class="collection-info-sticky"><div class="modal-kicker">YOUR LITTLE FRIENDS</div><h2 id="collection-title">캐릭터 도감</h2>
+          <p class="collection-summary">31명의 친구를 모아보세요. 일반 각 6.04% (갑옷씨2·3 각 6.05%) · 레어(인어의섬) 각 2.20% · 에픽 각 1.00% · 유니크(카레·진저맨·풍뎅이) 각 0.30%</p></div>
           <div class="collection-grid"></div>
           <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
           <button class="modal-primary" data-action="close">가챠로 돌아가기</button>
@@ -239,8 +245,8 @@ export class GachaUi {
       <section class="gacha-modal" data-screen="decos" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decos-title">
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">HOUSE DECO</div><h2 id="decos-title">데코 도감</h2>
-          <p class="collection-summary">데코 ${DECOS.length}종 · 모두 같은 확률(각 ${DECO_PROBABILITY}%)</p>
+          <div class="collection-info-sticky"><div class="modal-kicker">HOUSE DECO</div><h2 id="decos-title">데코 도감</h2>
+          <p class="collection-summary">데코 ${DECOS.length}종 · 모두 같은 확률(각 ${DECO_PROBABILITY}%)</p></div>
           <div class="collection-grid deco-grid"></div>
           <div class="duplicate-note">새 데코 등록 +${DECO_NEW_BONUS}코인 · 중복 데코는 하우스에 하나 더 놓을 수 있어요</div>
           <button class="modal-primary" data-action="house">🏠 하우스 꾸미러 가기</button>

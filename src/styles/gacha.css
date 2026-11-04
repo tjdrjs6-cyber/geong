@@ -722,3 +722,47 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .house-screen .house-panel .weed-rule { display:none; }
 .house-screen .house-tools { bottom:calc(min(29dvh,220px) + 8px); }
 .house-screen .house-lot { flex:1 1 auto; min-height:0; }
+
+/* Fixed collection portrait slots: images never push the labels down. */
+.collection-grid .friend-card { min-width:0; box-sizing:border-box; }
+.collection-grid .friend-avatar {
+  flex:0 0 auto; width:min(100%,96px); aspect-ratio:1/1;
+  height:auto; overflow:hidden; box-sizing:border-box;
+}
+.collection-grid .friend-avatar img {
+  display:block; width:100%; height:100%; max-width:100%; max-height:100%;
+  object-fit:contain; object-position:center;
+}
+.collection-grid .friend-card > b { width:100%; min-height:20px; line-height:20px; }
+.collection-grid .friend-card > small { width:100%; min-height:28px; line-height:14px; }
+@media(max-width:760px) {
+  .collection-grid .friend-avatar { width:min(100%,84px); }
+  .collection-grid .friend-card > b { min-height:18px; line-height:18px; }
+}
+
+/* Keep the information above characters visible while scrolling the lists. */
+.collection-card .collection-info-sticky {
+  position: sticky;
+  top: -34px;
+  z-index: 12;
+  padding: 18px 42px 12px 0;
+  margin: -18px 0 12px;
+  background: #fffaf5;
+  border-bottom: 1px solid rgba(219,190,177,.55);
+}
+.collection-card .collection-info-sticky .collection-summary { margin-bottom: 0; }
+.collection-card .modal-close { position: sticky; top: 0; float: right; margin: -18px -20px 0 0; z-index: 15; }
+.weed-panel .field-info-sticky {
+  position: sticky;
+  top: -16px;
+  z-index: 10;
+  margin: -16px -16px 12px;
+  padding: 16px 16px 10px;
+  background: #fffdf8;
+  border-bottom: 1px solid #eadcd4;
+}
+.weed-panel .field-info-sticky .weed-rule { margin-bottom: 0; }
+@media (max-width: 760px) {
+  .collection-card .collection-info-sticky { top: -30px; margin-top: -14px; padding-top: 14px; padding-right: 34px; }
+  .collection-card .modal-close { margin: -14px -8px 0 0; }
+}
