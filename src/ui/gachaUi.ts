@@ -230,7 +230,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">10,000,000</b> / 10,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버별 최대 10명 · 1인 1서버 · 3초마다 전투력만큼 공격 · 처치 시 참여자 모두 500코인 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 모두 500코인 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -406,7 +406,7 @@ export class GachaUi {
     if (action === 'house') { this.show('house'); return }
     if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.show('expedition');return}
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;if(this.expedition)this.renderExpedition();return}
-    if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대에 배치했어요!');await this.loadExpedition()}catch(e){this.handleError(e)}return}
+    if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition()}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
@@ -1096,9 +1096,9 @@ export class GachaUi {
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members)members.innerHTML=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))}</span>`).join('')
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party)party.innerHTML=room.members.map((m,i)=>`<img class="expedition-fighter" style="--n:${i};animation-delay:${i*.13}s" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" />`).join('')
+    if(party)party.innerHTML=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--delay:${i*.13}s"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('')
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker)picker.innerHTML=state.mine?'오늘 배치가 완료됐어요. 내일 오전 9시에 다시 배치할 수 있어요.':hp===0?'보스가 처치됐어요.':room.members.length>=10?'이 서버는 인원이 가득 찼어요.':`<b>원정대에 보낼 캐릭터 선택</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+    if(picker)picker.innerHTML=hp===0?'보스가 처치됐어요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
     this.renderWallet()
   }
 

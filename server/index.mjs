@@ -584,7 +584,7 @@ async function expeditionSettle(conn, day, serverId, now) {
       const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
       for(const player of players) {
         const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_paid (raid_day,server_id,account_id) VALUES (?,?,?)',[day,serverId,player.account_id])
-        if(paid.affectedRows) await conn.query('UPDATE gm_saves SET gems=gems+500 WHERE account_id=?',[player.account_id])
+        if(paid.affectedRows) await conn.query('UPDATE gm_saves SET coins=coins+500 WHERE account_id=?',[player.account_id])
       }
     }
   }
@@ -615,14 +615,15 @@ async function expeditionJoin(accountId,serverId,characterId) {
     await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
     const hp=await expeditionSettle(conn,day,serverId,now)
     const [old]=await conn.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
-    if(old.length) {await conn.rollback();return 'exp_already_joined'}
+    if(old.length && Number(old[0].server_id)!==serverId) {await conn.rollback();return 'exp_already_joined'}
     if(hp<=0) {await conn.rollback();return 'exp_boss_dead'}
     const [count]=await conn.query('SELECT COUNT(*) AS n FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
-    if(Number(count[0].n)>=10){await conn.rollback();return 'exp_full'}
+    if(!old.length && Number(count[0].n)>=10){await conn.rollback();return 'exp_full'}
     const [owned]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[accountId])
     const ids=owned.length?normalizeOwned(parseJson(owned[0].owned)):[]
     if(!ids.includes(characterId)){await conn.rollback();return 'not_owned'}
-    await conn.query('INSERT INTO gm_expedition_member (raid_day,account_id,server_id,character_id,joined_ms) VALUES (?,?,?,?,?)',[day,accountId,serverId,characterId,now])
+    if(old.length) await conn.query('UPDATE gm_expedition_member SET character_id=? WHERE raid_day=? AND account_id=?',[characterId,day,accountId])
+    else await conn.query('INSERT INTO gm_expedition_member (raid_day,account_id,server_id,character_id,joined_ms) VALUES (?,?,?,?,?)',[day,accountId,serverId,characterId,now])
     await conn.commit();return null
   } catch(e){await conn.rollback();if(e.code==='ER_DUP_ENTRY')return 'exp_already_joined';throw e}finally{conn.release()}
 }
