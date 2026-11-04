@@ -2664,3 +2664,10 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen .gacha-nav .nav-button .chiikawa-tab-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:17px!important;height:17px!important;flex:0 0 17px!important;}
 .gacha-screen .gacha-nav .nav-button .chiikawa-tab-icon img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}
 .gacha-screen .pull-mode-button .chiikawa-pull-icon{display:inline-block!important;width:17px!important;height:17px!important;object-fit:contain!important;vertical-align:middle!important;margin-right:3px!important;}
+
+/* v0.29: compact mobile sidebar, safe footer, always-visible version. */
+.gacha-screen > .gacha-nav { top:calc(49px + var(--safe-t,0px)) !important; gap:5px !important; max-height:calc(844px - 105px) !important; }
+.gacha-screen > .gacha-nav .nav-button { min-height:33px !important; }
+.gacha-screen > .gacha-actions { bottom:calc(42px + var(--safe-b,0px)) !important; }
+.gacha-screen > .free-note { bottom:calc(22px + var(--safe-b,0px)) !important; }
+#geongi-version { position:fixed !important; bottom:max(6px,env(safe-area-inset-bottom,0px)) !important; right:max(7px,env(safe-area-inset-right,0px)) !important; z-index:2147483647 !important; display:block !important; visibility:visible !important; opacity:1 !important; font:11px/1.2 Arial,sans-serif !important; color:#6d6268 !important; background:rgba(255,255,255,.85) !important; border-radius:6px !important; padding:3px 5px !important; pointer-events:none !important; }
