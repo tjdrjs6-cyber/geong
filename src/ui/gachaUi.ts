@@ -88,7 +88,7 @@ export class GachaUi {
     this.root.dataset.activeScreen = screen
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
-    if (screen === 'claw') { this.clawToyX = 18 + Math.random()*64; this.clawToyY = 20 + Math.random()*58; this.clawX = 50; this.clawY = 50; this.renderClaw() }
+    if (screen === 'claw') { this.randomizeClawToy(); this.clawX = 50; this.clawY = 50; this.renderClaw() }
     if (screen === 'mail') void this.loadMail()
     if (screen === 'storage') this.renderStorage()
     if (screen === 'suggest') void this.loadSuggest()
@@ -280,6 +280,7 @@ export class GachaUi {
       </section>
       <section class="gacha-modal claw-screen" data-screen="claw" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="claw-title">
         <div class="modal-card claw-card">
+          <button class="weed-back claw-back" data-action="close">← 가챠로</button>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <h2 id="claw-title">🧸 치이카와 인형뽑기</h2>
           <p class="claw-desc">💎 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
@@ -538,6 +539,37 @@ export class GachaUi {
   /** Operator accounts have unlimited coins (the server never charges them). */
   private get isAdmin(): boolean { return Boolean(this.store.user?.admin) }
 
+  private randomizeClawToy(): void {
+    // Keep the plush inside the play area and away from the prize chute.
+    this.clawToyX = 18 + Math.random() * 62
+    this.clawToyY = 22 + Math.random() * 62
+  }
+
+  private clawTouchesToy(): boolean {
+    const head = this.root.querySelector<HTMLElement>('.claw-head')
+    const toy = this.root.querySelector<HTMLElement>('.claw-single-toy')
+    if (!head || !toy) return false
+    const a = head.getBoundingClientRect()
+    const b = toy.getBoundingClientRect()
+    // Require a genuine overlap of the visible claw head and plush image.
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+  }
+
+  private respawnClawToy(): void {
+    this.randomizeClawToy()
+    const toy = this.root.querySelector<HTMLElement>('.claw-single-toy')
+    if (!toy) { this.renderClaw(); return }
+    toy.classList.remove('is-lifted', 'is-dropped')
+    toy.style.transition = 'none'
+    toy.style.left = `${this.clawToyX}%`
+    toy.style.top = `${this.clawToyY}%`
+    void toy.offsetWidth
+    toy.style.removeProperty('transition')
+    const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+    if (arm) { arm.classList.remove('is-dropping'); arm.style.removeProperty('transition') }
+    this.updateClawPosition()
+  }
+
   private renderClaw(): void {
     this.renderWallet()
     const toys = this.root.querySelector<HTMLElement>('.claw-toys')
@@ -572,21 +604,40 @@ export class GachaUi {
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
     if (btn) btn.disabled = true
+    let grabbedToy = false
     try {
-      const aligned = Math.hypot(this.clawX-this.clawToyX, this.clawY-this.clawToyY) <= 13
+      const aligned = this.clawTouchesToy()
+      grabbedToy = aligned
       const result = await this.store.playClaw(aligned)
       this.renderWallet()
-      if (msg) msg.textContent = '집게가 내려가 인형을 들어 올립니다…'
+      if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
       await new Promise(resolve => window.setTimeout(resolve, 700))
       arm?.classList.remove('is-dropping')
-      toy?.classList.add('is-lifted')
-      await new Promise(resolve => window.setTimeout(resolve, 650))
+      if (aligned) toy?.classList.add('is-lifted')
+      await new Promise(resolve => window.setTimeout(resolve, aligned ? 650 : 250))
       if (result.won && result.prize) {
-        if (arm) { arm.style.left='88%'; arm.style.top='15%' }
-        if (toy) { toy.style.left='88%'; toy.style.top='15%' }
-        await new Promise(resolve => window.setTimeout(resolve, 750))
+        // Keep the plush attached to the claw during the entire trip to the exit.
+        // Derive the exit center from the actual rendered chute, including mobile layouts.
+        const machine = this.root.querySelector<HTMLElement>('.claw-machine')
+        const chute = this.root.querySelector<HTMLElement>('.claw-chute')
+        let exitX = 88
+        let exitY = 15
+        if (machine && chute) {
+          const m = machine.getBoundingClientRect()
+          const c = chute.getBoundingClientRect()
+          if (m.width > 0 && m.height > 0) {
+            exitX = Math.max(0, Math.min(100, (c.left + c.width / 2 - m.left) / m.width * 100))
+            exitY = Math.max(0, Math.min(100, (c.top + c.height / 2 - m.top) / m.height * 100))
+          }
+        }
+        if (msg) msg.textContent = '성공! 집게가 인형을 잡은 채 출구로 이동합니다…'
+        if (arm) { arm.style.transition = 'left 1.15s ease-in-out, top 1.15s ease-in-out'; arm.style.left = `${exitX}%`; arm.style.top = `${exitY}%` }
+        if (toy) { toy.style.transition = 'left 1.15s ease-in-out, top 1.15s ease-in-out, transform .55s, opacity .5s'; toy.style.left = `${exitX}%`; toy.style.top = `${exitY}%` }
+        await new Promise(resolve => window.setTimeout(resolve, 1200))
+        // Only release the doll once both claw and doll have reached the exit.
         toy?.classList.add('is-dropped')
+        await new Promise(resolve => window.setTimeout(resolve, 520))
         const deco = DECOS.find(item => item.id === result.prize)
         if (deco && prizeEl) {
           prizeEl.innerHTML = `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="${deco.name}"/>`
@@ -595,11 +646,16 @@ export class GachaUi {
         }
         if (msg) msg.textContent = `🎉 성공! ${deco?.name ?? '데코'} 획득! 보관함에 지급됐어요.`
       } else {
-        toy?.classList.add('is-dropped')
-        if (msg) msg.textContent = '아쉽게 인형이 떨어졌어요! 다음에 다시 도전해요.'
+        if (aligned) toy?.classList.add('is-dropped')
+        if (msg) msg.textContent = aligned ? '아쉽게 인형이 떨어졌어요! 다음에 다시 도전해요.' : '허공이라 인형을 잡지 못했어요!'
       }
     } catch (error) { this.handleError(error) }
-    finally { this.clawBusy=false; if(btn) btn.disabled=false; this.updateClawPosition() }
+    finally {
+      // Only reposition after an actual doll grab. Empty-air attempts leave the doll untouched.
+      if (grabbedToy) this.respawnClawToy()
+      this.clawBusy=false
+      if(btn) btn.disabled=false
+    }
   }
 
   private renderWallet(): void {
