@@ -2912,3 +2912,8 @@ html body > #geongi-version {
 .gacha-modal.claw-screen .claw-graphic {display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 2px #8c566555);}
 .gacha-modal.claw-screen .claw-single-toy {z-index:3;}
 .gacha-modal.claw-screen .claw-single-toy.is-lifted {z-index:9;}
+
+/* v0.64: larger open/closed illustrated claw, preserve the center alignment. */
+.gacha-modal.claw-screen .claw-arm {width:20%!important;height:29%!important;}
+.gacha-modal.claw-screen .claw-arm.is-dropping {transform:translate(-50%,-44%)!important;}
+.gacha-modal.claw-screen .claw-graphic {object-fit:contain!important;}

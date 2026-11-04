@@ -360,7 +360,7 @@ export class GachaUi {
           <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · 💎 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
-            <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw.png" alt="" /></div>
+            <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw_open.png" alt="" /></div>
             <div class="claw-toys"></div><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
           <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small>💎 1개</small></button></div>
@@ -683,17 +683,33 @@ export class GachaUi {
 
   private clawTouchesToy(): boolean {
     this.clawTargetId = null
-    const head = this.root.querySelector<HTMLElement>('.claw-head')
-    if (!head) return false
-    const a = head.getBoundingClientRect()
+    const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+    if (!arm) return false
+    const a = arm.getBoundingClientRect()
+    // The two lower claw tips (not just the nonexistent legacy .claw-head)
+    // can touch any part of a plush to initiate a pickup.
+    const tips = [
+      { x: a.left + a.width * .23, y: a.top + a.height * .87 },
+      { x: a.left + a.width * .77, y: a.top + a.height * .87 },
+      { x: a.left + a.width * .50, y: a.top + a.height * .73 },
+    ]
     let nearest = Infinity
     this.root.querySelectorAll<HTMLElement>('.claw-single-toy').forEach(toy => {
       const b = toy.getBoundingClientRect()
-      if (a.left >= b.right || a.right <= b.left || a.top >= b.bottom || a.bottom <= b.top) return
-      const dist = Math.hypot((a.left+a.right-b.left-b.right)/2,(a.top+a.bottom-b.top-b.bottom)/2)
-      if (dist < nearest) { nearest = dist; this.clawTargetId = toy.dataset.toyId ?? null }
+      const gap = Math.max(4, Math.min(a.width, a.height) * .08)
+      for (const tip of tips) {
+        const dx = Math.max(b.left - tip.x, 0, tip.x - b.right)
+        const dy = Math.max(b.top - tip.y, 0, tip.y - b.bottom)
+        const dist = Math.hypot(dx, dy)
+        if (dist <= gap && dist < nearest) { nearest = dist; this.clawTargetId = toy.dataset.toyId ?? null }
+      }
     })
     return this.clawTargetId !== null
+  }
+
+  private setClawClosed(closed: boolean): void {
+    const graphic = this.root.querySelector<HTMLImageElement>('.claw-graphic')
+    if (graphic) graphic.src = closed ? '/assets/claw/claw_closed.png' : '/assets/claw/claw_open.png'
   }
 
   private respawnClawToy(): void {
@@ -711,6 +727,7 @@ export class GachaUi {
     toy.style.removeProperty('transition')
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
     if (arm) { arm.classList.remove('is-dropping'); arm.style.removeProperty('transition') }
+    this.setClawClosed(false)
     this.updateClawPosition()
   }
 
@@ -804,7 +821,9 @@ export class GachaUi {
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
-      await new Promise(resolve => window.setTimeout(resolve, 700))
+      await new Promise(resolve => window.setTimeout(resolve, 320))
+      this.setClawClosed(true)
+      await new Promise(resolve => window.setTimeout(resolve, 380))
       arm?.classList.remove('is-dropping')
       if (aligned) toy?.classList.add('is-lifted')
       await new Promise(resolve => window.setTimeout(resolve, aligned ? 650 : 250))
@@ -910,6 +929,7 @@ export class GachaUi {
         await new Promise(resolve => window.setTimeout(resolve, 470))
         clawArm.style.removeProperty('transition')
       }
+      this.setClawClosed(false)
       this.clawBusy=false
       if(btn) btn.disabled=false
     }
