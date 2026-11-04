@@ -2836,7 +2836,6 @@ html body > #geongi-version {
 /* v0.51: keep weed speed and combat power on separate lines on mobile and desktop. */
 .collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot{min-height:39px}
 .collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot .friend-bonus{line-height:1.45;white-space:normal}
-<<<<<<< HEAD
 
 /* v0.53: explicit paid claw arrangement refresh */
 .claw-refresh{display:block;margin:8px auto 12px;padding:8px 14px;border:1px solid #e9c6ce;border-radius:18px;background:#fff2f4;color:#9b596d;font-weight:700;cursor:pointer;max-width:100%;font-size:13px}
@@ -2844,5 +2843,3 @@ html body > #geongi-version {
 
 /* v0.57: Usagi face replaces the teddy bear in claw heading. */
 #claw-title .claw-title-usagi { display:inline-block; width:1.45em; height:1.45em; object-fit:contain; vertical-align:middle; margin-right:.1em; }
-=======
->>>>>>> c19bc12e60860b5482cb93e6be877753c0bc434a
