@@ -767,8 +767,8 @@ const routes = {
         await conn.rollback()
         return send(res, 400, { error: 'not_enough_diamonds' })
       }
-      // Each attempt has a new uniformly random 0–50% success probability.
-      const chance = aligned === true ? randomInt(51) : 0
+      // Each attempt has a new uniformly random 0–75% success probability.
+      const chance = aligned === true ? randomInt(76) : 0
       const won = randomInt(10000) < chance * 100
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])

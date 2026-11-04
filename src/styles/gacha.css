@@ -1474,3 +1474,36 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
  .gacha-screen>.collection-peek{top:calc(80px + var(--safe-t,0px))!important;}
  .gacha-screen>.top-rewards{top:calc(210px + var(--safe-t,0px))!important;}
 }
+
+/* Cozy pastel interface refresh; scoped to title screen to preserve game subpages. */
+.gacha-screen{--cute-ink:#79596c;--cute-pink:#ffe7ee;--cute-border:#f4bacd}
+.gacha-screen .gacha-nav .nav-button{background:linear-gradient(145deg,#fffdfa,#ffedf4)!important;color:#80546d!important;border:2px solid #f7c9d7!important;border-radius:17px!important;box-shadow:0 3px 0 #e9b3c8,0 5px 12px #b8779230!important;font-weight:800!important;text-shadow:none!important;transition:transform .15s,box-shadow .15s!important}
+.gacha-screen .gacha-nav .nav-button:nth-child(2n){background:linear-gradient(145deg,#fffef9,#e9f9f0)!important;border-color:#b9e6d0!important;box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25!important}
+.gacha-screen .gacha-nav .nav-button:active{transform:translateY(2px)!important;box-shadow:0 1px 0 #e9b3c8!important}
+.gacha-screen .wallet,.gacha-screen .diamond-wallet{background:linear-gradient(135deg,#fffdf5,#fff0db)!important;border:2px solid #f1d39b!important;border-radius:16px!important;box-shadow:0 3px 0 #e7ca91!important;color:#775b52!important}
+.gacha-screen .diamond-wallet{background:linear-gradient(135deg,#fffaff,#f0eaff)!important;border-color:#d9c4f4!important;box-shadow:0 3px 0 #c6afea!important}
+.gacha-screen>.collection-peek{background:linear-gradient(155deg,#fffefd,#fff0f6)!important;border:2px solid #f5c8d8!important;border-radius:17px!important;box-shadow:0 4px 0 #e8bdcd!important}
+.gacha-screen>.collection-peek .soft-button{background:#fff!important;color:#945d7b!important;border:1.5px solid #edc2d6!important;border-radius:12px!important;font-weight:800!important;box-shadow:0 2px 0 #efc8d9!important}
+.gacha-screen>.top-rewards .reward-chip{background:linear-gradient(135deg,#fffefa,#fff0db)!important;border:2px solid #f4d7a6!important;border-radius:16px!important;box-shadow:0 3px 0 #e9cda3!important;color:#7c5d61!important}
+.gacha-screen>.top-rewards .roulette-chip{background:linear-gradient(135deg,#fffafa,#f0edff)!important;border-color:#d6c9f5!important;box-shadow:0 3px 0 #c6b7eb!important}
+@media(max-width:760px){
+ .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,24vw,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(100dvh - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
+ .gacha-screen>.gacha-nav .nav-button{width:100%!important;min-height:34px!important;padding:6px 3px!important;font-size:10px!important;line-height:1.15!important;flex-shrink:0!important}
+ .gacha-screen>.gacha-nav .nav-button span{font-size:14px!important}
+ .gacha-screen .gacha-header .header-right{position:absolute!important;top:calc(8px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27vw,120px)!important;display:flex!important;flex-direction:column!important;gap:5px!important;z-index:36!important}
+ .gacha-screen .gacha-header .header-right .account-chip{display:none!important}
+ .gacha-screen .gacha-header .header-right .wallet,.gacha-screen .gacha-header .header-right .diamond-wallet{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;max-width:100%!important;min-width:0!important;min-height:29px!important;margin:0!important;padding:4px!important;display:flex!important;justify-content:center!important;gap:3px!important;font-size:10px!important;box-sizing:border-box!important;white-space:nowrap!important}
+ .gacha-screen .gacha-header .header-right .wallet{order:1!important}
+ .gacha-screen .gacha-header .header-right .diamond-wallet{order:2!important}
+ .gacha-screen .gacha-header .header-right .wallet-rate{display:none!important}
+ .gacha-screen>.collection-peek{position:absolute!important;top:calc(84px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27vw,120px)!important;max-width:none!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important;padding:6px!important;margin:0!important;z-index:34!important}
+ .gacha-screen>.collection-peek .peek-flowers,.gacha-screen>.collection-peek small{display:none!important}
+ .gacha-screen>.collection-peek .collection-count,.gacha-screen>.collection-peek .deco-count{font-size:11px!important;line-height:1.2!important;text-align:center!important}
+ .gacha-screen>.collection-peek .soft-button{width:100%!important;min-height:28px!important;margin:0!important;padding:5px 2px!important;font-size:10px!important;line-height:1.2!important;white-space:normal!important}
+ .gacha-screen>.top-rewards{position:absolute!important;top:calc(222px + var(--safe-t,0px))!important;right:7px!important;left:auto!important;width:clamp(92px,27vw,120px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:33!important;box-sizing:border-box!important}
+ .gacha-screen>.top-rewards .reward-chip{width:100%!important;min-height:36px!important;box-sizing:border-box!important;padding:5px!important;gap:3px!important}
+ .gacha-screen>.top-rewards .reward-chip b{font-size:10px!important}
+ .gacha-screen>.top-rewards .reward-chip small{display:none!important}
+ .gacha-screen>.profile-chip{z-index:35!important}
+}
+@media(max-width:360px){.gacha-screen>.gacha-nav{width:78px!important}.gacha-screen>.collection-peek,.gacha-screen>.top-rewards,.gacha-screen .gacha-header .header-right{width:88px!important}.gacha-screen>.gacha-nav .nav-button{font-size:9px!important}}
