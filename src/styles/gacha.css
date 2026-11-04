@@ -1871,3 +1871,56 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .house-screen .house-panel { flex:0 0 clamp(175px,28dvh,240px) !important; height:clamp(175px,28dvh,240px) !important; }
   .house-screen .house-tools { bottom:calc(clamp(175px,28dvh,240px) + 8px) !important; }
 }
+
+
+/* v0.13 — portrait cave fills the full editor width, with vertical scrolling.
+   Keep a 941:1672 coordinate plane so editor and visitor layouts match. */
+.house-screen .house-scroll-viewport {
+  display:block !important;
+  width:100% !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain !important;
+  background:transparent !important;
+  touch-action:pan-y !important;
+}
+.house-screen .house-scroll-viewport > .house-lot {
+  position:relative !important;
+  display:block !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:none !important;
+  height:auto !important;
+  max-height:none !important;
+  aspect-ratio:941 / 1672 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  touch-action:pan-y !important;
+}
+.house-screen .house-scroll-viewport > .house-lot > .house-bg,
+.house-lot.house-visit > .house-bg {
+  display:block !important;
+  visibility:visible !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:fill !important;
+}
+/* Friend's house: no 360px cap or inherited landscape crop. Its containing
+   user-details modal already scrolls vertically, so the full room is reachable. */
+.users-body .user-house {width:100% !important; min-width:0 !important; overflow:visible !important;}
+.users-body .user-house > .house-lot.house-visit {
+  position:relative !important;
+  display:block !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:auto !important;
+  max-height:none !important;
+  aspect-ratio:941 / 1672 !important;
+  overflow:hidden !important;
+  margin:0 auto !important;
+}
