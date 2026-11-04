@@ -2629,3 +2629,217 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* Keep entire gingerbread costume visible, including both feet. */
 .collection-grid .friend-card .friend-avatar img[src*="ginger_hachiware"],
 .collection-grid .friend-card .friend-avatar img[src*="ginger_usagi"] {object-fit:contain!important;object-position:center!important; padding:3px;box-sizing:border-box;}
+
+/* v0.26 square full-body portraits */
+.collection-grid .friend-card .friend-avatar img[src*="ginger_hachiware"],
+.collection-grid .friend-card .friend-avatar img[src*="ginger_usagi"] {width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;transform:none!important;}
+
+/* v0.27: Both deployed fighters stand on the moving red arena circle.
+   Override the obsolete rule that floated fighter #2 above the arena. */
+.battle-field .bf-enemy {
+  left: 10% !important;
+  bottom: 11% !important;
+  width: 29cqw !important;
+  max-width: 165px !important;
+  min-width: 0 !important;
+}
+.battle-field .bf-friend:not(.bf-friend-second) {
+  right: 7% !important;
+  bottom: 10% !important;
+  width: 20cqw !important;
+  max-width: 112px !important;
+  min-width: 0 !important;
+  z-index: 4 !important;
+}
+.battle-field .bf-friend.bf-friend-second {
+  right: 28% !important;
+  bottom: 10% !important;
+  width: 20cqw !important;
+  max-width: 112px !important;
+  min-width: 0 !important;
+  z-index: 3 !important;
+}
+
+/* v0.28: unified user-provided Chiikawa face icon for sidebar and gacha tabs */
+.gacha-screen .gacha-nav .nav-button .chiikawa-tab-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:17px!important;height:17px!important;flex:0 0 17px!important;}
+.gacha-screen .gacha-nav .nav-button .chiikawa-tab-icon img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}
+.gacha-screen .pull-mode-button .chiikawa-pull-icon{display:inline-block!important;width:17px!important;height:17px!important;object-fit:contain!important;vertical-align:middle!important;margin-right:3px!important;}
+
+/* v0.29: compact mobile sidebar, safe footer, always-visible version. */
+.gacha-screen > .gacha-nav { top:calc(49px + var(--safe-t,0px)) !important; gap:5px !important; max-height:calc(844px - 105px) !important; }
+.gacha-screen > .gacha-nav .nav-button { min-height:33px !important; }
+.gacha-screen > .gacha-actions { bottom:calc(42px + var(--safe-b,0px)) !important; }
+.gacha-screen > .free-note { bottom:calc(22px + var(--safe-b,0px)) !important; }
+#geongi-version { position:fixed !important; bottom:max(6px,env(safe-area-inset-bottom,0px)) !important; right:max(7px,env(safe-area-inset-right,0px)) !important; z-index:2147483647 !important; display:block !important; visibility:visible !important; opacity:1 !important; font:11px/1.2 Arial,sans-serif !important; color:#6d6268 !important; background:rgba(255,255,255,.85) !important; border-radius:6px !important; padding:3px 5px !important; pointer-events:none !important; }
+
+/* v0.30: show claw-machine currency errors in front of the claw modal, not behind it. */
+.claw-screen.is-active .claw-card { position:relative; isolation:isolate; }
+.claw-screen.is-active .claw-toast {
+  position:sticky!important; top:8px!important; bottom:auto!important; left:auto!important;
+  display:block; width:max-content; max-width:calc(100% - 16px); margin:0 auto -4px;
+  z-index:999!important; box-sizing:border-box; white-space:normal!important;
+  overflow:visible!important; text-overflow:clip!important; text-align:center;
+  font-size:12px; line-height:1.45; transform:translateY(-8px);
+}
+.claw-screen.is-active .claw-toast.is-visible {transform:translateY(0)}
+
+/* v0.31: allow full claw controls and bottom message to be reached at all heights. */
+.gacha-modal.claw-screen.is-active {
+  box-sizing:border-box!important;
+  display:flex!important; flex-direction:column!important; align-items:center!important;
+  justify-content:flex-start!important;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(14px + env(safe-area-inset-bottom,0px))!important;
+  overflow-y:auto!important; overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+}
+.gacha-modal.claw-screen.is-active .claw-card {
+  flex:0 0 auto!important;
+  width:min(100%,540px)!important;
+  max-height:none!important;
+  overflow:visible!important;
+  margin:0 auto!important;
+  padding:14px 12px 18px!important;
+  box-sizing:border-box!important;
+}
+.gacha-modal.claw-screen.is-active .claw-machine {
+  height:clamp(185px,35cqh,320px)!important;
+  min-height:0!important;
+}
+.gacha-modal.claw-screen.is-active .claw-controls {margin-top:12px!important;}
+.gacha-modal.claw-screen.is-active .claw-message {margin-bottom:4px!important;}
+/* Version label stays anchored to actual browser viewport, not the scaled game canvas. */
+html body > #geongi-version {
+  position:fixed!important; right:8px!important;
+  bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;
+  display:block!important; visibility:visible!important; opacity:1!important;
+  z-index:2147483647!important; transform:none!important;
+  background:rgba(255,255,255,.94)!important;
+  color:#65575d!important; padding:4px 6px!important;
+  border:1px solid rgba(112,89,99,.25)!important; border-radius:7px!important;
+  font:600 11px/1.2 Arial,sans-serif!important; pointer-events:none!important;
+}
+
+/* v0.32 expedition - responsive fixed-ratio stage */
+.expedition-entry{position:absolute;top:84px;left:50%;transform:translateX(-50%);z-index:15;width:104px;border:0;background:transparent;cursor:pointer;padding:0;text-align:center;color:#69435a;font-weight:900;font-size:12px}
+.expedition-entry img{width:90px;height:57px;object-fit:cover;border:2px solid #e3bfd4;border-radius:12px;display:block;margin:auto;box-shadow:0 3px 8px #0002}
+.expedition-screen{overflow-y:auto!important;overflow-x:hidden!important;display:none;flex-direction:column;background:#edf9ff!important}
+.expedition-screen.is-active{display:flex!important}
+.expedition-server-tabs{display:flex;gap:8px;padding:12px;justify-content:center}
+.expedition-server-tabs button{background:#fff;border:2px solid #9ccad8;border-radius:20px;padding:8px 17px;font-weight:800;color:#3b6977}
+.expedition-server-tabs button.selected{background:#86c5dd;color:#fff;border-color:#488eb0}
+.expedition-cave{position:relative;flex:none;width:100%;height:min(100vw,430px);min-height:310px;overflow:hidden;background:radial-gradient(ellipse at 50% 5%,#97f1f0 0%,#2a9fae 28%,#145b79 65%,#073149 100%);border:solid 12px #59677a;border-radius:45% 45% 8% 8%/25% 25% 8% 8%;box-sizing:border-box;box-shadow:inset 0 16px 40px #09283a99}
+.expedition-cave:before{content:' ';position:absolute;inset:0;background:repeating-linear-gradient(140deg,transparent 0 44px,#ffffff09 45px 50px);pointer-events:none}
+.expedition-hp-label{position:absolute;z-index:5;top:12px;left:10%;right:10%;text-align:center;font-weight:900;color:#fff;text-shadow:0 2px 4px #000}
+.expedition-hp-track{position:absolute;z-index:5;top:40px;left:8%;width:84%;height:17px;background:#351c2b;border:3px solid #fff;border-radius:20px;overflow:hidden}
+.expedition-hp-fill{height:100%;background:linear-gradient(90deg,#ffbc5a,#ff667f);transition:width .3s}
+.expedition-boss{position:absolute;right:2%;bottom:7%;width:43%;height:64%;object-fit:contain;filter:drop-shadow(0 8px 7px #001a36aa)}
+.expedition-boss.defeated{opacity:0;transform:scale(.5);transition:all .5s}
+.expedition-party{position:absolute;left:2%;bottom:8%;width:52%;height:62%;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);align-items:end;z-index:2}
+.expedition-fighter{width:100%;height:100%;object-fit:contain;transform-origin:bottom center;animation:exp-hit 3s ease-in-out infinite}
+@keyframes exp-hit{0%,68%,100%{transform:translateX(0)}78%{transform:translateX(24%) scale(1.08)}85%{transform:translateX(0)}}
+.expedition-details{padding:12px 16px 28px;display:flex;flex-direction:column;gap:10px;overflow:visible;color:#37586a}
+.expedition-status{font-weight:800;text-align:center}
+.expedition-members{display:flex;flex-wrap:wrap;gap:6px}.expedition-members span{padding:5px 8px;border-radius:15px;background:#fff;border:1px solid #add9e9;font-size:11px}
+.expedition-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:220px;overflow-y:auto}
+.expedition-choices button{display:flex;flex-direction:column;align-items:center;border:1px solid #abd1e4;background:#fff;border-radius:12px;padding:5px;color:#3c596b;font-size:10px;cursor:pointer}
+.expedition-choices img{height:52px;max-width:100%;object-fit:contain}.expedition-choices small{display:block;color:#527f94}
+.expedition-help{font-size:11px;line-height:1.5}
+
+/* v0.33: expedition entry must receive pointer events (title screen defaults to none). */
+.gacha-screen.is-active > .expedition-entry {pointer-events:auto!important;z-index:70!important;top:68px!important;width:148px!important;display:flex!important;flex-direction:column;align-items:center;gap:2px;}
+.gacha-screen > .expedition-entry img:not(.expedition-weapon) {width:138px!important;height:84px!important;object-fit:contain!important;border:0!important;background:transparent!important;box-shadow:none!important;}
+.gacha-screen > .expedition-entry .expedition-entry-label {display:flex;align-items:center;justify-content:center;gap:4px;background:#fff9f1;border:1px solid #eac6d3;border-radius:15px;padding:2px 10px;font-size:12px;line-height:18px;box-shadow:0 2px 5px #0001;}
+.gacha-screen > .expedition-entry .expedition-weapon {width:24px!important;height:24px!important;object-fit:contain!important;border:0!important;box-shadow:none!important;}
+.expedition-heading-weapon {width:27px;height:27px;object-fit:contain;vertical-align:middle;}
+.expedition-screen.is-active {z-index:85!important;pointer-events:auto!important;}
+.expedition-screen .expedition-server-tabs {position:relative;z-index:8;margin-top:53px;}
+
+/* v0.34 underwater expedition */
+.expedition-cave{height:480px!important;min-height:480px!important;border:5px solid #19345c!important;border-radius:22px!important;background:#06224e url('/expedition_cave.png') center center/cover no-repeat!important;isolation:isolate}
+.expedition-cave:before{display:none!important}
+.expedition-boss{left:50%!important;right:auto!important;top:20%!important;bottom:auto!important;width:68%!important;height:54%!important;max-width:330px!important;transform:translateX(-50%);transform-origin:50% 70%;animation:exp-boss-wiggle 3.8s ease-in-out infinite;z-index:2!important}
+.expedition-boss.defeated{opacity:0!important;transform:translateX(-50%) scale(.3)!important;animation:none!important}
+.expedition-party{left:2%!important;right:2%!important;bottom:2%!important;width:96%!important;height:28%!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;gap:2px!important;z-index:6!important;align-items:end!important}
+.expedition-combatant{position:relative;min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:end;animation:exp-fighter-strike 3s ease-in-out infinite;animation-delay:var(--delay)}
+.expedition-name{font-size:9px;font-weight:900;color:#fff;background:#172e59d9;border:1px solid #c8e9ff;border-radius:12px;padding:2px 4px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;z-index:2}
+.expedition-combatant .expedition-fighter{height:52px!important;width:100%!important;object-fit:contain!important;animation:none!important;filter:drop-shadow(0 2px 2px #001b3b)}
+.expedition-projectile{position:absolute;left:50%;bottom:60%;width:5px;height:20px;border-radius:8px;background:#fff9a5;box-shadow:0 0 8px 4px #68eaff;opacity:0;animation:exp-projectile 3s linear infinite;animation-delay:var(--delay);pointer-events:none}
+.expedition-hp-label,.expedition-hp-track{z-index:10!important}
+@keyframes exp-boss-wiggle{0%,100%{transform:translateX(-50%) rotate(-2deg) scale(1)}50%{transform:translateX(-50%) rotate(2deg) scale(1.035)}}
+@keyframes exp-fighter-strike{0%,78%,100%{transform:translateY(0)}84%{transform:translateY(-9px)}90%{transform:translateY(0)}}
+@keyframes exp-projectile{0%,77%{opacity:0;transform:translate(-50%,0)}79%{opacity:1}94%{opacity:1;transform:translate(-50%,-125px)}97%,100%{opacity:0;transform:translate(-50%,-150px)}}
+
+/* v0.35 - name legibility, boss hit reaction, accurate center-targeted projectiles */
+.expedition-party{height:32%!important;bottom:3%!important;row-gap:10px!important;overflow:visible!important}
+.expedition-combatant{overflow:visible!important;justify-content:flex-end!important;gap:4px!important}
+.expedition-name{position:relative!important;display:block!important;flex-shrink:0!important;overflow:visible!important;max-width:none!important;min-width:max-content!important;padding:3px 6px!important;border:1.5px solid #e5f8ff!important;border-radius:8px!important;background:#142749ed!important;font-size:clamp(10px,2.5vw,13px)!important;line-height:1.15!important;color:white!important;box-shadow:0 2px 4px #001b3b99!important;z-index:12!important;white-space:nowrap!important;text-overflow:clip!important}
+.expedition-combatant .expedition-fighter{flex-shrink:0!important;height:52px!important}
+.expedition-hp-track{height:21px!important;box-sizing:content-box!important;overflow:hidden!important}
+.expedition-hp-percent{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;text-shadow:0 1px 3px #331b33,0 0 4px #331b33;pointer-events:none}
+
+@keyframes exp-boss-hit{0%,76%,100%{transform:translateX(-50%) scale(1) rotate(-1deg);filter:drop-shadow(0 6px 5px #001a46aa)}80%{transform:translateX(-50%) scale(.96,1.04) rotate(2deg);filter:brightness(1.7) drop-shadow(0 0 12px #ff6464)}84%{transform:translateX(-50%) scale(1.04,.96) rotate(-2deg);filter:brightness(1.25) drop-shadow(0 0 8px #ff9696)}91%{transform:translateX(-50%) scale(1) rotate(0deg);filter:drop-shadow(0 6px 5px #001a46aa)}}
+.expedition-projectile{bottom:32px!important;width:9px!important;height:9px!important;border-radius:50%!important;background:#fffce4!important;box-shadow:0 0 6px 3px #7df8ff,0 0 13px 5px #45aaff!important;animation:exp-shot-to-boss 3s ease-in infinite!important;animation-delay:var(--delay)!important}
+@keyframes exp-shot-to-boss{0%,65%{opacity:0;transform:translate(0,0) scale(.5)}67%{opacity:1;transform:translate(0,0) scale(1)}79%{opacity:1;transform:translate(var(--shot-x),var(--shot-y)) scale(1.5)}81%,100%{opacity:0;transform:translate(var(--shot-x),var(--shot-y)) scale(.2)}}
+
+/* v0.37: All expedition fighters strike on the same three-second beat.
+   An empty server must never display the boss damage reaction. */
+.expedition-combatant{animation-delay:0s!important}
+.expedition-projectile{animation-delay:0s!important}
+.expedition-boss:not(.defeated):not(.under-attack){animation:exp-boss-wiggle 3.8s ease-in-out infinite!important}
+.expedition-boss.under-attack:not(.defeated){animation:exp-boss-hit 3s ease-in-out infinite!important}
+
+/* v0.38: strike at start, projectile arrives and boss reacts exactly 1s later. */
+@keyframes exp-fighter-strike{0%{transform:translateY(-10px)}9%{transform:translateY(0)}96%,100%{transform:translateY(0)}}
+@keyframes exp-shot-to-boss{0%{opacity:1;transform:translate(0,0) scale(1)}31%{opacity:1;transform:translate(var(--shot-x),var(--shot-y)) scale(1.5)}33.333%{opacity:0;transform:translate(var(--shot-x),var(--shot-y)) scale(.2)}33.34%,99.99%{opacity:0;transform:translate(0,0) scale(.5)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+@keyframes exp-boss-hit{0%,32%{transform:translateX(-50%) rotate(-1deg) scale(1);filter:drop-shadow(0 6px 5px #001a46aa)}33.333%{transform:translateX(-50%) rotate(2deg) scale(.96,1.04);filter:brightness(1.7) drop-shadow(0 0 12px #ff6464)}39%{transform:translateX(-50%) rotate(-2deg) scale(1.04,.96);filter:brightness(1.25) drop-shadow(0 0 8px #ff9696)}48%,100%{transform:translateX(-50%) rotate(-1deg) scale(1);filter:drop-shadow(0 6px 5px #001a46aa)}}
+
+
+/* v0.43: Restore original compact character and deco cards.
+   Only constrain stat badges to their own card, without changing card layout. */
+.collection-grid:not(.deco-grid) .friend-card{min-width:0}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus{max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;line-height:1.25;font-size:9px;text-align:center}
+
+/* v0.45: Keep representative actions at the bottom of every collection card,
+   regardless of how many stat/variant badges a character has. */
+.collection-grid .friend-card{display:flex!important;flex-direction:column!important;align-items:center!important;}
+.collection-grid .friend-card > .friend-select,
+.collection-grid .friend-card > .friend-lock{margin-top:auto!important;align-self:center!important;flex-shrink:0!important;}
+.collection-grid .friend-card > small{margin-bottom:12px!important;}
+.collection-grid .friend-card > .friend-select{max-width:100%;box-sizing:border-box;}
+
+/* v0.46 boot Chiikawa icon */
+.gacha-boot .boot-capsule img{width:65px;height:65px;object-fit:contain}
+
+/* v0.47: reserve an identical variant row on EVERY character card.
+   A character without a green variant badge gets an empty row, so
+   the yellow stat badges line up across all columns. Deco untouched. */
+.collection-grid:not(.deco-grid) .friend-card .friend-variant-slot{
+  display:flex;align-items:center;justify-content:center;flex:0 0 21px;
+  height:21px;min-height:21px;width:100%;overflow:hidden;box-sizing:border-box;
+}
+.collection-grid:not(.deco-grid) .friend-card .friend-variant-slot .friend-variant{
+  margin:0;max-width:100%;box-sizing:border-box;
+}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot{
+  display:flex;align-items:flex-start;justify-content:center;width:100%;
+  min-height:36px;box-sizing:border-box;
+}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot .friend-bonus{
+  margin:0;max-width:100%;box-sizing:border-box;white-space:normal;
+  overflow-wrap:break-word;line-height:1.25;text-align:center;font-size:9px;
+}
+
+/* v0.50 header mascot */
+.gacha-header .brand-icon{overflow:hidden;display:grid;place-items:center;background:#fff3ed!important}
+.gacha-header .brand-icon img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+
+/* v0.51: keep weed speed and combat power on separate lines on mobile and desktop. */
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot{min-height:39px}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot .friend-bonus{line-height:1.45;white-space:normal}
+
+/* v0.53: explicit paid claw arrangement refresh */
+.claw-refresh{display:block;margin:8px auto 12px;padding:8px 14px;border:1px solid #e9c6ce;border-radius:18px;background:#fff2f4;color:#9b596d;font-weight:700;cursor:pointer;max-width:100%;font-size:13px}
+.claw-refresh:disabled{opacity:.5;cursor:wait}
+
+/* v0.57: Usagi face replaces the teddy bear in claw heading. */
+#claw-title .claw-title-usagi { display:inline-block; width:1.45em; height:1.45em; object-fit:contain; vertical-align:middle; margin-right:.1em; }

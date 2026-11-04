@@ -1,6 +1,9 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art (transparent PNG), served locally in dev and from managed storage in builds. */
 const previewUrls: Record<CharacterId, string> = {
+  honey: '/assets/chars/honey.png',
+  ode: '/assets/chars/ode.png',
+  ode_prison: '/assets/chars/ode_prison.png',
   ginger_hachiware: '/assets/chars/ginger_hachiware.png',
   ginger_usagi: '/assets/chars/ginger_usagi.png',
   beetle_berserk: '/assets/chars/beetle_berserk.png',
@@ -38,6 +41,9 @@ const previewUrls: Record<CharacterId, string> = {
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
+  honey: '/assets/chars/honey.png',
+  ode: '/assets/chars/ode.png',
+  ode_prison: '/assets/chars/ode_prison.png',
   ginger_hachiware: '/assets/chars/ginger_hachiware.png',
   ginger_usagi: '/assets/chars/ginger_usagi.png',
   beetle_berserk: '/assets/chars/beetle_berserk.png',

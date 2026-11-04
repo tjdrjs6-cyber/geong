@@ -2,7 +2,7 @@ import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'
 import { BATTLE_TICK_MS, ENEMY_HP, battlePower, CHARACTERS, DAILY_GIFT, NEW_ENTRY_BONUS, RARE_NEW_BONUS, PULL_OPTIONS, characterById, fullName, type Character, pullCost, STARTING_COINS, ROULETTE_PRIZES, type CharacterId, type PullCount, type PullResult } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
-import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, type ProfilePrivacy, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICES, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
+import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, type ExpeditionState, type ProfilePrivacy, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICES, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
 import { weedFieldMarkup } from './weedField'
 import { battleFieldMarkup } from './battleField'
 import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
@@ -11,10 +11,10 @@ import { machineMarkup } from './toonMachine'
 
 const MACHINE_SPIN_SECONDS = 1.35
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
-const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '일반'
-const bonusTag = (character: Character): string => character.weedBonus ? `제초 +${character.weedBonus}%` : ''
+const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
+const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -55,6 +55,10 @@ export class GachaUi {
   private clawToys: { id: string; name: string; x: number; y: number }[] = []
   private clawTargetId: string | null = null
   private clawBusy = false
+  private expedition: ExpeditionState | null = null
+  private expeditionServer = 1
+  private expeditionTimer = 0
+  private expeditionLoading = false
   private users: PublicUser[] = []
   private privacy: ProfilePrivacy = { char: true, deco: true, house: true }
 
@@ -96,9 +100,11 @@ export class GachaUi {
       node.setAttribute('aria-hidden', String(!active))
     })
     this.root.dataset.activeScreen = screen
+    window.clearInterval(this.expeditionTimer)
+    if (screen === 'expedition') {void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)}
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
-    if (screen === 'claw') { this.randomizeClawToy(); this.clawX = 50; this.clawY = 50; this.renderClaw() }
+    if (screen === 'claw') { this.restoreClawToys(); this.clawX = 50; this.clawY = 50; this.renderClaw() }
     if (screen === 'mail') void this.loadMail()
     if (screen === 'announcements') void this.loadAnnouncements()
     window.clearInterval(this.chatTimer)
@@ -125,10 +131,10 @@ export class GachaUi {
   private template(): string {
     return `
       <section class="gacha-boot is-active" data-screen="boot" aria-live="polite">
-        <div class="boot-capsule"><img src="/favicon.png" alt="" width="58" height="58" /></div>
+        <div class="boot-capsule"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" width="58" height="58" /></div>
         <h1>겅이마켓</h1>
         <div class="boot-track" role="progressbar" aria-label="게임 불러오는 중" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5"><i class="boot-fill"></i></div>
-        <p aria-live="polite">작은 행운을 준비하고 있어요</p>
+        <p aria-live="polite">게임에 들어가고 있어요</p>
         <button class="boot-retry is-hidden" data-action="retry">다시 불러오기</button>
       </section>
       <section class="gacha-modal auth-modal" data-screen="auth" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="auth-title">
@@ -220,14 +226,22 @@ export class GachaUi {
         </div>
         <div class="toast house-toast" aria-live="polite"></div>
       </section>
+      <section class="weed-screen expedition-screen" data-screen="expedition" aria-hidden="true">
+        <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
+        <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
+        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">10,000,000</b> / 10,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
+        <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 우편함으로 500코인 보상 · 매일 오전 9시 새 보스</p></div>
+        <div class="toast expedition-toast" aria-live="polite"></div>
+      </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
-          <div class="brand"><span class="brand-icon">✦</span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
+          <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span>📢</span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span>💬</span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
+        <button class="expedition-entry" data-action="expedition"><img src="/expedition_banner.jpg" alt="원정대"/><span class="expedition-entry-label"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대</span></button>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>데코&amp;무기 인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -237,7 +251,7 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><span class="peek-flowers">✿　✿　✿</span><b class="collection-count">0 / ${CHARACTERS.length}</b><small>도감 수집</small><button class="soft-button" data-action="collection">캐릭터 도감</button><b class="deco-count">0 / ${DECOS.length}</b><button class="soft-button" data-action="decos">데코 도감</button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true">🐹 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false">🎀 데코 뽑기</button></div>
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
           ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
           ${PULL_OPTIONS.map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '✦ 한 번 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
         </footer>
@@ -256,7 +270,7 @@ export class GachaUi {
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="collection-info-sticky"><div class="modal-kicker">YOUR LITTLE FRIENDS</div><h2 id="collection-title">캐릭터 도감</h2>
-          <p class="collection-summary">31명의 친구를 모아보세요. 일반 각 6.04% (갑옷씨2·3 각 6.05%) · 레어(인어의섬) 각 2.20% · 에픽 각 1.00% · 유니크(카레·진저맨·풍뎅이) 각 0.30%</p></div>
+          <p class="collection-summary">총 37종 · 노멀 71.86% · 레어 22.00% · 에픽 4.25% · 유니크 1.84% · 레전더리 0.05%</p></div>
           <div class="collection-grid"></div>
           <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
           <button class="modal-primary" data-action="close">가챠로 돌아가기</button>
@@ -320,10 +334,12 @@ export class GachaUi {
       </section>
       <section class="gacha-modal claw-screen" data-screen="claw" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="claw-title">
         <div class="modal-card claw-card">
+          <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <h2 id="claw-title">🧸 치이카와 인형뽑기</h2>
+          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 데코&amp;무기 인형뽑기</h2>
           <p class="claw-desc">💎 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
           <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
+          <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · 💎 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
             <div class="claw-arm"><div class="claw-wire"></div><div class="claw-head">✦</div></div>
             <div class="claw-toys"></div><div class="claw-chute">출구 ↓</div><div class="claw-prize"></div>
@@ -389,6 +405,9 @@ export class GachaUi {
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
+    if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.show('expedition');return}
+    if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;if(this.expedition)this.renderExpedition();return}
+    if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition()}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
@@ -591,6 +610,30 @@ export class GachaUi {
   /** Operator accounts have unlimited coins (the server never charges them). */
   private get isAdmin(): boolean { return Boolean(this.store.user?.admin) }
 
+  private get clawStorageKey(): string { return `geongi-claw-v1-${this.store.user?.username ?? 'guest'}` }
+
+  private restoreClawToys(): void {
+    if (this.clawToys.length) return
+    try {
+      const raw = window.localStorage.getItem(this.clawStorageKey)
+      if (raw) {
+        const saved: unknown = JSON.parse(raw)
+        if (Array.isArray(saved) && saved.length === 3 && saved.every((t: any) =>
+          ['chiikawa','hachiware','usagi'].includes(t?.id) &&
+          typeof t.x === 'number' && Number.isFinite(t.x) && t.x >= 0 && t.x <= 100 &&
+          typeof t.y === 'number' && Number.isFinite(t.y) && t.y >= 0 && t.y <= 100)) {
+          this.clawToys = saved as typeof this.clawToys
+          return
+        }
+      }
+    } catch { /* storage unavailable: keep the in-memory arrangement */ }
+    this.randomizeClawToy()
+  }
+
+  private saveClawToys(): void {
+    try { window.localStorage.setItem(this.clawStorageKey, JSON.stringify(this.clawToys)) } catch { /* private browsing */ }
+  }
+
   private randomizeClawToy(id?: string): void {
     const types = [
       { id: 'chiikawa', name: '치이카와' },
@@ -608,6 +651,7 @@ export class GachaUi {
       }
       toy.x = x; toy.y = y
     }
+    this.saveClawToys()
   }
 
   private clawTouchesToy(): boolean {
@@ -672,6 +716,21 @@ export class GachaUi {
       this.updateClawPosition()
       return
     }
+    if (action === 'claw-refresh') {
+      this.clawBusy = true
+      const refresh = this.root.querySelector<HTMLButtonElement>('.claw-refresh')
+      if(refresh)refresh.disabled=true
+      try {
+        await this.store.refreshClaw()
+        this.randomizeClawToy()
+        this.clawX=50; this.clawY=50
+        this.renderClaw()
+        this.renderWallet()
+        this.toast('💎 1개를 사용해 인형 위치를 새로 배치했어요!')
+      } catch(error) { this.handleError(error) }
+      finally {this.clawBusy=false;if(refresh)refresh.disabled=false}
+      return
+    }
     if (action !== 'claw-play') return
     this.clawBusy = true
     const btn = this.root.querySelector<HTMLButtonElement>('.claw-play')
@@ -685,7 +744,7 @@ export class GachaUi {
       const toy = this.clawTargetId ? this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${this.clawTargetId}"]`) : null
       const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
       const previousDecos = { ...this.store.decos }
-      const result = await this.store.playClaw(aligned)
+      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50)
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
@@ -693,8 +752,7 @@ export class GachaUi {
       arm?.classList.remove('is-dropping')
       if (aligned) toy?.classList.add('is-lifted')
       await new Promise(resolve => window.setTimeout(resolve, aligned ? 650 : 250))
-      if (result.won && result.prize) {
-        wonToy = true
+      if (aligned && toy) {
         // Keep the plush attached to the claw during the entire trip to the exit.
         // Derive the exit center from the actual rendered chute, including mobile layouts.
         const machine = this.root.querySelector<HTMLElement>('.claw-machine')
@@ -709,10 +767,34 @@ export class GachaUi {
             exitY = Math.max(0, Math.min(100, (c.top + c.height / 2 - m.top) / m.height * 100))
           }
         }
-        if (msg) msg.textContent = '성공! 집게가 인형을 잡은 채 출구로 이동합니다…'
-        if (arm) { arm.style.transition = 'left 1.15s ease-in-out, top 1.15s ease-in-out'; arm.style.left = `${exitX}%`; arm.style.top = `${exitY}%` }
-        if (toy) { toy.style.transition = 'left 1.15s ease-in-out, top 1.15s ease-in-out, transform .55s, opacity .5s'; toy.style.left = `${exitX}%`; toy.style.top = `${exitY}%` }
-        await new Promise(resolve => window.setTimeout(resolve, 1200))
+        if (msg) msg.textContent = '인형을 집었어요! 출구까지 잘 버틸까요?'
+        const steps = Math.max(1, result.segments)
+        const startX = originalToy?.x ?? this.clawX
+        const startY = originalToy?.y ?? this.clawY
+        const endStep = result.won ? steps : Math.max(1, result.dropAt)
+        for (let step = 1; step <= endStep; step++) {
+          const fraction = step / steps
+          const px = startX + (exitX - startX) * fraction
+          const py = startY + (exitY - startY) * fraction
+          if (arm) { arm.style.transition = 'left .28s linear, top .28s linear'; arm.style.left = `${px}%`; arm.style.top = `${py}%` }
+          toy.style.transition = 'left .28s linear, top .28s linear, transform .3s, opacity .3s'
+          toy.style.left = `${px}%`; toy.style.top = `${py}%`
+          await new Promise(resolve => window.setTimeout(resolve, 310))
+        }
+        if (!result.won) {
+          if (msg) msg.textContent = '이동 중 인형이 떨어졌어요! 출구 가까이 있는 인형이 더 유리해요.'
+          toy.classList.add('is-dropped')
+          await new Promise(resolve => window.setTimeout(resolve, 450))
+          toy.classList.remove('is-lifted', 'is-dropped')
+          toy.style.transition = 'none'
+          toy.style.left = `${originalToy?.x ?? 50}%`
+          toy.style.top = `${originalToy?.y ?? 50}%`
+          void toy.offsetWidth
+          toy.style.removeProperty('transition')
+        }
+      }
+      if (result.won && result.prize) {
+        wonToy = true
         // Only release the doll once both claw and doll have reached the exit.
         toy?.classList.add('is-dropped')
         await new Promise(resolve => window.setTimeout(resolve, 520))
@@ -742,7 +824,7 @@ export class GachaUi {
           if (msg && msg.textContent === earnedText) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
         }, 2300)
       } else {
-        if (aligned) {
+        if (false) {
           toy?.classList.add('is-dropped')
           await new Promise(resolve => window.setTimeout(resolve, 500))
           // A failed grab returns the doll to its ORIGINAL location.
@@ -755,7 +837,7 @@ export class GachaUi {
             toy.style.removeProperty('transition')
           }
         }
-        if (msg) msg.textContent = aligned ? '아쉽게 인형이 떨어졌어요! 같은 자리에서 다시 도전해요.' : '허공이라 인형을 잡지 못했어요!'
+        if (msg && !aligned) msg.textContent = '허공이라 인형을 잡지 못했어요!'
       }
     } catch (error) { this.handleError(error) }
     finally {
@@ -817,7 +899,7 @@ export class GachaUi {
 
   /** Collection cards; uncollected friends stay gray with a question mark. */
   private collectionCards(owned: readonly CharacterId[], interactive: boolean): string {
-    return CHARACTERS.map(character => {
+    return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4}[b.tier])).map(character => {
       const has = owned.includes(character.id)
       const isFeatured = has && character.id === this.heroId()
       const footer = has && interactive
@@ -825,8 +907,8 @@ export class GachaUi {
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
-        <div class="friend-chance">${tierTag(character)} · ${character.probability}%</div>
-        <b>${has ? character.name : '???'}</b>${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}
+        <div class="friend-chance">${tierTag(character)}</div>
+        <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}
       </article>`
@@ -1057,6 +1139,41 @@ export class GachaUi {
     if (!window.confirm('모든 유저에게 새 공지를 게시할까요?')) return
     try { await this.store.postAnnouncement(message); this.toast('전체 공지가 등록되었습니다.'); await this.loadAnnouncements() }
     catch (error) { this.handleError(error) }
+  }
+
+  private async loadExpedition():Promise<void> {
+    if(this.expeditionLoading || this.screen!=='expedition')return
+    this.expeditionLoading=true
+    try {this.expedition=await this.store.expedition();this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+  }
+  private renderExpedition():void {
+    const state=this.expedition
+    if(!state)return
+    const room=state.servers.find(r=>r.id===this.expeditionServer)!
+    this.root.querySelectorAll<HTMLButtonElement>('.expedition-server-tabs button').forEach(b=>b.classList.toggle('selected',Number(b.dataset.id)===room.id))
+    const hp=Math.max(0,room.hp)
+    const label=this.root.querySelector<HTMLElement>('.exp-hp');if(label)label.textContent=hp.toLocaleString('ko-KR')
+    const fill=this.root.querySelector<HTMLElement>('.expedition-hp-fill');if(fill)fill.style.width=`${hp/10000000*100}%`
+    const percent=this.root.querySelector<HTMLElement>('.expedition-hp-percent');if(percent)percent.textContent=`${(hp/10000000*100).toFixed(2)}%`
+    const boss=this.root.querySelector<HTMLElement>('.expedition-boss');if(boss){boss.classList.toggle('defeated',hp===0);boss.classList.toggle('under-attack',hp>0 && room.members.length>0)}
+    const status=this.root.querySelector<HTMLElement>('.expedition-status')
+    if(status)status.textContent=hp===0?'보스 토벌 성공! 우편함에서 보상을 받아주세요! 🎁':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
+    const members=this.root.querySelector<HTMLElement>('.expedition-members')
+    if(members){const html=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
+    const party=this.root.querySelector<HTMLElement>('.expedition-party')
+    if(party){const html=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
+    if(picker){const html=hp===0?'보스가 처치됐어요. 📬 우편함에서 500코인 보상을 수령해 주세요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+      // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
+      if(picker.innerHTML!==html){
+        const choices=picker.querySelector<HTMLElement>('.expedition-choices')
+        const previousScroll=choices?.scrollTop ?? 0
+        picker.innerHTML=html
+        const updated=picker.querySelector<HTMLElement>('.expedition-choices')
+        if(updated)updated.scrollTop=previousScroll
+      }
+    }
+    this.renderWallet()
   }
 
   private renderProfile(): void {
@@ -1690,7 +1807,7 @@ export class GachaUi {
   }
 
   private toast(text: string): void {
-    const node = this.root.querySelector<HTMLElement>(this.screen === 'weed' ? '.weed-toast' : this.screen === 'battle' ? '.battle-toast' : this.screen === 'house' ? '.house-toast' : '.gacha-screen .toast')
+    const node = this.root.querySelector<HTMLElement>(this.screen === 'weed' ? '.weed-toast' : this.screen === 'battle' ? '.battle-toast' : this.screen === 'house' ? '.house-toast' : this.screen === 'claw' ? '.claw-toast' : '.gacha-screen .toast')
     if (!node) return
     node.textContent = text
     node.classList.add('is-visible')

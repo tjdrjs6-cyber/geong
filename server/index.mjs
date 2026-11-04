@@ -68,6 +68,21 @@ async function prepareDatabase() {
     damage INT NOT NULL DEFAULT 0
   )`)
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
+    raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
+    hp BIGINT NOT NULL DEFAULT 10000000, last_tick BIGINT NOT NULL,
+    PRIMARY KEY (raid_day, server_id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_member (
+    raid_day VARCHAR(10) NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
+    server_id TINYINT UNSIGNED NOT NULL, character_id VARCHAR(32) NOT NULL,
+    joined_ms BIGINT NOT NULL, PRIMARY KEY (raid_day, account_id),
+    KEY ix_gm_expedition_room (raid_day, server_id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_paid (
+    raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
+    account_id BIGINT UNSIGNED NOT NULL, PRIMARY KEY (raid_day, server_id, account_id)
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_weeding (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     character_id VARCHAR(20) NOT NULL,
@@ -346,8 +361,8 @@ async function sentToday(conn, accountId) {
   return Number(rows[0].total)
 }
 async function mailbox(accountId) {
-  const [rows] = await pool.query('SELECT m.id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const mail = rows.map(row => ({ id: Number(row.id), from: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? '원정대 보상' : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
   const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
   const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
   return { mail, sent, max: MAILBOX_MAX, unread: mail.filter(item => !item.seen).length, sentToday: await sentToday(pool, accountId), dailyLimit: MAIL_DAILY_COINS }
@@ -386,7 +401,7 @@ async function suggestions(account) {
   const [rows] = await pool.query('SELECT s.id, s.account_id, s.message, s.created_ms, s.reply, s.reply_ms, a.nickname FROM gm_suggest s LEFT JOIN gm_accounts a ON a.id = s.account_id ORDER BY s.id DESC LIMIT 100')
   const [today] = await pool.query('SELECT COUNT(*) AS n FROM gm_suggest WHERE account_id = ? AND day = ?', [account.id, checkInDay()])
   return {
-    items: rows.map(row => ({ id: Number(row.id), from: row.nickname || '알 수 없음', message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
+    items: rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? '원정대 보상' : (row.nickname || '알 수 없음'), message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
     admin: Boolean(account.is_admin), todayCount: Number(today[0].n), dailyMax: SUGGEST_DAILY_MAX,
   }
 }
@@ -543,7 +558,98 @@ async function ensureGlobalChatTables() {
   )`)
 }
 
+// The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
+const EXP_HP = 10000000
+const EXP_TICK = 3000
+function expeditionWindow(now = Date.now()) {
+  const kst = new Date(now + 9 * 3600000)
+  const midnight = Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate()) - 9*3600000
+  const actualStart = midnight + 9*3600000 - (kst.getUTCHours() < 9 ? 86400000 : 0)
+  const d = new Date(actualStart + 9*3600000)
+  return {day:d.toISOString().slice(0,10),start:actualStart,next:actualStart+86400000}
+}
+async function expeditionSettle(conn, day, serverId, now) {
+  const [bossRows] = await conn.query('SELECT hp,last_tick FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+  if (!bossRows.length) return null
+  const boss=bossRows[0]
+  let hp=Number(boss.hp),last=Number(boss.last_tick)
+  const ticks=hp>0 ? Math.max(0,Math.floor((now-last)/EXP_TICK)) : 0
+  if(ticks) {
+    const [members]=await conn.query('SELECT character_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0),0)
+    hp=Math.max(0,hp-ticks*power)
+    last+=ticks*EXP_TICK
+    await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
+    if(hp===0) {
+      const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+      for(const player of players) {
+        const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_paid (raid_day,server_id,account_id) VALUES (?,?,?)',[day,serverId,player.account_id])
+        if(paid.affectedRows) {
+          // System mail: reward is credited only when the recipient claims it.
+          // The mail `coins` column is the game's coin balance (`gm_saves.gems`).
+          await conn.query(
+            'INSERT INTO gm_mail (from_id,to_id,message,coins,sent_day,created_ms) VALUES (?,?,?,?,?,?)',
+            [0,player.account_id,'원정대 보스를 토벌하였습니다!',500,day,now]
+          )
+          await trimInbox(conn,player.account_id)
+        }
+      }
+    }
+  }
+  return hp
+}
+async function expeditionSnapshot(accountId) {
+  const now=Date.now(), {day,start,next}=expeditionWindow(now)
+  const conn=await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const [mine]=await conn.query('SELECT server_id,character_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
+    const servers=[]
+    for(let id=1;id<=3;id++) {
+      await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,id,EXP_HP,start])
+      const hp=await expeditionSettle(conn,day,id,now)
+      const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
+      servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,me:String(m.account_id)===String(accountId)}))})
+    }
+    await conn.commit()
+    return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
+  } catch(e){await conn.rollback();throw e} finally {conn.release()}
+}
+async function expeditionJoin(accountId,serverId,characterId) {
+  const now=Date.now(),{day,start}=expeditionWindow(now)
+  const conn=await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
+    const hp=await expeditionSettle(conn,day,serverId,now)
+    const [old]=await conn.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
+    if(old.length && Number(old[0].server_id)!==serverId) {await conn.rollback();return 'exp_already_joined'}
+    if(hp<=0) {await conn.rollback();return 'exp_boss_dead'}
+    const [count]=await conn.query('SELECT COUNT(*) AS n FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+    if(!old.length && Number(count[0].n)>=10){await conn.rollback();return 'exp_full'}
+    const [owned]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[accountId])
+    const ids=owned.length?normalizeOwned(parseJson(owned[0].owned)):[]
+    if(!ids.includes(characterId)){await conn.rollback();return 'not_owned'}
+    if(old.length) await conn.query('UPDATE gm_expedition_member SET character_id=? WHERE raid_day=? AND account_id=?',[characterId,day,accountId])
+    else await conn.query('INSERT INTO gm_expedition_member (raid_day,account_id,server_id,character_id,joined_ms) VALUES (?,?,?,?,?)',[day,accountId,serverId,characterId,now])
+    await conn.commit();return null
+  } catch(e){await conn.rollback();if(e.code==='ER_DUP_ENTRY')return 'exp_already_joined';throw e}finally{conn.release()}
+}
 const routes = {
+  'GET /api/expedition': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    send(res,200,await expeditionSnapshot(account.id))
+  },
+  'POST /api/expedition/join': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {serverId,characterId}=await readJson(req)
+    if(![1,2,3].includes(serverId)||typeof characterId!=='string'||!CHARACTER_IDS.includes(characterId))return send(res,400,{error:'not_owned'})
+    const error=await expeditionJoin(account.id,serverId,characterId)
+    if(error)return send(res,409,{error})
+    send(res,200,await expeditionSnapshot(account.id))
+  },
   'GET /api/global-chat': async (req, res) => {
     await ensureGlobalChatTables()
     const account = await currentAccount(req)
@@ -940,22 +1046,51 @@ const routes = {
     if (!outcome.ok) return send(res, 400, { error: outcome.error })
     send(res, 200, { save: outcome.state, results: outcome.results, dupes })
   },
+  'POST /api/claw/refresh': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      if (!rows.length || (!account.is_admin && Number(rows[0].diamonds) < 2)) {
+        await conn.rollback()
+        return send(res, 400, { error: 'not_enough_diamonds' })
+      }
+      if (!account.is_admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 2 WHERE account_id = ?', [account.id])
+      await conn.commit()
+      return send(res, 200, { save: await getSave(account.id) })
+    } catch (error) { await conn.rollback().catch(() => {}); throw error }
+    finally { conn.release() }
+  },
   'POST /api/claw/play': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-      const { aligned } = await readJson(req)
+      const body = await readJson(req)
+      const { aligned } = body
       const admin = Boolean(account.is_admin)
       const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       if (!rows.length || (!admin && Number(rows[0].diamonds) < 1)) {
         await conn.rollback()
         return send(res, 400, { error: 'not_enough_diamonds' })
       }
-      // Each attempt has a new uniformly random 0–75% success probability.
-      const chance = aligned === true ? randomInt(76) : 0
-      const won = randomInt(10000) < chance * 100
+      // Always grab when aligned; grip may release at each distance interval.
+      const x = Math.max(0, Math.min(100, Number(body.x) || 0))
+      const y = Math.max(0, Math.min(100, Number(body.y) || 0))
+      const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
+      // Cumulative win chances for distance segments 1–6: 71.2, 50.7, 47, 42, 37, 33%.
+      // For longer paths, retain an 89% grip per additional segment.
+      const cumulative = [1, .712, .712 ** 2, .47, .42, .37, .33]
+      const gripAt = (step) => step <= 6 ? cumulative[step] / cumulative[step - 1] : .89
+      let dropAt = -1
+      if (aligned === true) for (let i = 1; i <= segments; i++) {
+        if (randomInt(1000000) >= Math.round(gripAt(i) * 1000000)) { dropAt = i; break }
+      }
+      const won = aligned === true && dropAt === -1
+      const chance = aligned === true ? Math.round((segments <= 6 ? cumulative[segments] : cumulative[6] * .89 ** (segments - 6)) * 100) : 0
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
       if (prize) {
@@ -965,7 +1100,7 @@ const routes = {
         await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(decos)])
       }
       await conn.commit()
-      send(res, 200, { won, chance, prize, save: await getSave(account.id), decos: await getDecos(account.id) })
+      send(res, 200, { won, chance, dropAt, segments, prize, save: await getSave(account.id), decos: await getDecos(account.id) })
     } catch (error) {
       await conn.rollback().catch(() => {})
       throw error

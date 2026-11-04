@@ -3,6 +3,7 @@ import type { CharacterId, GachaSave, PullCount, PullResult } from './collection
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
@@ -73,6 +74,9 @@ export const ERROR_TEXT: Record<string, string> = {
   admin_only: '운영자만 할 수 있어요.',
   announcement_invalid: '공지사항은 1~100자까지 작성할 수 있어요.',
   house_private: '이 유저의 하우스는 비공개예요.',
+  exp_already_joined: '오늘은 이미 원정대에 배치했어요.',
+  exp_full: '이 서버는 10명이 모두 찼어요.',
+  exp_boss_dead: '이 서버의 보스는 이미 처치됐어요.',
   login_required: '다시 로그인해 주세요.',
   starting: '서버를 준비하고 있어요. 잠시 후 다시 시도해 주세요.',
   network: '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',
@@ -244,6 +248,8 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
+  async expedition():Promise<ExpeditionState> {return request<ExpeditionState>('expedition')}
+  async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
   async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
   async postAnnouncement(message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements', { message }) }
@@ -294,11 +300,16 @@ export class RemoteGachaStore {
     return result.results
   }
 
-  async playClaw(aligned: boolean): Promise<{ won: boolean; chance: number; prize: string | null }> {
-    const result = await request<{ won: boolean; chance: number; prize: string | null; save: GachaSave; decos: DecoCounts }>('claw/play', { aligned })
+  async refreshClaw(): Promise<void> {
+    const result = await request<{ save: GachaSave }>('claw/refresh', {})
+    this.data = result.save
+  }
+
+  async playClaw(aligned: boolean, x: number, y: number): Promise<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null }> {
+    const result = await request<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; save: GachaSave; decos: DecoCounts }>('claw/play', { aligned, x, y })
     this.data = result.save
     this.decos = result.decos
-    return { won: result.won, chance: result.chance, prize: result.prize }
+    return { won: result.won, chance: result.chance, dropAt: result.dropAt, segments: result.segments, prize: result.prize }
   }
 
   async pullDecos(count: DecoPullCount): Promise<DecoPullResult[]> {
