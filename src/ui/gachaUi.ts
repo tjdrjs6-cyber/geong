@@ -227,7 +227,7 @@ export class GachaUi {
         <div class="toast house-toast" aria-live="polite"></div>
       </section>
       <section class="weed-screen expedition-screen" data-screen="expedition" aria-hidden="true">
-        <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b>⚔ 원정대</b><small>매일 오전 9시 갱신</small></header>
+        <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">10,000,000</b> / 10,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
         <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버별 최대 10명 · 1인 1서버 · 3초마다 전투력만큼 공격 · 처치 시 참여자 모두 500코인 · 매일 오전 9시 새 보스</p></div>
@@ -240,7 +240,7 @@ export class GachaUi {
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <button class="expedition-entry" data-action="expedition"><img src="/expedition_banner.jpg" alt="원정대"/><span>⚔ 원정대</span></button>
+        <button class="expedition-entry" data-action="expedition"><img src="/expedition_banner.jpg" alt="원정대"/><span class="expedition-entry-label"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대</span></button>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
@@ -404,8 +404,8 @@ export class GachaUi {
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
-    if (action === 'expedition') {this.show('expedition');return}
-    if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.renderExpedition();return}
+    if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.show('expedition');return}
+    if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대에 배치했어요!');await this.loadExpedition()}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
@@ -1080,7 +1080,7 @@ export class GachaUi {
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {this.expedition=await this.store.expedition();this.renderExpedition()} catch(e){this.handleError(e)} finally{this.expeditionLoading=false}
+    try {this.expedition=await this.store.expedition();this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private renderExpedition():void {
     const state=this.expedition
