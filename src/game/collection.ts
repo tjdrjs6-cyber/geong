@@ -1,18 +1,18 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
-  { id: 'chiikawa', name: '치이카와', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
-  { id: 'hachiware', name: '하치와레', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
-  { id: 'usagi', name: '우사기', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
-  { id: 'momonga', name: '모몽가', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 3, color: '#f1efff', accent: '#a99ae1' },
-  { id: 'kurimanju', name: '쿠리만쥬', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 2, color: '#f8e9d4', accent: '#b08a62' },
-  { id: 'shisa', name: '시사', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 2, color: '#fff0dc', accent: '#eba65a' },
-  { id: 'kani', name: '카니', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 2, color: '#ffeef2', accent: '#ec8fa8' },
-  { id: 'goblin', name: '고블린', variant: '', probability: 6.07, tier: 'normal', weedBonus: 0, power: 1, color: '#eef6e2', accent: '#8cb86a' },
-  { id: 'rakko', name: '랏코', variant: '', probability: 6.06, tier: 'normal', weedBonus: 0, power: 10, color: '#f1f1ef', accent: '#a8b0b5' },
-  { id: 'armor1', name: '갑옷씨1', variant: '', probability: 6.06, tier: 'normal', weedBonus: 0, power: 15, color: '#f0f0f3', accent: '#9a98a3' },
-  { id: 'armor2', name: '갑옷씨2', variant: '', probability: 6.06, tier: 'normal', weedBonus: 0, power: 15, color: '#f3ece6', accent: '#a8948a' },
-  { id: 'armor3', name: '갑옷씨3', variant: '', probability: 6.06, tier: 'normal', weedBonus: 0, power: 15, color: '#fbf6d8', accent: '#c9b24a' },
+  { id: 'chiikawa', name: '치이카와', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'hachiware', name: '하치와레', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
+  { id: 'usagi', name: '우사기', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
+  { id: 'momonga', name: '모몽가', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 3, color: '#f1efff', accent: '#a99ae1' },
+  { id: 'kurimanju', name: '쿠리만쥬', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 2, color: '#f8e9d4', accent: '#b08a62' },
+  { id: 'shisa', name: '시사', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 2, color: '#fff0dc', accent: '#eba65a' },
+  { id: 'kani', name: '카니', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 2, color: '#ffeef2', accent: '#ec8fa8' },
+  { id: 'goblin', name: '고블린', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 1, color: '#eef6e2', accent: '#8cb86a' },
+  { id: 'rakko', name: '랏코', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 10, color: '#f1f1ef', accent: '#a8b0b5' },
+  { id: 'armor1', name: '갑옷씨1', variant: '', probability: 6.04, tier: 'normal', weedBonus: 0, power: 15, color: '#f0f0f3', accent: '#9a98a3' },
+  { id: 'armor2', name: '갑옷씨2', variant: '', probability: 6.05, tier: 'normal', weedBonus: 0, power: 15, color: '#f3ece6', accent: '#a8948a' },
+  { id: 'armor3', name: '갑옷씨3', variant: '', probability: 6.05, tier: 'normal', weedBonus: 0, power: 15, color: '#fbf6d8', accent: '#c9b24a' },
   { id: 'm_chiikawa', name: '치이카와', variant: '인어의섬', probability: 2.2, tier: 'mermaid', weedBonus: 5, power: 6, color: '#fff4f6', accent: '#8ccf6a' },
   { id: 'm_hachiware', name: '하치와레', variant: '인어의섬', probability: 2.2, tier: 'mermaid', weedBonus: 5, power: 8, color: '#e6f3ff', accent: '#8ccf6a' },
   { id: 'm_usagi', name: '우사기', variant: '인어의섬', probability: 2.2, tier: 'mermaid', weedBonus: 5, power: 9, color: '#fff6d8', accent: '#8ccf6a' },
@@ -30,6 +30,7 @@ export const CHARACTERS = [
   { id: 'c_curry', name: '치이카와', variant: '카레', probability: 0.3, tier: 'super', weedBonus: 50, power: 5, color: '#ffe3ea', accent: '#e9799a' },
   { id: 'h_curry', name: '하치와레', variant: '카레', probability: 0.3, tier: 'super', weedBonus: 50, power: 5, color: '#ffe3ea', accent: '#7fa6cc' },
   { id: 'u_curry', name: '우사기', variant: '카레', probability: 0.3, tier: 'super', weedBonus: 50, power: 5, color: '#ffe3ea', accent: '#e9799a' },
+  { id: 'ginger_chiikawa', name: '치이카와', variant: '진저맨', probability: 0.3, tier: 'super', weedBonus: 50, power: 5, color: '#ffe5ca', accent: '#c78c55' },
   { id: 'beetle', name: '풍뎅이', variant: '', probability: 0.3, tier: 'super', weedBonus: 0, power: 1, color: '#f6e6dc', accent: '#a8705a' },
 ] as const
 

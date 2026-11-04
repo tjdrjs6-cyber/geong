@@ -123,6 +123,13 @@ async function prepareDatabase() {
   try { await pool.query('ALTER TABLE gm_weeding ADD COLUMN beetle TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN to_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN from_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  // Promote only an existing account; never create an administrator implicitly.
+  // Configure ADMIN_USERNAME as a private Railway environment variable.
+  const adminUsername = process.env.ADMIN_USERNAME?.trim()
+  if (adminUsername) {
+    const [result] = await pool.query('UPDATE gm_accounts SET is_admin = 1 WHERE username = ?', [adminUsername])
+    if (result.affectedRows === 0) console.warn('[api] configured administrator account does not exist yet')
+  }
   ready = true
 }
 

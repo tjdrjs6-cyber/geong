@@ -3,6 +3,7 @@ import type { CharacterId } from './collection'
 const previewUrls: Record<CharacterId, string> = {
   anoko: '/assets/chars/anoko.png',
   c_curry: '/assets/chars/c_curry.png',
+  ginger_chiikawa: '/assets/chars/ginger_chiikawa.png',
   goblin: '/assets/chars/goblin.png',
   beetle: '/assets/chars/beetle.png',
   armor1: '/assets/chars/armor1.png',
@@ -34,6 +35,7 @@ const previewUrls: Record<CharacterId, string> = {
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
+  ginger_chiikawa: '/assets/chars/ginger_chiikawa.png',
   dekatsuyo: '/manus-storage/game/sha256/2b2af33e3f7f14f712d848dbe512b274dcd0dbb8a6d410039ad1e5339e40e727.png',
   h_curry: '/manus-storage/game/sha256/279d4d3e118d9fcc04876a4da23c63f0c9c9c8732075966692c14496891df51c.png',
   u_curry: '/manus-storage/game/sha256/27b73e5c38fa0712d8ec8cee7f3f94f29aaa0f23e38caba666f6603793e233f7.png',

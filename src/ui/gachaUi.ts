@@ -220,7 +220,7 @@ export class GachaUi {
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">YOUR LITTLE FRIENDS</div><h2 id="collection-title">캐릭터 도감</h2>
-          <p class="collection-summary">30명의 친구를 모아보세요. 일반 각 6.07% (랏코·갑옷씨1~3 각 6.06%) · 레어(인어의섬) 각 2.20% · 에픽 각 1.00% · 유니크(카레·풍뎅이) 각 0.30%</p>
+          <p class="collection-summary">31명의 친구를 모아보세요. 일반 각 6.04% (갑옷씨2·3 각 6.05%) · 레어(인어의섬) 각 2.20% · 에픽 각 1.00% · 유니크(카레·진저맨·풍뎅이) 각 0.30%</p>
           <div class="collection-grid"></div>
           <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
           <button class="modal-primary" data-action="close">가챠로 돌아가기</button>
