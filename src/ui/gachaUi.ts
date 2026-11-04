@@ -81,7 +81,7 @@ export class GachaUi {
     this.screen = screen
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
-      const active = node.dataset.screen === screen || (node.dataset.screen === 'title' && (screen === 'claw' || screen === 'collection' || screen === 'decos' || screen === 'result' || screen === 'users' || screen === 'roulette' || screen === 'mail' || screen === 'featured' || screen === 'storage' || screen === 'suggest'))
+      const active = node.dataset.screen === screen || (node.dataset.screen === 'title' && (screen === 'claw' || screen === 'collection' || screen === 'decos' || screen === 'result' || screen === 'users' || screen === 'roulette' || screen === 'mail' || screen === 'featured'))
       node.classList.toggle('is-active', active)
       node.setAttribute('aria-hidden', String(!active))
     })
@@ -604,10 +604,9 @@ export class GachaUi {
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
     if (btn) btn.disabled = true
-    let grabbedToy = false
+    let wonToy = false
     try {
       const aligned = this.clawTouchesToy()
-      grabbedToy = aligned
       const result = await this.store.playClaw(aligned)
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
@@ -617,6 +616,7 @@ export class GachaUi {
       if (aligned) toy?.classList.add('is-lifted')
       await new Promise(resolve => window.setTimeout(resolve, aligned ? 650 : 250))
       if (result.won && result.prize) {
+        wonToy = true
         // Keep the plush attached to the claw during the entire trip to the exit.
         // Derive the exit center from the actual rendered chute, including mobile layouts.
         const machine = this.root.querySelector<HTMLElement>('.claw-machine')
@@ -644,15 +644,33 @@ export class GachaUi {
           prizeEl.classList.remove('is-delivered'); void prizeEl.offsetWidth
           prizeEl.classList.add('is-delivered')
         }
-        if (msg) msg.textContent = `🎉 성공! ${deco?.name ?? '데코'} 획득! 보관함에 지급됐어요.`
+        const earnedText = `🎉 ${deco?.name ?? '데코 아이템'} 획득! 보관함에 저장됐어요!`
+        if (msg) msg.textContent = earnedText
+        this.toast(earnedText)
+        window.setTimeout(() => {
+          if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
+          if (msg && msg.textContent === earnedText) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
+        }, 2300)
       } else {
-        if (aligned) toy?.classList.add('is-dropped')
-        if (msg) msg.textContent = aligned ? '아쉽게 인형이 떨어졌어요! 다음에 다시 도전해요.' : '허공이라 인형을 잡지 못했어요!'
+        if (aligned) {
+          toy?.classList.add('is-dropped')
+          await new Promise(resolve => window.setTimeout(resolve, 500))
+          // A failed grab returns the doll to its ORIGINAL location.
+          if (toy) {
+            toy.classList.remove('is-lifted', 'is-dropped')
+            toy.style.transition = 'none'
+            toy.style.left = `${this.clawToyX}%`
+            toy.style.top = `${this.clawToyY}%`
+            void toy.offsetWidth
+            toy.style.removeProperty('transition')
+          }
+        }
+        if (msg) msg.textContent = aligned ? '아쉽게 인형이 떨어졌어요! 같은 자리에서 다시 도전해요.' : '허공이라 인형을 잡지 못했어요!'
       }
     } catch (error) { this.handleError(error) }
     finally {
-      // Only reposition after an actual doll grab. Empty-air attempts leave the doll untouched.
-      if (grabbedToy) this.respawnClawToy()
+      // Only a successful win generates a new position. Failures keep the original.
+      if (wonToy) this.respawnClawToy()
       this.clawBusy=false
       if(btn) btn.disabled=false
     }
