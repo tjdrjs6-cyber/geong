@@ -766,3 +766,79 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .collection-card .collection-info-sticky { top: -30px; margin-top: -14px; padding-top: 14px; padding-right: 34px; }
   .collection-card .modal-close { margin: -14px -8px 0 0; }
 }
+
+
+/* PC + MOBILE: keep descriptions in view, scroll only the collection content. */
+.gacha-modal .modal-card.collection-card {
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+  max-height:min(86dvh,760px);
+}
+.gacha-modal .collection-card .collection-info-sticky {
+  position:relative;
+  top:auto;
+  flex:0 0 auto;
+  z-index:2;
+  margin:0 0 10px;
+  padding:0 30px 10px 0;
+  background:#fffaf5;
+  border-bottom:1px solid rgba(219,190,177,.55);
+}
+.gacha-modal .collection-card .collection-grid {
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  align-content:start;
+  padding:3px 2px 10px;
+}
+.gacha-modal .collection-card .modal-close {
+  position:absolute;
+  top:10px;
+  right:10px;
+  margin:0;
+  float:none;
+  z-index:5;
+}
+.gacha-modal .collection-card .duplicate-note,
+.gacha-modal .collection-card > .modal-primary {
+  flex:0 0 auto;
+}
+.weed-screen .weed-panel:not(.house-panel) {
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+}
+.weed-screen .weed-panel:not(.house-panel) .field-info-sticky {
+  position:relative;
+  top:auto;
+  flex:0 0 auto;
+  margin:-16px -16px 10px;
+  padding:16px 16px 10px;
+  z-index:2;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker {
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  align-content:start;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-beetle-slot { flex:0 0 auto; }
+@media (max-width:760px) {
+  .gacha-modal { padding:10px; }
+  .gacha-modal .modal-card.collection-card {
+    max-height:calc(100dvh - 24px - var(--safe-t, 0px) - var(--safe-b, 0px));
+  }
+  .gacha-modal .collection-card .collection-info-sticky {
+    top:auto; margin:0 0 8px; padding:0 28px 8px 0;
+  }
+  .gacha-modal .collection-card .modal-close { top:8px; right:8px; margin:0; }
+  .weed-screen .weed-panel:not(.house-panel) .field-info-sticky { top:auto; }
+}
