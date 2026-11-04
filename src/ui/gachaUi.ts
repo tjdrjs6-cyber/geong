@@ -84,7 +84,11 @@ export class GachaUi {
 
   show(screen: Screen): void {
     this.screen = screen
-    if (screen !== 'users') this.root.querySelector('.users-card')?.classList.remove('privacy-mode')
+    if (screen !== 'users') {
+      const usersCard = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card')
+      usersCard?.classList.remove('privacy-mode')
+      usersCard?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden')
+    }
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
       const active = node.dataset.screen === screen
@@ -239,6 +243,14 @@ export class GachaUi {
         <div class="free-note">이 게임의 모든 뽑기는 게임 속 무료 코인으로 즐길 수 있어요.</div>
         <div class="toast" aria-live="polite"></div>
       </main>
+      <div class="insufficient-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="insufficient-title" aria-describedby="insufficient-message">
+        <div class="insufficient-card">
+          <span class="insufficient-icon" aria-hidden="true">🪙</span>
+          <h2 id="insufficient-title">코인이 부족해요!</h2>
+          <p id="insufficient-message"></p>
+          <button type="button" data-action="insufficient-close" class="insufficient-close">확인</button>
+        </div>
+      </div>
       <section class="gacha-modal" data-screen="collection" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="collection-title">
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
@@ -370,6 +382,7 @@ export class GachaUi {
     if (!action) return
     this.audio.unlock()
     this.audio.play('ui')
+    if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'claw') { this.show('claw'); return }
     if (action?.startsWith('claw-')) { await this.handleClaw(action); return }
     if (action === 'collection') { this.show('collection'); return }
@@ -386,7 +399,7 @@ export class GachaUi {
     if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
-    if (action === 'users') { this.root.querySelector('.users-card')?.classList.remove('privacy-mode'); this.show('users'); void this.loadUsers(); return }
+    if (action === 'users') { const card = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card'); card?.classList.remove('privacy-mode'); card?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden'); this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
     if (action === 'admin-broadcast-send') { await this.sendBroadcast(); return }
@@ -434,7 +447,7 @@ export class GachaUi {
       const count = Number(button.dataset.count) as PullCount
       if (!PULL_OPTIONS.some(option => option.count === count)) return
       const cost = pullCost(count)
-      if (!this.isAdmin && this.store.data.gems < cost) { this.toast(ERROR_TEXT.not_enough_coins); return }
+      if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
@@ -459,7 +472,7 @@ export class GachaUi {
     if (action === 'deco-pull') {
       const count = Number(button.dataset.count) as DecoPullCount
       if (!DECO_PULL_OPTIONS.some(option => option.count === count)) return
-      if (!this.isAdmin && this.store.data.gems < decoPullCost(count)) { this.toast(ERROR_TEXT.not_enough_coins); return }
+      if (!this.isAdmin && this.store.data.gems < decoPullCost(count)) { this.showInsufficient(decoPullCost(count)); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
@@ -846,6 +859,8 @@ export class GachaUi {
     this.show('users')
     const usersCard = this.root.querySelector<HTMLElement>('.users-card')
     usersCard?.classList.add('privacy-mode')
+    // Privacy has its own Save/Cancel actions: remove the unrelated footer action.
+    usersCard?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.setAttribute('hidden', '')
     const body = this.root.querySelector<HTMLElement>('.users-body')
     if (!body) return
     body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="featured">← 내 프로필</button><b>🔒 내 정보 공개 설정</b></div>
@@ -1540,7 +1555,8 @@ export class GachaUi {
   }
   private handleError(error: unknown): void {
     const code = error instanceof RequestError ? error.code : 'network'
-    this.toast(ERROR_TEXT[code] ?? ERROR_TEXT.network)
+    if (code === 'not_enough_coins' && this.screen === 'title') this.showInsufficient()
+    else this.toast(ERROR_TEXT[code] ?? ERROR_TEXT.network)
     if (code === 'login_required') { this.store.user = null; this.setAuthMode('login'); this.show('auth') }
   }
 
@@ -1623,6 +1639,23 @@ export class GachaUi {
       this.wheelSpinning = false
       this.renderWallet()
     }
+  }
+
+  private showInsufficient(cost?: number): void {
+    const overlay = this.root.querySelector<HTMLElement>('.insufficient-overlay')
+    const message = this.root.querySelector<HTMLElement>('#insufficient-message')
+    if (!overlay || !message) return
+    const have = this.store.data.gems
+    message.textContent = cost === undefined
+      ? `현재 ${have.toLocaleString('ko-KR')}코인을 보유 중이에요. 제초장이나 출석 체크에서 코인을 모아보세요!`
+      : `뽑기에 ${cost.toLocaleString('ko-KR')}코인이 필요하지만 현재 ${have.toLocaleString('ko-KR')}코인이 있어요. 제초장이나 출석 체크에서 코인을 모아보세요!`
+    overlay.hidden = false
+    this.root.querySelector<HTMLButtonElement>('.insufficient-close')?.focus()
+  }
+
+  private closeInsufficient(): void {
+    const overlay = this.root.querySelector<HTMLElement>('.insufficient-overlay')
+    if (overlay) overlay.hidden = true
   }
 
   private toast(text: string): void {

@@ -1924,3 +1924,73 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   overflow:hidden !important;
   margin:0 auto !important;
 }
+
+/* v0.14 — fit the COMPLETE portrait friend house into the visitor modal.
+   Only the visitor preview is scaled; editor layout and stored coordinates stay unchanged. */
+.gacha-modal[data-screen="users"] .users-body .user-house {
+  display:flex !important; flex-direction:column !important; align-items:center !important;
+  width:100% !important; min-width:0 !important;
+}
+.gacha-modal[data-screen="users"] .users-body .user-house > .house-lot.house-visit {
+  flex:0 0 auto !important;
+  width:min(100%, 340px, calc(46dvh * 941 / 1672)) !important;
+  min-width:0 !important; max-width:100% !important;
+  height:auto !important; max-height:none !important;
+  aspect-ratio:941 / 1672 !important;
+  overflow:hidden !important; margin:0 auto !important;
+  container-type:inline-size !important;
+}
+.gacha-modal[data-screen="users"] .users-body .user-house > .house-lot.house-visit .house-bg {
+  position:absolute !important; inset:0 !important; width:100% !important; height:100% !important;
+  object-fit:fill !important;
+}
+.gacha-modal[data-screen="users"] .users-body .user-house > .house-lot.house-visit .house-items {
+  position:absolute !important; inset:0 !important;
+}
+.gacha-modal[data-screen="users"] .users-body .user-house-note {
+  flex:0 0 auto !important; text-align:center !important;
+}
+
+/* v0.15: Keep currency/error toast above navigation and side controls. */
+.gacha-screen > .toast { z-index: 100 !important; top: 36% !important; bottom: auto !important; max-width: calc(100vw - 28px); white-space: normal; text-align: center; line-height: 1.45; box-sizing: border-box; }
+
+/* v0.16: The falling capsule must render over the left nav and right rail.
+   Raise the whole stage only during the machine animation to escape its stacking context. */
+.gacha-screen > .toon-stage.is-spinning { z-index: 90 !important; }
+.gacha-screen > .toon-stage.is-spinning .toon-capsule { z-index: 100 !important; }
+
+/* Insufficient coins: an actual dismissible popup, above all game controls. */
+#ui > .insufficient-overlay:not([hidden]) {
+  position: fixed !important; inset: 0 !important; z-index: 2147483647 !important;
+  display: grid !important; place-items: center !important;
+  padding: 18px; box-sizing: border-box;
+  background: rgba(46, 32, 41, .54); pointer-events: auto;
+}
+#ui > .insufficient-overlay[hidden] { display: none !important; }
+.insufficient-card {
+  width: min(350px, 100%); box-sizing: border-box; padding: 28px 22px 22px;
+  border: 3px solid #e5a6b7; border-radius: 25px; background: #fffaf5;
+  box-shadow: 0 18px 55px rgba(45, 29, 40, .3);
+  text-align: center; color: #514047;
+}
+.insufficient-icon { display: block; font-size: 42px; margin-bottom: 6px; }
+.insufficient-card h2 { font-size: 22px; margin: 0 0 12px; }
+.insufficient-card p { font-size: 15px; line-height: 1.65; margin: 0 0 22px; overflow-wrap: anywhere; }
+.insufficient-close {
+  display: block; width: 100%; border: 0; border-radius: 16px;
+  padding: 13px 20px; background: #d98fa6; color: white;
+  font: inherit; font-weight: 800; font-size: 17px; cursor: pointer;
+}
+
+/* v0.17: Privacy settings have exactly two footer actions. */
+.gacha-modal[data-screen="users"] .users-card.privacy-mode > button.modal-primary[data-action="close"],
+.gacha-modal[data-screen="users"] .users-card.privacy-mode > button.modal-primary[data-action="close"][hidden],
+.gacha-modal[data-screen="users"] .users-card:has(.privacy-save-actions) > button.modal-primary[data-action="close"] { display:none!important; }
+.gacha-modal[data-screen="users"] .users-card.privacy-mode .privacy-save-actions {
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;
+ width:100%;margin:22px 0 0!important;padding:0 0 12px!important;box-sizing:border-box;
+}
+.gacha-modal[data-screen="users"] .users-card.privacy-mode .privacy-save-actions > button {
+ position:static!important;transform:none!important;width:100%!important;min-width:0!important;
+ margin:0!important;box-sizing:border-box!important;min-height:50px!important;
+}
