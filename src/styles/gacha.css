@@ -2798,3 +2798,11 @@ html body > #geongi-version {
    Only constrain stat badges to their own card, without changing card layout. */
 .collection-grid:not(.deco-grid) .friend-card{min-width:0}
 .collection-grid:not(.deco-grid) .friend-card .friend-bonus{max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;line-height:1.25;font-size:9px;text-align:center}
+
+/* v0.45: Keep representative actions at the bottom of every collection card,
+   regardless of how many stat/variant badges a character has. */
+.collection-grid .friend-card{display:flex!important;flex-direction:column!important;align-items:center!important;}
+.collection-grid .friend-card > .friend-select,
+.collection-grid .friend-card > .friend-lock{margin-top:auto!important;align-self:center!important;flex-shrink:0!important;}
+.collection-grid .friend-card > small{margin-bottom:12px!important;}
+.collection-grid .friend-card > .friend-select{max-width:100%;box-sizing:border-box;}
