@@ -2890,3 +2890,7 @@ html body > #geongi-version {
 /* Keep the face and text upright while preserving the hand-drawn button silhouette. */
 .gacha-modal.claw-screen .claw-play {transform:rotate(0deg)!important}
 .gacha-modal.claw-screen .claw-play:active {transform:translateY(3px) scale(.97)!important}
+
+/* v0.62: fast press-and-hold claw arrows, without touch page scrolling */
+.gacha-modal.claw-screen .claw-arrows button {touch-action:none;user-select:none;-webkit-user-select:none;}
+.gacha-modal.claw-screen .claw-arm {transition:left .09s linear,top .09s linear;}

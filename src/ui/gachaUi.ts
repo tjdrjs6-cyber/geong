@@ -50,8 +50,11 @@ export class GachaUi {
   private weedTimer = 0
   private lastEnemyHp = -1
   private battleSyncing = false
-  private clawX = 50
-  private clawY = 50
+  private clawX = 88
+  private clawY = 15
+  private clawHoldTimer: number | undefined
+  private clawHoldDelay: number | undefined
+  private clawIgnoreClick = false
   private clawToys: { id: string; name: string; x: number; y: number }[] = []
   private clawToysOwner = ''
   private clawTargetId: string | null = null
@@ -66,6 +69,21 @@ export class GachaUi {
   constructor(private readonly store: RemoteGachaStore, private readonly audio: Audio, private readonly actions: Actions) {
     this.root.innerHTML = this.template()
     this.root.addEventListener('click', event => { void this.onClick(event) })
+    // Press-and-hold arrows continuously move the claw; release stops immediately.
+    this.root.addEventListener('pointerdown', event => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.claw-arrows button[data-action]')
+      if (!button || this.clawBusy) return
+      event.preventDefault()
+      this.clawIgnoreClick = true
+      this.moveClaw(button.dataset.action ?? '')
+      this.stopClawHold()
+      this.clawHoldDelay = window.setTimeout(() => {
+        this.clawHoldTimer = window.setInterval(() => this.moveClaw(button.dataset.action ?? ''), 55)
+      }, 170)
+    })
+    window.addEventListener('pointerup', () => this.stopClawHold())
+    window.addEventListener('pointercancel', () => this.stopClawHold())
+    window.addEventListener('blur', () => this.stopClawHold())
     window.setInterval(() => { void this.tickSettle() }, 60_000)
     this.root.querySelector<HTMLFormElement>('.auth-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitAuth() })
     this.root.querySelector<HTMLFormElement>('.nickname-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitNickname() })
@@ -105,7 +123,7 @@ export class GachaUi {
     if (screen === 'expedition') {void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)}
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
-    if (screen === 'claw') { this.restoreClawToys(); this.clawX = 50; this.clawY = 50; this.renderClaw() }
+    if (screen === 'claw') { this.restoreClawToys(); this.resetClawToExit(); this.renderClaw() }
     if (screen === 'mail') void this.loadMail()
     if (screen === 'announcements') void this.loadAnnouncements()
     window.clearInterval(this.chatTimer)
@@ -402,7 +420,10 @@ export class GachaUi {
     this.audio.play('ui')
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'claw') { this.show('claw'); return }
-    if (action?.startsWith('claw-')) { await this.handleClaw(action); return }
+    if (action?.startsWith('claw-')) {
+      if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
+      await this.handleClaw(action); return
+    }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
@@ -712,16 +733,42 @@ export class GachaUi {
     if (arm) { arm.style.left = `${this.clawX}%`; arm.style.top = `${this.clawY}%` }
   }
 
+  private stopClawHold(): void {
+    window.clearTimeout(this.clawHoldDelay)
+    window.clearInterval(this.clawHoldTimer)
+    this.clawHoldDelay = undefined
+    this.clawHoldTimer = undefined
+  }
+
+  private resetClawToExit(): void {
+    const machine = this.root.querySelector<HTMLElement>('.claw-machine')
+    const chute = this.root.querySelector<HTMLElement>('.claw-chute')
+    if (machine && chute) {
+      const m = machine.getBoundingClientRect()
+      const c = chute.getBoundingClientRect()
+      if (m.width > 0 && m.height > 0) {
+        this.clawX = Math.max(10, Math.min(90, (c.left + c.width / 2 - m.left) / m.width * 100))
+        this.clawY = Math.max(10, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100))
+        return
+      }
+    }
+    this.clawX = 88
+    this.clawY = 15
+  }
+
+  private moveClaw(action: string): void {
+    if (this.clawBusy) return
+    const directions: Record<string, [number, number]> = { 'claw-up':[0,-2], 'claw-down':[0,2], 'claw-left':[-2,0], 'claw-right':[2,0] }
+    const move = directions[action]
+    if (!move) return
+    this.clawX = Math.max(10, Math.min(90, this.clawX + move[0]))
+    this.clawY = Math.max(10, Math.min(90, this.clawY + move[1]))
+    this.updateClawPosition()
+  }
+
   private async handleClaw(action: string): Promise<void> {
     if (this.clawBusy) return
-    const directions: Record<string, [number, number]> = { 'claw-up':[0,-7], 'claw-down':[0,7], 'claw-left':[-7,0], 'claw-right':[7,0] }
-    if (directions[action]) {
-      const [dx,dy] = directions[action]
-      this.clawX = Math.max(10,Math.min(90,this.clawX+dx))
-      this.clawY = Math.max(10,Math.min(90,this.clawY+dy))
-      this.updateClawPosition()
-      return
-    }
+    if (['claw-up', 'claw-down', 'claw-left', 'claw-right'].includes(action)) { this.moveClaw(action); return }
     if (action === 'claw-refresh') {
       this.clawBusy = true
       const refresh = this.root.querySelector<HTMLButtonElement>('.claw-refresh')
@@ -729,7 +776,7 @@ export class GachaUi {
       try {
         await this.store.refreshClaw()
         this.randomizeClawToy()
-        this.clawX=50; this.clawY=50
+        this.resetClawToExit()
         this.renderClaw()
         this.renderWallet()
         this.toast('💎 다이아 2개를 사용해 인형 위치를 새로 배치했어요!')
@@ -740,6 +787,7 @@ export class GachaUi {
       return
     }
     if (action !== 'claw-play') return
+    this.stopClawHold()
     this.clawBusy = true
     const btn = this.root.querySelector<HTMLButtonElement>('.claw-play')
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
@@ -851,12 +899,16 @@ export class GachaUi {
       }
     } catch (error) { this.handleError(error) }
     finally {
-      // The next arrow press starts at the released claw position, without moving the fallen toy.
+      // Even after a missed grab or an early drop, the empty claw must return
+      // to the exit before the player can move it again. The fallen toy stays put.
       if (wonToy) this.respawnClawToy()
-      else {
-        const clawArm = this.root.querySelector<HTMLElement>('.claw-arm')
-        if (clawArm) clawArm.style.removeProperty('transition')
+      const clawArm = this.root.querySelector<HTMLElement>('.claw-arm')
+      this.resetClawToExit()
+      if (clawArm) {
+        clawArm.style.transition = 'left .45s ease-in-out, top .45s ease-in-out'
         this.updateClawPosition()
+        await new Promise(resolve => window.setTimeout(resolve, 470))
+        clawArm.style.removeProperty('transition')
       }
       this.clawBusy=false
       if(btn) btn.disabled=false
