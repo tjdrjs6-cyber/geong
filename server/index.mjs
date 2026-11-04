@@ -760,16 +760,18 @@ const routes = {
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
+      const { aligned } = await readJson(req)
+      const admin = Boolean(account.is_admin)
       const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
-      if (!rows.length || Number(rows[0].diamonds) < 1) {
+      if (!rows.length || (!admin && Number(rows[0].diamonds) < 1)) {
         await conn.rollback()
         return send(res, 400, { error: 'not_enough_diamonds' })
       }
       // Each attempt has a new uniformly random 0–50% success probability.
-      const chance = randomInt(51)
+      const chance = aligned === true ? randomInt(51) : 0
       const won = randomInt(10000) < chance * 100
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
-      await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
+      if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
       if (prize) {
         const [decoRows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
         const decos = decoRows.length ? normalizeDecos(parseJson(decoRows[0].items)) : {}

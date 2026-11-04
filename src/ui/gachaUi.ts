@@ -48,7 +48,9 @@ export class GachaUi {
   private lastEnemyHp = -1
   private battleSyncing = false
   private clawX = 50
-  private clawY = 12
+  private clawY = 50
+  private clawToyX = 50
+  private clawToyY = 50
   private clawBusy = false
   private users: PublicUser[] = []
 
@@ -86,7 +88,7 @@ export class GachaUi {
     this.root.dataset.activeScreen = screen
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
-    if (screen === 'claw') this.renderClaw()
+    if (screen === 'claw') { this.clawToyX = 18 + Math.random()*64; this.clawToyY = 20 + Math.random()*58; this.clawX = 50; this.clawY = 50; this.renderClaw() }
     if (screen === 'mail') void this.loadMail()
     if (screen === 'storage') this.renderStorage()
     if (screen === 'suggest') void this.loadSuggest()
@@ -178,10 +180,10 @@ export class GachaUi {
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
-          <p class="battle-reward-hint">💎 몬스터 1마리 처치 시 다이아 코인 1개! 보관함에 자동 지급돼요.</p>
+          <p class="battle-reward-hint">💎 몬스터 1마리 처치 시 다이아 1개! 보관함에 자동 지급돼요.</p>
           <p class="battle-status"></p>
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
-          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 다이아 코인 1개가 인벤토리에 자동 지급돼요. 앱을 닫아도 계속 싸워요.</p>
+          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 다이아 1개가 인벤토리에 자동 지급돼요. 앱을 닫아도 계속 싸워요.</p>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -207,8 +209,9 @@ export class GachaUi {
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon">✦</span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
-          <div class="header-right"><div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아 코인"><span>💎</span><strong class="diamond-value">0</strong><span>다이아 코인</span></div></div>
+          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
         </header>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-weed" data-action="weed"><span>🌿</span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span>⚔️</span>토벌장</button><button class="nav-button nav-house" data-action="house"><span>🏠</span>하우스</button><button class="nav-button nav-users" data-action="users"><span>👥</span>유저 목록</button><button class="nav-button nav-storage" data-action="storage"><span>🎒</span>보관함</button><button class="nav-button nav-suggest" data-action="suggest"><span>💌</span>건의함</button><button class="nav-button nav-claw" data-action="claw"><span>🧸</span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
@@ -279,10 +282,10 @@ export class GachaUi {
         <div class="modal-card claw-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <h2 id="claw-title">🧸 치이카와 인형뽑기</h2>
-          <p class="claw-desc">💎 1회 1다이아 코인 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
-          <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 성공 확률은 매번 0~50% 랜덤</p>
+          <p class="claw-desc">💎 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
+          <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
-            <div class="claw-rail"></div><div class="claw-arm"><div class="claw-wire"></div><div class="claw-head">⌄</div></div>
+            <div class="claw-arm"><div class="claw-wire"></div><div class="claw-head">✦</div></div>
             <div class="claw-toys"></div><div class="claw-chute">출구 ↓</div><div class="claw-prize"></div>
           </div>
           <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play">🕹️ 뽑기!<small>💎 1개</small></button></div>
@@ -292,7 +295,7 @@ export class GachaUi {
       <section class="gacha-modal" data-screen="storage" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="storage-title">
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 다이아 코인">💎 다이아 코인 <strong class="diamond-value">0</strong>개</div>
+          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 다이아">💎 다이아 <strong class="diamond-value">0</strong>개</div>
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab">🧸 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab">🌸 데코</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
@@ -311,7 +314,7 @@ export class GachaUi {
         </div>
       </section>
       <section class="gacha-modal" data-screen="featured" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="featured-title">
-        <div class="modal-card collection-card">
+        <div class="modal-card collection-card profile-modal-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">MY PROFILE</div><h2 id="featured-title">내 프로필</h2>
           <div class="profile-card"><span class="profile-big"><img alt="" /></span><b class="profile-big-name"></b><small class="profile-stats"></small></div>
@@ -470,7 +473,7 @@ export class GachaUi {
       try {
         const earned = await this.store.startBattle(id)
         const name = fullName(characterById(id))
-        this.toast(earned > 0 ? `몬스터 ${earned}마리 처치 보상 다이아 코인 ${earned}개! ${withJosa(name, '이', '가')} 토벌에 나섰어요!` : `${withJosa(name, '이', '가')} 토벌에 나섰어요! (전투력 ${battlePower(id)})`)
+        this.toast(earned > 0 ? `몬스터 ${earned}마리 처치 보상 다이아 ${earned}개! ${withJosa(name, '이', '가')} 토벌에 나섰어요!` : `${withJosa(name, '이', '가')} 토벌에 나섰어요! (전투력 ${battlePower(id)})`)
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.lastEnemyHp = -1
       this.renderBattle()
@@ -538,7 +541,11 @@ export class GachaUi {
   private renderClaw(): void {
     this.renderWallet()
     const toys = this.root.querySelector<HTMLElement>('.claw-toys')
-    if (toys && !toys.children.length) toys.innerHTML = DECOS.slice(0, 12).map((deco, i) => `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="" style="--i:${i}"/>`).join('')
+    if (toys) toys.innerHTML = `<img class="claw-single-toy" src="/assets/chars/chiikawa_face_claw.png" alt="치이카와 얼굴 인형" style="left:${this.clawToyX}%;top:${this.clawToyY}%"/>`
+    const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
+    if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
+    const msg = this.root.querySelector<HTMLElement>('.claw-message')
+    if (msg) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
     this.updateClawPosition()
   }
 
@@ -549,11 +556,11 @@ export class GachaUi {
 
   private async handleClaw(action: string): Promise<void> {
     if (this.clawBusy) return
-    const directions: Record<string, [number, number]> = { 'claw-up':[0,-8], 'claw-down':[0,8], 'claw-left':[-10,0], 'claw-right':[10,0] }
+    const directions: Record<string, [number, number]> = { 'claw-up':[0,-7], 'claw-down':[0,7], 'claw-left':[-7,0], 'claw-right':[7,0] }
     if (directions[action]) {
       const [dx,dy] = directions[action]
-      this.clawX = Math.max(12,Math.min(88,this.clawX+dx))
-      this.clawY = Math.max(8,Math.min(34,this.clawY+dy))
+      this.clawX = Math.max(10,Math.min(90,this.clawX+dx))
+      this.clawY = Math.max(10,Math.min(90,this.clawY+dy))
       this.updateClawPosition()
       return
     }
@@ -561,35 +568,43 @@ export class GachaUi {
     this.clawBusy = true
     const btn = this.root.querySelector<HTMLButtonElement>('.claw-play')
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+    const toy = this.root.querySelector<HTMLElement>('.claw-single-toy')
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
     if (btn) btn.disabled = true
     try {
-      // The server decides the result and debits the diamond atomically.
-      const result = await this.store.playClaw()
+      const aligned = Math.hypot(this.clawX-this.clawToyX, this.clawY-this.clawToyY) <= 13
+      const result = await this.store.playClaw(aligned)
       this.renderWallet()
-      if (msg) msg.textContent = '집게가 내려갑니다…'
+      if (msg) msg.textContent = '집게가 내려가 인형을 들어 올립니다…'
       arm?.classList.add('is-dropping')
-      await new Promise(resolve => window.setTimeout(resolve, 900))
+      await new Promise(resolve => window.setTimeout(resolve, 700))
       arm?.classList.remove('is-dropping')
+      toy?.classList.add('is-lifted')
+      await new Promise(resolve => window.setTimeout(resolve, 650))
       if (result.won && result.prize) {
+        if (arm) { arm.style.left='88%'; arm.style.top='15%' }
+        if (toy) { toy.style.left='88%'; toy.style.top='15%' }
+        await new Promise(resolve => window.setTimeout(resolve, 750))
+        toy?.classList.add('is-dropped')
         const deco = DECOS.find(item => item.id === result.prize)
-        if (arm) { arm.style.left = '88%'; arm.style.top = '8%' }
-        await new Promise(resolve => window.setTimeout(resolve, 650))
         if (deco && prizeEl) {
           prizeEl.innerHTML = `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="${deco.name}"/>`
           prizeEl.classList.remove('is-delivered'); void prizeEl.offsetWidth
           prizeEl.classList.add('is-delivered')
         }
-        if (msg) msg.textContent = `🎉 성공! ${deco?.name ?? '데코'} 획득! (이번 확률 ${result.chance}%) · 보관함에 지급됐어요.`
-      } else if (msg) msg.textContent = `아쉽게 실패했어요! (이번 확률 ${result.chance}%) 다음에 다시 도전해요.`
+        if (msg) msg.textContent = `🎉 성공! ${deco?.name ?? '데코'} 획득! 보관함에 지급됐어요.`
+      } else {
+        toy?.classList.add('is-dropped')
+        if (msg) msg.textContent = '아쉽게 인형이 떨어졌어요! 다음에 다시 도전해요.'
+      }
     } catch (error) { this.handleError(error) }
-    finally { this.clawBusy = false; if (btn) btn.disabled = false; this.updateClawPosition() }
+    finally { this.clawBusy=false; if(btn) btn.disabled=false; this.updateClawPosition() }
   }
 
   private renderWallet(): void {
     this.root.querySelectorAll<HTMLElement>('.wallet-value').forEach(balance => { balance.textContent = this.isAdmin ? '∞' : this.store.data.gems.toLocaleString('ko-KR') })
-    this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.store.data.diamonds ?? 0).toLocaleString('ko-KR') })
+    this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
     const rate = `+${this.store.hourlyRate().toFixed(2)} 코인/시간`
     this.root.querySelectorAll<HTMLElement>('.wallet-rate').forEach(node => { node.textContent = rate })
     const count = this.store.data.owned.length
@@ -735,6 +750,7 @@ export class GachaUi {
     try { await this.store.setFeatured(id) } catch (error) { this.handleError(error); return }
     this.renderHero()
     this.renderProfile()
+    this.renderFeaturedPicker()
     if (this.screen !== 'featured') this.show('title')
     this.toast(`${withJosa(fullName(characterById(id)), '을', '를')} 대표 친구로 세웠어요!`)
   }
@@ -746,7 +762,7 @@ export class GachaUi {
     const current = this.heroId()
     if (!this.store.data.owned.length) { grid.innerHTML = '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'; return }
     grid.innerHTML = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).map(character => `<button class="featured-pick${current === character.id ? ' is-active' : ''}" role="listitem" data-action="featured-pick" data-id="${character.id}" aria-pressed="${current === character.id}">
-        <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><b>${character.name}</b>${character.variant ? `<em>${character.variant}</em>` : ''}${current === character.id ? '<small>지금 대표</small>' : ''}</button>`).join('')
+        <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><b>${character.name}</b>${character.variant ? `<em>${character.variant}</em>` : ''}${current === character.id ? '<small class="featured-selected-label">✓ 선택됨</small>' : ''}</button>`).join('')
   }
 
   /** The account's representative friend: the saved choice if still owned, else the first collected, else 치이카와. */
@@ -857,7 +873,7 @@ export class GachaUi {
   }
 
   private renderStorage(): void {
-    this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(el => { el.textContent = (this.store.data.diamonds ?? 0).toLocaleString('ko-KR') })
+    this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(el => { el.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
     const grid = this.root.querySelector<HTMLElement>('.storage-grid')
     const summary = this.root.querySelector<HTMLElement>('.storage-summary')
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="storage-tab"]').forEach(tab => {
@@ -1059,7 +1075,7 @@ export class GachaUi {
       const earned = await this.store.claimBattle()
       if (earned > 0) {
         this.audio.play('pickup')
-        if (this.screen === 'battle') this.toast(`몬스터를 ${earned}마리 물리쳤어요! 다이아 코인 +${earned}개`)
+        if (this.screen === 'battle') this.toast(`몬스터를 ${earned}마리 물리쳤어요! 다이아 +${earned}개`)
       }
     } catch { /* Retried on the next tick. */ } finally { this.battleSyncing = false }
     this.renderWallet()

@@ -1193,3 +1193,138 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .roulette-pop-reward.pop-in {animation:roulette-reward-pop 2.3s ease-in-out both;}
 @keyframes roulette-reward-pop {0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}13%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}23%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%) scale(1.03)}}
 @media(prefers-reduced-motion:reduce){.roulette-pop-reward.pop-in{animation:none;}}
+
+/* Top-down claw game: overhead view and one plush target. */
+.claw-machine{background:repeating-linear-gradient(45deg,#eaf5ff 0 24px,#e1f0fc 24px 48px);border:10px solid #f3a6c1;box-shadow:inset 0 0 0 4px #fff9,0 8px 0 #e8b1b6}
+.claw-toys{position:absolute;inset:0;display:block;height:auto;width:auto;pointer-events:none}
+.claw-single-toy{position:absolute;display:block;width:70px!important;height:70px!important;object-fit:contain;transform:translate(-50%,-50%);transition:left .75s,top .75s,transform .55s,opacity .5s;filter:drop-shadow(0 5px 3px #8f6e7c70)}
+.claw-single-toy.is-lifted{transform:translate(-50%,-50%) scale(.7);filter:drop-shadow(0 13px 7px #8f6e7c80)}
+.claw-single-toy.is-dropped{transform:translate(-50%,-50%) scale(.3);opacity:0}
+.claw-arm{z-index:5;transform:translate(-50%,-50%);width:65px;height:65px;display:grid;place-items:center}
+.claw-wire{display:none}
+.claw-head{box-sizing:border-box;width:60px;height:60px;border:7px solid #b68ba0;border-radius:50%;background:#ffffff77;color:#bd6c95;font-size:32px;line-height:42px;box-shadow:0 0 0 3px #fff9}
+.claw-arm.is-dropping .claw-head{animation:claw-grab-top .7s ease}
+@keyframes claw-grab-top{50%{transform:scale(.6);background:#f9a6c9aa}}
+.claw-chute{top:4%;right:3%;bottom:auto;border-radius:50%;width:65px;height:65px;display:grid;place-items:center}
+.claw-prize{top:6%;right:6%;bottom:auto}
+@media(max-width:760px){.claw-single-toy{width:58px!important;height:58px!important}.claw-arm{width:55px;height:55px}.claw-head{width:51px;height:51px;line-height:34px}.claw-chute{width:52px;height:52px}}
+/* Main header: balances directly at the top, keeping profile centered below them. */
+@media(max-width:760px){
+ .gacha-header .header-right .wallet,.gacha-header .header-right .diamond-wallet{position:relative;top:auto;left:auto;right:auto;bottom:auto}
+ .gacha-header .header-right{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:5px}
+ .gacha-header .header-right .wallet{order:-3}
+ .gacha-header .header-right .diamond-wallet{order:-2}
+}
+
+/* Profile representative picker: scroll the choices, not the profile controls. */
+.gacha-modal .modal-card.profile-modal-card {
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  max-height:min(90dvh,800px);
+}
+.gacha-modal .profile-modal-card .profile-card,
+.gacha-modal .profile-modal-card .profile-actions,
+.gacha-modal .profile-modal-card .profile-sub,
+.gacha-modal .profile-modal-card .collection-summary,
+.gacha-modal .profile-modal-card .profile-bottom,
+.gacha-modal .profile-modal-card .modal-kicker,
+.gacha-modal .profile-modal-card #featured-title {flex:0 0 auto;}
+.gacha-modal .profile-modal-card .featured-grid {
+  flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  align-content:start;padding:5px 4px 10px;margin-bottom:8px;
+}
+.gacha-modal .profile-modal-card .featured-pick {position:relative;box-sizing:border-box;min-width:0;}
+.gacha-modal .profile-modal-card .featured-pick.is-active {
+  border:3px solid #e56b96;background:#fff0f6;
+  box-shadow:0 0 0 2px #ffd1e1,inset 0 0 0 1px #fff;
+}
+.gacha-modal .profile-modal-card .featured-pick.is-active::after {
+  content:'✓';position:absolute;right:5px;top:5px;
+  width:21px;height:21px;border-radius:50%;display:grid;place-items:center;
+  color:white;background:#e56b96;font-size:13px;font-weight:900;
+}
+.gacha-modal .profile-modal-card .featured-pick[aria-pressed="true"] {outline-offset:2px;}
+@media(max-width:760px) {
+  .gacha-modal .modal-card.profile-modal-card {
+    box-sizing:border-box;max-height:calc(100dvh - 20px - var(--safe-t,0px) - var(--safe-b,0px));
+    height:min(700px,calc(100dvh - 20px - var(--safe-t,0px) - var(--safe-b,0px)));
+    padding:12px 12px 10px;gap:0;
+  }
+  .gacha-modal .profile-modal-card .modal-kicker {font-size:9px;line-height:1.1;margin:0;}
+  .gacha-modal .profile-modal-card #featured-title {font-size:19px;line-height:1.15;margin:2px 0 5px;}
+  .gacha-modal .profile-modal-card .profile-card {gap:2px;margin:0 0 5px;}
+  .gacha-modal .profile-modal-card .profile-big {width:62px;height:62px;border-width:2px;}
+  .gacha-modal .profile-modal-card .profile-big-name {font-size:12px;line-height:1.2;}
+  .gacha-modal .profile-modal-card .profile-stats {font-size:10px;line-height:1.2;}
+  .gacha-modal .profile-modal-card .profile-actions {gap:4px;margin-bottom:5px;}
+  .gacha-modal .profile-modal-card .profile-actions > button {min-height:29px;padding:5px 3px;font-size:10px;line-height:1.1;}
+  .gacha-modal .profile-modal-card .profile-sub {font-size:13px;line-height:1.15;margin:2px 0;}
+  .gacha-modal .profile-modal-card .collection-summary {font-size:10px;line-height:1.25;margin:1px 0 4px;}
+  .gacha-modal .profile-modal-card .featured-grid {
+    flex:1 1 auto;min-height:145px;grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-auto-rows:94px;gap:6px;padding:3px 3px 6px;margin-bottom:5px;
+  }
+  .gacha-modal .profile-modal-card .featured-pick {height:94px;padding:3px 2px;gap:1px;overflow:hidden;border-radius:12px;}
+  .gacha-modal .profile-modal-card .featured-pick img {width:49px;height:49px;max-width:100%;flex:0 0 auto;object-fit:contain;}
+  .gacha-modal .profile-modal-card .featured-pick b {font-size:10px;line-height:1.15;}
+  .gacha-modal .profile-modal-card .featured-pick em {font-size:9px;padding:1px 4px;line-height:1.1;}
+  .gacha-modal .profile-modal-card .featured-pick small {font-size:9px;line-height:1.1;}
+  .gacha-modal .profile-modal-card .profile-bottom {gap:5px;margin-top:2px;}
+  .gacha-modal .profile-modal-card .profile-bottom > button {min-height:32px;padding:6px 4px;font-size:11px;}
+}
+
+/* Reward actions are independent of header: visible even when header wraps. */
+.gacha-screen > .top-rewards {
+  position:absolute !important;display:flex !important;flex-direction:column !important;
+  align-items:stretch !important;gap:6px !important;
+  left:auto !important;right:clamp(12px,3vw,36px) !important;
+  top:calc(100px + var(--safe-t,0px)) !important;
+  z-index:25 !important;pointer-events:auto !important;
+}
+.gacha-screen > .top-rewards .reward-chip {display:flex !important;visibility:visible !important;opacity:1 !important;cursor:pointer;}
+/* Left vertical menu on both PC and mobile. */
+.gacha-screen > .gacha-nav {
+  position:absolute !important;left:clamp(9px,2vw,24px) !important;right:auto !important;
+  top:calc(120px + var(--safe-t,0px)) !important;
+  display:flex !important;flex-direction:column !important;grid-template-columns:none !important;
+  align-items:stretch !important;width:clamp(98px,11vw,140px) !important;
+  max-width:none !important;gap:6px !important;z-index:22 !important;
+  pointer-events:auto !important;overflow-y:auto;overscroll-behavior:contain;
+  max-height:calc(100dvh - 235px - var(--safe-t,0px) - var(--safe-b,0px));
+}
+.gacha-screen > .gacha-nav .nav-button {
+  width:100% !important;min-width:0 !important;min-height:35px !important;
+  height:35px !important;flex:none !important;padding:6px 7px !important;
+  justify-content:flex-start !important;gap:5px !important;
+  font-size:11px !important;border-radius:12px !important;white-space:nowrap !important;
+}
+@media(max-width:760px){
+  .gacha-screen > .top-rewards {
+    top:calc(105px + var(--safe-t,0px)) !important;
+    right:max(7px,env(safe-area-inset-right,0px)) !important;
+    left:auto !important;flex-direction:column !important;gap:5px !important;
+    max-width:120px !important;
+  }
+  .gacha-screen > .top-rewards .reward-chip {padding:5px 6px !important;min-width:0 !important;min-height:32px !important;gap:4px !important;}
+  .gacha-screen > .top-rewards .reward-chip b {font-size:10px !important;}
+  .gacha-screen > .top-rewards .reward-chip small {font-size:8px !important;}
+  .gacha-screen > .top-rewards .reward-icon {font-size:15px !important;}
+  .gacha-screen > .gacha-nav {
+    top:calc(105px + var(--safe-t,0px)) !important;
+    left:max(7px,env(safe-area-inset-left,0px)) !important;right:auto !important;
+    display:flex !important;flex-direction:column !important;grid-template-columns:none !important;
+    width:clamp(90px,26vw,112px) !important;gap:4px !important;
+    max-height:calc(100dvh - 250px - var(--safe-t,0px) - var(--safe-b,0px)) !important;
+  }
+  .gacha-screen > .gacha-nav .nav-button {
+    width:100% !important;min-height:30px !important;height:30px !important;
+    font-size:10px !important;padding:4px 6px !important;gap:4px !important;
+    justify-content:flex-start !important;border-radius:10px !important;
+  }
+  .gacha-screen > .gacha-nav .nav-button span {font-size:12px !important;}
+  .gacha-screen .collection-peek {right:8px !important;left:auto !important;top:calc(205px + var(--safe-t,0px)) !important;}
+}
+@media(max-width:380px){
+  .gacha-screen > .gacha-nav {width:88px !important;}
+  .gacha-screen > .gacha-nav .nav-button {font-size:9px !important;}
+}
