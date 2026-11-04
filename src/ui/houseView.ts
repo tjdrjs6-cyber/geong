@@ -8,7 +8,7 @@ type Selection = { kind: 'piece' | 'friend'; index: number } | null
 const FRIEND_LAYER = 5000
 type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void }
 
-const HOUSE_BG_URL = '/assets/bg/house.webp?v=4'
+const HOUSE_BG_URL = '/assets/bg/house.webp?v=12'
 
 /** House background: the user's hand-drawn stone room with a window to the forest. */
 export function houseLotMarkup(): string {

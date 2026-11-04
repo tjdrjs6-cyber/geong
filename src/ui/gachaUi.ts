@@ -204,8 +204,7 @@ export class GachaUi {
           <b id="house-title">하우스</b>
           <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
-        <div class="house-zoom-controls" aria-label="하우스 화면 확대 축소"><button type="button" data-action="house-zoom-out">－</button><span class="house-zoom-label">100%</span><button type="button" data-action="house-zoom-in">＋</button><button type="button" data-action="house-zoom-reset">기본</button></div>
-        <div class="house-scroll-viewport" aria-label="하우스 좌우 스크롤 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><span class="house-coin-face">✿</span><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
+        <div class="house-scroll-viewport" aria-label="세로형 하우스 꾸미기 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><span class="house-coin-face">✿</span><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
         <div class="weed-panel house-panel">
           <div class="field-info-sticky">
@@ -377,21 +376,6 @@ export class GachaUi {
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
-    if (action === 'house-zoom-in' || action === 'house-zoom-out' || action === 'house-zoom-reset') {
-      const screen = this.root.querySelector<HTMLElement>('.house-screen')
-      const viewport = screen?.querySelector<HTMLElement>('.house-scroll-viewport')
-      const lot = viewport?.querySelector<HTMLElement>('.house-lot')
-      if (screen && viewport && lot) {
-        const current = Number(screen.dataset.zoom || '100')
-        const next = action === 'house-zoom-reset' ? 100 : Math.max(60, Math.min(160, current + (action === 'house-zoom-in' ? 20 : -20)))
-        const center = (viewport.scrollLeft + viewport.clientWidth / 2) / Math.max(1, lot.offsetWidth)
-        screen.dataset.zoom = String(next)
-        screen.style.setProperty('--house-zoom', String(next / 100))
-        screen.querySelector<HTMLElement>('.house-zoom-label')!.textContent = `${next}%`
-        requestAnimationFrame(() => { viewport.scrollLeft = center * lot.offsetWidth - viewport.clientWidth / 2 })
-      }
-      return
-    }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
     if (action === 'weed') { this.show('weed'); return }

@@ -1835,3 +1835,39 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
     margin-inline:0;
   }
 }
+
+/* v0.12 — same portrait cave on desktop and mobile; no house zoom or sideways pan. */
+.house-screen .house-zoom-controls { display:none !important; }
+.house-screen .house-scroll-viewport {
+  display:flex !important; justify-content:center !important; align-items:center !important;
+  flex:1 1 auto !important; min-height:0 !important; width:100% !important;
+  overflow:hidden !important; background:none !important; touch-action:auto !important;
+}
+.house-screen .house-scroll-viewport > .house-lot {
+  position:relative !important; box-sizing:border-box !important;
+  flex:0 0 auto !important; height:100% !important; width:auto !important;
+  max-height:100% !important; max-width:100% !important;
+  aspect-ratio:941 / 1672 !important; min-height:0 !important;
+  margin:0 auto !important; background:transparent !important;
+  touch-action:none !important;
+}
+.house-screen .house-scroll-viewport > .house-lot > .house-bg {
+  visibility:visible !important; display:block !important; object-fit:fill !important;
+}
+.house-lot.house-visit {
+  width:min(100%, 360px) !important; height:auto !important;
+  aspect-ratio:941 / 1672 !important; max-height:none !important;
+}
+.house-lot.house-visit .house-bg { object-fit:fill !important; }
+/* Character and deco scale relative to the same portrait stage on every device. */
+.house-screen .house-lot .house-piece, .house-lot.house-visit .house-piece {
+  width:calc(19cqw * var(--s,1)) !important;
+}
+.house-screen .house-lot .house-friend, .house-lot.house-visit .house-friend {
+  width:calc(21cqw * var(--s,1)) !important;
+}
+@media(max-width:760px) {
+  .house-screen .house-scroll-viewport { flex:1 1 auto !important; min-height:0 !important; }
+  .house-screen .house-panel { flex:0 0 clamp(175px,28dvh,240px) !important; height:clamp(175px,28dvh,240px) !important; }
+  .house-screen .house-tools { bottom:calc(clamp(175px,28dvh,240px) + 8px) !important; }
+}
