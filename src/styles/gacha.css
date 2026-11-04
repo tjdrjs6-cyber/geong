@@ -1632,3 +1632,8 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 }
 .gacha-screen > .top-rewards .reward-chip.is-used small,
 .gacha-screen > .top-rewards .reward-chip:disabled small {color:#777b82 !important;}
+
+/* Pull results and reveal animation must overlay the mobile fixed right rail. */
+.gacha-screen > .pop-reveal { z-index:1000 !important; }
+.gacha-modal[data-screen="result"] { z-index:1001 !important; }
+.gacha-modal[data-screen="result"].is-active { isolation:isolate; }
