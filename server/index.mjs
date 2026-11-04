@@ -511,8 +511,25 @@ const getAnnouncements = async (accountId) => {
   return { items: items.map(x => ({ id: Number(x.id), message: x.message, at: Number(x.created_ms) })), unread: items.some(x => Number(x.id) > lastSeen) }
 }
 
+// Chat tables are also checked on demand so older Railway databases can recover
+// without wiping any existing accounts, messages, or saves.
+async function ensureGlobalChatTables() {
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_global_chat (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    account_id BIGINT UNSIGNED NOT NULL,
+    message VARCHAR(120) NOT NULL,
+    created_ms BIGINT NOT NULL,
+    KEY ix_gm_global_chat_time (id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_global_chat_cooldown (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    last_sent_ms BIGINT NOT NULL DEFAULT 0
+  )`)
+}
+
 const routes = {
   'GET /api/global-chat': async (req, res) => {
+    await ensureGlobalChatTables()
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     const [rows] = await pool.query(`SELECT c.id, c.message, c.created_ms, a.nickname, a.username
@@ -522,6 +539,7 @@ const routes = {
     send(res, 200, { items: rows.reverse().map(x => ({ id: Number(x.id), message: x.message, at: Number(x.created_ms), nickname: x.nickname || x.username })), nextAt: Number(last[0]?.last_sent_ms || 0) + 10000, now: Date.now() })
   },
   'POST /api/global-chat': async (req, res) => {
+    await ensureGlobalChatTables()
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     const body = await readBody(req)
