@@ -2806,3 +2806,25 @@ html body > #geongi-version {
 .collection-grid .friend-card > .friend-lock{margin-top:auto!important;align-self:center!important;flex-shrink:0!important;}
 .collection-grid .friend-card > small{margin-bottom:12px!important;}
 .collection-grid .friend-card > .friend-select{max-width:100%;box-sizing:border-box;}
+
+/* v0.46 boot Chiikawa icon */
+.gacha-boot .boot-capsule img{width:65px;height:65px;object-fit:contain}
+
+/* v0.47: reserve an identical variant row on EVERY character card.
+   A character without a green variant badge gets an empty row, so
+   the yellow stat badges line up across all columns. Deco untouched. */
+.collection-grid:not(.deco-grid) .friend-card .friend-variant-slot{
+  display:flex;align-items:center;justify-content:center;flex:0 0 21px;
+  height:21px;min-height:21px;width:100%;overflow:hidden;box-sizing:border-box;
+}
+.collection-grid:not(.deco-grid) .friend-card .friend-variant-slot .friend-variant{
+  margin:0;max-width:100%;box-sizing:border-box;
+}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot{
+  display:flex;align-items:flex-start;justify-content:center;width:100%;
+  min-height:36px;box-sizing:border-box;
+}
+.collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot .friend-bonus{
+  margin:0;max-width:100%;box-sizing:border-box;white-space:normal;
+  overflow-wrap:break-word;line-height:1.25;text-align:center;font-size:9px;
+}

@@ -131,10 +131,10 @@ export class GachaUi {
   private template(): string {
     return `
       <section class="gacha-boot is-active" data-screen="boot" aria-live="polite">
-        <div class="boot-capsule"><img src="/favicon.png" alt="" width="58" height="58" /></div>
+        <div class="boot-capsule"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" width="58" height="58" /></div>
         <h1>겅이마켓</h1>
         <div class="boot-track" role="progressbar" aria-label="게임 불러오는 중" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5"><i class="boot-fill"></i></div>
-        <p aria-live="polite">작은 행운을 준비하고 있어요</p>
+        <p aria-live="polite">게임에 들어가고 있어요</p>
         <button class="boot-retry is-hidden" data-action="retry">다시 불러오기</button>
       </section>
       <section class="gacha-modal auth-modal" data-screen="auth" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="auth-title">
@@ -844,7 +844,7 @@ export class GachaUi {
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
         <div class="friend-chance">${tierTag(character)}</div>
-        <b>${has ? character.name : '???'}</b>${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}
+        <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}
       </article>`
