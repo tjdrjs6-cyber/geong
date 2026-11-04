@@ -71,7 +71,7 @@ export type DecoCounts = Partial<Record<DecoId, number>>
 export type DecoPullResult = { id: DecoId; duplicate: boolean; bonus: number }
 /** One placed item in the house lot; x/y are percentages of the lot (bottom-centre anchor). */
 export type HousePiece = { id: DecoId; x: number; y: number; s: number; f: boolean }
-export type HouseFriend = { id: string; x: number; y: number; f: boolean }
+export type HouseFriend = { id: string; x: number; y: number; s: number; f: boolean }
 export type HouseLayout = { pieces: HousePiece[]; friends: HouseFriend[] }
 export const HOUSE_MAX_PIECES = 20
 export const HOUSE_MAX_FRIENDS = 3

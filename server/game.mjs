@@ -162,7 +162,8 @@ export function validateHouse(layout, decos, owned) {
   for (const f of list) {
     if (!f || !owned.includes(f.id) || !Number.isFinite(Number(f.x)) || !Number.isFinite(Number(f.y))) return { error: 'not_owned' }
     if (friends.some(other => other.id === f.id)) return { error: 'invalid_house' }
-    friends.push({ id: f.id, x: clampPct(f.x), y: clampPct(f.y), f: Boolean(f.f) })
+    const s = Number(f.s ?? 1)
+    friends.push({ id: f.id, x: clampPct(f.x), y: clampPct(f.y), s: Number.isFinite(s) ? Math.round(Math.min(1.6, Math.max(0.6, s)) * 100) / 100 : 1, f: Boolean(f.f) })
   }
   return { layout: { pieces: clean, friends } }
 }

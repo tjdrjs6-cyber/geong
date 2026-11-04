@@ -21,7 +21,7 @@ export function houseVisitMarkup(layout: HouseLayout): string {
   const items = layout.pieces.map(piece => `<div class="house-piece${piece.f ? ' is-flipped' : ''}" style="left:${piece.x}%;top:${piece.y}%;--s:${piece.s};z-index:${Math.round(piece.y * 10)}"><img src="${DECO_IMAGE_URLS[piece.id]}" alt="${decoById(piece.id).name}" draggable="false" /></div>`)
   layout.friends.forEach(friend => {
     const character = characterById(friend.id as CharacterId)
-    items.push(`<div class="house-piece house-friend${friend.f ? ' is-flipped' : ''}" style="left:${friend.x}%;top:${friend.y}%;z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
+    items.push(`<div class="house-piece house-friend${friend.f ? ' is-flipped' : ''}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
   })
   return `<div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${items.join('')}</div>${items.length ? '' : '<p class="house-visit-empty">아직 꾸민 데코가 없어요</p>'}</div>`
 }
@@ -73,9 +73,9 @@ export class HouseView {
     if (action === 'house-flip') { this.mutateSelected(item => { item.f = !item.f }); return true }
     if (action === 'house-bigger' || action === 'house-smaller') {
       const step = action === 'house-bigger' ? 0.15 : -0.15
-      if (this.selected?.kind === 'piece') {
-        const piece = this.layout.pieces[this.selected.index]
-        piece.s = Math.round(Math.min(1.6, Math.max(0.6, piece.s + step)) * 100) / 100
+      const selected = this.selected?.kind === 'piece' ? this.layout.pieces[this.selected.index] : this.selected?.kind === 'friend' ? this.layout.friends[this.selected.index] : null
+      if (selected) {
+        selected.s = Math.round(Math.min(1.6, Math.max(0.6, (selected.s ?? 1) + step)) * 100) / 100
         this.changed()
       }
       return true
@@ -172,7 +172,7 @@ export class HouseView {
     }
     if (this.layout.friends.length >= HOUSE_MAX_FRIENDS) { this.hooks.toast(`친구는 최대 ${HOUSE_MAX_FRIENDS}명까지 데려올 수 있어요.`); return }
     const slot = [62, 38, 80][this.layout.friends.length] ?? 50
-    this.layout.friends.push({ id, x: slot, y: 84, f: false })
+    this.layout.friends.push({ id, x: slot, y: 84, s: 1, f: false })
     this.selected = { kind: 'friend', index: this.layout.friends.length - 1 }
     this.hooks.toast(`${fullName(characterById(id))}이(가) 하우스에 놀러 왔어요!`)
     this.changed()
@@ -219,7 +219,7 @@ export class HouseView {
     this.layout.friends.forEach((friend, index) => {
       const character = characterById(friend.id as CharacterId)
       const selected = this.selected?.kind === 'friend' && this.selected.index === index
-      pieces.push(`<div class="house-piece house-friend${selected ? ' is-selected' : ''}${friend.f ? ' is-flipped' : ''}" data-kind="friend" data-index="${index}" style="left:${friend.x}%;top:${friend.y}%;z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
+      pieces.push(`<div class="house-piece house-friend${selected ? ' is-selected' : ''}${friend.f ? ' is-flipped' : ''}" data-kind="friend" data-index="${index}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
     })
     layer.innerHTML = pieces.join('')
     const empty = this.lot.querySelector<HTMLElement>('.house-empty')
@@ -229,7 +229,7 @@ export class HouseView {
       tools.hidden = !this.selected
       const label = tools.querySelector<HTMLElement>('.house-tools-name')
       if (label) label.textContent = this.selected?.kind === 'piece' ? decoById(this.layout.pieces[this.selected.index].id).name : this.selected?.kind === 'friend' && this.layout.friends[this.selected.index] ? characterById(this.layout.friends[this.selected.index].id as CharacterId).name : ''
-      tools.querySelectorAll<HTMLButtonElement>('[data-action="house-bigger"],[data-action="house-smaller"]').forEach(button => { button.hidden = this.selected?.kind !== 'piece' })
+      tools.querySelectorAll<HTMLButtonElement>('[data-action="house-bigger"],[data-action="house-smaller"]').forEach(button => { button.hidden = !this.selected })
     }
   }
 

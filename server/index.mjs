@@ -35,6 +35,12 @@ async function prepareDatabase() {
     waitForConnections: true,
   })
   // Additive, repeatable migration; existing accounts and saves are preserved.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_profile_privacy (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    show_char TINYINT(1) NOT NULL DEFAULT 1,
+    show_deco TINYINT(1) NOT NULL DEFAULT 1,
+    show_house TINYINT(1) NOT NULL DEFAULT 1
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(20) NOT NULL,
@@ -666,16 +672,35 @@ const routes = {
     }
     send(res, 200, { user: { username: account.username, nickname: nickname.trim(), admin: Boolean(account.is_admin) } })
   },
+  'GET /api/profile/privacy': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const [rows] = await pool.query('SELECT show_char, show_deco, show_house FROM gm_profile_privacy WHERE account_id = ?', [account.id])
+    const row = rows[0]
+    send(res, 200, { privacy: { char: row ? Boolean(row.show_char) : true, deco: row ? Boolean(row.show_deco) : true, house: row ? Boolean(row.show_house) : true } })
+  },
+  'POST /api/profile/privacy': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { char, deco, house } = await readJson(req)
+    if ([char, deco, house].some(v => typeof v !== 'boolean')) return send(res, 400, { error: 'invalid_privacy' })
+    await pool.query('INSERT INTO gm_profile_privacy (account_id, show_char, show_deco, show_house) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE show_char=VALUES(show_char), show_deco=VALUES(show_deco), show_house=VALUES(show_house)', [account.id, Number(char), Number(deco), Number(house)])
+    send(res, 200, { privacy: { char, deco, house } })
+  },
   'GET /api/users': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const [rows] = await pool.query('SELECT a.nickname, s.owned, s.featured, d.items FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 ORDER BY a.created_at DESC LIMIT 300')
+    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, d.items, p.show_char, p.show_deco, p.show_house FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
     const users = rows.map(row => {
-      const owned = normalizeOwned(typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned)
-      const decos = Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {}))
-      const featured = row.featured && owned.includes(row.featured) ? row.featured : null
-      return { nickname: row.nickname, owned, decos, featured, me: row.nickname === account.nickname }
+      const me = Number(row.id) === Number(account.id)
+      const privacy = { char: row.show_char === null || row.show_char === undefined ? true : Boolean(row.show_char), deco: row.show_deco === null || row.show_deco === undefined ? true : Boolean(row.show_deco), house: row.show_house === null || row.show_house === undefined ? true : Boolean(row.show_house) }
+      const rawOwned = normalizeOwned(typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned)
+      const owned = me || privacy.char ? rawOwned : []
+      const decos = me || privacy.deco ? Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {})) : []
+      const featured = (me || privacy.char) && row.featured && rawOwned.includes(row.featured) ? row.featured : null
+      return { nickname: row.nickname, owned, decos, featured, me, privacy }
     })
+    users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
   },
   'GET /api/house/coin': async (req, res) => {
@@ -721,6 +746,10 @@ const routes = {
     if (typeof nickname !== 'string' || !nickname.trim()) return send(res, 404, { error: 'mail_no_user' })
     const [rows] = await pool.query('SELECT id, nickname FROM gm_accounts WHERE nickname = ? AND is_admin = 0', [nickname.trim()])
     if (!rows[0]) return send(res, 404, { error: 'mail_no_user' })
+    if (Number(rows[0].id) !== Number(account.id)) {
+      const [privacyRows] = await pool.query('SELECT show_house FROM gm_profile_privacy WHERE account_id = ?', [rows[0].id])
+      if (privacyRows[0] && !Boolean(privacyRows[0].show_house)) return send(res, 403, { error: 'house_private' })
+    }
     send(res, 200, { nickname: rows[0].nickname, house: await getHouse(rows[0].id) })
   },
   'POST /api/weed/start': async (req, res) => {

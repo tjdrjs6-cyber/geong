@@ -10,7 +10,8 @@ export type WeedMember = { id: CharacterId; since: number }
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
 export type BattleState = { id: CharacterId; secondId?: CharacterId | null; since: number; damage: number }
-export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean }
+export type ProfilePrivacy = { char: boolean; deco: boolean; house: boolean }
+export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy }
 export type MailItem = { id: number; from: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
 export type SentItem = { id: number; to: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
@@ -71,6 +72,7 @@ export const ERROR_TEXT: Record<string, string> = {
   suggest_not_found: '이미 지워진 건의예요.',
   admin_only: '운영자만 할 수 있어요.',
   announcement_invalid: '공지사항은 1~100자까지 작성할 수 있어요.',
+  house_private: '이 유저의 하우스는 비공개예요.',
   login_required: '다시 로그인해 주세요.',
   starting: '서버를 준비하고 있어요. 잠시 후 다시 시도해 주세요.',
   network: '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',
@@ -245,6 +247,8 @@ export class RemoteGachaStore {
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
   async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
   async postAnnouncement(message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements', { message }) }
+  async profilePrivacy(): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy')).privacy }
+  async setProfilePrivacy(privacy: ProfilePrivacy): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy', privacy)).privacy }
   async users(): Promise<PublicUser[]> {
     return (await request<{ users: PublicUser[] }>('users')).users
   }

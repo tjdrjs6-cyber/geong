@@ -1763,3 +1763,29 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   .house-screen .house-panel {flex:1 1 auto; min-height:110px; height:auto; max-height:none;}
   .house-screen .house-tools {bottom:calc(min(38dvh,320px) + 8px);}
 }
+
+/* v0.06 — Mobile house editor uses a full-sized horizontal canvas. */
+.house-screen .house-scroll-viewport { position:relative; flex:0 0 auto; width:100%; overflow:hidden; min-height:0; }
+@media (max-width:760px) {
+  .house-screen .house-scroll-viewport {
+    flex:1 1 auto !important; min-height:150px !important;
+    overflow-x:auto !important; overflow-y:hidden !important;
+    overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch;
+    touch-action:pan-x; scrollbar-width:thin;
+  }
+  .house-screen .house-scroll-viewport > .house-lot {
+    width:max(100%, 1100px) !important; max-width:none !important;
+    height:100% !important; min-height:0 !important;
+    aspect-ratio:auto !important; flex:none !important;
+    touch-action:pan-x !important;
+  }
+  .house-screen .house-scroll-viewport .house-piece { touch-action:none !important; }
+  .house-screen .house-panel { flex:0 0 clamp(190px,34dvh,290px) !important; height:clamp(190px,34dvh,290px) !important; }
+}
+
+/* v0.08 — house friends can be resized exactly like deco, in editor and visitor view. */
+.house-screen .house-lot .house-friend,
+.house-lot.house-visit .house-friend { width:calc(7.6cqw * var(--s, 1)) !important; }
+
+/* v0.08 — profile visibility controls */
+.privacy-settings{display:grid;gap:12px;margin:18px 0}.privacy-settings label{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:#fff7fa;color:#55434a;font-weight:700}.privacy-settings input{width:19px;height:19px;accent-color:#df87a7}
