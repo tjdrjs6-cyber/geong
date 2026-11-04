@@ -53,6 +53,7 @@ export class GachaUi {
   private clawX = 50
   private clawY = 50
   private clawToys: { id: string; name: string; x: number; y: number }[] = []
+  private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
   private expedition: ExpeditionState | null = null
@@ -444,6 +445,7 @@ export class GachaUi {
     if (action === 'retry') { this.actions.retry(); return }
     if (action === 'auth-login' || action === 'auth-register') { this.setAuthMode(action === 'auth-login' ? 'login' : 'register'); return }
     if (action === 'logout') {
+      this.clawToys = []; this.clawToysOwner = ''
       try { await this.store.logout() } catch { /* The session is cleared locally either way. */ }
       this.setAuthMode('login')
       this.show('auth')
@@ -613,9 +615,13 @@ export class GachaUi {
   private get clawStorageKey(): string { return `geongi-claw-v1-${this.store.user?.username ?? 'guest'}` }
 
   private restoreClawToys(): void {
-    if (this.clawToys.length) return
+    // Always compare the logged-in account: an in-memory arrangement must not leak across accounts.
+    const key = this.clawStorageKey
+    if (this.clawToysOwner === key && this.clawToys.length) return
+    this.clawToysOwner = key
+    this.clawToys = []
     try {
-      const raw = window.localStorage.getItem(this.clawStorageKey)
+      const raw = window.localStorage.getItem(key)
       if (raw) {
         const saved: unknown = JSON.parse(raw)
         if (Array.isArray(saved) && saved.length === 3 && saved.every((t: any) =>
@@ -845,8 +851,13 @@ export class GachaUi {
       }
     } catch (error) { this.handleError(error) }
     finally {
-      // Only a successful win generates a new position. Failures keep the original.
+      // The next arrow press starts at the released claw position, without moving the fallen toy.
       if (wonToy) this.respawnClawToy()
+      else {
+        const clawArm = this.root.querySelector<HTMLElement>('.claw-arm')
+        if (clawArm) clawArm.style.removeProperty('transition')
+        this.updateClawPosition()
+      }
       this.clawBusy=false
       if(btn) btn.disabled=false
     }

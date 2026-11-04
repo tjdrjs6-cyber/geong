@@ -1081,9 +1081,9 @@ const routes = {
       const x = Math.max(0, Math.min(100, Number(body.x) || 0))
       const y = Math.max(0, Math.min(100, Number(body.y) || 0))
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
-      // Cumulative win chances for distance segments 1–6: 71.2, 50.7, 47, 42, 37, 33%.
+      // Cumulative win chances for distance segments 1–6: 69, 47.6, 44, 39, 34, 30%.
       // For longer paths, retain an 89% grip per additional segment.
-      const cumulative = [1, .712, .712 ** 2, .47, .42, .37, .33]
+      const cumulative = [1, .69, .69 ** 2, .44, .39, .34, .30]
       const gripAt = (step) => step <= 6 ? cumulative[step] / cumulative[step - 1] : .89
       let dropAt = -1
       if (aligned === true) for (let i = 1; i <= segments; i++) {
