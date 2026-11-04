@@ -1812,3 +1812,26 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-modal .users-card.privacy-mode .privacy-save-actions {display:grid;gap:10px;margin:20px 0 8px;position:relative;}
 .gacha-modal .users-card.privacy-mode .privacy-save-actions > button {position:static!important;display:block;width:100%;min-height:46px;margin:0!important;white-space:normal;}
 .gacha-modal .users-card.privacy-mode .privacy-settings {margin:16px 0;}
+
+/* v0.11: The cave itself is a fixed viewport backdrop; zoom changes only
+   the furnishing coordinate plane, never the cave's visible edges. */
+.house-screen .house-scroll-viewport {
+  background-image:url('/assets/bg/house.webp?v=4');
+  background-position:center center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-color:#b6a5a0;
+}
+.house-screen .house-scroll-viewport > .house-lot > .house-bg {
+  visibility:hidden !important;
+}
+/* The decorating plane is independent of the stationary cave background. */
+.house-screen .house-scroll-viewport > .house-lot {
+  background:transparent !important;
+  margin-inline:auto;
+}
+@media (max-width:760px) {
+  .house-screen .house-scroll-viewport > .house-lot {
+    margin-inline:0;
+  }
+}
