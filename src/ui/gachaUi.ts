@@ -1028,7 +1028,7 @@ export class GachaUi {
       const footer = has && interactive
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
-      return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''}" style="--friend:${character.color};--accent:${character.accent}">
+      return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''} tier-${character.tier === 'mermaid' ? 'rare' : character.tier === 'rare' ? 'epic' : character.tier === 'super' ? 'unique' : character.tier}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
         <div class="friend-chance">${tierTag(character)}</div>
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
@@ -1769,11 +1769,15 @@ export class GachaUi {
     if (title) title.textContent = deco ? '데코가 나왔어요' : '새로운 만남이에요'
     const toCollection = this.root.querySelector<HTMLElement>('.result-collection')
     if (toCollection) toCollection.textContent = deco ? '데코 도감에서 확인하기' : '도감에서 확인하기'
-    list.innerHTML = this.results.map((item, index) => `<div class="result-friend" style="--friend:${item.color};--accent:${item.accent};--i:${index}">
+    list.innerHTML = this.results.map((item, index) => {
+      const grade = deco ? 'deco' : (item.grade ?? '노멀').replace(/^★\s*/, '').trim()
+      const tier = grade === '레전더리' ? 'legendary' : grade === '유니크' ? 'unique' : grade === '에픽' ? 'epic' : grade === '레어' ? 'rare' : grade === '노멀' ? 'normal' : 'deco'
+      return `<div class="result-friend result-tier-${tier}" style="--friend:${item.color};--accent:${item.accent};--i:${index}">
         <span class="result-avatar"><img src="${item.image}" alt="${item.name}" /></span>
         <span><b>${item.variant ? `${item.name}(${item.variant})` : item.name}</b><small>${item.sub}</small></span>
         <span class="result-chance">${item.chance}%</span>
-      </div>`).join('')
+      </div>`
+    }).join('')
     this.renderCollection()
   }
 
@@ -1868,9 +1872,10 @@ export class GachaUi {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
     if (!node) return
     const grade = item.grade ? item.grade.replace(/^★\s*/, '') : '노멀'
+    const tier = grade === '레전더리' ? 'legendary' : grade === '유니크' ? 'unique' : grade === '에픽' ? 'epic' : grade === '레어' ? 'rare' : 'normal'
     const counter = total > 1 ? `<small class="pop-count">${index + 1} / ${total}</small>` : ''
     const hint = total > 1 ? '<small class="pop-more">화면을 누르면 다음으로 넘어가요</small>' : ''
-    node.innerHTML = `<div class="pop-card${item.rare ? ' is-rare' : ''}" style="--friend:${item.color};--accent:${item.accent}">
+    node.innerHTML = `<div class="pop-card tier-${tier}${item.rare ? ' is-rare' : ''}" style="--friend:${item.color};--accent:${item.accent}">
         <span class="pop-grade">${grade}</span>
         <span class="pop-burst">${item.rare ? `${item.grade ?? '★'} 뿅!` : '뿅!'}</span>
         ${counter}

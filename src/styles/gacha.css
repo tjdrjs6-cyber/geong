@@ -2928,9 +2928,9 @@ html body > #geongi-version {
 }
 .gacha-modal.claw-screen .claw-single-toy:not(.is-lifted) {will-change:auto;}
 
-/* v0.68: honey character artwork sits lower than the other collection portraits. */
+/* Honey portrait is normalized to the same square canvas as other characters. */
 .collection-grid .friend-card .friend-avatar img[src*="/honey.png"] {
-  transform:translateY(-10px) !important;
+  transform:none !important;
   animation:none !important;
 }
 
@@ -2977,3 +2977,41 @@ html body > #geongi-version {
 @media (max-aspect-ratio: 9/16) {
   .gacha-screen, .gacha-screen.is-active { background-size:cover!important; }
 }
+
+/* v0.75: pulled character borders match encyclopedia tier colors. */
+.result-list .result-friend.result-tier-normal {border:2px solid #e7d5cb;}
+.result-list .result-friend.result-tier-rare {border:2px solid #a8d8ec;box-shadow:inset 0 0 0 1px #e2f5ff;}
+.result-list .result-friend.result-tier-epic {border:2px solid #f0b7a0;box-shadow:0 0 0 1px rgba(217,67,79,.12);}
+.result-list .result-friend.result-tier-unique {border:2px solid #d6a8f0;box-shadow:0 0 0 1px rgba(155,79,214,.15);}
+.result-list .result-friend.result-tier-legendary {border:2px solid #e7b53b;background:linear-gradient(110deg,#fff7d8,#fffdf3);box-shadow:0 0 0 1px rgba(244,195,55,.3);}
+/* Keep the unread badge fully within the mailbox button's visible bounds. */
+.gacha-modal .profile-actions .profile-mail {position:relative;overflow:visible;padding-right:24px!important;}
+.gacha-modal .profile-actions .profile-mail .mail-badge {top:2px!important;right:3px!important;z-index:3;transform:none!important;}
+
+/* v0.76: ONE shared tier palette for encyclopedia and pull results. */
+.collection-grid .friend-card.tier-normal, .result-list .result-friend.result-tier-normal {border:2px solid #e7d5cb!important;box-shadow:none!important;}
+.collection-grid .friend-card.tier-rare, .result-list .result-friend.result-tier-rare {border:2px solid #a8d8ec!important;box-shadow:0 0 0 2px rgba(168,216,236,.35)!important;}
+.collection-grid .friend-card.tier-epic, .result-list .result-friend.result-tier-epic {border:2px solid #f0b7a0!important;box-shadow:0 0 0 2px rgba(240,183,160,.45)!important;}
+.collection-grid .friend-card.tier-unique, .result-list .result-friend.result-tier-unique {border:2px solid #d6a8f0!important;box-shadow:0 0 0 2px rgba(200,150,240,.5)!important;}
+.collection-grid .friend-card.tier-legendary, .result-list .result-friend.result-tier-legendary {border:2px solid #e7b53b!important;background:linear-gradient(160deg,#fff7d8,#fffdf3)!important;box-shadow:0 0 0 2px rgba(244,195,55,.65)!important;}
+.collection-grid .friend-card .friend-avatar img, .result-list .result-friend .result-avatar img {width:100%;height:100%;object-fit:contain;object-position:center;}
+
+/* v0.77 - matching sparkle intensity across encyclopedia, result, and popup badge */
+@keyframes geongiTierPulse {0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
+@keyframes geongiTierSweep {from{background-position:180% 0}to{background-position:-180% 0}}
+.collection-grid .friend-card.tier-epic,.result-list .result-friend.result-tier-epic,
+.collection-grid .friend-card.tier-unique,.result-list .result-friend.result-tier-unique,
+.collection-grid .friend-card.tier-legendary,.result-list .result-friend.result-tier-legendary{position:relative;isolation:isolate}
+.collection-grid .friend-card.tier-epic,.result-list .result-friend.result-tier-epic{animation:geongiTierPulse 4.5s ease-in-out infinite}
+.collection-grid .friend-card.tier-unique,.result-list .result-friend.result-tier-unique{animation:geongiTierPulse 2.8s ease-in-out infinite}
+.collection-grid .friend-card.tier-legendary,.result-list .result-friend.result-tier-legendary{animation:geongiTierPulse 1.5s ease-in-out infinite}
+.collection-grid .friend-card.tier-epic::after,.collection-grid .friend-card.tier-unique::after,.collection-grid .friend-card.tier-legendary::after,
+.result-list .result-friend.result-tier-epic::after,.result-list .result-friend.result-tier-unique::after,.result-list .result-friend.result-tier-legendary::after{
+content:"";pointer-events:none;position:absolute;inset:0;border-radius:inherit;z-index:2;
+background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,transparent 61%);background-size:250% 100%;animation:geongiTierSweep 6s linear infinite}
+.collection-grid .friend-card.tier-unique::after,.result-list .result-friend.result-tier-unique::after{animation-duration:3.5s}
+.collection-grid .friend-card.tier-legendary::after,.result-list .result-friend.result-tier-legendary::after{animation-duration:1.8s}
+#ui .pop-card.tier-epic .pop-grade{background:#fff0e7;border-color:#f0b7a0;color:#b9653d;animation:geongiTierPulse 4.5s infinite}
+#ui .pop-card.tier-unique .pop-grade{background:#f6e9ff;border-color:#d6a8f0;color:#9146bc;animation:geongiTierPulse 2.8s infinite}
+#ui .pop-card.tier-legendary .pop-grade{background:linear-gradient(110deg,#fff4b7,#fffef0,#ffdf73);border-color:#e7b53b;color:#936000;box-shadow:0 0 14px #f4c337a0;animation:geongiTierPulse 1.5s infinite}
+@media(prefers-reduced-motion:reduce){.collection-grid .friend-card,.result-list .result-friend,#ui .pop-card .pop-grade{animation:none!important}.collection-grid .friend-card::after,.result-list .result-friend::after{animation:none!important;display:none}}
