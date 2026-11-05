@@ -3214,3 +3214,12 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .rps-stage-label{display:inline-flex;align-items:center;justify-content:center;gap:5px}
 #ui .rps-coin{display:inline-block;width:27px;height:27px;object-fit:contain;vertical-align:middle}
 #ui .rps-coin-count{font-size:1.08em;white-space:nowrap}
+
+/* v0.98: no transient loading banner, preserve deliberate line breaks. */
+#ui .rps-screen.rps-loading .rps-message,#ui .rps-screen.rps-loading .rps-countdown{visibility:hidden}
+#ui .rps-screen .rps-message{white-space:pre-line}
+
+/* v0.99 user-provided diamond art */
+#ui .diamond-icon{display:inline-block;width:1.35em;height:1.35em;object-fit:contain;vertical-align:-.26em;flex-shrink:0}
+#ui .diamond-wallet .diamond-icon{width:22px;height:22px;vertical-align:middle}
+#ui .storage-diamonds .diamond-icon{width:25px;height:25px}

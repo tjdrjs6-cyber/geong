@@ -136,7 +136,7 @@ export class GachaUi {
       this.root.querySelector<HTMLElement>('.rps-screen')?.classList.remove('rps-resting')
       this.root.querySelector<HTMLElement>('.rps-screen')?.classList.add('rps-loading')
       const message=this.root.querySelector<HTMLElement>('.rps-message')
-      if(message)message.textContent='게임 상태를 확인하고 있어요…'
+      if(message)message.textContent='' // Avoid a transient loading message
       void this.openRps()
       this.rpsTimer=window.setInterval(()=>void this.tickRps(),120)
     }
@@ -232,12 +232,12 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title">토벌장</b>
-          <div class="battle-wallet-stack"><div class="diamond-wallet battle-diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div><small class="battle-hourly-rate" aria-live="polite">0.00개/시간</small></div>
+          <div class="battle-wallet-stack"><div class="diamond-wallet battle-diamond-wallet" aria-label="보유 다이아"><span><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/></span><strong class="diamond-value">0</strong><span>다이아</span></div><small class="battle-hourly-rate" aria-live="polite">0.00개/시간</small></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
-          <p class="battle-reward-hint">💎 몬스터 1마리 처치 시 다이아 1개! 보관함에 자동 지급돼요.</p>
+          <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 몬스터 1마리 처치 시 다이아 1개! 보관함에 자동 지급돼요.</p>
           <p class="battle-status"></p>
           
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
@@ -294,7 +294,7 @@ export class GachaUi {
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
-          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
+          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/></span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
@@ -395,21 +395,21 @@ export class GachaUi {
           <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 인형뽑기</h2>
-          <p class="claw-desc">💎 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
-          <p class="claw-balance">보유 💎 <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
-          <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · 💎 2개</button>
+          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
+          <p class="claw-balance">보유 <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> <strong class="diamond-value">0</strong>개 · 집게를 인형 위로 이동해 잡아보세요!</p>
+          <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
             <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw_open.png" alt="" /></div>
             <div class="claw-toys"></div><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
-          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small>💎 1개</small></button></div>
+          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1개</small></button></div>
           <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
       <section class="gacha-modal" data-screen="storage" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="storage-title">
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 다이아">💎 다이아 <strong class="diamond-value">0</strong>개</div>
+          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 다이아"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 다이아 <strong class="diamond-value">0</strong>개</div>
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab">🧸 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab">🌸 데코</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
@@ -851,9 +851,9 @@ export class GachaUi {
         this.resetClawToExit()
         this.renderClaw()
         this.renderWallet()
-        this.toast('💎 다이아 2개를 사용해 인형 위치를 새로 배치했어요!')
+        this.toast('다이아 2개를 사용해 인형 위치를 새로 배치했어요!')
         const clawMessage = this.root.querySelector<HTMLElement>('.claw-message')
-        if (clawMessage) clawMessage.textContent = '💎 다이아 2개를 사용해 인형 위치를 새로 배치했어요!'
+        if (clawMessage) clawMessage.textContent = '다이아 2개를 사용해 인형 위치를 새로 배치했어요!'
       } catch(error) { this.handleError(error) }
       finally {this.clawBusy=false;if(refresh)refresh.disabled=false}
       return
@@ -1117,7 +1117,7 @@ export class GachaUi {
       state.phase==='waiting'?'선택 완료! 모몽가의 선택을 기다려요…':
       state.phase==='draw'?`둘 다 ${names[state.opponent]||''}! 비겼어요. 다시 도전!`:
       state.phase==='won'?`모몽가는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
-      state.phase==='lost'?(state.choice?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다. 보상은 모두 사라졌어요.`:'아무것도 내지 않아서 졌어요! 보상은 모두 사라졌어요.'):
+      state.phase==='lost'?(state.used&&!state.admin?`다음 가위바위보까지 기다려 주세요!\n${this.rpsWaitText(state.nextAt)}\n\n${state.choice?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다.`:'아무것도 내지 않아서 졌어요!'}\n보상은 모두 사라졌어요.`:state.choice?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다.\n보상은 모두 사라졌어요.`:'아무것도 내지 않아서 졌어요!\n보상은 모두 사라졌어요.'):
       state.phase==='claimed'?`보상 ${state.coins||rewards[(state.stage||1)-1]}코인을 받았어요!`:
       state.used?'이번 가위바위보는 끝났어요. 다음 도전 시간이 될 때까지 기다려 주세요!':'모몽가와 가위바위보를 시작해요!'
     if(state.phase==='won'&&state.stage===5&&claim){claim.hidden=false;claim.textContent='200코인 받기'}
