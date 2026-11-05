@@ -3568,3 +3568,22 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-field .bf-enemy.is-hit .bf-enemy-body {animation:bf-impact-v164 .45s ease-out!important;}
 @keyframes bf-impact-v164 {0%,100%{transform:translate(0,0) scale(1);filter:none}15%{transform:translate(-9px,2px) scale(.93);filter:brightness(1.6) saturate(1.5)}40%{transform:translate(7px,-2px) scale(1.05);filter:brightness(1.25)}65%{transform:translate(-4px,1px) scale(.98)}}
 .battle-field .bf-enemy-fill {transition:transform .15s ease-out!important;}
+
+/* v1.66: 3-second attack animation phase is fixed on entry; contact at the tick boundary. */
+@keyframes bf-attack-v166 {
+  0% {transform:translateX(-24%) rotate(-9deg)}
+  12% {transform:translateX(-7%) rotate(-3deg)}
+  25%,77% {transform:translateX(0) rotate(0deg)}
+  88% {transform:translateX(4%) rotate(3deg)}
+  100% {transform:translateX(-24%) rotate(-9deg)}
+}
+@keyframes arena-weapon-v166 {
+  0% {transform:translate(-55%,-7%) rotate(-28deg)}
+  12% {transform:translate(-8%,-1%) rotate(0deg)}
+  25%,77% {transform:translate(15%,0) rotate(12deg)}
+  88% {transform:translate(-12%,-2%) rotate(-5deg)}
+  100% {transform:translate(-55%,-7%) rotate(-28deg)}
+}
+.battle-field.is-fighting .bf-friend-body {animation:bf-attack-v166 3s linear var(--battle-cycle-offset,0s) infinite!important;}
+.battle-field.is-fighting > .battle-weapon-strike {animation:arena-weapon-v166 3s linear var(--battle-cycle-offset,0s) infinite!important;}
+.battle-field .bf-hit {color:#e00000!important;-webkit-text-fill-color:#e00000!important;-webkit-text-stroke:.7px #720000!important;text-shadow:0 1px 2px rgba(255,255,255,.9),0 2px 5px rgba(90,0,0,.45)!important;}
