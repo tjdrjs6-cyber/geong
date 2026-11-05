@@ -3234,3 +3234,6 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .rps-screen .rps-choice-row button img {display:block!important;box-sizing:border-box!important;width:65%!important;height:43px!important;max-width:70px!important;max-height:43px!important;object-fit:contain!important;flex-shrink:0!important;}
 #ui .rps-screen .rps-decision {margin-top:0!important;margin-bottom:0!important;}
 @media(max-height:700px){#ui .rps-screen .rps-choice-row button{min-height:68px!important;}#ui .rps-screen .rps-choice-row button img{height:35px!important;max-height:35px!important;}}
+
+/* v1.09: normalize Hachiware plush size relative to the other claw dolls. */
+.gacha-modal.claw-screen .claw-single-toy[data-toy-id="hachiware"]{width:52px!important;height:52px!important;}

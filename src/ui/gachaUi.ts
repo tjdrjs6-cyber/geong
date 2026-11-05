@@ -951,8 +951,25 @@ export class GachaUi {
           const nearChute = landedFraction >= .65
           const bounceBack = nearChute ? 5 + (landedFraction - .65) * 12 : 0
           const horizontalAway = startX <= exitX ? -1 : 1
-          const landedX = Math.max(10, Math.min(90, startX + (exitX - startX) * landedFraction + horizontalAway * bounceBack))
-          const landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY + (nearChute ? 2.5 : 0)))
+          let landedX = Math.max(10, Math.min(90, startX + (exitX - startX) * landedFraction + horizontalAway * bounceBack))
+          let landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY + (nearChute ? 2.5 : 0)))
+          // Failed plushes must not straddle the prize opening. Keep the entire
+          // doll outside the rendered chute rectangle, not just its center.
+          if (machine && chute) {
+            const mb = machine.getBoundingClientRect()
+            const cb = chute.getBoundingClientRect()
+            const toyHalfW = toy.getBoundingClientRect().width / 2
+            const toyHalfH = toy.getBoundingClientRect().height / 2
+            const centerX = mb.left + mb.width * landedX / 100
+            const centerY = mb.top + mb.height * landedY / 100
+            const pad = 8
+            if (centerX + toyHalfW > cb.left - pad && centerX - toyHalfW < cb.right + pad &&
+                centerY + toyHalfH > cb.top - pad && centerY - toyHalfH < cb.bottom + pad) {
+              // Push back to the playfield side, leaving a visible gap.
+              landedX = Math.max(10, Math.min(90, (cb.left - pad - toyHalfW - mb.left) / mb.width * 100))
+              landedY = Math.max(18, Math.min(69, landedY))
+            }
+          }
           if (originalToy) {
             originalToy.x = Math.max(10, Math.min(90, landedX))
             originalToy.y = landedY
@@ -1007,6 +1024,8 @@ export class GachaUi {
       // to the exit before the player can move it again. The fallen toy stays put.
       if (wonToy) this.respawnClawToy()
       const clawArm = this.root.querySelector<HTMLElement>('.claw-arm')
+      // Let the claw linger briefly at the exact missed-drop location.
+      if (!wonToy && clawArm) await new Promise(resolve => window.setTimeout(resolve, 230))
       this.resetClawToExit()
       if (clawArm) {
         clawArm.style.transition = 'left .45s ease-in-out, top .45s ease-in-out'
