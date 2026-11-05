@@ -1121,7 +1121,7 @@ export class GachaUi {
           prizeEl.classList.remove('is-delivered'); void prizeEl.offsetWidth
           prizeEl.classList.add('is-delivered')
         }
-        const earnedText = `🎉 ${deco?.name ?? '데코 아이템'} 획득! 보관함에 저장됐어요!`
+        const earnedText = `🎉 ${deco?.name ?? '데코 아이템'} 획득! 보관함에 저장됐어요!${result.bonus > 0 ? ` 신규 도감 등록 +${result.bonus}코인!` : ''}`
         if (msg) msg.textContent = earnedText
         this.toast(earnedText)
         // Show the same capsule-style reveal as normal deco pulls, without
@@ -1645,7 +1645,7 @@ export class GachaUi {
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {this.expedition=await this.store.expedition();this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    try {this.expedition=await this.store.expedition();this.expeditionServer=this.expedition.mine?.serverId??1;this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private renderExpedition():void {
     const state=this.expedition

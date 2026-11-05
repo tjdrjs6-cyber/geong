@@ -6,7 +6,7 @@ import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual
 import { promisify } from 'node:util'
 import mysql from 'mysql2/promise'
 import { houseCoinFor, houseCoinSlot, HOUSE_COIN_MS, BEETLE_ID, weedCoinMultiplier, WEED_MAX } from './game.mjs'
-import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, POWER, settleBattle, DECO_IDS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
+import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
 
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
@@ -1404,14 +1404,19 @@ const routes = {
       const chance = aligned === true ? Math.round(chanceProduct * 10000) / 100 : 0
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
+      let bonus = 0
       if (prize) {
         const [decoRows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
         const decos = decoRows.length ? normalizeDecos(parseJson(decoRows[0].items)) : {}
+        if (!decos[prize]) {
+          bonus = DECO_NEW_BONUS
+          await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [bonus, account.id])
+        }
         decos[prize] = (decos[prize] || 0) + 1
         await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(decos)])
       }
       await conn.commit()
-      send(res, 200, { won, chance, dropAt, segments, prize, save: await getSave(account.id), decos: await getDecos(account.id) })
+      send(res, 200, { won, chance, dropAt, segments, prize, bonus, save: await getSave(account.id), decos: await getDecos(account.id) })
     } catch (error) {
       await conn.rollback().catch(() => {})
       throw error

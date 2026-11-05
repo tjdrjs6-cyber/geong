@@ -354,8 +354,8 @@ export class RemoteGachaStore {
     this.data = result.save
   }
 
-  async playClaw(aligned: boolean, x: number, y: number): Promise<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null }> {
-    const result = await request<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; save: GachaSave; decos: DecoCounts }>('claw/play', { aligned, x, y })
+  async playClaw(aligned: boolean, x: number, y: number): Promise<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number }> {
+    const result = await request<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number; save: GachaSave; decos: DecoCounts }>('claw/play', { aligned, x, y })
     this.data = result.save
     this.decos = result.decos
     return { won: result.won, chance: result.chance, dropAt: result.dropAt, segments: result.segments, prize: result.prize }
