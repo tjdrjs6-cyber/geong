@@ -819,12 +819,12 @@ export class GachaUi {
       const c = chute.getBoundingClientRect()
       if (m.width > 0 && m.height > 0) {
         this.clawX = Math.max(10, Math.min(90, (c.left + c.width / 2 - m.left) / m.width * 100))
-        this.clawY = Math.max(10, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100))
+        this.clawY = Math.max(3, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100 - 6))
         return
       }
     }
     this.clawX = 88
-    this.clawY = 15
+    this.clawY = 9
   }
 
   private moveClaw(action: string): void {
@@ -902,13 +902,13 @@ export class GachaUi {
         const machine = this.root.querySelector<HTMLElement>('.claw-machine')
         const chute = this.root.querySelector<HTMLElement>('.claw-chute')
         let exitX = 88
-        let exitY = 15
+        let exitY = 9
         if (machine && chute) {
           const m = machine.getBoundingClientRect()
           const c = chute.getBoundingClientRect()
           if (m.width > 0 && m.height > 0) {
             exitX = Math.max(0, Math.min(100, (c.left + c.width / 2 - m.left) / m.width * 100))
-            exitY = Math.max(0, Math.min(100, (c.top + c.height / 2 - m.top) / m.height * 100))
+            exitY = Math.max(3, Math.min(100, (c.top + c.height / 2 - m.top) / m.height * 100 - 6))
           }
         }
         if (msg) msg.textContent = '인형을 집었어요! 출구까지 잘 버틸까요?'
