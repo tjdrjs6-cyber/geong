@@ -6,7 +6,7 @@ import type { HouseCoin, RemoteGachaStore } from '../game/remoteStore'
 type Selection = { kind: 'piece' | 'friend'; index: number } | null
 /** Characters always render above every deco, whatever their position. */
 const FRIEND_LAYER = 5000
-type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void }
+type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
 
 const HOUSE_BG_URL = '/assets/bg/house.webp?v=12'
 
@@ -99,6 +99,7 @@ export class HouseView {
       this.coin = state.coin
       this.coinNextAt = state.nextAt
       this.coinClockSkew = state.now - Date.now()
+      this.hooks.coinAvailable(Boolean(state.coin))
     } catch { this.coin = null }
     this.renderCoin()
     window.clearInterval(this.coinTimer)
@@ -134,6 +135,7 @@ export class HouseView {
     try {
       const result = await this.store.claimHouseCoin(coin.slot)
       this.coin = null
+      this.hooks.coinAvailable(false)
       this.coinNextAt = result.nextAt
       this.hooks.wallet()
       this.hooks.toast(`✿ 코인 ${result.coins}개를 주웠어요!`)

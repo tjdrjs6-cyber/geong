@@ -4,7 +4,7 @@ import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
-export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean}[]}[] }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
@@ -13,9 +13,9 @@ export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
 export type BattleState = { id: CharacterId; secondId?: CharacterId | null; since: number; damage: number }
 export type ProfilePrivacy = { char: boolean; deco: boolean; house: boolean }
-export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy }
-export type MailItem = { id: number; from: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
-export type SentItem = { id: number; to: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
+export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; weapon?: string | null; weaponLevel?: number | null }
+export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
+export type SentItem = { id: number; to: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
 export type Suggestion = { id: number; from: string; message: string; at: number; reply: string | null; replyAt: number | null; mine: boolean }
 export type SuggestBox = { items: Suggestion[]; admin: boolean; todayCount: number; dailyMax: number }
@@ -29,7 +29,8 @@ export const MAIL_MAX_CHARS = 30
 export const MAIL_DAILY_COINS = 100
 export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
-type AccountPayload = { user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
+export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
+type AccountPayload = { forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
 type ApiError = { error?: string }
 
@@ -51,7 +52,7 @@ export const ERROR_TEXT: Record<string, string> = {
   house_friends_full: '친구는 최대 3명까지 데려올 수 있어요.',
   invalid_house: '배치를 저장하지 못했어요. 다시 시도해 주세요.',
   not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',
-  not_enough_diamonds: '다이아 코인이 부족해요. 토벌장에서 모아보세요!',
+  not_enough_diamonds: '다이아가 부족해요. 매시간 5개씩 최대 20개까지 충전돼요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
   mail_empty: '편지 내용이나 보낼 코인을 적어 주세요.',
@@ -109,6 +110,7 @@ export class RemoteGachaStore {
   battle: BattleState | null = null
   decos: DecoCounts = {}
   house: HouseLayout = { pieces: [], friends: [] }
+  forge: ForgeState | null = null
   featured: CharacterId | null = null
   mailUnread = 0
   dupes: CharDupes = {}
@@ -134,7 +136,7 @@ export class RemoteGachaStore {
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; nextIn: number; power: number } {
     if (!this.battle) return { kills: 0, hp: ENEMY_HP, nextIn: BATTLE_TICK_MS, power: 0 }
-    const power = battlePower(this.battle.id) + (this.battle.secondId ? battlePower(this.battle.secondId) : 0)
+    const power = battlePower(this.battle.id) + (this.battle.secondId ? battlePower(this.battle.secondId) : 0) + (this.forge?.bonus ?? 0)
     const elapsed = Math.max(0, this.serverNow() - this.battle.since)
     const total = this.battle.damage + Math.floor(elapsed / BATTLE_TICK_MS) * power
     return { kills: Math.floor(total / ENEMY_HP), hp: ENEMY_HP - (total % ENEMY_HP), nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power }
@@ -174,6 +176,19 @@ export class RemoteGachaStore {
     return result.earned
   }
 
+  async loadForge(): Promise<void> { this.forge = (await request<{forge:ForgeState|null}>('forge')).forge }
+  async selectForge(weapon: ForgeState['weapon']): Promise<void> {
+    this.forge=(await request<{forge:ForgeState}>('forge/select',{weapon})).forge
+  }
+  async upgradeForge(): Promise<boolean> {
+    const result=await request<{forge:ForgeState;save:GachaSave;success:boolean}>('forge/upgrade',{})
+    this.forge=result.forge
+    this.data=result.save
+    return result.success
+  }
+  async diamondRecharge(): Promise<{ diamonds: number; nextAt: number | null; now: number; max: number }> {
+    return request('diamonds/recharge')
+  }
   async restore(): Promise<AuthUser | null> {
     const payload = await request<AccountPayload & { autoEarned?: number }>('me')
     this.lastAutoEarned = payload.autoEarned ?? 0
@@ -207,8 +222,8 @@ export class RemoteGachaStore {
     this.data = result.save
     return result
   }
-  async broadcastMail(message: string, coins: number): Promise<{ count: number; coins: number }> {
-    return request<{ count: number; coins: number }>('admin/mail/broadcast', { message, coins })
+  async broadcastMail(message: string, coins: number, diamonds: number, fragments: number): Promise<{ count: number; coins: number }> {
+    return request<{ count: number; coins: number }>('admin/mail/broadcast', { message, coins, diamonds, fragments })
   }
   async deleteMail(id: number, box: 'in' | 'sent'): Promise<{ claimed: number; box: Mailbox }> {
     const result = await request<Mailbox & { claimed: number; save: GachaSave }>('mail/delete', { id, box })
@@ -285,6 +300,7 @@ export class RemoteGachaStore {
   async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
   async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
+  async editAnnouncement(id: number, message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements/edit', { id, message }) }
   async postAnnouncement(message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements', { message }) }
   async profilePrivacy(): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy')).privacy }
   async setProfilePrivacy(privacy: ProfilePrivacy): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy', privacy)).privacy }
@@ -377,6 +393,7 @@ export class RemoteGachaStore {
   }
 
   private apply(payload: AccountPayload): void {
+    this.forge = payload.forge ?? null
     this.user = payload.user
     this.weed = payload.weed ?? null
     this.battle = payload.battle ?? null

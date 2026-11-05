@@ -3250,3 +3250,260 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-modal.claw-screen .claw-balance-count .diamond-value {font-size:27px;font-weight:900}
 .gacha-modal.claw-screen .claw-balance-unit {font-size:17px}
 .gacha-modal.claw-screen .claw-balance-help {font-size:12px;margin:4px 0 7px;color:#79515b}
+
+/* v1.20: Tap the selected lobby friend to cycle compact illustrated tips. */
+.toon-stage .toon-hero { pointer-events: auto; }
+
+
+/* v1.21: halve the tap target without shrinking the visible featured friend. */
+.gacha-screen .toon-hero { pointer-events:none !important; }
+.gacha-screen .toon-hero-img { pointer-events:none !important; }
+/* Portal-like placement as a direct child of the lobby, not the clipped stage. */
+
+/* v1.24 blacksmith */
+.gacha-nav .nav-forge {order:99}
+.forge-card {width:min(94vw,520px);max-height:92dvh;overflow:auto;background:#fff2df}
+.forge-body {background:linear-gradient(#ffffffa6,#ffffffa6),url('/assets/forge/background.png') center/cover;min-height:380px;padding:18px 12px;border-radius:18px;text-align:center}
+.forge-warning,.forge-note {background:#fff9eddd;padding:10px;border-radius:12px;font-size:13px;color:#714e38}
+.forge-weapons {display:flex;gap:8px;margin-top:22px}
+.forge-weapons button {flex:1;min-width:0;background:#fff9f0ed;border:2px solid #e6b87b;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:9px;color:#6c442d}
+.forge-weapons img {width:100%;height:92px;object-fit:contain}
+.forge-weapons b {font-size:12px}.forge-weapons small {font-size:11px}
+.forge-current {display:flex;align-items:center;gap:12px;background:#fff8edeb;border-radius:14px;padding:12px}
+.forge-current>img {width:48%;height:140px;object-fit:contain}
+.forge-current>div {display:flex;flex-direction:column;gap:9px;text-align:left;font-size:14px;color:#66422e}
+.forge-current strong {font-size:19px;color:#ad6032}
+.forge-cost {background:#fff9edeb;border-radius:14px;margin:14px 0;padding:10px;font-size:14px;color:#62422d}
+.forge-cost p {margin:6px 0}.forge-cost img {width:23px;height:23px;object-fit:contain;vertical-align:middle}
+.forge-upgrade {display:block;margin:12px auto;border:0;background:none;width:min(240px,70%);cursor:pointer}
+.forge-upgrade img {display:block;width:100%;height:auto}
+.forge-max {padding:18px;background:#fff8d8;border-radius:12px;font-weight:700}
+
+/* Weapon + enhancement level badge on expedition names and battle characters */
+.forge-weapon-tag{display:inline-flex;align-items:center;justify-content:center;gap:2px;position:relative;z-index:25;background:#fff9e9ed;border:1px solid #b57a40;border-radius:12px;padding:1px 4px;color:#64391c;font-size:11px;font-weight:900;white-space:nowrap;line-height:1.1;box-shadow:0 1px 4px #53371b55;pointer-events:none}
+.forge-weapon-tag img{width:22px!important;height:17px!important;object-fit:contain!important;flex-shrink:0}
+.expedition-combatant .forge-weapon-tag{display:flex;margin:0 auto 2px;max-width:max-content}
+.bf-friend-body{position:relative}
+.bf-friend-body .forge-weapon-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:30}
+.bf-friend-body .forge-weapon-tag img{width:22px!important;height:17px!important}
+
+/* v1.28: forge currency icons and clean text layout */
+.forge-cost .forge-resource-icon{display:inline-block;width:24px;height:24px;object-fit:contain;vertical-align:middle;margin:0 2px 0 4px}
+.forge-cost p{line-height:1.9;overflow-wrap:anywhere}
+.forge-current>div{min-width:0;flex:1}
+.forge-cost{overflow:hidden}
+
+/* v1.29: larger, crisp weapon badges for expedition and battle */
+.forge-weapon-tag{gap:4px!important;padding:3px 7px!important;min-height:27px!important;border-radius:10px!important;font-size:14px!important;line-height:1.2!important;background:#fffaf0f5!important;box-shadow:0 2px 6px #30201466!important}
+.forge-weapon-tag img,.bf-friend-body .forge-weapon-tag img{width:48px!important;height:24px!important;max-width:none!important;object-fit:contain!important;image-rendering:auto!important}
+.forge-weapon-tag b{font-size:14px!important;font-weight:900!important}
+.expedition-combatant .forge-weapon-tag{margin:0 auto 2px!important;flex-shrink:0!important}
+.bf-friend-body .forge-weapon-tag{top:-25px!important}
+
+/* v1.30 forge upgrade: two hammer strikes, then outcome; no level refresh until animation finishes */
+.forge-body{position:relative}
+.forge-animation-overlay{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border-radius:16px;background:#fff5e8f2;pointer-events:all}
+.forge-animation-overlay img{display:block;max-width:min(75%,230px);max-height:230px;object-fit:contain}
+.forge-animation-hammer{transform-origin:75% 75%;animation:forge-double-strike 1.05s ease-in-out both}
+.forge-animation-caption{font-size:20px;font-weight:900;color:#75401e;text-shadow:0 1px #fff}
+.forge-animation-result img{animation:forge-result-pop .3s ease-out both}
+@keyframes forge-double-strike{0%,45%,100%{transform:rotate(-16deg) translateY(-8px)}22%,72%{transform:rotate(12deg) translateY(15px)}}
+@keyframes forge-result-pop{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
+
+/* v1.32: collection tab faces */
+.storage-screen .storage-tab-face, .storage-tab-face{display:inline-block;width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:3px}
+
+/* v1.33: clean forge, character tab icon and battle strike */
+.forge-body{background:#fff8ed!important}
+.forge-animation-overlay{background:#fff8ed!important}
+.forge-animation-overlay img{background:transparent!important}
+.forge-current,.forge-cost{background:#fffaf3!important}
+.gacha-nav .nav-forge .chiikawa-tab-icon img{width:100%!important;height:100%!important;object-fit:contain!important}
+.bf-friend-body{position:relative}
+.bf-friend-body .battle-weapon-strike{position:absolute;z-index:15;left:56%;top:49%;width:62px;height:35px;display:flex;align-items:center;justify-content:center;pointer-events:none;transform-origin:85% 55%}
+.battle-weapon-strike img{width:52px!important;height:31px!important;object-fit:contain!important;filter:drop-shadow(0 1px 2px #563a2880)}
+.battle-weapon-strike b{font-size:13px;font-weight:900;color:#7b2e18;background:#fff9e5d9;border-radius:6px;padding:1px 3px}
+.battle-field.is-fighting .battle-weapon-strike{animation:weapon-stab 3s ease-in-out infinite}
+@keyframes weapon-stab{0%,72%,100%{transform:translate(0,0) rotate(-18deg)}79%{transform:translate(26px,-9px) rotate(-33deg)}85%{transform:translate(32px,-12px) rotate(-33deg)}93%{transform:translate(0,0) rotate(-18deg)}}
+.user-weapon-badge{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#86501e;font-weight:900;max-width:100%}
+.user-weapon-badge img{width:48px;height:23px;object-fit:contain}
+
+/* v1.34: diamond capacity and exact recharge countdown */
+.gacha-header .header-right .diamond-wallet{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:center!important;column-gap:2px!important;row-gap:0!important}
+.gacha-header .header-right .diamond-wallet .diamond-capacity{font-size:11px;font-weight:800;color:#6d6586}
+.gacha-header .header-right .diamond-wallet .diamond-recharge-countdown{display:block!important;flex-basis:100%;font-size:9px!important;font-weight:700;white-space:nowrap;color:#785d9a;text-align:center;line-height:1.3}
+
+/* v1.35 - weapon floats in arena center, not over character or health/name UI */
+.battle-field > .battle-weapon-strike{position:absolute!important;left:43%!important;top:50%!important;width:clamp(96px,28cqw,180px)!important;height:clamp(80px,22cqw,145px)!important;display:flex!important;align-items:center!important;justify-content:center!important;z-index:8!important;pointer-events:none!important;transform-origin:70% 65%!important;filter:drop-shadow(0 4px 3px #563a2866)}
+.battle-field > .battle-weapon-strike img{width:100%!important;height:100%!important;max-width:none!important;object-fit:contain!important;transform:rotate(-18deg)!important}
+.battle-field > .battle-weapon-strike b{position:absolute!important;right:0!important;bottom:0!important;font-size:clamp(15px,4cqw,23px)!important;font-weight:900!important;color:#a45113!important;background:#fff9e5ed!important;border:2px solid #e2ae60!important;border-radius:9px!important;padding:1px 5px!important}
+.battle-field.is-fighting > .battle-weapon-strike{animation:arena-weapon-thrust 2.4s ease-in-out infinite!important}
+@keyframes arena-weapon-thrust{0%,54%,100%{transform:translate(15%,0) rotate(12deg)}66%{transform:translate(-38%,-6%) rotate(-20deg)}76%{transform:translate(-55%,-7%) rotate(-28deg)}87%{transform:translate(15%,0) rotate(12deg)}}
+.user-main{min-width:0!important;gap:4px!important}
+.user-name-line{display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;min-width:0!important;width:100%!important;white-space:nowrap!important}
+.user-name-line > b{flex:0 1 auto!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.user-name-line .user-weapon-badge{flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;gap:1px!important;white-space:nowrap!important}
+.user-name-line .user-weapon-badge img{width:37px!important;height:19px!important;object-fit:contain!important}
+.user-name-line .user-weapon-badge b{font-size:12px!important}
+
+/* v1.37 restore illustrated blacksmith background; transparent upgrade button */
+.forge-body{background:linear-gradient(#ffffffa6,#ffffffa6),url('/assets/forge/background.png') center/cover!important}
+.forge-animation-overlay{background:linear-gradient(#fff8ede8,#fff8ede8),url('/assets/forge/background.png') center/cover!important}
+.forge-upgrade,.forge-upgrade img{background:transparent!important}
+
+/* v1.38: center the weapon and tuck its upgrade badge against the handle */
+.battle-field > .battle-weapon-strike{left:35%!important;top:49%!important}
+.battle-field > .battle-weapon-strike b{right:14%!important;bottom:12%!important;padding:1px 3px!important;line-height:1.1!important}
+
+/* v1.39: keep diamond icon and 0/20 on one row, countdown below */
+.gacha-screen .gacha-header .header-right .diamond-wallet{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:0!important;overflow:visible!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-wallet-line{display:inline-flex!important;flex:0 0 auto!important;align-items:center!important;justify-content:center!important;gap:2px!important;white-space:nowrap!important;line-height:1.05!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-wallet-line .diamond-icon{display:block!important;width:15px!important;height:15px!important;object-fit:contain!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-value{display:inline!important;position:static!important;transform:none!important;margin:0!important;line-height:1!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-capacity{display:inline!important;position:static!important;margin:0!important;line-height:1!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-recharge-countdown{display:block!important;flex:0 0 auto!important;position:static!important;transform:none!important;margin:1px 0 0!important;line-height:1.1!important;font-size:9px!important;white-space:nowrap!important}
+
+/* v1.40: raise weapon substantially, show only character name and combat power above allies */
+.battle-field > .battle-weapon-strike{top:34%!important}
+.battle-field .bf-friend-label{display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;width:max-content!important;max-width:150%!important;margin:0 auto 5px!important;padding:4px 7px!important;border:2px solid #51403d!important;border-radius:12px!important;background:#fff9f1f2!important;box-shadow:0 2px 2px #422d2a24!important;white-space:nowrap!important;position:relative!important;z-index:6!important}
+.battle-field .bf-friend-name{font-size:clamp(10px,2.5cqw,13px)!important;font-weight:900!important;color:#4a3b3b!important;max-width:90px!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.battle-field .bf-friend-label .bf-friend-power{font-size:clamp(10px,2.5cqw,13px)!important;font-style:normal!important;font-weight:900!important;color:#9b5322!important;white-space:nowrap!important}
+
+/* v1.41: house unclaimed coin notification, larger Rakko forge icon */
+.gacha-screen .gacha-nav .nav-house{position:relative}
+.gacha-screen .gacha-nav .house-coin-dot:not([hidden]){display:block!important;position:absolute;right:5px;top:4px;width:9px;height:9px;background:#f0444d;border:1.5px solid white;border-radius:50%;box-shadow:0 0 0 1px #e33b45;pointer-events:none}
+.gacha-screen .gacha-nav .house-coin-dot[hidden]{display:none!important}
+.gacha-screen .gacha-nav .nav-forge .chiikawa-tab-icon{width:23px!important;height:23px!important;flex:0 0 23px!important;margin-left:-3px;margin-right:-2px;overflow:visible!important}
+.gacha-screen .gacha-nav .nav-forge .chiikawa-tab-icon img{width:100%!important;height:100%!important;object-fit:contain!important}
+
+/* Storage bulk duplicate selling */
+.storage-bulk-sell {display:block;width:100%;margin:0 0 10px;min-height:42px;}
+.storage-bulk-sell:disabled {opacity:.55;cursor:not-allowed;}
+
+/* v147: softly animated weapon enhancement auras */
+.forge-aura{position:relative;display:inline-flex;align-items:center;justify-content:center;isolation:isolate;vertical-align:middle;--aura-color:transparent}
+.forge-aura>img{position:relative;z-index:1;filter:drop-shadow(0 0 0 transparent)}
+.forge-aura:is(.aura-10,.aura-13,.aura-15,.aura-17,.aura-20){--aura-color:#59baff}
+.forge-aura.aura-13{--aura-color:#f05b60}
+.forge-aura.aura-15{--aura-color:#bb78ff}
+.forge-aura.aura-17,.forge-aura.aura-20{--aura-color:#ffcf48}
+.forge-aura:is(.aura-10,.aura-13,.aura-15,.aura-17,.aura-20)>img{filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 10px var(--aura-color));animation:forge-aura-breathe 2.7s ease-in-out infinite}
+.forge-aura.aura-20::after{content:'✦';position:absolute;z-index:3;top:-13px;right:-8px;font-size:16px;color:#fff6ae;text-shadow:-19px 13px 0 #ffdc60, 0 0 7px #ffd23e, 0 0 13px #fff;animation:forge-aura-sparkle 1.45s ease-in-out infinite;pointer-events:none}
+@keyframes forge-aura-breathe{0%,100%{opacity:.9;filter:drop-shadow(0 0 3px var(--aura-color)) drop-shadow(0 0 6px var(--aura-color))}50%{opacity:1;filter:drop-shadow(0 0 7px var(--aura-color)) drop-shadow(0 0 14px var(--aura-color))}}
+@keyframes forge-aura-sparkle{0%,100%{opacity:.35;transform:scale(.75) rotate(-12deg)}50%{opacity:1;transform:scale(1.18) rotate(12deg)}}
+.forge-current>.forge-aura{width:48%;height:140px;flex-shrink:0}
+.forge-current>.forge-aura>img{width:100%;height:100%;object-fit:contain}
+.user-weapon-badge>.forge-aura>img{width:48px;height:23px;object-fit:contain}
+.user-name-line .user-weapon-badge .forge-aura>img{width:37px!important;height:19px!important}
+@media(prefers-reduced-motion:reduce){.forge-aura>img,.forge-aura::after{animation:none!important}}
+
+/* v148: in-game confirmation instead of browser confirm */
+.storage-confirm-dialog{border:0;border-radius:24px;padding:0;max-width:min(340px,calc(100vw - 36px));width:100%;background:#fffaf7;color:#59454c;box-shadow:0 16px 60px #59454c45;text-align:center}
+.storage-confirm-dialog::backdrop{background:rgba(42,30,38,.48)}
+.storage-confirm-content{padding:27px 22px 22px}
+.storage-confirm-heading{font-size:13px;font-weight:800;color:#d77d98;letter-spacing:.04em}
+.storage-confirm-content p{font-size:18px;font-weight:800;margin:20px 0 25px}
+.storage-confirm-actions{display:flex;gap:10px}
+.storage-confirm-actions button{flex:1;border:0;border-radius:14px;padding:13px 8px;font-weight:800;cursor:pointer;background:#f2e8e6;color:#6d5960}
+.storage-confirm-actions button[data-choice="ok"]{background:#e58da4;color:white}
+
+.forge-confirm-warning{font-size:13px!important;font-weight:600!important;line-height:1.6;color:#a76c79;margin:-12px 0 22px!important}
+
+/* v150: weapon-attached +20 glints, compact battle level, clearer user badges */
+/* Sparkles follow the weapon element rather than floating beyond its corners. */
+.forge-aura.aura-20::after{
+  content:'✦';position:absolute;z-index:4;
+  left:44%;top:43%;right:auto;
+  font-size:clamp(9px,1.8cqw,15px);line-height:1;
+  color:#fffbea;text-shadow:0 0 4px #fff,0 0 9px #ffd746;
+  transform-origin:center;animation:forge-weapon-glint 1.6s ease-in-out infinite;
+  pointer-events:none;
+}
+.forge-aura.aura-20::before{
+  content:'✧';position:absolute;z-index:4;
+  left:66%;top:53%;font-size:clamp(7px,1.3cqw,11px);line-height:1;
+  color:#fff9d0;text-shadow:0 0 5px #ffd746;
+  animation:forge-weapon-glint 1.6s ease-in-out -.8s infinite;
+  pointer-events:none;
+}
+@keyframes forge-weapon-glint{0%,100%{opacity:.12;scale:.65}48%{opacity:1;scale:1.16}70%{opacity:.35;scale:.85}}
+.battle-field > .battle-weapon-strike b{
+  right:8%!important;bottom:23%!important;
+  font-size:clamp(10px,2.4cqw,14px)!important;
+  border-width:1px!important;border-radius:6px!important;
+  padding:0 3px!important;line-height:1.15!important;
+}
+.user-name-line .user-weapon-badge .forge-aura>img{
+  width:43px!important;height:23px!important;
+  image-rendering:auto;
+  filter:drop-shadow(0 1px 1px #5b403b55);
+}
+.user-name-line .user-weapon-badge b{font-size:13px!important;line-height:1.15!important}
+.user-name-line .user-weapon-badge{gap:2px!important}
+@media(prefers-reduced-motion:reduce){.forge-aura.aura-20::before,.forge-aura.aura-20::after{animation:none!important;opacity:.85}}
+
+/* v151: stronger, weapon-centered +20 star glints */
+.forge-aura.aura-20>img{
+  animation:forge-aura-breathe-20 1.8s ease-in-out infinite!important;
+}
+.forge-aura.aura-20::after{
+  content:'✦';left:38%;top:35%;right:auto;
+  font-size:clamp(12px,2.6cqw,21px);
+  color:#fffef4;
+  text-shadow:0 0 3px #fff,0 0 8px #fff,0 0 14px #ffe16c,0 0 22px #ffcf31;
+  animation:forge-glint-bright 1.15s ease-in-out infinite!important;
+}
+.forge-aura.aura-20::before{
+  content:'✦';left:66%;top:54%;
+  font-size:clamp(9px,1.9cqw,15px);
+  color:#fffdf0;
+  text-shadow:0 0 4px #fff,0 0 10px #ffe16c,0 0 17px #ffc629;
+  animation:forge-glint-bright 1.15s ease-in-out -.58s infinite!important;
+}
+@keyframes forge-glint-bright{
+  0%,100%{opacity:.25;transform:scale(.55) rotate(-20deg)}
+  40%{opacity:1;transform:scale(1.45) rotate(14deg)}
+  60%{opacity:.8;transform:scale(1.05) rotate(25deg)}
+}
+@keyframes forge-aura-breathe-20{
+  0%,100%{filter:drop-shadow(0 0 5px #ffd84c) drop-shadow(0 0 10px #ffca35)}
+  50%{filter:drop-shadow(0 0 10px #ffe66e) drop-shadow(0 0 19px #ffcc33)}
+}
+@media(prefers-reduced-motion:reduce){.forge-aura.aura-20>img,.forge-aura.aura-20::before,.forge-aura.aura-20::after{animation:none!important;opacity:1}}
+
+/* v152: keep forge weapon and enhancement label readable on desktop/mobile */
+.forge-current{width:100%;box-sizing:border-box;min-width:0;gap:clamp(8px,2vw,14px)}
+.forge-current>.forge-aura{flex:0 1 46%;width:46%;min-width:0;max-width:46%;height:clamp(85px,22vw,140px)}
+.forge-current>.forge-aura>img{display:block;width:100%;height:100%;object-fit:contain}
+/* Previous >div selector also matched the text panel, but not the span image wrapper. */
+.forge-current>div{flex:1 1 0;min-width:0;max-width:54%;gap:clamp(5px,1vw,9px);font-size:clamp(11px,2.7vw,14px);overflow-wrap:normal;word-break:keep-all}
+.forge-current>div>b{font-size:clamp(12px,3vw,16px)}
+.forge-current>div>strong{display:block;white-space:nowrap;font-size:clamp(12px,3.2vw,19px);letter-spacing:-.055em;line-height:1.3}
+.forge-current>div>span{font-size:clamp(11px,2.6vw,14px);line-height:1.35;white-space:normal;word-break:keep-all}
+@media(max-width:380px){.forge-current{padding:9px;gap:7px}.forge-current>.forge-aura{flex-basis:42%;width:42%;max-width:42%}.forge-current>div{max-width:58%}.forge-current>div>strong{font-size:12px;letter-spacing:-.07em}}
+
+/* v154: constrain forge dialog to the actual game container on wide PC screens.
+   vw refers to the browser window, not the narrow game panel. */
+.gacha-modal.forge-screen {grid-template-columns:minmax(0,1fr);min-width:0;box-sizing:border-box;overflow:hidden;}
+.gacha-modal.forge-screen > .forge-card {width:min(100%,520px)!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-self:center;}
+.gacha-modal.forge-screen .forge-body {width:100%;min-width:0;box-sizing:border-box;overflow-x:hidden;}
+.gacha-modal.forge-screen .forge-current {max-width:100%;}
+.gacha-modal.forge-screen .forge-current > div {min-width:0;}
+
+/* v155: battle summary wraps into its own rows without covering character cards. */
+.battle-panel .battle-status { display:block; margin:4px 0 8px; line-height:1.45; overflow-wrap:normal; word-break:keep-all; }
+.battle-status-row { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:3px 12px; }
+.battle-status-row > span { display:inline-flex; align-items:baseline; gap:4px; white-space:nowrap; }
+.battle-status-row b { font-weight:800; }
+.battle-total-power { color:#a24c4c; font-weight:800; }
+.battle-status-help { display:block; margin-top:3px; font-size:11px; color:#88777a; }
+.weed-screen .weed-panel.battle-panel .field-info-sticky { position:relative; z-index:2; flex:0 0 auto; }
+.weed-screen .weed-panel.battle-panel .battle-picker { min-height:0; overflow-y:auto; position:relative; z-index:1; }
+@media(max-width:480px) {
+ .battle-status-row { gap:2px 9px; font-size:11px; }
+ .battle-status-help { font-size:10px; }
+}
+
+/* v1.56: defeated boss overlay; hide participants without deleting reward records. */
+.expedition-defeated-message{position:absolute;left:5%;right:5%;top:47%;transform:translateY(-50%);z-index:9;text-align:center;color:#fff8d9;font-weight:900;font-size:clamp(19px,4.8vw,28px);line-height:1.35;text-shadow:0 2px 5px #001c45,0 0 16px #00cfff;background:rgba(4,31,66,.65);border:1px solid rgba(190,240,255,.65);border-radius:16px;padding:18px 8px;box-sizing:border-box}
+.expedition-defeated-message[hidden]{display:none!important}

@@ -120,6 +120,17 @@ async function prepareDatabase() {
   // Existing databases may already have last_roulette VARCHAR(10); the slot value is 11 chars (YYYY-MM-DD + A/B).
   await pool.query("ALTER TABLE gm_saves MODIFY COLUMN last_roulette VARCHAR(16) NOT NULL DEFAULT ''")
   try { await pool.query('ALTER TABLE gm_saves ADD COLUMN diamonds BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_saves ADD COLUMN fragments BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_forge (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    weapon VARCHAR(12) NOT NULL,
+    level TINYINT UNSIGNED NOT NULL DEFAULT 0
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_diamond_recharge (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    last_ms BIGINT NOT NULL
+  )`)
+
   try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_accounts ADD COLUMN nickname VARCHAR(6) NULL') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('CREATE UNIQUE INDEX uq_gm_accounts_nickname ON gm_accounts (nickname)') } catch (error) { if (!error || error.code !== 'ER_DUP_KEYNAME') throw error }
@@ -185,6 +196,7 @@ async function prepareDatabase() {
   // One-time move of the old single weeding friend into the 3-slot table.
   if (!slotTable.length) await pool.query("INSERT IGNORE INTO gm_weed_slots (account_id, character_id, since_ms) SELECT account_id, character_id, since_ms FROM gm_weeding WHERE character_id <> ''")
   try { await pool.query('ALTER TABLE gm_weeding ADD COLUMN beetle TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  for (const field of ['diamonds', 'fragments']) { try { await pool.query(`ALTER TABLE gm_mail ADD COLUMN ${field} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error } }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN to_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN from_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   // Promote only an existing account; never create an administrator implicitly.
@@ -298,7 +310,7 @@ function recordFailure(key) {
 
 function saveView(row) {
   const owned = typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned
-  return { version: 1, gems: Number(row.gems), diamonds: Number(row.diamonds ?? 0), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '' }
+  return { version: 1, gems: Number(row.gems), diamonds: Number(row.diamonds ?? 0), fragments: Number(row.fragments ?? 0), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '' }
 }
 
 async function startSession(res, accountId, username, nickname, save, admin = false) {
@@ -322,7 +334,7 @@ async function withSave(accountId, change) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [rows] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [rows] = await conn.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const outcome = change(state)
     if (outcome.ok) {
@@ -349,8 +361,32 @@ async function houseCoinRow(db, accountId, lock = false) {
   return rows[0]
 }
 
+const DIAMOND_RECHARGE_MS = 60 * 60 * 1000
+const diamondHourSlot = ms => Math.floor(ms / DIAMOND_RECHARGE_MS) * DIAMOND_RECHARGE_MS
+async function rechargeDiamonds(accountId) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const now = Date.now()
+    const [saves] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    if (!saves.length) { await conn.commit(); return }
+    await conn.query('INSERT IGNORE INTO gm_diamond_recharge (account_id, last_ms) VALUES (?, ?)', [accountId, diamondHourSlot(now)])
+    const [rows] = await conn.query('SELECT last_ms FROM gm_diamond_recharge WHERE account_id = ? FOR UPDATE', [accountId])
+    const last = Number(rows[0].last_ms)
+    const slot = diamondHourSlot(now)
+    const hours = Math.max(0, Math.floor((slot - diamondHourSlot(last)) / DIAMOND_RECHARGE_MS))
+    const current = Number(saves[0].diamonds)
+    const next = Math.min(20, current + hours * 5)
+    if (next !== current) await conn.query('UPDATE gm_saves SET diamonds = ? WHERE account_id = ?', [next, accountId])
+    if (hours > 0 || current >= 20) await conn.query('UPDATE gm_diamond_recharge SET last_ms = ? WHERE account_id = ?', [slot, accountId])
+    await conn.commit()
+  } catch (error) { await conn.rollback().catch(() => {}); throw error }
+  finally { conn.release() }
+}
+
 async function getSave(accountId) {
-  const [rows] = await pool.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ?', [accountId])
+  await rechargeDiamonds(accountId)
+  const [rows] = await pool.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ?', [accountId])
   return rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
 }
 
@@ -376,19 +412,21 @@ async function sentToday(conn, accountId) {
   return Number(rows[0].total)
 }
 async function mailbox(accountId) {
-  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? '원정대 보상' : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
-  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? '원정대 보상' : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
   return { mail, sent, max: MAILBOX_MAX, unread: mail.filter(item => !item.seen).length, sentToday: await sentToday(pool, accountId), dailyLimit: MAIL_DAILY_COINS }
 }
 /** Hides a recipient's inbox letters beyond the newest MAILBOX_MAX; coins still waiting in them go to the recipient. */
 async function trimInbox(conn, toId) {
-  const [old] = await conn.query('SELECT id, coins, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
+  const [old] = await conn.query('SELECT id, coins, diamonds, fragments, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
   if (!old.length) return
   const coins = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.coins)), 0)
   await conn.query(`UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
-  if (coins > 0) await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, toId])
+  const diamonds = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.diamonds)), 0)
+  const fragments = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.fragments)), 0)
+  if (coins || diamonds || fragments) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [coins, diamonds, fragments, toId])
 }
 async function trimSent(conn, fromId) {
   const [old] = await conn.query('SELECT id FROM gm_mail WHERE from_id = ? AND from_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [fromId, MAILBOX_MAX])
@@ -420,9 +458,16 @@ async function suggestions(account) {
     admin: Boolean(account.is_admin), todayCount: Number(today[0].n), dailyMax: SUGGEST_DAILY_MAX,
   }
 }
+const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
+const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5]
+const forgeBonus = level => level <= 14 ? level + 1 : level === 20 ? 50 : 20 + (level - 15) * 5
+async function getForge(accountId) {
+  const [rows] = await pool.query('SELECT weapon, level FROM gm_forge WHERE account_id = ?', [accountId])
+  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), bonus: forgeBonus(Number(rows[0].level)) } : null
+}
 async function accountState(accountId) {
   const box = await mailbox(accountId)
-  return { dupes: await getDupes(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
+  return { forge: await getForge(accountId), dupes: await getDupes(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
 }
 
 async function getWeed(accountId) {
@@ -439,7 +484,7 @@ async function updateBattle(accountId, nextCharacter) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [saves] = await conn.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const [rows] = await conn.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
     const now = Date.now()
@@ -449,22 +494,24 @@ async function updateBattle(accountId, nextCharacter) {
       const [busy] = await conn.query('SELECT 1 FROM gm_weed_slots WHERE account_id = ? AND character_id = ? UNION ALL SELECT 1 FROM gm_weeding WHERE account_id = ? AND beetle = 1 AND ? = ?', [accountId, nextCharacter, accountId, nextCharacter, BEETLE_ID])
       if (busy.length) { await conn.rollback(); return { error: 'busy_weed' } }
     }
+    const [forgeRows] = await conn.query('SELECT level FROM gm_forge WHERE account_id = ?', [accountId])
+    const weaponBonus = forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0
     let earned = 0
     if (battle) {
-      const settled = settleBattle(battle.since, battle.damage, now, (POWER[battle.id] ?? 10) + (battle.secondId ? (POWER[battle.secondId] ?? 10) : 0))
+      const settled = settleBattle(battle.since, battle.damage, now, (POWER[battle.id] ?? 10) + (battle.secondId ? (POWER[battle.secondId] ?? 10) : 0) + weaponBonus)
       earned = settled.kills
       battle = { ...battle, since: settled.since, damage: settled.damage }
     }
     if (nextCharacter) battle = battle ? (battle.id === nextCharacter || battle.secondId === nextCharacter ? (battle.secondId === nextCharacter ? { ...battle, secondId: null } : battle.secondId ? { ...battle, id: battle.secondId, secondId: null } : null) : battle.secondId ? { ...battle, secondId: nextCharacter } : { ...battle, secondId: nextCharacter }) : { id: nextCharacter, secondId: null, since: now, damage: 0 }
     if (!battle) {
-      if (earned > 0) await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [earned, accountId])
-      state.diamonds = (state.diamonds ?? 0) + earned
+      if (earned > 0) await conn.query('UPDATE gm_saves SET fragments = fragments + ? WHERE account_id = ?', [earned, accountId])
+      state.fragments = (state.fragments ?? 0) + earned
       await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
       await conn.commit()
       return { save: state, battle: null, earned, now }
     }
-    state.diamonds = (state.diamonds ?? 0) + earned
-    if (earned > 0) await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [earned, accountId])
+    state.fragments = (state.fragments ?? 0) + earned
+    if (earned > 0) await conn.query('UPDATE gm_saves SET fragments = fragments + ? WHERE account_id = ?', [earned, accountId])
     await conn.query('INSERT INTO gm_battle (account_id, character_id, second_id, since_ms, damage) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), second_id = VALUES(second_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.secondId || '', battle.since, battle.damage])
     await conn.commit()
     return { save: state, battle, earned, now }
@@ -491,7 +538,7 @@ async function autoSettle(accountId) {
   const weed = await updateWeed(accountId, {})
   if (!weed.error) earned += weed.earned
   const battle = await updateBattle(accountId, null)
-  // Battle rewards are diamonds, not ordinary coins.
+  // Battle rewards are enhancement fragments, not diamonds.
   return earned
 }
 /** op: { add?: id, remove?: id, beetle?: boolean } — settles every member's coins first, then applies the change. */
@@ -499,7 +546,7 @@ async function updateWeed(accountId, op = {}) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [saves] = await conn.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const current = await readWeed(conn, accountId, true)
     const now = Date.now()
@@ -604,8 +651,9 @@ async function expeditionSettle(conn, day, serverId, now) {
   let hp=Number(boss.hp),last=Number(boss.last_tick)
   const ticks=hp>0 ? Math.max(0,Math.floor((now-last)/EXP_TICK)) : 0
   if(ticks) {
-    const [members]=await conn.query('SELECT character_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
-    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0),0)
+    const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
+    // One permanent weapon bonus per participating account, regardless of party size.
+    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level))),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
@@ -656,8 +704,8 @@ async function expeditionSnapshot(accountId) {
       if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,id])
       await expeditionMigrateHp(conn,day,id)
       const hp=await expeditionSettle(conn,day,id,now)
-      const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
-      servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,me:String(m.account_id)===String(accountId)}))})
+      const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
+      servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -720,6 +768,60 @@ const rpsPublic = (row,admin=false) => ({
   reward:rpsRewards[Math.min(4,Number(row.stage)-1)]
 })
 const routes = {
+  'GET /api/forge': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, {error:'login_required'})
+    send(res, 200, {forge: await getForge(account.id)})
+  },
+  'POST /api/forge/select': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, {error:'login_required'})
+    const {weapon} = await readJson(req)
+    if (!FORGE_WEAPONS.includes(weapon)) return send(res,400,{error:'forge_invalid_weapon'})
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('SELECT id FROM gm_accounts WHERE id=? FOR UPDATE',[account.id])
+      const [rows] = await conn.query('SELECT weapon FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
+      if (rows.length) { await conn.rollback(); return send(res,409,{error:'forge_already_selected'}) }
+      await conn.query('INSERT INTO gm_forge(account_id,weapon,level) VALUES(?,?,0)',[account.id,weapon])
+      await conn.commit()
+      send(res,200,{forge:{weapon,level:0,bonus:1}})
+    } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
+  },
+  'POST /api/forge/upgrade': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, {error:'login_required'})
+    await readJson(req)
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [saves] = await conn.query('SELECT gems,fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      const [rows] = await conn.query('SELECT weapon,level FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
+      if (!rows.length) {await conn.rollback();return send(res,409,{error:'forge_no_weapon'})}
+      const level=Number(rows[0].level)
+      if(level>=20){await conn.rollback();return send(res,409,{error:'forge_max'})}
+      const fragments=level+1, coins=(level+1)*5
+      if(!saves.length || (!rpsAdmin(account) && Number(saves[0].fragments)<fragments)){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
+      if(!rpsAdmin(account) && Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
+      // Settle battle damage with the OLD bonus before raising weapon level.
+      const [battles]=await conn.query('SELECT character_id,second_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
+      let earned=0
+      if(battles.length){
+        const b=battles[0]
+        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+forgeBonus(level)
+        const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),oldPower)
+        earned=settled.kills
+        await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
+      }
+      const success=randomInt(100)<FORGE_CHANCES[level]
+      await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[rpsAdmin(account)?0:coins,rpsAdmin(account)?0:fragments,earned,account.id])
+      if(success) await conn.query('UPDATE gm_forge SET level=level+1 WHERE account_id=?',[account.id])
+      await conn.commit()
+      const newLevel=level+(success?1:0)
+      send(res,200,{success,forge:{weapon:rows[0].weapon,level:newLevel,bonus:forgeBonus(newLevel)},save:await getSave(account.id)})
+    } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
+  },
   'GET /api/rps': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -894,6 +996,18 @@ const routes = {
     } catch (error) { await conn.rollback(); throw error } finally { conn.release() }
     send(res, 200, await getAnnouncements(account.id))
   },
+  'POST /api/admin/announcements/edit': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    if (!account.is_admin || account.username !== 'tjdrjs885') return send(res, 403, { error: 'admin_only' })
+    const body = await readJson(req)
+    const id = Number(body.id)
+    const message = typeof body.message === 'string' ? body.message.trim() : ''
+    if (!Number.isSafeInteger(id) || id <= 0 || !message || [...message].length > 100) return send(res, 400, { error: 'announcement_invalid' })
+    const [result] = await pool.query('UPDATE gm_announcements SET message = ? WHERE id = ?', [message, id])
+    if (!result.affectedRows) return send(res, 404, { error: 'announcement_not_found' })
+    send(res, 200, await getAnnouncements(account.id))
+  },
   'POST /api/auth/register': async (req, res) => {
     const { username, password, nickname } = await readJson(req)
     const invalid = validateCredentials(username, password) || validateNickname(nickname)
@@ -930,6 +1044,16 @@ const routes = {
     const token = readCookie(req, COOKIE)
     if (token) await pool.query('DELETE FROM gm_sessions WHERE token_hash = ?', [tokenHash(token)])
     send(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) })
+  },
+  'GET /api/diamonds/recharge': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await rechargeDiamonds(account.id)
+    const [rows] = await pool.query('SELECT s.diamonds, r.last_ms FROM gm_saves s LEFT JOIN gm_diamond_recharge r ON r.account_id = s.account_id WHERE s.account_id = ?', [account.id])
+    const diamonds = Number(rows[0]?.diamonds ?? 0)
+    const now = Date.now()
+    const nextAt = diamonds >= 20 ? null : diamondHourSlot(now) + DIAMOND_RECHARGE_MS
+    send(res, 200, { diamonds, nextAt, now, max: 20 })
   },
   'GET /api/me': async (req, res) => {
     const account = await currentAccount(req)
@@ -968,7 +1092,7 @@ const routes = {
   'GET /api/users': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, d.items, p.show_char, p.show_deco, p.show_house FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
+    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, f.weapon AS forge_weapon, f.level AS forge_level, d.items, p.show_char, p.show_deco, p.show_house FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_forge f ON f.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
     const users = rows.map(row => {
       const me = Number(row.id) === Number(account.id)
       const privacy = { char: row.show_char === null || row.show_char === undefined ? true : Boolean(row.show_char), deco: row.show_deco === null || row.show_deco === undefined ? true : Boolean(row.show_deco), house: row.show_house === null || row.show_house === undefined ? true : Boolean(row.show_house) }
@@ -976,7 +1100,7 @@ const routes = {
       const owned = me || privacy.char ? rawOwned : []
       const decos = me || privacy.deco ? Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {})) : []
       const featured = row.featured && rawOwned.includes(row.featured) ? row.featured : (rawOwned[0] || null)
-      return { nickname: row.nickname, owned, decos, featured, me, privacy }
+      return { nickname: row.nickname, owned, decos, featured, me, privacy, weapon: row.forge_weapon || null, weaponLevel: row.forge_weapon ? Number(row.forge_level) : null }
     })
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
@@ -1147,6 +1271,9 @@ const routes = {
     const body = await readJson(req)
     const message = typeof body.message === 'string' ? body.message.trim() : ''
     const coins = Number(body.coins)
+    const diamonds = Number(body.diamonds ?? 0)
+    const fragments = Number(body.fragments ?? 0)
+    if (![diamonds, fragments].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 1000000)) return send(res, 400, { error: 'invalid_broadcast' })
     if (!message || message.length > 200 || !Number.isSafeInteger(coins) || coins < 0 || coins > 1000000) {
       return send(res, 400, { error: 'invalid_broadcast' })
     }
@@ -1159,7 +1286,7 @@ const routes = {
       if (count > 10000) { await conn.rollback(); return send(res, 400, { error: 'too_many_recipients' }) }
       const now = Date.now()
       for (const recipient of recipients) {
-        await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?)', [account.id, recipient.id, message, coins, checkInDay(), now])
+        await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, diamonds, fragments, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [account.id, recipient.id, message, coins, diamonds, fragments, checkInDay(), now])
         await trimInbox(conn, recipient.id)
       }
       await trimSent(conn, account.id)
@@ -1168,7 +1295,7 @@ const routes = {
       await conn.rollback().catch(() => {})
       throw error
     } finally { conn.release() }
-    send(res, 200, { count, coins })
+    send(res, 200, { count, coins, diamonds, fragments })
   },
   'POST /api/mail/claim': async (req, res) => {
     const account = await currentAccount(req)
@@ -1180,14 +1307,16 @@ const routes = {
       await conn.beginTransaction()
       const [rows] = await conn.query(
         id == null
-          ? 'SELECT id, coins FROM gm_mail WHERE to_id = ? AND claimed = 0 AND coins > 0 AND to_deleted = 0 FOR UPDATE'
-          : 'SELECT id, coins FROM gm_mail WHERE to_id = ? AND claimed = 0 AND coins > 0 AND to_deleted = 0 AND id = ? FOR UPDATE',
+          ? 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 FOR UPDATE'
+          : 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 AND id = ? FOR UPDATE',
         id == null ? [account.id] : [account.id, Number(id)],
       )
       total = rows.reduce((sum, row) => sum + Number(row.coins), 0)
+      const diamondTotal = rows.reduce((sum, row) => sum + Number(row.diamonds), 0)
+      const fragmentTotal = rows.reduce((sum, row) => sum + Number(row.fragments), 0)
       if (rows.length) {
         await conn.query(`UPDATE gm_mail SET claimed = 1, seen = 1 WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(row => row.id))
-        await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [total, account.id])
+        await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [total, diamondTotal, fragmentTotal, account.id])
       }
       await conn.commit()
     } catch (error) {
@@ -1221,6 +1350,7 @@ const routes = {
   'POST /api/claw/refresh': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
+    await rechargeDiamonds(account.id)
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
@@ -1238,6 +1368,7 @@ const routes = {
   'POST /api/claw/play': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
+    await rechargeDiamonds(account.id)
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
@@ -1293,7 +1424,7 @@ const routes = {
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-      const [saves] = await conn.query('SELECT gems, diamonds, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const [saves] = await conn.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
       const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
       const decos = rows[0] ? normalizeDecos(parseJson(rows[0].items)) : {}
@@ -1331,12 +1462,12 @@ const routes = {
         const [r] = await conn.query('UPDATE gm_mail SET from_deleted = 1 WHERE id = ? AND from_id = ? AND from_deleted = 0', [id, account.id])
         return r.affectedRows ? { claimed: 0 } : { error: 'mail_not_found' }
       }
-      const [rows] = await conn.query('SELECT coins, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
+      const [rows] = await conn.query('SELECT coins, diamonds, fragments, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
       if (!rows[0]) return { error: 'mail_not_found' }
       // Deleting a letter never loses its coins: unclaimed coins are received first.
       const claimed = rows[0].claimed ? 0 : Number(rows[0].coins)
       await conn.query('UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id = ?', [id])
-      if (claimed > 0) await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [claimed, account.id])
+      if (!rows[0].claimed) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [claimed, Number(rows[0].diamonds), Number(rows[0].fragments), account.id])
       return { claimed }
     })
     if (outcome.error) return send(res, 404, { error: outcome.error })

@@ -53,9 +53,9 @@ export function battleFieldMarkup(): string {
       <span class="bf-hit">-10</span>
     </div>
     <span class="bf-spark" aria-hidden="true">✦</span>
-    <div class="bf-unit bf-friend bf-friend-second is-empty"><div class="bf-bar bf-friend-bar"><i class="bf-bar-icon bf-friend-icon"></i><span class="bf-bar-track"><b class="bf-friend-fill"></b></span><em class="bf-friend-power"></em></div><div class="bf-body bf-friend-body"></div></div>
+    <div class="bf-unit bf-friend bf-friend-second is-empty"><div class="bf-friend-label"><span class="bf-friend-name"></span><em class="bf-friend-power"></em></div><div class="bf-body bf-friend-body"></div></div>
     <div class="bf-unit bf-friend is-empty">
-      <div class="bf-bar bf-friend-bar"><i class="bf-bar-icon bf-friend-icon"></i><span class="bf-bar-track"><b class="bf-friend-fill"></b></span><em class="bf-friend-power"></em></div>
+      <div class="bf-friend-label"><span class="bf-friend-name"></span><em class="bf-friend-power"></em></div>
       <div class="bf-body bf-friend-body"></div>
     </div>`
 }
