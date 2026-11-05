@@ -691,17 +691,17 @@ const rpsSlot = () => {
   const now = Date.now() + 9 * 3600000
   return `${new Date(now).toISOString().slice(0,10)}-${Math.floor((now % 86400000) / 10800000)}`
 }
+const emptyRps = () => ({slot:'',stage:1,phase:'none',choice:'',deadline:0,result:'',opponent:''})
 async function rpsRow(db,id,lock=false) {
-  const sql=`SELECT * FROM gm_rps WHERE account_id = ?${lock?' FOR UPDATE':''}`
-  let [rows]=await db.query(sql,[id])
-  if(rows.length)return rows[0]
-  await db.query('INSERT IGNORE INTO gm_rps (account_id) VALUES (?)',[id])
-  ;[rows]=await db.query(sql,[id])
-  return rows[0]
+  const [rows]=await db.query(`SELECT * FROM gm_rps WHERE account_id=?${lock?' FOR UPDATE':''}`,[id])
+  return rows[0] || emptyRps()
 }
 async function rpsTransaction(id, callback) {
   const conn=await pool.getConnection()
   try {
+    // Create missing row before opening a transaction. A locking read of an
+    // absent row followed by INSERT IGNORE can deadlock with concurrent reads.
+    await conn.query('INSERT IGNORE INTO gm_rps (account_id) VALUES (?)',[id])
     await conn.beginTransaction()
     const row=await rpsRow(conn,id,true)
     const result=await callback(conn,row)

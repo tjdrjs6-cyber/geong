@@ -130,7 +130,8 @@ export class GachaUi {
     if (screen === 'expedition') {void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)}
     window.clearInterval(this.rpsTimer)
     if (screen === 'rps') {
-      this.rpsState=null
+      this.rpsState={used:false,stage:1,phase:'none',deadline:0}
+      this.renderRps()
       const message=this.root.querySelector<HTMLElement>('.rps-message')
       if(message)message.textContent='게임 상태를 확인하고 있어요…'
       void this.openRps()
@@ -1021,7 +1022,7 @@ export class GachaUi {
   }
 
   private async openRps():Promise<void> {
-    try {this.rpsState=await this.store.rps();this.renderRps()}
+    try {const state=await this.store.rps();if(this.screen!=='rps')return;this.rpsState=state;this.renderRps()}
     catch(e){
       this.handleError(e)
       const message=this.root.querySelector<HTMLElement>('.rps-message')
