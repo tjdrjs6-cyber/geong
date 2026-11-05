@@ -3046,3 +3046,16 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
  width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
  object-fit:contain!important;object-position:center!important;transform:scale(.85)!important;
 }
+
+/* v0.79: banner is not a clickable expedition entry; only its separate label is. */
+#ui .gacha-screen > .expedition-entry {cursor:default!important;pointer-events:none!important;}
+#ui .gacha-screen > .expedition-entry > .expedition-banner-image {pointer-events:none!important;}
+#ui .gacha-screen > .expedition-entry > button.expedition-entry-label {
+  pointer-events:auto!important;cursor:pointer!important;appearance:none!important;
+  font-family:inherit!important;font-weight:900!important;color:inherit!important;
+  position:relative!important;overflow:visible!important;
+}
+#ui .gacha-screen > .expedition-entry > button.expedition-entry-label > .expedition-entry-dot:not([hidden]) {
+  display:block!important;position:absolute!important;left:auto!important;right:-11px!important;top:-5px!important;
+  width:12px!important;height:12px!important;z-index:10!important;
+}
