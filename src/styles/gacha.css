@@ -3135,3 +3135,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen > .top-rewards > .rps-lobby-tab b {font-size:10px!important;line-height:1.2!important;}
 .gacha-screen > .top-rewards > .rps-lobby-tab .rps-lobby-status {font-size:8px!important;line-height:1.2!important;display:block!important;}
 .gacha-screen > .top-rewards > .rps-lobby-tab.is-used {background:#e6e6e6!important;border-color:#c9c9c9!important;color:#777!important;filter:grayscale(1);}
+
+/* v0.85: dedicated RPS layout, no inherited header title collisions. */
+#ui .rps-screen .weed-header {display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;padding:10px 12px!important;min-height:56px!important;box-sizing:border-box!important;}
+#ui .rps-screen .weed-header .weed-back {position:static!important;transform:none!important;inset:auto!important;white-space:nowrap!important;padding:7px 10px!important;font-size:12px!important;}
+#ui .rps-screen .weed-header > b {position:static!important;transform:none!important;inset:auto!important;text-align:center!important;font-size:clamp(14px,3.8vw,20px)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.25!important;}
+#ui .rps-screen .weed-header > small {position:static!important;transform:none!important;inset:auto!important;font-size:10px!important;white-space:nowrap!important;}
+#ui .rps-scene {background:linear-gradient(180deg,#a4d8ff 0%,#c2e7ff 45%,#c9e99d 46%,#e1f4a7 100%);}
+#ui .rps-scene .rps-chiikawa {width:min(74vw,320px)!important;height:min(41vh,340px)!important;max-width:90%!important;object-fit:contain!important;filter:drop-shadow(0 5px 3px #65844b35)!important;}
+#ui .rps-choice-row button {min-height:95px!important;}
+#ui .rps-choice-row button img {display:block;width:80%!important;max-width:94px!important;height:62px!important;object-fit:contain!important;}
+#ui .rps-choice-row button span {display:none!important;}
+@media(max-width:390px){#ui .rps-screen .weed-header{gap:4px!important;padding:8px 6px!important;}#ui .rps-screen .weed-header>small{font-size:9px!important;}#ui .rps-scene .rps-chiikawa{height:min(38vh,280px)!important;}}

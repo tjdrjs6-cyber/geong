@@ -262,17 +262,17 @@ export class GachaUi {
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="rps-screen" data-screen="rps" aria-hidden="true">
-        <header class="weed-header"><button class="weed-back" data-action="close">← 로비로</button><b>치이카와 가위바위보</b><small>3시간마다 1회</small></header>
+        <header class="weed-header"><button class="weed-back" data-action="close">← 로비로</button><b>모몽가와 가위바위보</b><small>3시간마다 1회</small></header>
         <div class="rps-scene">
           <h2>나랑 가위바위보 하자!</h2>
           <div class="rps-stage-label">1단계 · 10코인</div>
-          <img class="rps-chiikawa" src="/assets/chars/chiikawa.png" alt="치이카와"/>
+          <img class="rps-chiikawa" src="/rps_momonga.png" alt="모몽가"/>
           <p class="rps-message">가위바위보를 시작해 보세요!</p>
           <strong class="rps-countdown"></strong>
           <div class="rps-choice-row">
-            <button data-action="rps-move" data-move="rock"><span>✊</span>바위</button>
-            <button data-action="rps-move" data-move="scissors"><span>✌️</span>가위</button>
-            <button data-action="rps-move" data-move="paper"><span>✋</span>보</button>
+            <button data-action="rps-move" data-move="rock"><img src="/rps_rock.png" alt=""/>바위</button>
+            <button data-action="rps-move" data-move="scissors"><img src="/rps_scissors.png" alt=""/>가위</button>
+            <button data-action="rps-move" data-move="paper"><img src="/rps_paper.png" alt=""/>보</button>
           </div>
           <div class="rps-decision">
             <button data-action="rps-start">도전 시작!</button>
@@ -1016,7 +1016,11 @@ export class GachaUi {
 
   private async openRps():Promise<void> {
     try {this.rpsState=await this.store.rps();this.renderRps()}
-    catch(e){this.handleError(e)}
+    catch(e){
+      this.handleError(e)
+      const message=this.root.querySelector<HTMLElement>('.rps-message')
+      if(message)message.textContent='서버 연결을 확인해 주세요. 로비로 돌아갔다 다시 시도할 수 있어요.'
+    }
   }
   private async rpsAction(action:'start'|'next'|'claim'|'choose',move=''):Promise<void> {
     if(this.rpsResolving)return
@@ -1028,7 +1032,12 @@ export class GachaUi {
       this.rpsState=state
       this.renderRps()
       if(action==='claim'){this.renderWallet();void this.refreshRpsBadge()}
-    }catch(e){this.handleError(e);void this.openRps()}
+    }catch(e){
+      this.handleError(e)
+      const message=this.root.querySelector<HTMLElement>('.rps-message')
+      if(message)message.textContent='게임 연결에 실패했어요. 잠시 후 다시 눌러주세요.'
+      void this.openRps()
+    }
     finally {this.rpsResolving=false}
   }
   private async tickRps():Promise<void> {
@@ -1068,15 +1077,15 @@ export class GachaUi {
     if(countdown)countdown.textContent=''
     const names:Record<string,string>={rock:'바위',scissors:'가위',paper:'보'}
     if(msg)msg.textContent=state.phase==='choosing'?'5초 안에 가위·바위·보를 골라주세요!':
-      state.phase==='waiting'?'선택 완료! 치이카와의 선택을 기다려요…':
+      state.phase==='waiting'?'선택 완료! 모몽가의 선택을 기다려요…':
       state.phase==='draw'?`둘 다 ${names[state.opponent]||''}! 비겼어요. 다시 도전!`:
-      state.phase==='won'?`치이카와는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
-      state.phase==='lost'?`치이카와는 ${names[state.opponent]||''}! 치이카와가 이겼습니다. 보상은 모두 사라졌어요.`:
+      state.phase==='won'?`모몽가는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
+      state.phase==='lost'?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다. 보상은 모두 사라졌어요.`:
       state.phase==='claimed'?`보상 ${state.coins||rewards[(state.stage||1)-1]}코인을 받았어요!`:
-      state.used?'이번 3시간 도전은 완료했어요. 다음 정각에 만나요!':'치이카와와 가위바위보를 시작해요!'
+      state.used?'이번 3시간 도전은 완료했어요. 다음 정각에 만나요!':'모몽가와 가위바위보를 시작해요!'
     if(state.phase==='won'&&state.stage===5&&claim){claim.hidden=false;claim.textContent='200코인 받기'}
     else if(claim)claim.textContent='코인 받고 그만하기'
-    void this.refreshRpsBadge()
+    if(this.screen==='title')void this.refreshRpsBadge()
   }
 
   private renderWallet(): void {
