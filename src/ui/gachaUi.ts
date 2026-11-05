@@ -1,3 +1,7 @@
+// Enhancement aura tiers are visual-only and never affect weapon stats.
+function weaponAuraClass(level: number): string {
+  return level >= 20 ? 'aura-20' : level >= 17 ? 'aura-17' : level >= 15 ? 'aura-15' : level >= 13 ? 'aura-13' : level >= 10 ? 'aura-10' : ''
+}
 import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'
 import { BATTLE_TICK_MS, ENEMY_HP, battlePower, CHARACTERS, DAILY_GIFT, NEW_ENTRY_BONUS, RARE_NEW_BONUS, PULL_OPTIONS, characterById, fullName, type Character, pullCost, STARTING_COINS, ROULETTE_PRIZES, type CharacterId, type PullCount, type PullResult } from '../game/collection'
@@ -429,6 +433,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button></div>
+          <button class="modal-primary storage-bulk-sell" data-action="storage-bulk-sell" disabled>🪙 중복 일괄 판매</button>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -484,7 +489,15 @@ export class GachaUi {
     }
     const level=forge.level
     const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5][level]
-    body.innerHTML=`<div class="forge-current"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+    body.innerHTML=`<div class="forge-current"><span class="forge-aura ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"></span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+  }
+
+  private playForgeSound(kind: 'working' | 'success' | 'failure'): void {
+    try {
+      const sound = new Audio(`/assets/forge/sound_${kind}.wav`)
+      sound.volume = kind === 'working' ? 0.42 : 0.55
+      void sound.play().catch(() => {})
+    } catch { /* Audio may be unavailable or blocked by browser settings. */ }
   }
 
   private async playForgeUpgradeAnimation(success: boolean): Promise<void> {
@@ -495,9 +508,11 @@ export class GachaUi {
     overlay.setAttribute('aria-live', 'polite')
     overlay.innerHTML = `<img class="forge-animation-hammer" src="/assets/forge/upgrade_hammer.png" alt="무기를 두드리는 중"/><span class="forge-animation-caption">강화 중...</span>`
     body.appendChild(overlay)
+    this.playForgeSound('working')
     try {
       await new Promise<void>(resolve => window.setTimeout(resolve, 1050))
       if (this.screen !== 'forge') return
+      this.playForgeSound(success ? 'success' : 'failure')
       overlay.classList.add('forge-animation-result')
       overlay.innerHTML = `<img src="/assets/forge/upgrade_${success ? 'success' : 'failure'}.png" alt="${success ? '강화 성공' : '강화 실패'}"/><span class="forge-animation-caption">${success ? '강화 성공!' : '강화 실패!'}</span>`
       await new Promise<void>(resolve => window.setTimeout(resolve, 1150))
@@ -580,6 +595,7 @@ export class GachaUi {
     if (action === 'mail-tab' && button.dataset.tab) { this.mailTab = button.dataset.tab === 'sent' ? 'sent' : 'in'; if (this.lastBox) this.renderMail(this.lastBox); return }
     if (action === 'mail-delete' && button.dataset.id) { await this.deleteMail(Number(button.dataset.id), button.dataset.box === 'sent' ? 'sent' : 'in'); return }
     if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'deco' ? 'deco' : 'char'; this.renderStorage(); return }
+    if (action === 'storage-bulk-sell') { await this.sellBulk(button); return }
     if (action === 'sell' && button.dataset.id && button.dataset.kind) { await this.sell(button.dataset.kind === 'deco' ? 'deco' : 'char', button.dataset.id, Number(button.dataset.count) || 1, button); return }
     if (action === 'suggest-reply' && button.dataset.id) { await this.replySuggestion(Number(button.dataset.id)); return }
     if (action === 'suggest-delete' && button.dataset.id) { await this.deleteSuggestion(Number(button.dataset.id)); return }
@@ -1023,7 +1039,7 @@ export class GachaUi {
           await new Promise(resolve => window.setTimeout(resolve, 310))
         }
         if (!result.won) {
-          if (msg) msg.textContent = '이동 중 인형이 떨어졌어요! 멀리 있는 인형일수록 성공 확률이 높아요.'
+          if (msg) msg.textContent = '이동 중 인형이 떨어졌어요!'
           // Stop movement and place the toy immediately, without a shrinking/fading
           // drop animation that leaves a visible trail on the machine background.
           toy.style.transition = 'none'
@@ -1469,7 +1485,7 @@ export class GachaUi {
         const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
-          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
+          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><span class="forge-aura ${weaponAuraClass(user.weaponLevel??0)}"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/></span><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
           <span class="user-count">${(user.privacy?.char ?? true) || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${(user.privacy?.deco ?? true) || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
         </button>`
       }).join('')}</div>`
@@ -1789,6 +1805,14 @@ export class GachaUi {
       tab.setAttribute('aria-selected', String(on))
     })
     if (!grid) return
+    const bulkButton = this.root.querySelector<HTMLButtonElement>('.storage-bulk-sell')
+    const bulkItems = this.getBulkSellItems()
+    if (bulkButton) {
+      const count = bulkItems.reduce((sum, item) => sum + item.count, 0)
+      const coins = bulkItems.reduce((sum, item) => sum + item.count * item.price, 0)
+      bulkButton.disabled = count === 0
+      bulkButton.textContent = count ? `🪙 중복 일괄 판매 · ${count.toLocaleString('ko-KR')}개 (+${coins.toLocaleString('ko-KR')}코인)` : '🪙 중복 일괄 판매 · 판매할 중복 없음'
+    }
     const sellButtons = (kind: 'char' | 'deco', id: string, extra: number, price: number) => extra > 0
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 팔기 +${price}</button>${extra > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${extra}">모두 팔기 +${extra * price}</button>` : ''}</div>`
       : '<small class="storage-keep">중복 없음</small>'
@@ -1814,6 +1838,44 @@ export class GachaUi {
       }).join('') : '<p class="users-empty">아직 뽑은 데코가 없어요.</p>'
     }
   }
+  private getBulkSellItems(): { kind: 'char' | 'deco'; id: string; count: number; price: number }[] {
+    if (this.storageTab === 'char') return CHARACTERS.filter(c => this.store.data.owned.includes(c.id)).map(c => ({
+      kind: 'char' as const, id: c.id, count: Math.max(0, this.store.dupes[c.id] ?? 0),
+      price: CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' || c.tier === 'legendary' ? 'unique' : 'normal']
+    })).filter(item => item.count > 0)
+    const placed: Record<string, number> = {}
+    for (const piece of this.store.house.pieces) placed[piece.id] = (placed[piece.id] ?? 0) + 1
+    return DECOS.map(d => ({ kind: 'deco' as const, id: d.id,
+      count: Math.max(0, (this.store.decos[d.id] ?? 0) - Math.max(1, placed[d.id] ?? 0)), price: DECO_SELL_PRICE
+    })).filter(item => item.count > 0)
+  }
+
+  private async sellBulk(button: HTMLButtonElement): Promise<void> {
+    const items = this.getBulkSellItems()
+    if (!items.length) { this.toast('판매할 중복 아이템이 없어요.'); return }
+    const count = items.reduce((sum, item) => sum + item.count, 0)
+    const expected = items.reduce((sum, item) => sum + item.count * item.price, 0)
+    const label = this.storageTab === 'char' ? '캐릭터' : '데코'
+    if (!window.confirm(`${label} 중복 ${count.toLocaleString('ko-KR')}개를 모두 판매할까요?\n예상 획득: ${expected.toLocaleString('ko-KR')}코인\n원본과 하우스 배치 아이템은 남습니다.`)) return
+    button.disabled = true
+    let sold = 0
+    let earned = 0
+    try {
+      for (const item of items) {
+        earned += await this.store.sell(item.kind, item.id, item.count)
+        sold += item.count
+      }
+      this.audio.play('win')
+      this.toast(`${label} 중복 ${sold}개 판매 완료! +${earned.toLocaleString('ko-KR')}코인`)
+    } catch (error) {
+      this.handleError(error)
+      if (sold) this.toast(`${sold}개 판매 후 중단됐어요. 남은 중복은 다시 판매할 수 있어요.`)
+    } finally {
+      this.renderWallet()
+      this.renderStorage()
+    }
+  }
+
   private async sell(kind: 'char' | 'deco', id: string, count: number, button: HTMLButtonElement): Promise<void> {
     button.disabled = true
     try {
@@ -2027,7 +2089,7 @@ export class GachaUi {
       battleField.querySelector('.battle-weapon-strike')?.remove()
       if (fighter && this.store.forge && ['pink','blue','yellow'].includes(this.store.forge.weapon)) {
         const weapon = document.createElement('div')
-        weapon.className = 'battle-weapon-strike'
+        weapon.className = `battle-weapon-strike forge-aura ${weaponAuraClass(this.store.forge.level)}`
         weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
         weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b>`
         battleField.appendChild(weapon)
