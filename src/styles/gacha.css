@@ -3629,3 +3629,13 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* v1.71: boss only reacts on projectile contact, never independently. */
 .expedition-boss.under-attack:not(.defeated):not(.expedition-impact){animation:none!important;transform:translateX(-50%)!important}
+
+/* v1.72: compact monster HP bar and center-targeted expedition shots. */
+.battle-field .bf-enemy .bf-bar {
+  width:min(290px, 76cqw)!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  gap:6px!important;
+}
+.battle-field .bf-enemy .bf-bar-track {min-width:22px!important;}
+.expedition-projectile {transform-origin:center center!important;}
