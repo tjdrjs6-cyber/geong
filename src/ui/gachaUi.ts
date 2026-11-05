@@ -650,6 +650,13 @@ export class GachaUi {
           typeof t.x === 'number' && Number.isFinite(t.x) && t.x >= 0 && t.x <= 100 &&
           typeof t.y === 'number' && Number.isFinite(t.y) && t.y >= 0 && t.y <= 100)) {
           this.clawToys = saved as typeof this.clawToys
+          // Keep previously saved plushes off the machine's bottom decorative bezel.
+          let corrected = false
+          for (const toy of this.clawToys) {
+            const safeY = Math.max(18, Math.min(69, toy.y))
+            if (toy.y !== safeY) { toy.y = safeY; corrected = true }
+          }
+          if (corrected) this.saveClawToys()
           return
         }
       }
@@ -673,7 +680,7 @@ export class GachaUi {
       let x = 18, y = 28
       for (let attempt = 0; attempt < 80; attempt++) {
         x = 16 + Math.random() * 68
-        y = 24 + Math.random() * 57
+        y = 22 + Math.random() * 46
         if (this.clawToys.every(other => other === toy || other.id === id || Math.hypot(other.x - x, other.y - y) >= 21)) break
       }
       toy.x = x; toy.y = y
@@ -881,15 +888,17 @@ export class GachaUi {
         }
         if (!result.won) {
           if (msg) msg.textContent = '이동 중 인형이 떨어졌어요! 출구 가까이 있는 인형이 더 유리해요.'
-          toy.classList.add('is-dropped')
-          await new Promise(resolve => window.setTimeout(resolve, 450))
+          // Stop movement and place the toy immediately, without a shrinking/fading
+          // drop animation that leaves a visible trail on the machine background.
+          toy.style.transition = 'none'
+          toy.classList.remove('is-lifted', 'is-dropped')
           // A failed grab stays where it fell, including after leaving or reloading.
           const landedFraction = endStep / steps
           const landedX = startX + (exitX - startX) * landedFraction
-          const landedY = startY + (exitY - startY) * landedFraction + gripOffsetY
+          const landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY))
           if (originalToy) {
             originalToy.x = Math.max(10, Math.min(90, landedX))
-            originalToy.y = Math.max(10, Math.min(90, landedY))
+            originalToy.y = landedY
             this.saveClawToys()
           }
           toy.classList.remove('is-lifted', 'is-dropped')
@@ -897,7 +906,8 @@ export class GachaUi {
           toy.style.left = `${landedX}%`
           toy.style.top = `${landedY}%`
           void toy.offsetWidth
-          toy.style.removeProperty('transition')
+          // Do not restore the old transition: it can animate from the dropped
+          // coordinates to the saved position and leave a ghost/trail.
         }
       }
       if (result.won && result.prize) {

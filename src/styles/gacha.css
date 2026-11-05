@@ -2933,3 +2933,17 @@ html body > #geongi-version {
   transform:translateY(-10px) !important;
   animation:none !important;
 }
+
+/* v0.69: no drop ghosting or image smear; plushes never cover bottom bezel. */
+.gacha-modal.claw-screen .claw-single-toy,
+.gacha-modal.claw-screen .claw-single-toy.is-dropped {
+  filter:none!important;
+  box-shadow:none!important;
+  opacity:1!important;
+  transform:translate(-50%,-50%)!important;
+  backface-visibility:hidden;
+}
+.gacha-modal.claw-screen .claw-single-toy:not(.is-lifted) {
+  transition:none!important;
+  will-change:auto!important;
+}
