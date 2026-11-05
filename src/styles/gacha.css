@@ -3165,3 +3165,9 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .rps-screen .rps-decision {flex:0 0 auto;margin-bottom:8px;}
 #ui .rps-screen .rps-decision button {padding:10px 13px;font-size:14px;}
 @media(max-height:670px){#ui .rps-screen .rps-scene .rps-chiikawa{height:140px!important;max-height:140px!important;}#ui .rps-screen .rps-choice-row button{min-height:60px!important;}#ui .rps-screen .rps-choice-row button img{height:33px!important;}}
+
+/* v0.92: RPS was visible but completely non-interactive because #ui uses
+   pointer-events:none. Explicitly opt the standalone RPS screen back in. */
+#ui .rps-screen.is-active { pointer-events:auto!important; }
+#ui .rps-screen.is-active button { pointer-events:auto!important; touch-action:manipulation; }
+#ui .rps-screen:not(.is-active) { pointer-events:none!important; }
