@@ -796,8 +796,8 @@ const routes = {
       const level=Number(rows[0].level)
       if(level>=20){await conn.rollback();return send(res,409,{error:'forge_max'})}
       const fragments=level+1, coins=(level+1)*5
-      if(!saves.length || Number(saves[0].fragments)<fragments){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
-      if(Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
+      if(!saves.length || (!rpsAdmin(account) && Number(saves[0].fragments)<fragments)){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
+      if(!rpsAdmin(account) && Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
       // Settle battle damage with the OLD bonus before raising weapon level.
       const [battles]=await conn.query('SELECT character_id,second_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
       let earned=0
@@ -809,7 +809,7 @@ const routes = {
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
       }
       const success=randomInt(100)<FORGE_CHANCES[level]
-      await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[coins,fragments,earned,account.id])
+      await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[rpsAdmin(account)?0:coins,rpsAdmin(account)?0:fragments,earned,account.id])
       if(success) await conn.query('UPDATE gm_forge SET level=level+1 WHERE account_id=?',[account.id])
       await conn.commit()
       const newLevel=level+(success?1:0)

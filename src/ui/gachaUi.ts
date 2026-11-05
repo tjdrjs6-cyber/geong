@@ -300,7 +300,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><button class="nav-button nav-forge" data-action="forge"><span class="chiikawa-tab-icon">🔨</span>대장간</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><button class="nav-button nav-forge" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -467,14 +467,31 @@ export class GachaUi {
     const body=this.root.querySelector<HTMLElement>('.forge-body')
     if(!body)return
     const forge=this.store.forge
-    const names={pink:'분홍 토벌봉',blue:'파랑 토벌봉',yellow:'우사기 토벌봉'}
+    const names={pink:'치이카와 토벌봉',blue:'하치와레 토벌봉',yellow:'우사기 토벌봉'}
     if(!forge){
       body.innerHTML=`<p class="forge-warning">무기는 계정당 하나만 선택할 수 있으며, 선택 후 영구적으로 변경할 수 없어요!</p><div class="forge-weapons">${(['pink','blue','yellow'] as const).map(key=>`<button data-action="forge-select" data-weapon="${key}"><img src="/assets/forge/${key}.png" alt="${names[key]}"><b>${names[key]}</b><small>선택하기</small></button>`).join('')}</div>`
       return
     }
     const level=forge.level
     const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5][level]
-    body.innerHTML=`<div class="forge-current"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 공격력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p>강화파편 <b>${level+1}개</b> + 코인 <b>${(level+1)*5}개</b></p><p>보유: <img src="/assets/enhancement_fragment.png" alt=""/> ${(this.store.data.fragments??0).toLocaleString()}개 · 🪙 ${this.store.data.gems.toLocaleString()}개</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+    body.innerHTML=`<div class="forge-current"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+  }
+
+  private async playForgeUpgradeAnimation(success: boolean): Promise<void> {
+    const body = this.root.querySelector<HTMLElement>('.forge-body')
+    if (!body) return
+    const overlay = document.createElement('div')
+    overlay.className = 'forge-animation-overlay'
+    overlay.setAttribute('aria-live', 'polite')
+    overlay.innerHTML = `<img class="forge-animation-hammer" src="/assets/forge/upgrade_hammer.png" alt="무기를 두드리는 중"/><span class="forge-animation-caption">강화 중...</span>`
+    body.appendChild(overlay)
+    try {
+      await new Promise<void>(resolve => window.setTimeout(resolve, 1050))
+      if (this.screen !== 'forge') return
+      overlay.classList.add('forge-animation-result')
+      overlay.innerHTML = `<img src="/assets/forge/upgrade_${success ? 'success' : 'failure'}.png" alt="${success ? '강화 성공' : '강화 실패'}"/><span class="forge-animation-caption">${success ? '강화 성공!' : '강화 실패!'}</span>`
+      await new Promise<void>(resolve => window.setTimeout(resolve, 1150))
+    } finally { overlay.remove() }
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
@@ -501,9 +518,21 @@ export class GachaUi {
     }
     if (action === 'forge-upgrade') {
       if(this.busy)return
+      const currentLevel=this.store.forge?.level
+      if(currentLevel===undefined)return
+      if(currentLevel<20 && (!this.isForgeOperator && ((this.store.data.fragments??0)<currentLevel+1 || this.store.data.gems<(currentLevel+1)*5))){this.showForgeInsufficient();return}
       this.busy=true
-      try{const success=await this.store.upgradeForge();this.toast(success?'✨ 강화 성공! 공격력이 올랐어요!':'강화 실패! 강화 단계는 유지돼요.');this.renderForge();this.renderWallet();this.renderBattleStatus()}
-      catch(e){this.handleError(e)}finally{this.busy=false}
+      try {
+        const success = await this.store.upgradeForge()
+        if (this.screen === 'forge') await this.playForgeUpgradeAnimation(success)
+        this.renderForge()
+        this.renderWallet()
+        this.renderBattleStatus()
+        this.toast(success ? '✨ 강화 성공! 전투력이 올랐어요!' : '강화 실패! 강화 단계는 유지돼요.')
+      } catch(e) {
+        if(e instanceof RequestError && ['forge_no_fragments','not_enough_coins'].includes(e.code)) this.showForgeInsufficient()
+        else this.handleError(e)
+      } finally { this.busy=false }
       return
     }
     if (action === 'claw') { this.show('claw'); return }
@@ -719,6 +748,7 @@ export class GachaUi {
 
   /** Operator accounts have unlimited coins (the server never charges them). */
   private get isAdmin(): boolean { return Boolean(this.store.user?.admin) }
+  private get isForgeOperator(): boolean { return this.store.user?.username === 'tjdrjs885' }
 
   private get clawStorageKey(): string { return `geongi-claw-v1-${this.store.user?.username ?? 'guest'}` }
 
@@ -1171,7 +1201,7 @@ export class GachaUi {
     }
     if(['choosing','waiting'].includes(state.phase)) {
       const remain=Math.max(0,state.deadline-Date.now())
-      if(countdown)countdown.textContent=`${(remain/1000).toFixed(1)}초`
+      if(countdown)countdown.textContent=`${Math.ceil(remain/1000)}초`
       if(remain===0&&!this.rpsResolving){
         this.rpsResolving=true
         try{this.rpsState=await this.store.rpsResolve();if(this.rpsState.phase==='claimed'){await this.store.restore();this.renderWallet()}this.renderRps()}
@@ -1543,7 +1573,7 @@ export class GachaUi {
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party){const html=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px">${m.weapon && ['pink','blue','yellow'].includes(m.weapon) ? `<span class="forge-weapon-tag"><img src="/assets/forge/${m.weapon}.png" alt="장착 무기"/><b>+${Number(m.weaponLevel)||0}</b></span>` : ''}<span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    if(party){const html=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px">${m.weapon && ['pink','blue','yellow'].includes(m.weapon) ? `<span class="forge-weapon-tag"><img src="/assets/forge/badge_${m.weapon}.png" alt="장착 무기"/><b>+${Number(m.weaponLevel)||0}</b></span>` : ''}<span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
     if(picker){const html=hp===0?'보스가 처치됐어요. 📬 우편함에서 500코인 보상을 수령해 주세요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
@@ -1898,7 +1928,7 @@ export class GachaUi {
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
       const icon = secondUnit.querySelector<HTMLElement>('.bf-friend-icon')
       const power = secondUnit.querySelector<HTMLElement>('.bf-friend-power')
-      if (body) body.innerHTML = second ? `${this.store.forge ? `<span class="forge-weapon-tag"><img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
+      if (body) body.innerHTML = second ? `${this.store.forge ? `<span class="forge-weapon-tag"><img src="/assets/forge/badge_${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
       if (icon) icon.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="" />` : ''
       if (power) power.textContent = second ? `⚔ ${battlePower(second.id)}` : ''
     }
@@ -1908,7 +1938,7 @@ export class GachaUi {
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
       const icon = unit.querySelector<HTMLElement>('.bf-friend-icon')
       const power = unit.querySelector<HTMLElement>('.bf-friend-power')
-      if (body) body.innerHTML = fighter ? `${this.store.forge ? `<span class="forge-weapon-tag"><img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `${this.store.forge ? `<span class="forge-weapon-tag"><img src="/assets/forge/badge_${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
       if (icon) icon.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="" />` : ''
       if (power) power.textContent = fighter ? `⚔ ${battlePower(fighter.id)}` : ''
     }
@@ -1938,7 +1968,7 @@ export class GachaUi {
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
     if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
-    if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 합산 공격력 ⚔ ${view.power} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
+    if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 합산 전투력 ⚔ ${view.power} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
     const hp = this.root.querySelector<HTMLElement>('.battle-hp')
     if (hp) hp.textContent = `${view.hp} / ${ENEMY_HP}`
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
@@ -2194,11 +2224,29 @@ export class GachaUi {
     }
   }
 
+  private showForgeInsufficient(): void {
+    const overlay=this.root.querySelector<HTMLElement>('.insufficient-overlay')
+    const title=this.root.querySelector<HTMLElement>('#insufficient-title')
+    const message=this.root.querySelector<HTMLElement>('#insufficient-message')
+    const icon=this.root.querySelector<HTMLImageElement>('.insufficient-icon')
+    if(!overlay||!title||!message)return
+    title.textContent='재화가 부족합니다'
+    const level=this.store.forge?.level??0
+    message.textContent=`강화에는 강화파편 ${level+1}개와 코인 ${(level+1)*5}개가 필요합니다. 현재 강화파편 ${this.isForgeOperator?'무제한':(this.store.data.fragments??0).toLocaleString()+'개'}, 코인 ${this.store.data.gems.toLocaleString()}개를 보유 중입니다.`
+    if(icon)icon.src='/assets/enhancement_fragment.png'
+    overlay.hidden=false
+    this.root.querySelector<HTMLButtonElement>('.insufficient-close')?.focus()
+  }
+
   private showInsufficient(cost?: number): void {
     const overlay = this.root.querySelector<HTMLElement>('.insufficient-overlay')
     const message = this.root.querySelector<HTMLElement>('#insufficient-message')
     if (!overlay || !message) return
     const have = this.store.data.gems
+    const title=this.root.querySelector<HTMLElement>('#insufficient-title')
+    if(title)title.textContent='코인이 부족해요!'
+    const icon=this.root.querySelector<HTMLImageElement>('.insufficient-icon')
+    if(icon)icon.src='/assets/coin.png'
     message.textContent = cost === undefined
       ? `현재 ${have.toLocaleString('ko-KR')}코인을 보유 중이에요. 제초장이나 출석 체크에서 코인을 모아보세요!`
       : `뽑기에 ${cost.toLocaleString('ko-KR')}코인이 필요하지만 현재 ${have.toLocaleString('ko-KR')}코인이 있어요. 제초장이나 출석 체크에서 코인을 모아보세요!`
