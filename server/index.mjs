@@ -1253,17 +1253,24 @@ const routes = {
       const x = Math.max(0, Math.min(100, Number(body.x) || 0))
       const y = Math.max(0, Math.min(100, Number(body.y) || 0))
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
-      // Increasing final win chance with distance from the chute.
-      // This is one server-side roll per pickup, not one roll per travel step.
-      // Farther bands beyond 8 retain the 40% cap.
-      const bandChances = [0, .30, .40, .50, .60, .70, .80, .85, .90]
-      const probability = bandChances[Math.min(segments, 8)]
-      const won = aligned === true && randomInt(1000000) < Math.round(probability * 1000000)
-      // Failed grabs release the plush at a random point along the trip.
-      // Failed pickups more often release near the start or midpoint.
-      const dropAt = aligned === true && !won
-        ? Math.max(1, Math.min(Math.max(1, segments - 1), Math.ceil((Math.random() ** 1.6) * segments))) : -1
-      const chance = aligned === true ? Math.round(probability * 100) : 0
+      // Each travel interval has its own independent survival roll.
+      // The interval nearest the chute is band 1; farther intervals are
+      // progressively easier, using the raised v1.15 probabilities.
+      const bandChances = [0, .65, .70, .75, .80, .83, .86, .90, .93]
+      let won = aligned === true
+      let dropAt = -1
+      let chanceProduct = 1
+      for (let step = 1; step <= segments; step++) {
+        const remainingBand = segments - step + 1
+        const probability = bandChances[Math.min(remainingBand, 8)]
+        chanceProduct *= probability
+        if (won && randomInt(1000000) >= Math.round(probability * 1000000)) {
+          won = false
+          dropAt = step
+        }
+      }
+      // chance is the full-trip probability, not an individual interval's.
+      const chance = aligned === true ? Math.round(chanceProduct * 10000) / 100 : 0
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
       if (prize) {

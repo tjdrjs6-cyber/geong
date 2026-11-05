@@ -781,8 +781,9 @@ export class GachaUi {
     toy.style.removeProperty('transition')
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
     if (arm) { arm.classList.remove('is-dropping'); arm.style.removeProperty('transition') }
+    // Do not move the arm here: successful deliveries already finish at the chute.
+    // Moving to stale this.clawX/Y caused a phantom empty-claw grab after reward.
     this.setClawClosed(false)
-    this.updateClawPosition()
   }
 
   private renderClaw(): void {
@@ -1038,10 +1039,19 @@ export class GachaUi {
       if (!wonToy && clawArm) await new Promise(resolve => window.setTimeout(resolve, 230))
       this.resetClawToExit()
       if (clawArm) {
-        clawArm.style.transition = 'left .45s ease-in-out, top .45s ease-in-out'
-        this.updateClawPosition()
-        await new Promise(resolve => window.setTimeout(resolve, 470))
-        clawArm.style.removeProperty('transition')
+        if (wonToy) {
+          // Successful pickup is already at the chute; never replay an empty
+          // return/grab animation after the prize has been awarded.
+          clawArm.style.transition = 'none'
+          this.updateClawPosition()
+          void clawArm.offsetWidth
+          clawArm.style.removeProperty('transition')
+        } else {
+          clawArm.style.transition = 'left .45s ease-in-out, top .45s ease-in-out'
+          this.updateClawPosition()
+          await new Promise(resolve => window.setTimeout(resolve, 470))
+          clawArm.style.removeProperty('transition')
+        }
       }
       this.setClawClosed(false)
       this.clawTargetId = null
