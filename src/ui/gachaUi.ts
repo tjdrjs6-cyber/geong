@@ -262,7 +262,7 @@ export class GachaUi {
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="rps-screen" data-screen="rps" aria-hidden="true">
-        <header class="weed-header"><button class="weed-back" data-action="close">← 로비로</button><b>모몽가와 가위바위보</b><small>3시간마다 1회</small></header>
+        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><span>3시간마다 1회</span></header>
         <div class="rps-scene">
           <h2>나랑 가위바위보 하자!</h2>
           <div class="rps-stage-label">1단계 · 10코인</div>
@@ -1025,6 +1025,8 @@ export class GachaUi {
   private async rpsAction(action:'start'|'next'|'claim'|'choose',move=''):Promise<void> {
     if(this.rpsResolving)return
     this.rpsResolving=true
+    const startButton=this.root.querySelector<HTMLButtonElement>('[data-action="rps-start"]')
+    if(startButton&&action==='start'){startButton.disabled=true;startButton.textContent='연결 중…'}
     try {
       const state=action==='start'?await this.store.rpsStart():
         action==='next'?await this.store.rpsNext():
@@ -1035,10 +1037,10 @@ export class GachaUi {
     }catch(e){
       this.handleError(e)
       const message=this.root.querySelector<HTMLElement>('.rps-message')
-      if(message)message.textContent='게임 연결에 실패했어요. 잠시 후 다시 눌러주세요.'
-      void this.openRps()
+      if(message)message.textContent=`도전을 시작하지 못했어요 (${error instanceof Error?error.message:'연결 오류'}). 잠시 후 다시 시도해 주세요.`
+      // Do not immediately refetch: it can overwrite the actionable error and appear frozen.
     }
-    finally {this.rpsResolving=false}
+    finally {this.rpsResolving=false;if(startButton){startButton.disabled=false;startButton.textContent='도전 시작!'}}
   }
   private async tickRps():Promise<void> {
     if(this.screen!=='rps'||!this.rpsState)return

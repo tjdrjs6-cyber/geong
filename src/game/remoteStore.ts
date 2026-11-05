@@ -249,8 +249,19 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
+  private async rpsRequest(path:string,body:object):Promise<RpsState> {
+    const controller=new AbortController()
+    const timeout=setTimeout(()=>controller.abort(),10000)
+    try {
+      const response=await fetch(`/api/${path}`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal})
+      const result=await response.json().catch(()=>({error:'invalid_response'})) as RpsState & {error?:string}
+      if(!response.ok)throw new RequestError(result.error||`http_${response.status}`)
+      return result
+    }catch(error){if(error instanceof RequestError)throw error;throw new RequestError('network_timeout')}
+    finally{clearTimeout(timeout)}
+  }
   async rps():Promise<RpsState> {return request<RpsState>('rps')}
-  async rpsStart():Promise<RpsState> {return request<RpsState>('rps/start',{})}
+  async rpsStart():Promise<RpsState> {return this.rpsRequest('rps/start',{})}
   async rpsChoose(move:string):Promise<RpsState> {return request<RpsState>('rps/choose',{move})}
   async rpsResolve():Promise<RpsState> {return request<RpsState>('rps/resolve',{})}
   async rpsNext():Promise<RpsState> {return request<RpsState>('rps/next',{})}

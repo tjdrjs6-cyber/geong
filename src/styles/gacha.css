@@ -3147,3 +3147,21 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .rps-choice-row button img {display:block;width:80%!important;max-width:94px!important;height:62px!important;object-fit:contain!important;}
 #ui .rps-choice-row button span {display:none!important;}
 @media(max-width:390px){#ui .rps-screen .weed-header{gap:4px!important;padding:8px 6px!important;}#ui .rps-screen .weed-header>small{font-size:9px!important;}#ui .rps-scene .rps-chiikawa{height:min(38vh,280px)!important;}}
+
+/* v0.86: single-line header, compact mobile-safe RPS layout */
+#ui .rps-screen {height:100%;min-height:0;overflow:hidden;}
+#ui .rps-screen .rps-header {flex:0 0 42px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 12px;box-sizing:border-box;background:#b0dbff;}
+#ui .rps-screen .rps-header .rps-back {font-size:13px;font-weight:700;border:1px solid #dcc9b7;border-radius:18px;padding:7px 12px;background:#fff;color:#694a42;}
+#ui .rps-screen .rps-header span {font-size:11px;color:#654d49;white-space:nowrap;}
+#ui .rps-screen .rps-scene {display:flex;flex:1 1 0;min-height:0;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;gap:clamp(7px,1.4vh,15px);padding:12px 12px 22px;}
+#ui .rps-screen .rps-scene h2 {font-size:clamp(17px,5vw,23px);flex:0 0 auto;margin:2px 0;white-space:normal;}
+#ui .rps-screen .rps-stage-label {flex:0 0 auto;font-size:15px;padding:5px 17px;}
+#ui .rps-screen .rps-scene .rps-chiikawa {width:min(68vw,290px)!important;height:clamp(150px,30vh,280px)!important;max-height:30vh!important;flex:0 0 auto;}
+#ui .rps-screen .rps-message {flex:0 0 auto;margin:0;font-size:13px;padding:9px 12px;}
+#ui .rps-screen .rps-countdown {flex:0 0 auto;min-height:22px;font-size:20px;}
+#ui .rps-screen .rps-choice-row {flex:0 0 auto;gap:7px;}
+#ui .rps-screen .rps-choice-row button {min-height:74px!important;border-radius:17px;font-size:12px;padding:5px;}
+#ui .rps-screen .rps-choice-row button img {max-height:45px!important;height:45px!important;max-width:85%!important;}
+#ui .rps-screen .rps-decision {flex:0 0 auto;margin-bottom:8px;}
+#ui .rps-screen .rps-decision button {padding:10px 13px;font-size:14px;}
+@media(max-height:670px){#ui .rps-screen .rps-scene .rps-chiikawa{height:140px!important;max-height:140px!important;}#ui .rps-screen .rps-choice-row button{min-height:60px!important;}#ui .rps-screen .rps-choice-row button img{height:33px!important;}}
