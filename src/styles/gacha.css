@@ -3441,3 +3441,32 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .user-name-line .user-weapon-badge b{font-size:13px!important;line-height:1.15!important}
 .user-name-line .user-weapon-badge{gap:2px!important}
 @media(prefers-reduced-motion:reduce){.forge-aura.aura-20::before,.forge-aura.aura-20::after{animation:none!important;opacity:.85}}
+
+/* v151: stronger, weapon-centered +20 star glints */
+.forge-aura.aura-20>img{
+  animation:forge-aura-breathe-20 1.8s ease-in-out infinite!important;
+}
+.forge-aura.aura-20::after{
+  content:'✦';left:38%;top:35%;right:auto;
+  font-size:clamp(12px,2.6cqw,21px);
+  color:#fffef4;
+  text-shadow:0 0 3px #fff,0 0 8px #fff,0 0 14px #ffe16c,0 0 22px #ffcf31;
+  animation:forge-glint-bright 1.15s ease-in-out infinite!important;
+}
+.forge-aura.aura-20::before{
+  content:'✦';left:66%;top:54%;
+  font-size:clamp(9px,1.9cqw,15px);
+  color:#fffdf0;
+  text-shadow:0 0 4px #fff,0 0 10px #ffe16c,0 0 17px #ffc629;
+  animation:forge-glint-bright 1.15s ease-in-out -.58s infinite!important;
+}
+@keyframes forge-glint-bright{
+  0%,100%{opacity:.25;transform:scale(.55) rotate(-20deg)}
+  40%{opacity:1;transform:scale(1.45) rotate(14deg)}
+  60%{opacity:.8;transform:scale(1.05) rotate(25deg)}
+}
+@keyframes forge-aura-breathe-20{
+  0%,100%{filter:drop-shadow(0 0 5px #ffd84c) drop-shadow(0 0 10px #ffca35)}
+  50%{filter:drop-shadow(0 0 10px #ffe66e) drop-shadow(0 0 19px #ffcc33)}
+}
+@media(prefers-reduced-motion:reduce){.forge-aura.aura-20>img,.forge-aura.aura-20::before,.forge-aura.aura-20::after{animation:none!important;opacity:1}}
