@@ -3015,3 +3015,34 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .pop-card.tier-unique .pop-grade{background:#f6e9ff;border-color:#d6a8f0;color:#9146bc;animation:geongiTierPulse 2.8s infinite}
 #ui .pop-card.tier-legendary .pop-grade{background:linear-gradient(110deg,#fff4b7,#fffef0,#ffdf73);border-color:#e7b53b;color:#936000;box-shadow:0 0 14px #f4c337a0;animation:geongiTierPulse 1.5s infinite}
 @media(prefers-reduced-motion:reduce){.collection-grid .friend-card,.result-list .result-friend,#ui .pop-card .pop-grade{animation:none!important}.collection-grid .friend-card::after,.result-list .result-friend::after{animation:none!important;display:none}}
+
+/* v0.78: the banner is decorative; only the expedition label button opens the screen. */
+#ui .gacha-screen > .expedition-entry {cursor:default!important;}
+#ui .gacha-screen > .expedition-entry > img {pointer-events:none!important;}
+#ui .gacha-screen > .expedition-entry .expedition-entry-label {cursor:pointer!important;position:relative!important;overflow:visible!important;}
+#ui .gacha-screen > .expedition-entry .expedition-entry-dot:not([hidden]) {
+ top:-5px!important;right:-12px!important;left:auto!important;display:block!important;
+ width:11px!important;height:11px!important;z-index:8!important;
+}
+/* Result list: tier label immediately before probability. */
+#ui .result-list .result-chance {display:flex;align-items:center;gap:6px;white-space:nowrap;}
+#ui .result-list .result-grade {font-size:10px;font-weight:900;padding:2px 5px;border-radius:8px;border:1px solid #e7d5cb;color:#78645e;background:#fff8f1;}
+#ui .result-list .result-grade-rare {border-color:#a8d8ec;color:#4185a2;background:#eaf8ff;}
+#ui .result-list .result-grade-epic {border-color:#f0b7a0;color:#b9653d;background:#fff0e7;}
+#ui .result-list .result-grade-unique {border-color:#d6a8f0;color:#9146bc;background:#f6e9ff;}
+#ui .result-list .result-grade-legendary {border-color:#e7b53b;color:#936000;background:#fff3bc;}
+/* Collection only: no sparkle on epic/unique, subtle shimmer on legendary. */
+#ui .collection-grid .friend-card.tier-epic,
+#ui .collection-grid .friend-card.tier-unique {animation:none!important;filter:none!important;}
+#ui .collection-grid .friend-card.tier-epic::after,
+#ui .collection-grid .friend-card.tier-unique::after {animation:none!important;display:none!important;}
+#ui .collection-grid .friend-card.tier-legendary {animation:geongiTierPulse 7s ease-in-out infinite!important;}
+#ui .collection-grid .friend-card.tier-legendary::after {animation:geongiTierShine 9s linear infinite!important;opacity:.24!important;}
+/* Standardize ODE character scale inside collection card and reveal result. */
+#ui .collection-grid .friend-card .friend-avatar img[src$="/ode.png"],
+#ui .collection-grid .friend-card .friend-avatar img[src$="/ode_prison.png"],
+#ui .result-list .result-avatar img[src$="/ode.png"],
+#ui .result-list .result-avatar img[src$="/ode_prison.png"] {
+ width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important;transform:scale(.85)!important;
+}
