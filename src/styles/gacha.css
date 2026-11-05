@@ -2927,3 +2927,9 @@ html body > #geongi-version {
   will-change:left,top;
 }
 .gacha-modal.claw-screen .claw-single-toy:not(.is-lifted) {will-change:auto;}
+
+/* v0.68: honey character artwork sits lower than the other collection portraits. */
+.collection-grid .friend-card .friend-avatar img[src*="/honey.png"] {
+  transform:translateY(-10px) !important;
+  animation:none !important;
+}
