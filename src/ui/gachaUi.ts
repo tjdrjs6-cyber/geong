@@ -783,7 +783,6 @@ export class GachaUi {
     if (arm) { arm.classList.remove('is-dropping'); arm.style.removeProperty('transition') }
     // Do not move the arm here: successful deliveries already finish at the chute.
     // Moving to stale this.clawX/Y caused a phantom empty-claw grab after reward.
-    this.setClawClosed(false)
   }
 
   private renderClaw(): void {
@@ -1012,6 +1011,9 @@ export class GachaUi {
         // The claw itself is precisely centered on the chute before releasing.
         // Only release the doll once both claw and doll have reached the exit.
         toy?.classList.add('is-dropped')
+        // Open once as the prize drops. Do not animate the claw a second time
+        // after the reward appears.
+        this.setClawClosed(false)
         await new Promise(resolve => window.setTimeout(resolve, 520))
         const deco = DECOS.find(item => item.id === result.prize)
         if (deco && prizeEl) {
@@ -1065,7 +1067,7 @@ export class GachaUi {
           clawArm.style.removeProperty('transition')
         }
       }
-      this.setClawClosed(false)
+      if (!wonToy) this.setClawClosed(false)
       this.clawTargetId = null
       this.clawBusy=false
       if(btn) btn.disabled=false

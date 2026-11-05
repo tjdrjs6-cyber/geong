@@ -1255,8 +1255,8 @@ const routes = {
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
       // Each travel interval has its own independent survival roll.
       // The interval nearest the chute is band 1; farther intervals are
-      // progressively easier, using the raised v1.15 probabilities.
-      const bandChances = [0, .65, .70, .75, .80, .83, .86, .90, .93]
+      // progressively easier, using the tuned v1.18 probabilities.
+      const bandChances = [0, .60, .65, .70, .75, .79, .82, .86, .90]
       let won = aligned === true
       let dropAt = -1
       let chanceProduct = 1
