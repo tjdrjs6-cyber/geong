@@ -3507,3 +3507,39 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* v1.56: defeated boss overlay; hide participants without deleting reward records. */
 .expedition-defeated-message{position:absolute;left:5%;right:5%;top:47%;transform:translateY(-50%);z-index:9;text-align:center;color:#fff8d9;font-weight:900;font-size:clamp(19px,4.8vw,28px);line-height:1.35;text-shadow:0 2px 5px #001c45,0 0 16px #00cfff;background:rgba(4,31,66,.65);border:1px solid rgba(190,240,255,.65);border-radius:16px;padding:18px 8px;box-sizing:border-box}
 .expedition-defeated-message[hidden]{display:none!important}
+
+/* v1.60: Keep tall character art inside storage tiles, clear of labels. */
+.storage-item .storage-pic:not(.is-deco) {
+  width: 70px;
+  height: 70px;
+  flex: 0 0 70px;
+  overflow: hidden;
+}
+.storage-item .storage-pic:not(.is-deco) img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  transform: scale(.78);
+  transform-origin: center;
+}
+.storage-item > b, .storage-item > .storage-count, .storage-item > .storage-keep {
+  position: relative;
+  z-index: 1;
+}
+
+/* v1.61: three-second synchronized attacks, clear monster HP and percent */
+.battle-field.is-fighting .bf-friend-body { animation:bf-attack 3s ease-in-out var(--battle-cycle-offset,0s) infinite!important; }
+.battle-field.is-fighting > .battle-weapon-strike { animation:arena-weapon-thrust 3s ease-in-out var(--battle-cycle-offset,0s) infinite!important; }
+.battle-field.is-fighting .bf-spark { animation:bf-spark 3s ease-out var(--battle-cycle-offset,0s) infinite!important; }
+.battle-field.is-fighting .bf-enemy-body { animation:bf-wobble 1.6s ease-in-out infinite,bf-flinch 3s ease-in-out var(--battle-cycle-offset,0s) infinite!important; }
+.battle-field .bf-bar { width:max-content;max-width:100%;min-width:min(260px,95%); }
+.battle-field .bf-bar-track { min-width:32px; }
+.battle-field .bf-enemy-hp {font-size:clamp(9px,2.4cqw,12px);white-space:nowrap;}
+.battle-panel .battle-earn {display:none!important;}
+
+/* v1.63: supplied battle-ground artwork, behind existing combat elements */
+.battle-field > .bf-scene-background { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; pointer-events:none; z-index:0; }

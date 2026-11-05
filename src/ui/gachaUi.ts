@@ -255,8 +255,8 @@ export class GachaUi {
           <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 몬스터 1마리 처치 시 강화파편 1개! 보관함에 자동 지급돼요.</p>
           <p class="battle-status"></p>
           
-          <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
-          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP}이에요. 5분마다 친구의 전투력만큼 공격하고, 몬스터를 물리치면 강화파편 1개가 인벤토리에 자동 지급돼요. 앱을 닫아도 계속 싸워요.</p>
+          
+          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP.toLocaleString()}이에요. 캐릭터와 무기가 3초마다 함께 공격하며 총전투력만큼 피해를 줘요. 처치 보상은 강화파편으로 자동 지급돼요.</p>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -1128,7 +1128,7 @@ export class GachaUi {
         // switching screens or leaving a permanent result panel behind.
         if (deco) {
           const duplicate = (previousDecos[deco.id] ?? 0) > 0
-          const reveal = this.decoReveal({ id: deco.id, duplicate, bonus: result.bonus })
+          const reveal = this.decoReveal({ id: deco.id, duplicate, bonus: Number(result.bonus) || 0 })
           this.popReveal(reveal, 0, 1)
           const revealNode = this.root.querySelector<HTMLElement>('.pop-reveal')
           const dismiss = () => { window.clearTimeout(hideTimer); this.hidePop(); revealNode?.removeEventListener('pointerdown', dismiss) }
@@ -2174,7 +2174,7 @@ export class GachaUi {
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
-    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간`
+    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간 (예상)`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
       if (fighter) {
@@ -2185,21 +2185,13 @@ export class GachaUi {
         status.textContent = '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
       }
     }
-    const hp = this.root.querySelector<HTMLElement>('.battle-hp')
-    if (hp) hp.textContent = `${view.hp} / ${ENEMY_HP}`
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
-    if (enemyHp) enemyHp.textContent = String(view.hp)
+    if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${ENEMY_HP.toLocaleString()} · ${(view.hp / ENEMY_HP * 100).toFixed(1)}%`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')
     if (fill) fill.style.transform = `scaleX(${view.hp / ENEMY_HP})`
-    const next = this.root.querySelector<HTMLElement>('.battle-next')
-    if (next) {
-      const seconds = Math.ceil((fighter ? view.nextIn : BATTLE_TICK_MS) / 1000)
-      next.textContent = fighter ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : '--:--'
-    }
-    const kills = this.root.querySelector<HTMLElement>('.battle-kills')
-    if (kills) kills.textContent = fighter ? `${Math.max(0, Math.ceil(view.hp / Math.max(1, view.power)))}번` : '-'
-    const killsLabel = kills?.nextElementSibling
-    if (killsLabel) killsLabel.textContent = '처치까지 공격'
+    // Match the weapon and character attack cycles to the same 3-second server tick.
+    const field = this.root.querySelector<HTMLElement>('.battle-field')
+    if (field) field.style.setProperty('--battle-cycle-offset', `${-(BATTLE_TICK_MS - view.nextIn) / 1000}s`)
     // A real attack landed since the last frame: show the damage number and a hit shake.
     if (fighter && this.lastEnemyHp >= 0 && view.hp !== this.lastEnemyHp) {
       const hit = this.root.querySelector<HTMLElement>('.bf-hit')
@@ -2378,7 +2370,7 @@ export class GachaUi {
   private popReveal(item: RevealItem, index: number, total: number): void {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
     if (!node) return
-    const grade = item.grade ? item.grade.replace(/^★\s*/, '') : '노멀'
+    const grade = item.grade ? item.grade.replace(/^★\s*/, '') : (item.sub.includes('데코') ? '데코' : '노멀')
     const tier = grade === '레전더리' ? 'legendary' : grade === '유니크' ? 'unique' : grade === '에픽' ? 'epic' : grade === '레어' ? 'rare' : 'normal'
     const counter = total > 1 ? `<small class="pop-count">${index + 1} / ${total}</small>` : ''
     const hint = total > 1 ? '<small class="pop-more">화면을 누르면 다음으로 넘어가요</small>' : ''

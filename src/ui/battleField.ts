@@ -27,28 +27,10 @@ const rock = (x: number, y: number, s = 1): string =>
 
 export function battleFieldMarkup(): string {
   return `
-    <svg class="bf-scene" viewBox="0 0 800 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <rect width="800" height="600" fill="#c9c2c7"/>
-      <path d="M0 0 H800 V330 H0 Z" fill="#b8b0b6"/>
-      <g fill="none" stroke="#9a9198" stroke-width="4" stroke-linejoin="round">
-        <path d="M40 60 l60 -20 l40 50 l-30 60 l-70 -10 z M170 120 l70 -30 l50 40 l-20 70 l-80 0 z M560 100 l60 -40 l70 30 l-10 70 l-90 10 z M680 200 l70 -10 l40 60 l-50 50 l-60 -30 z M60 220 l60 -10 l30 60 l-60 30 z"/>
-      </g>
-      <path d="M210 330 C 210 150 300 90 400 90 C 500 90 590 150 590 330 Z" fill="#8f878e" stroke="${INK}" stroke-width="5"/>
-      <path d="M260 330 C 262 190 330 140 400 140 C 470 140 538 190 540 330 Z" fill="#7a7279"/>
-      ${banner(130)}${banner(670)}
-      ${torch(70)}${torch(730)}
-      ${bush(90, 300)}${bush(712, 300, -1)}
-      <path d="M0 320 C 160 300 640 300 800 320 V600 H0 Z" fill="#efdcbc" stroke="${INK}" stroke-width="5"/>
-      <g stroke="#d9c39d" stroke-width="4" stroke-linecap="round"><path d="M90 380 h30 M640 360 h26 M170 470 h22 M560 520 h34 M700 450 h20 M300 560 h26"/></g>
-      <g class="bf-circle" fill="none" stroke="#e98e8e" stroke-width="5" stroke-linecap="round" stroke-dasharray="40 16">
-        <ellipse cx="400" cy="470" rx="290" ry="70"/>
-      </g>
-      <path d="M330 450 l40 20 l-40 20 M470 450 l-40 20 l40 20 M400 430 v80" fill="none" stroke="#f0aaaa" stroke-width="4" stroke-linecap="round"/>
-      ${rock(150, 430)}${rock(660, 410, .8)}${rock(60, 560, 1.4)}${rock(760, 560, 1.3)}
-    </svg>
+    <img class="bf-scene bf-scene-background" src="/assets/battle_background_v163.png" alt="" aria-hidden="true" draggable="false" />
     <div class="bf-title"><span>⚔</span> 토벌장 <span>⚔</span></div>
     <div class="bf-unit bf-enemy">
-      <div class="bf-bar"><i class="bf-bar-icon">🐛</i><span class="bf-bar-track"><b class="bf-enemy-fill"></b></span><em class="bf-enemy-hp">100</em></div>
+      <div class="bf-bar"><i class="bf-bar-icon">🐛</i><span class="bf-bar-track"><b class="bf-enemy-fill"></b></span><em class="bf-enemy-hp">20,000 / 20,000 · 100%</em></div>
       <div class="bf-body bf-enemy-body">${monsterSvg()}</div>
       <span class="bf-hit">-10</span>
     </div>
@@ -60,20 +42,7 @@ export function battleFieldMarkup(): string {
     </div>`
 }
 
-/** Round green striped bug monster with antennae, drawn in the same thick-outline style as the characters. */
+/** Uploaded monster illustration, shown only in the hunting ground. */
 function monsterSvg(): string {
-  return `
-    <svg viewBox="0 0 220 230" class="bf-monster" aria-label="초록 줄무늬 몬스터">
-      <g fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"><path d="M88 52 Q 78 26 66 18 M132 52 Q 142 26 154 18"/></g>
-      <circle cx="64" cy="16" r="12" fill="#fff" stroke="${INK}" stroke-width="6"/><circle cx="156" cy="16" r="12" fill="#fff" stroke="${INK}" stroke-width="6"/>
-      <ellipse cx="110" cy="170" rx="92" ry="48" fill="#a6d77c" stroke="${INK}" stroke-width="6"/>
-      <path d="M30 150 Q 110 132 190 150 M22 178 Q 110 196 198 178" fill="none" stroke="#4f8a3a" stroke-width="12" stroke-linecap="round"/>
-      <path d="M58 214 l-10 14 M162 214 l10 14" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>
-      <ellipse cx="110" cy="96" rx="66" ry="56" fill="#a6d77c" stroke="${INK}" stroke-width="6"/>
-      <path d="M52 76 Q 110 58 168 76 M46 104 Q 110 90 174 104" fill="none" stroke="#4f8a3a" stroke-width="11" stroke-linecap="round"/>
-      <ellipse cx="110" cy="116" rx="40" ry="30" fill="#fffaf2" stroke="${INK}" stroke-width="5"/>
-      <circle cx="96" cy="112" r="4.5" fill="${INK}"/><circle cx="124" cy="112" r="4.5" fill="${INK}"/>
-      <ellipse cx="110" cy="128" rx="6" ry="8" fill="${INK}"/>
-      <ellipse cx="84" cy="124" rx="7" ry="4" fill="#f6b4bf"/><ellipse cx="136" cy="124" rx="7" ry="4" fill="#f6b4bf"/>
-    </svg>`
+  return `<img class="bf-monster" src="/assets/battle_monster_v162.png" alt="초록 줄무늬 몬스터" draggable="false" />`
 }
