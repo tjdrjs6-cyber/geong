@@ -1664,11 +1664,19 @@ export class GachaUi {
     const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===20?50:20+(level-15)*5
     const rankedMembers=[...room.members].sort((a,b)=>(battlePower(b.characterId)+weaponPower(b.weaponLevel))-(battlePower(a.characterId)+weaponPower(a.weaponLevel)))
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
+<<<<<<< HEAD
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${battlePower(m.characterId)+(m.weaponLevel===null||m.weaponLevel===undefined?0:(m.weaponLevel<=14?m.weaponLevel+1:m.weaponLevel===20?50:20+(m.weaponLevel-15)*5))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
+=======
+    if(members){const html=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${battlePower(m.characterId)+(m.weaponLevel===null||m.weaponLevel===undefined?0:(m.weaponLevel<=14?m.weaponLevel+1:m.weaponLevel===20?50:20+(m.weaponLevel-15)*5))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
+>>>>>>> 9179a19b42ec60c821c27a82a326006ad52df174
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
     if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
+<<<<<<< HEAD
     if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)+(this.store.forge?.bonus??0)}${this.store.forge?` (무기 +${this.store.forge.bonus})`:``}</small></span></button>`).join('')}</div>`
+=======
+    if(picker){const html=hp===0?'보스가 처치됐어요. 📬 우편함에서 500코인 보상을 수령해 주세요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)+(this.store.forge?.bonus??0)}${this.store.forge?` (무기 +${this.store.forge.bonus})`:``}</small></span></button>`).join('')}</div>`
+>>>>>>> 9179a19b42ec60c821c27a82a326006ad52df174
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
       if(picker.innerHTML!==html){
         const choices=picker.querySelector<HTMLElement>('.expedition-choices')

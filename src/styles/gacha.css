@@ -3503,7 +3503,10 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
  .battle-status-row { gap:2px 9px; font-size:11px; }
  .battle-status-help { font-size:10px; }
 }
+<<<<<<< HEAD
 
 /* v1.56: defeated boss overlay; hide participants without deleting reward records. */
 .expedition-defeated-message{position:absolute;left:5%;right:5%;top:47%;transform:translateY(-50%);z-index:9;text-align:center;color:#fff8d9;font-weight:900;font-size:clamp(19px,4.8vw,28px);line-height:1.35;text-shadow:0 2px 5px #001c45,0 0 16px #00cfff;background:rgba(4,31,66,.65);border:1px solid rgba(190,240,255,.65);border-radius:16px;padding:18px 8px;box-sizing:border-box}
 .expedition-defeated-message[hidden]{display:none!important}
+=======
+>>>>>>> 9179a19b42ec60c821c27a82a326006ad52df174
