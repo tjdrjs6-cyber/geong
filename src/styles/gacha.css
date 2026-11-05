@@ -3241,3 +3241,12 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* v1.17: small temporary missed-claw sticker between release point and doll */
 .gacha-modal.claw-screen .claw-missed-sticker{position:absolute;z-index:12;width:clamp(38px,12%,62px);height:auto;object-fit:contain;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease}
 .gacha-modal.claw-screen .claw-missed-sticker.is-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* v1.19: prominent diamond count on claw screen */
+.gacha-modal.claw-screen .claw-balance {display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:7px auto 4px!important;padding:9px 14px;border:2px solid #f3c4dc;border-radius:18px;background:#fff5fc;max-width:max-content;box-shadow:0 3px 0 #f8dce9;color:#855069}
+.gacha-modal.claw-screen .claw-balance-title {font-size:14px;font-weight:800;white-space:nowrap}
+.gacha-modal.claw-screen .claw-balance-count {display:inline-flex;align-items:center;gap:4px;font-size:24px;line-height:1.2;font-weight:900;color:#ad568e;font-variant-numeric:tabular-nums}
+.gacha-modal.claw-screen .claw-balance-count .diamond-icon {width:32px!important;height:32px!important;object-fit:contain;vertical-align:middle}
+.gacha-modal.claw-screen .claw-balance-count .diamond-value {font-size:27px;font-weight:900}
+.gacha-modal.claw-screen .claw-balance-unit {font-size:17px}
+.gacha-modal.claw-screen .claw-balance-help {font-size:12px;margin:4px 0 7px;color:#79515b}
