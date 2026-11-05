@@ -819,12 +819,12 @@ export class GachaUi {
       const c = chute.getBoundingClientRect()
       if (m.width > 0 && m.height > 0) {
         this.clawX = Math.max(10, Math.min(90, (c.left + c.width / 2 - m.left) / m.width * 100))
-        this.clawY = Math.max(3, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100 - 6))
+        this.clawY = Math.max(3, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100 - 12))
         return
       }
     }
     this.clawX = 88
-    this.clawY = 9
+    this.clawY = 3
   }
 
   private moveClaw(action: string): void {
@@ -902,13 +902,13 @@ export class GachaUi {
         const machine = this.root.querySelector<HTMLElement>('.claw-machine')
         const chute = this.root.querySelector<HTMLElement>('.claw-chute')
         let exitX = 88
-        let exitY = 9
+        let exitY = 3
         if (machine && chute) {
           const m = machine.getBoundingClientRect()
           const c = chute.getBoundingClientRect()
           if (m.width > 0 && m.height > 0) {
             exitX = Math.max(0, Math.min(100, (c.left + c.width / 2 - m.left) / m.width * 100))
-            exitY = Math.max(3, Math.min(100, (c.top + c.height / 2 - m.top) / m.height * 100 - 6))
+            exitY = Math.max(3, Math.min(100, (c.top + c.height / 2 - m.top) / m.height * 100 - 12))
           }
         }
         if (msg) msg.textContent = '인형을 집었어요! 출구까지 잘 버틸까요?'
@@ -946,8 +946,13 @@ export class GachaUi {
           toy.classList.remove('is-lifted', 'is-dropped')
           // A failed grab stays where it fell, including after leaving or reloading.
           const landedFraction = Math.min(.86, endStep / steps)
-          const landedX = startX + (exitX - startX) * landedFraction
-          const landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY))
+          // Near-chute misses bounce slightly backward, away from the exit,
+          // instead of landing directly in the prize opening.
+          const nearChute = landedFraction >= .65
+          const bounceBack = nearChute ? 5 + (landedFraction - .65) * 12 : 0
+          const horizontalAway = startX <= exitX ? -1 : 1
+          const landedX = Math.max(10, Math.min(90, startX + (exitX - startX) * landedFraction + horizontalAway * bounceBack))
+          const landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY + (nearChute ? 2.5 : 0)))
           if (originalToy) {
             originalToy.x = Math.max(10, Math.min(90, landedX))
             originalToy.y = landedY
