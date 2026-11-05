@@ -928,7 +928,9 @@ export class GachaUi {
         void toy.offsetWidth
         const endStep = result.won ? steps : Math.max(1, result.dropAt)
         for (let step = 1; step <= endStep; step++) {
-          const fraction = step / steps
+          // A failed lift stops before the exact chute center. Successful lifts
+          // always travel to the chute center, regardless of the starting point.
+          const fraction = result.won ? step / steps : Math.min(.86, step / steps)
           const px = startX + (exitX - startX) * fraction
           const py = startY + (exitY - startY) * fraction
           if (arm) { arm.style.transition = 'left .28s linear, top .28s linear'; arm.style.left = `${px}%`; arm.style.top = `${py}%` }
@@ -943,7 +945,7 @@ export class GachaUi {
           toy.style.transition = 'none'
           toy.classList.remove('is-lifted', 'is-dropped')
           // A failed grab stays where it fell, including after leaving or reloading.
-          const landedFraction = endStep / steps
+          const landedFraction = Math.min(.86, endStep / steps)
           const landedX = startX + (exitX - startX) * landedFraction
           const landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY))
           if (originalToy) {
@@ -962,6 +964,7 @@ export class GachaUi {
       }
       if (result.won && result.prize) {
         wonToy = true
+        // The claw itself is precisely centered on the chute before releasing.
         // Only release the doll once both claw and doll have reached the exit.
         toy?.classList.add('is-dropped')
         await new Promise(resolve => window.setTimeout(resolve, 520))

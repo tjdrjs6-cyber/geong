@@ -1261,7 +1261,7 @@ const routes = {
       // Failed grabs release the plush at a random point along the trip.
       // Failed pickups more often release near the start or midpoint.
       const dropAt = aligned === true && !won
-        ? Math.max(1, Math.min(segments, Math.ceil((Math.random() ** 1.6) * segments))) : -1
+        ? Math.max(1, Math.min(Math.max(1, segments - 1), Math.ceil((Math.random() ** 1.6) * segments))) : -1
       const chance = aligned === true ? Math.round(probability * 100) : 0
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
