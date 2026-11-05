@@ -3350,3 +3350,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .forge-body{background:linear-gradient(#ffffffa6,#ffffffa6),url('/assets/forge/background.png') center/cover!important}
 .forge-animation-overlay{background:linear-gradient(#fff8ede8,#fff8ede8),url('/assets/forge/background.png') center/cover!important}
 .forge-upgrade,.forge-upgrade img{background:transparent!important}
+
+/* v1.38: center the weapon and tuck its upgrade badge against the handle */
+.battle-field > .battle-weapon-strike{left:35%!important;top:49%!important}
+.battle-field > .battle-weapon-strike b{right:14%!important;bottom:12%!important;padding:1px 3px!important;line-height:1.1!important}
+
+/* v1.39: keep diamond icon and 0/20 on one row, countdown below */
+.gacha-screen .gacha-header .header-right .diamond-wallet{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:0!important;overflow:visible!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-wallet-line{display:inline-flex!important;flex:0 0 auto!important;align-items:center!important;justify-content:center!important;gap:2px!important;white-space:nowrap!important;line-height:1.05!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-wallet-line .diamond-icon{display:block!important;width:15px!important;height:15px!important;object-fit:contain!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-value{display:inline!important;position:static!important;transform:none!important;margin:0!important;line-height:1!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-capacity{display:inline!important;position:static!important;margin:0!important;line-height:1!important}
+.gacha-screen .gacha-header .header-right .diamond-wallet .diamond-recharge-countdown{display:block!important;flex:0 0 auto!important;position:static!important;transform:none!important;margin:1px 0 0!important;line-height:1.1!important;font-size:9px!important;white-space:nowrap!important}

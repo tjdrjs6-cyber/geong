@@ -71,6 +71,8 @@ export class GachaUi {
   private users: PublicUser[] = []
   private privacy: ProfilePrivacy = { char: true, deco: true, house: true }
   private diamondNextAt: number | null = null
+  private diamondServerOffset = 0
+  private diamondRechargeError = false
   private diamondRefreshBusy = false
   private diamondLastRefresh = 0
 
@@ -300,7 +302,7 @@ export class GachaUi {
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
-          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/></span><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
+          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
@@ -1270,10 +1272,12 @@ export class GachaUi {
     try {
       const state = await this.store.diamondRecharge()
       this.diamondNextAt = state.nextAt
+      this.diamondServerOffset = state.now - Date.now()
+      this.diamondRechargeError = false
       this.diamondLastRefresh = Date.now()
       this.store.data.diamonds = state.diamonds
       this.renderWallet()
-    } catch { /* 로그인 전 또는 일시적인 연결 문제: 다음 주기에 다시 시도 */ }
+    } catch { this.diamondRechargeError = true; this.diamondLastRefresh = Date.now() }
     finally { this.diamondRefreshBusy = false }
   }
 
@@ -1284,14 +1288,14 @@ export class GachaUi {
     if (!this.store.user) { label.textContent = '로그인 후 충전'; return }
     if (amount >= 20 || this.isAdmin) { label.textContent = '최대 보유'; return }
     if (this.diamondNextAt === null) {
-      label.textContent = '충전 확인 중'
+      label.textContent = this.diamondRechargeError ? '충전 확인 실패' : '충전 확인 중'
     } else {
-      const remaining = Math.max(0, Math.ceil((this.diamondNextAt - Date.now()) / 1000))
+      const remaining = Math.max(0, Math.ceil((this.diamondNextAt - (Date.now() + this.diamondServerOffset)) / 1000))
       const minutes = Math.floor(remaining / 60)
       const seconds = remaining % 60
       label.textContent = `충전까지 ${minutes}:${String(seconds).padStart(2, '0')}`
     }
-    if ((this.diamondNextAt !== null && Date.now() >= this.diamondNextAt) || Date.now() - this.diamondLastRefresh > 60000) {
+    if ((this.diamondNextAt !== null && Date.now() + this.diamondServerOffset >= this.diamondNextAt) || Date.now() - this.diamondLastRefresh > 60000) {
       void this.refreshDiamondRecharge()
     }
   }
