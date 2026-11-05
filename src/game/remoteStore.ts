@@ -4,7 +4,11 @@ import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
+<<<<<<< HEAD
 export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
+=======
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean}[]}[] }
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }

@@ -14,7 +14,11 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
+<<<<<<< HEAD
 type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'forge'
+=======
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps'
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -143,7 +147,10 @@ export class GachaUi {
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
     if (screen === 'claw') { this.restoreClawToys(); this.resetClawToExit(); this.renderClaw() }
+<<<<<<< HEAD
     if (screen === 'forge') {void this.openForge()}
+=======
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
     if (screen === 'mail') void this.loadMail()
     if (screen === 'announcements') void this.loadAnnouncements()
     window.clearInterval(this.chatTimer)
@@ -233,12 +240,20 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title">토벌장</b>
+<<<<<<< HEAD
           <div class="battle-wallet-stack"><div class="diamond-wallet battle-diamond-wallet" aria-label="보유 강화파편"><span><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/></span><strong class="fragment-value">0</strong><span>강화파편</span></div><small class="battle-hourly-rate" aria-live="polite">0.00개/시간</small></div>
+=======
+          <div class="battle-wallet-stack"><div class="diamond-wallet battle-diamond-wallet" aria-label="보유 다이아"><span><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/></span><strong class="diamond-value">0</strong><span>다이아</span></div><small class="battle-hourly-rate" aria-live="polite">0.00개/시간</small></div>
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
         </header>
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
+<<<<<<< HEAD
           <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 몬스터 1마리 처치 시 강화파편 1개! 보관함에 자동 지급돼요.</p>
+=======
+          <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 몬스터 1마리 처치 시 다이아 1개! 보관함에 자동 지급돼요.</p>
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
           <p class="battle-status"></p>
           
           <div class="weed-earn battle-earn"><span><b class="battle-hp">${ENEMY_HP}</b><small>몬스터 체력</small></span><span><b class="battle-next">--:--</b><small>다음 공격까지</small></span><span><b class="battle-kills">0</b><small>처치까지 공격</small></span></div>
@@ -300,7 +315,11 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
+<<<<<<< HEAD
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><button class="nav-button nav-forge" data-action="forge"><span class="chiikawa-tab-icon">🔨</span>대장간</button></nav>
+=======
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></nav>
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -417,7 +436,11 @@ export class GachaUi {
       <section class="gacha-modal" data-screen="storage" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="storage-title">
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
+<<<<<<< HEAD
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
+=======
+          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 다이아"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 다이아 <strong class="diamond-value">0</strong>개</div>
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab">🧸 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab">🌸 데코</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
@@ -489,6 +512,7 @@ export class GachaUi {
     if (action === 'rps-next') {await this.rpsAction('next');return}
     if (action === 'rps-claim') {await this.rpsAction('claim');return}
     if (action === 'rps-move' && button?.dataset.move) {await this.rpsAction('choose',button.dataset.move);return}
+<<<<<<< HEAD
     if (action === 'forge') {this.show('forge');return}
     if (action === 'forge-select' && button?.dataset.weapon) {
       if(this.busy || this.store.forge)return
@@ -506,6 +530,8 @@ export class GachaUi {
       catch(e){this.handleError(e)}finally{this.busy=false}
       return
     }
+=======
+>>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
     if (action === 'claw') { this.show('claw'); return }
     if (action?.startsWith('claw-')) {
       if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
