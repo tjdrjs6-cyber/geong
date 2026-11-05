@@ -196,6 +196,7 @@ async function prepareDatabase() {
   // One-time move of the old single weeding friend into the 3-slot table.
   if (!slotTable.length) await pool.query("INSERT IGNORE INTO gm_weed_slots (account_id, character_id, since_ms) SELECT account_id, character_id, since_ms FROM gm_weeding WHERE character_id <> ''")
   try { await pool.query('ALTER TABLE gm_weeding ADD COLUMN beetle TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  for (const field of ['diamonds', 'fragments']) { try { await pool.query(`ALTER TABLE gm_mail ADD COLUMN ${field} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error } }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN to_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN from_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   // Promote only an existing account; never create an administrator implicitly.
@@ -361,6 +362,7 @@ async function houseCoinRow(db, accountId, lock = false) {
 }
 
 const DIAMOND_RECHARGE_MS = 60 * 60 * 1000
+const diamondHourSlot = ms => Math.floor(ms / DIAMOND_RECHARGE_MS) * DIAMOND_RECHARGE_MS
 async function rechargeDiamonds(accountId) {
   const conn = await pool.getConnection()
   try {
@@ -368,14 +370,15 @@ async function rechargeDiamonds(accountId) {
     const now = Date.now()
     const [saves] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     if (!saves.length) { await conn.commit(); return }
-    await conn.query('INSERT IGNORE INTO gm_diamond_recharge (account_id, last_ms) VALUES (?, ?)', [accountId, now])
+    await conn.query('INSERT IGNORE INTO gm_diamond_recharge (account_id, last_ms) VALUES (?, ?)', [accountId, diamondHourSlot(now)])
     const [rows] = await conn.query('SELECT last_ms FROM gm_diamond_recharge WHERE account_id = ? FOR UPDATE', [accountId])
     const last = Number(rows[0].last_ms)
-    const hours = Math.max(0, Math.floor((now - last) / DIAMOND_RECHARGE_MS))
+    const slot = diamondHourSlot(now)
+    const hours = Math.max(0, Math.floor((slot - diamondHourSlot(last)) / DIAMOND_RECHARGE_MS))
     const current = Number(saves[0].diamonds)
     const next = Math.min(20, current + hours * 5)
     if (next !== current) await conn.query('UPDATE gm_saves SET diamonds = ? WHERE account_id = ?', [next, accountId])
-    if (hours > 0 || current >= 20) await conn.query('UPDATE gm_diamond_recharge SET last_ms = ? WHERE account_id = ?', [current >= 20 ? now : last + hours * DIAMOND_RECHARGE_MS, accountId])
+    if (hours > 0 || current >= 20) await conn.query('UPDATE gm_diamond_recharge SET last_ms = ? WHERE account_id = ?', [slot, accountId])
     await conn.commit()
   } catch (error) { await conn.rollback().catch(() => {}); throw error }
   finally { conn.release() }
@@ -409,19 +412,21 @@ async function sentToday(conn, accountId) {
   return Number(rows[0].total)
 }
 async function mailbox(accountId) {
-  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? '원정대 보상' : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
-  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? '원정대 보상' : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
   return { mail, sent, max: MAILBOX_MAX, unread: mail.filter(item => !item.seen).length, sentToday: await sentToday(pool, accountId), dailyLimit: MAIL_DAILY_COINS }
 }
 /** Hides a recipient's inbox letters beyond the newest MAILBOX_MAX; coins still waiting in them go to the recipient. */
 async function trimInbox(conn, toId) {
-  const [old] = await conn.query('SELECT id, coins, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
+  const [old] = await conn.query('SELECT id, coins, diamonds, fragments, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
   if (!old.length) return
   const coins = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.coins)), 0)
   await conn.query(`UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
-  if (coins > 0) await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, toId])
+  const diamonds = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.diamonds)), 0)
+  const fragments = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.fragments)), 0)
+  if (coins || diamonds || fragments) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [coins, diamonds, fragments, toId])
 }
 async function trimSent(conn, fromId) {
   const [old] = await conn.query('SELECT id FROM gm_mail WHERE from_id = ? AND from_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [fromId, MAILBOX_MAX])
@@ -991,6 +996,18 @@ const routes = {
     } catch (error) { await conn.rollback(); throw error } finally { conn.release() }
     send(res, 200, await getAnnouncements(account.id))
   },
+  'POST /api/admin/announcements/edit': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    if (!account.is_admin || account.username !== 'tjdrjs885') return send(res, 403, { error: 'admin_only' })
+    const body = await readJson(req)
+    const id = Number(body.id)
+    const message = typeof body.message === 'string' ? body.message.trim() : ''
+    if (!Number.isSafeInteger(id) || id <= 0 || !message || [...message].length > 100) return send(res, 400, { error: 'announcement_invalid' })
+    const [result] = await pool.query('UPDATE gm_announcements SET message = ? WHERE id = ?', [message, id])
+    if (!result.affectedRows) return send(res, 404, { error: 'announcement_not_found' })
+    send(res, 200, await getAnnouncements(account.id))
+  },
   'POST /api/auth/register': async (req, res) => {
     const { username, password, nickname } = await readJson(req)
     const invalid = validateCredentials(username, password) || validateNickname(nickname)
@@ -1035,7 +1052,7 @@ const routes = {
     const [rows] = await pool.query('SELECT s.diamonds, r.last_ms FROM gm_saves s LEFT JOIN gm_diamond_recharge r ON r.account_id = s.account_id WHERE s.account_id = ?', [account.id])
     const diamonds = Number(rows[0]?.diamonds ?? 0)
     const now = Date.now()
-    const nextAt = diamonds >= 20 ? null : Number(rows[0]?.last_ms ?? now) + DIAMOND_RECHARGE_MS
+    const nextAt = diamonds >= 20 ? null : diamondHourSlot(now) + DIAMOND_RECHARGE_MS
     send(res, 200, { diamonds, nextAt, now, max: 20 })
   },
   'GET /api/me': async (req, res) => {
@@ -1254,6 +1271,9 @@ const routes = {
     const body = await readJson(req)
     const message = typeof body.message === 'string' ? body.message.trim() : ''
     const coins = Number(body.coins)
+    const diamonds = Number(body.diamonds ?? 0)
+    const fragments = Number(body.fragments ?? 0)
+    if (![diamonds, fragments].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 1000000)) return send(res, 400, { error: 'invalid_broadcast' })
     if (!message || message.length > 200 || !Number.isSafeInteger(coins) || coins < 0 || coins > 1000000) {
       return send(res, 400, { error: 'invalid_broadcast' })
     }
@@ -1266,7 +1286,7 @@ const routes = {
       if (count > 10000) { await conn.rollback(); return send(res, 400, { error: 'too_many_recipients' }) }
       const now = Date.now()
       for (const recipient of recipients) {
-        await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?)', [account.id, recipient.id, message, coins, checkInDay(), now])
+        await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, diamonds, fragments, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [account.id, recipient.id, message, coins, diamonds, fragments, checkInDay(), now])
         await trimInbox(conn, recipient.id)
       }
       await trimSent(conn, account.id)
@@ -1275,7 +1295,7 @@ const routes = {
       await conn.rollback().catch(() => {})
       throw error
     } finally { conn.release() }
-    send(res, 200, { count, coins })
+    send(res, 200, { count, coins, diamonds, fragments })
   },
   'POST /api/mail/claim': async (req, res) => {
     const account = await currentAccount(req)
@@ -1287,14 +1307,16 @@ const routes = {
       await conn.beginTransaction()
       const [rows] = await conn.query(
         id == null
-          ? 'SELECT id, coins FROM gm_mail WHERE to_id = ? AND claimed = 0 AND coins > 0 AND to_deleted = 0 FOR UPDATE'
-          : 'SELECT id, coins FROM gm_mail WHERE to_id = ? AND claimed = 0 AND coins > 0 AND to_deleted = 0 AND id = ? FOR UPDATE',
+          ? 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 FOR UPDATE'
+          : 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 AND id = ? FOR UPDATE',
         id == null ? [account.id] : [account.id, Number(id)],
       )
       total = rows.reduce((sum, row) => sum + Number(row.coins), 0)
+      const diamondTotal = rows.reduce((sum, row) => sum + Number(row.diamonds), 0)
+      const fragmentTotal = rows.reduce((sum, row) => sum + Number(row.fragments), 0)
       if (rows.length) {
         await conn.query(`UPDATE gm_mail SET claimed = 1, seen = 1 WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(row => row.id))
-        await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [total, account.id])
+        await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [total, diamondTotal, fragmentTotal, account.id])
       }
       await conn.commit()
     } catch (error) {
@@ -1440,12 +1462,12 @@ const routes = {
         const [r] = await conn.query('UPDATE gm_mail SET from_deleted = 1 WHERE id = ? AND from_id = ? AND from_deleted = 0', [id, account.id])
         return r.affectedRows ? { claimed: 0 } : { error: 'mail_not_found' }
       }
-      const [rows] = await conn.query('SELECT coins, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
+      const [rows] = await conn.query('SELECT coins, diamonds, fragments, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
       if (!rows[0]) return { error: 'mail_not_found' }
       // Deleting a letter never loses its coins: unclaimed coins are received first.
       const claimed = rows[0].claimed ? 0 : Number(rows[0].coins)
       await conn.query('UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id = ?', [id])
-      if (claimed > 0) await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [claimed, account.id])
+      if (!rows[0].claimed) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [claimed, Number(rows[0].diamonds), Number(rows[0].fragments), account.id])
       return { claimed }
     })
     if (outcome.error) return send(res, 404, { error: outcome.error })

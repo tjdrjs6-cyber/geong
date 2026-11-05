@@ -36,6 +36,7 @@ export class GachaUi {
   private results: RevealItem[] = []
   private resultKind: 'char' | 'deco' = 'char'
   private house!: HouseView
+  private houseBadgeBusy = false
   private userTab: 'char' | 'deco' | 'house' = 'char'
   private mailTab: 'in' | 'sent' = 'in'
   private storageTab: 'char' | 'deco' = 'char'
@@ -97,13 +98,15 @@ export class GachaUi {
     window.setInterval(() => { void this.tickSettle(); if (this.screen === 'title') void this.refreshExpeditionBadge(true); void this.refreshRpsBadge() }, 60_000)
     this.root.querySelector<HTMLFormElement>('.auth-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitAuth() })
     this.root.querySelector<HTMLFormElement>('.nickname-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitNickname() })
-    this.house = new HouseView(this.root.querySelector<HTMLElement>('.house-screen')!, this.store, { toast: text => this.toast(text), error: error => this.handleError(error), wallet: () => this.renderWallet() })
+    this.house = new HouseView(this.root.querySelector<HTMLElement>('.house-screen')!, this.store, { toast: text => this.toast(text), error: error => this.handleError(error), wallet: () => this.renderWallet(), coinAvailable: available => this.setHouseCoinDot(available) })
     this.renderWallet()
     window.setInterval(() => this.tickDiamondRecharge(), 1000)
     void this.refreshDiamondRecharge()
     this.renderCollection()
     void this.refreshExpeditionBadge(true)
     void this.refreshRpsBadge()
+    void this.refreshHouseCoinBadge()
+    window.setInterval(() => { if (this.screen === 'title') void this.refreshHouseCoinBadge() }, 30_000)
     this.chatBadgeTimer = window.setInterval(() => { if (this.screen === 'title') void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge() }, 12000)
     // Keep the 2D stage (floor + name tag) clear of the bottom controls, whatever their height.
     const fitStage = (): void => {
@@ -159,7 +162,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge() }
+    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); this.weedTimer = window.setInterval(() => this.renderWeedStatus(), 1000) }
     if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 1000) }
@@ -307,7 +310,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><button class="nav-button nav-forge" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스<i class="house-coin-dot" hidden></i></button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><button class="nav-button nav-forge" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -561,6 +564,7 @@ export class GachaUi {
     if (action === 'announcements') { this.show('announcements'); return }
     if (action === 'global-chat') { this.show('global-chat'); return }
     if (action === 'global-chat-send') { await this.sendGlobalChat(); return }
+    if (action === 'announcement-edit' && button.dataset.id) { await this.editAnnouncement(Number(button.dataset.id)); return }
     if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
@@ -1154,6 +1158,21 @@ export class GachaUi {
     }
   }
 
+  private setHouseCoinDot(available: boolean): void {
+    const dot = this.root.querySelector<HTMLElement>('.house-coin-dot')
+    if (dot) dot.hidden = !available
+  }
+
+  private async refreshHouseCoinBadge(): Promise<void> {
+    if (this.houseBadgeBusy || this.screen !== 'title') return
+    this.houseBadgeBusy = true
+    try {
+      const state = await this.store.houseCoin()
+      if (this.screen === 'title') this.setHouseCoinDot(Boolean(state.coin))
+    } catch { /* Keep the last known badge when offline. */ }
+    finally { this.houseBadgeBusy = false }
+  }
+
   private async refreshRpsBadge():Promise<void> {
     if(!this.store.user)return
     try {
@@ -1578,11 +1597,23 @@ export class GachaUi {
       const data = await this.store.announcements()
       const admin = Boolean(this.store.user?.admin && this.store.user?.username === 'tjdrjs885')
       body.innerHTML = `${admin ? `<div class="announcement-compose"><textarea class="announcement-input" maxlength="100" rows="3" placeholder="모든 유저에게 보낼 공지 (100자 이내)"></textarea><button class="modal-primary" data-action="announcement-send">📢 전체 공지 등록</button></div>` : ''}
-        <div class="announcement-list">${data.items.length ? data.items.map(item => `<article class="announcement-item"><small>${new Date(item.at).toLocaleString('ko-KR')}</small><p>${escapeHtml(item.message)}</p></article>`).join('') : '<p class="users-empty">아직 공지사항이 없어요.</p>'}</div>`
+        <div class="announcement-list">${data.items.length ? data.items.map(item => `<article class="announcement-item"><small>${new Date(item.at).toLocaleString('ko-KR')}</small><p>${escapeHtml(item.message)}</p>${admin ? `<button class="modal-secondary" data-action="announcement-edit" data-id="${item.id}">✏️ 수정</button>` : ''}</article>`).join('') : '<p class="users-empty">아직 공지사항이 없어요.</p>'}</div>`
       await this.store.announcementsSeen()
       const dot = this.root.querySelector<HTMLElement>('.announcement-dot')
       if (dot) dot.hidden = true
     } catch (error) { this.handleError(error); body.innerHTML = '<p class="users-empty">공지를 불러오지 못했어요.</p>' }
+  }
+
+  private async editAnnouncement(id: number): Promise<void> {
+    if (!this.store.user?.admin || this.store.user.username !== 'tjdrjs885') return
+    const data = await this.store.announcements()
+    const old = data.items.find(item => item.id === id)
+    if (!old) { this.toast('공지를 찾을 수 없어요.'); return }
+    const message = window.prompt('수정할 공지 내용 (최대 100자)', old.message)?.trim()
+    if (message == null) return
+    if (!message || [...message].length > 100) { this.toast('공지는 1~100자로 작성해 주세요.'); return }
+    try { await this.store.editAnnouncement(id, message); this.toast('공지사항을 수정했어요.'); await this.loadAnnouncements() }
+    catch (error) { this.handleError(error) }
   }
 
   private async sendAnnouncement(): Promise<void> {
@@ -1698,22 +1729,22 @@ export class GachaUi {
     const list = this.root.querySelector<HTMLElement>('.mail-list')
     const summary = this.root.querySelector<HTMLElement>('.mail-summary')
     if (summary) summary.textContent = `편지함마다 최대 ${max}개까지 보관되고, 넘치면 가장 오래된 우편부터 지워져요. 오늘 보낸 코인 ${this.store.user?.admin ? '무제한' : `${box.sentToday} / ${box.dailyLimit}`}`
-    const waiting = box.mail.filter(item => item.coins > 0 && !item.claimed).reduce((sum, item) => sum + item.coins, 0)
+    const waiting = box.mail.filter(item => (item.coins > 0 || item.diamonds > 0 || item.fragments > 0) && !item.claimed).length
     const all = this.root.querySelector<HTMLButtonElement>('.mail-claim-all')
-    if (all) { all.hidden = !inbox; all.disabled = waiting === 0; all.textContent = waiting ? `코인 모두 받기 (+${waiting})` : '받을 코인이 없어요' }
+    if (all) { all.hidden = !inbox; all.disabled = waiting === 0; all.textContent = waiting ? `첨부 보상 모두 받기 (${waiting}건)` : '받을 보상이 없어요' }
     if (!list) return
     const del = (id: number, which: 'in' | 'sent') => `<button class="mail-delete" data-action="mail-delete" data-box="${which}" data-id="${id}" aria-label="우편 삭제">🗑 삭제</button>`
     if (inbox) {
       list.innerHTML = box.mail.length ? box.mail.map(item => `<article class="mail-item${item.seen ? '' : ' is-new'}" role="listitem">
         <div class="mail-head"><b>${escapeHtml(item.from)}</b><small>${mailTime(item.at)}</small>${item.seen ? '' : '<em>NEW</em>'}${del(item.id, 'in')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${item.coins > 0 ? (item.claimed ? `<span class="mail-coins is-claimed">✿ ${item.coins}코인 받음</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">✿ ${item.coins}코인 받기</button>`) : ''}
+        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? (item.claimed ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받음</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">🎁 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받기</button>`) : ''}
       </article>`).join('') : '<p class="users-empty">아직 받은 편지가 없어요.</p>'
     } else {
       list.innerHTML = box.sent.length ? box.sent.map(item => `<article class="mail-item is-sent" role="listitem">
         <div class="mail-head"><b>To. ${escapeHtml(item.to)}</b><small>${mailTime(item.at)}</small><em class="mail-read">${item.seen ? '읽음' : '안 읽음'}</em>${del(item.id, 'sent')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${item.coins > 0 ? `<span class="mail-coins is-claimed">✿ ${item.coins}코인 보냄${item.claimed ? ' · 받음' : ''}</span>` : ''}
+        ${item.coins > 0 ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 보냄${item.claimed ? ' · 받음' : ''}</span>` : ''}
       </article>`).join('') : '<p class="users-empty">아직 보낸 편지가 없어요.</p>'
     }
   }
@@ -1849,11 +1880,15 @@ export class GachaUi {
     if (!body) return
     body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="users">← 유저 목록</button><b>📢 전체 우편 발송</b><span></span></div>
       <div class="mail-form admin-broadcast-form">
-        <p>가입한 일반 유저 모두에게 같은 편지와 코인을 보냅니다. 코인은 유저 1명당 지급할 수량입니다.</p>
+        <p>가입한 일반 유저 모두에게 같은 편지와 코인, 다이아, 강화파편을 보냅니다. 수량은 유저 1명당 지급량입니다.</p>
         <label for="broadcast-message">편지 내용 (필수 · 최대 200자)</label>
         <textarea id="broadcast-message" class="mail-text-input" maxlength="200" rows="4" placeholder="전체 유저에게 보낼 내용을 적어 주세요"></textarea>
         <label for="broadcast-coins">유저 1명당 지급할 코인 (0~1,000,000)</label>
         <input id="broadcast-coins" class="mail-coin-input" type="number" min="0" max="1000000" step="1" value="0" />
+        <label for="broadcast-diamonds">유저 1명당 지급할 다이아 (0~1,000,000)</label>
+        <input id="broadcast-diamonds" class="mail-coin-input" type="number" min="0" max="1000000" step="1" value="0" />
+        <label for="broadcast-fragments">유저 1명당 지급할 강화파편 (0~1,000,000)</label>
+        <input id="broadcast-fragments" class="mail-coin-input" type="number" min="0" max="1000000" step="1" value="0" />
         <button class="modal-primary" data-action="admin-broadcast-send">📨 전체 유저에게 보내기</button>
       </div>`
   }
@@ -1863,15 +1898,18 @@ export class GachaUi {
     const body = this.root.querySelector<HTMLElement>('.users-body')
     const message = body?.querySelector<HTMLTextAreaElement>('#broadcast-message')?.value.trim() ?? ''
     const coins = Number(body?.querySelector<HTMLInputElement>('#broadcast-coins')?.value)
+    const diamonds = Number(body?.querySelector<HTMLInputElement>('#broadcast-diamonds')?.value)
+    const fragments = Number(body?.querySelector<HTMLInputElement>('#broadcast-fragments')?.value)
+    if (![diamonds, fragments].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 1000000)) { this.toast('다이아와 강화파편 수량을 확인해 주세요.'); return }
     if (!message || message.length > 200 || !Number.isSafeInteger(coins) || coins < 0 || coins > 1000000) {
       this.toast('편지 내용과 코인 수량을 확인해 주세요.'); return
     }
-    if (!window.confirm(`전체 일반 유저에게 편지와 1인당 ${coins.toLocaleString()}코인을 보내시겠어요? 발송은 취소할 수 없습니다.`)) return
+    if (!window.confirm(`전체 일반 유저에게 편지와 1인당 코인 ${coins.toLocaleString()}개, 다이아 ${diamonds.toLocaleString()}개, 강화파편 ${fragments.toLocaleString()}개를 보내시겠어요? 발송은 취소할 수 없습니다.`)) return
     const button = body?.querySelector<HTMLButtonElement>('[data-action="admin-broadcast-send"]')
     if (button) button.disabled = true
     try {
-      const result = await this.store.broadcastMail(message, coins)
-      this.notice('전체 우편 발송 완료', `${result.count}명에게 편지와 1인당 ${coins.toLocaleString()}코인을 보냈어요.`)
+      const result = await this.store.broadcastMail(message, coins, diamonds, fragments)
+      this.notice('전체 우편 발송 완료', `${result.count}명에게 편지와 1인당 코인 ${coins.toLocaleString()}개, 다이아 ${diamonds.toLocaleString()}개, 강화파편 ${fragments.toLocaleString()}개를 보냈어요.`)
       this.audio.play('win')
       this.show('featured')
     } catch (error) { this.handleError(error); if (button) button.disabled = false }
@@ -1968,20 +2006,20 @@ export class GachaUi {
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
-      const icon = secondUnit.querySelector<HTMLElement>('.bf-friend-icon')
+      const name = secondUnit.querySelector<HTMLElement>('.bf-friend-name')
       const power = secondUnit.querySelector<HTMLElement>('.bf-friend-power')
       if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
-      if (icon) icon.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="" />` : ''
+      if (name) name.textContent = second ? fullName(second) : ''
       if (power) power.textContent = second ? `⚔ ${battlePower(second.id)}` : ''
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
-      const icon = unit.querySelector<HTMLElement>('.bf-friend-icon')
+      const name = unit.querySelector<HTMLElement>('.bf-friend-name')
       const power = unit.querySelector<HTMLElement>('.bf-friend-power')
       if (body) body.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
-      if (icon) icon.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="" />` : ''
+      if (name) name.textContent = fighter ? fullName(fighter) : ''
       if (power) power.textContent = fighter ? `⚔ ${battlePower(fighter.id)+(this.store.forge?.bonus??0)}` : ''
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')

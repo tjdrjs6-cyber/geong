@@ -14,8 +14,8 @@ export const WEED_MAX = 3
 export type BattleState = { id: CharacterId; secondId?: CharacterId | null; since: number; damage: number }
 export type ProfilePrivacy = { char: boolean; deco: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; weapon?: string | null; weaponLevel?: number | null }
-export type MailItem = { id: number; from: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
-export type SentItem = { id: number; to: string; message: string; coins: number; at: number; seen: boolean; claimed: boolean }
+export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
+export type SentItem = { id: number; to: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
 export type Suggestion = { id: number; from: string; message: string; at: number; reply: string | null; replyAt: number | null; mine: boolean }
 export type SuggestBox = { items: Suggestion[]; admin: boolean; todayCount: number; dailyMax: number }
@@ -222,8 +222,8 @@ export class RemoteGachaStore {
     this.data = result.save
     return result
   }
-  async broadcastMail(message: string, coins: number): Promise<{ count: number; coins: number }> {
-    return request<{ count: number; coins: number }>('admin/mail/broadcast', { message, coins })
+  async broadcastMail(message: string, coins: number, diamonds: number, fragments: number): Promise<{ count: number; coins: number }> {
+    return request<{ count: number; coins: number }>('admin/mail/broadcast', { message, coins, diamonds, fragments })
   }
   async deleteMail(id: number, box: 'in' | 'sent'): Promise<{ claimed: number; box: Mailbox }> {
     const result = await request<Mailbox & { claimed: number; save: GachaSave }>('mail/delete', { id, box })
@@ -300,6 +300,7 @@ export class RemoteGachaStore {
   async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
   async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
+  async editAnnouncement(id: number, message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements/edit', { id, message }) }
   async postAnnouncement(message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements', { message }) }
   async profilePrivacy(): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy')).privacy }
   async setProfilePrivacy(privacy: ProfilePrivacy): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy', privacy)).privacy }
