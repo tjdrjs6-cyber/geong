@@ -2917,3 +2917,13 @@ html body > #geongi-version {
 .gacha-modal.claw-screen .claw-arm {width:20%!important;height:29%!important;}
 .gacha-modal.claw-screen .claw-arm.is-dropping {transform:translate(-50%,-44%)!important;}
 .gacha-modal.claw-screen .claw-graphic {object-fit:contain!important;}
+
+/* v0.67: prevent ghosting while carrying plushes and avoid the initial jump. */
+.gacha-modal.claw-screen .claw-single-toy.is-lifted {
+  transform:translate(-50%,-50%)!important;
+  filter:none!important;
+  opacity:1!important;
+  backface-visibility:hidden;
+  will-change:left,top;
+}
+.gacha-modal.claw-screen .claw-single-toy:not(.is-lifted) {will-change:auto;}

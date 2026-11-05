@@ -825,8 +825,20 @@ export class GachaUi {
       this.setClawClosed(true)
       await new Promise(resolve => window.setTimeout(resolve, 380))
       arm?.classList.remove('is-dropping')
-      if (aligned) toy?.classList.add('is-lifted')
-      await new Promise(resolve => window.setTimeout(resolve, aligned ? 650 : 250))
+      // Position the plush at the claw tips BEFORE showing its picked-up state.
+      // This prevents the old position briefly flashing in the upper-left.
+      if (aligned && toy && arm) {
+        const machine = this.root.querySelector<HTMLElement>('.claw-machine')
+        const clawBox = arm.getBoundingClientRect()
+        const machineBox = machine?.getBoundingClientRect()
+        const offsetY = machineBox && machineBox.height > 0 ? clawBox.height * .29 / machineBox.height * 100 : 7
+        toy.style.transition = 'none'
+        toy.style.left = `${this.clawX}%`
+        toy.style.top = `${this.clawY + offsetY}%`
+        void toy.offsetWidth
+        toy.classList.add('is-lifted')
+      }
+      await new Promise(resolve => window.setTimeout(resolve, aligned ? 350 : 250))
       if (aligned && toy) {
         // Keep the plush attached to the claw during the entire trip to the exit.
         // Derive the exit center from the actual rendered chute, including mobile layouts.
@@ -863,7 +875,7 @@ export class GachaUi {
           const px = startX + (exitX - startX) * fraction
           const py = startY + (exitY - startY) * fraction
           if (arm) { arm.style.transition = 'left .28s linear, top .28s linear'; arm.style.left = `${px}%`; arm.style.top = `${py}%` }
-          toy.style.transition = 'left .28s linear, top .28s linear, transform .3s, opacity .3s'
+          toy.style.transition = 'left .28s linear, top .28s linear'
           toy.style.left = `${px}%`; toy.style.top = `${py + gripOffsetY}%`
           await new Promise(resolve => window.setTimeout(resolve, 310))
         }
