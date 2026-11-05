@@ -3115,3 +3115,23 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .rps-decision button[data-action="rps-next"]{background:#ffda85}
 #ui .rps-decision button[hidden] {display:none!important}
 @media (max-height:700px) {#ui .rps-scene {justify-content:flex-start}#ui .rps-chiikawa {height:145px}#ui .rps-choice-row button {min-height:65px}#ui .rps-choice-row button span{font-size:26px}}
+
+/* v0.84: RPS belongs inside the existing right-side reward stack,
+   directly below roulette, never as an independently positioned element. */
+.gacha-screen > .top-rewards > .rps-lobby-tab {
+ position:relative!important;top:auto!important;left:auto!important;right:auto!important;
+ width:100%!important;min-height:34px!important;max-width:100%!important;
+ margin:0!important;display:flex!important;flex-direction:row!important;
+ justify-content:flex-start!important;align-items:center!important;gap:3px!important;
+ padding:4px!important;box-sizing:border-box!important;
+ z-index:auto!important;white-space:nowrap!important;
+ border:1px solid #efb5d4!important;border-radius:12px!important;
+ background:#fff2f9!important;color:#80596f!important;
+ font-size:10px!important;box-shadow:none!important;
+}
+.gacha-screen > .top-rewards > .rps-lobby-tab .reward-icon {display:flex;align-items:center;justify-content:center;flex:0 0 20px;}
+.gacha-screen > .top-rewards > .rps-lobby-tab .reward-icon img {width:20px!important;height:20px!important;object-fit:contain!important;}
+.gacha-screen > .top-rewards > .rps-lobby-tab > span:last-child {min-width:0;display:flex;flex-direction:column;align-items:flex-start;}
+.gacha-screen > .top-rewards > .rps-lobby-tab b {font-size:10px!important;line-height:1.2!important;}
+.gacha-screen > .top-rewards > .rps-lobby-tab .rps-lobby-status {font-size:8px!important;line-height:1.2!important;display:block!important;}
+.gacha-screen > .top-rewards > .rps-lobby-tab.is-used {background:#e6e6e6!important;border-color:#c9c9c9!important;color:#777!important;filter:grayscale(1);}
