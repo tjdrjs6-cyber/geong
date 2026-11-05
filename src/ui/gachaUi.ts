@@ -1037,8 +1037,8 @@ export class GachaUi {
     }catch(e){
       this.handleError(e)
       const message=this.root.querySelector<HTMLElement>('.rps-message')
-      if(message)message.textContent=`도전을 시작하지 못했어요 (${error instanceof Error?error.message:'연결 오류'}). 잠시 후 다시 시도해 주세요.`
-      // Do not immediately refetch: it can overwrite the actionable error and appear frozen.
+      if(message)message.textContent=`도전을 시작하지 못했어요 (${e instanceof Error?e.message:'연결 오류'}). 잠시 후 다시 시도해 주세요.`
+      // Preserve the actionable error; do not hide it with an immediate re-render.
     }
     finally {this.rpsResolving=false;if(startButton){startButton.disabled=false;startButton.textContent='도전 시작!'}}
   }
