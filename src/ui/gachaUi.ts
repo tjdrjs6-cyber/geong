@@ -63,6 +63,8 @@ export class GachaUi {
   private expeditionServer = 1
   private expeditionTimer = 0
   private expeditionLoading = false
+  private expeditionBadgeCheckedAt = 0
+  private expeditionBadgeDay = ''
   private users: PublicUser[] = []
   private privacy: ProfilePrivacy = { char: true, deco: true, house: true }
 
@@ -84,13 +86,13 @@ export class GachaUi {
     window.addEventListener('pointerup', () => this.stopClawHold())
     window.addEventListener('pointercancel', () => this.stopClawHold())
     window.addEventListener('blur', () => this.stopClawHold())
-    window.setInterval(() => { void this.tickSettle() }, 60_000)
+    window.setInterval(() => { void this.tickSettle(); if (this.screen === 'title') void this.refreshExpeditionBadge(true) }, 60_000)
     this.root.querySelector<HTMLFormElement>('.auth-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitAuth() })
     this.root.querySelector<HTMLFormElement>('.nickname-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitNickname() })
     this.house = new HouseView(this.root.querySelector<HTMLElement>('.house-screen')!, this.store, { toast: text => this.toast(text), error: error => this.handleError(error), wallet: () => this.renderWallet() })
     this.renderWallet()
     this.renderCollection()
-    this.chatBadgeTimer = window.setInterval(() => { if (this.screen === 'title') void this.refreshGlobalChatDot() }, 12000)
+    this.chatBadgeTimer = window.setInterval(() => { if (this.screen === 'title') void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge() }, 12000)
     // Keep the 2D stage (floor + name tag) clear of the bottom controls, whatever their height.
     const fitStage = (): void => {
       const screen = this.root.querySelector<HTMLElement>('[data-screen="title"]')
@@ -259,7 +261,7 @@ export class GachaUi {
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <button class="expedition-entry" data-action="expedition"><img src="/expedition_banner.jpg" alt="원정대"/><span class="expedition-entry-label"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대</span></button>
+        <button class="expedition-entry" data-action="expedition"><img src="/expedition_banner.jpg" alt="원정대"/><span class="expedition-entry-label"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대</span><i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
@@ -429,7 +431,7 @@ export class GachaUi {
     if (action === 'house') { this.show('house'); return }
     if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.show('expedition');return}
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;if(this.expedition)this.renderExpedition();return}
-    if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition()}catch(e){this.handleError(e)}return}
+    if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
@@ -1265,7 +1267,7 @@ export class GachaUi {
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {this.expedition=await this.store.expedition();this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    try {this.expedition=await this.store.expedition();this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private renderExpedition():void {
     const state=this.expedition
@@ -1313,6 +1315,20 @@ export class GachaUi {
     if (stats) stats.textContent = `캐릭터 도감 ${this.store.data.owned.length} / ${CHARACTERS.length} · 데코 도감 ${Object.keys(this.store.decos).length} / ${DECOS.length}`
   }
   private mailCheckedAt = 0
+  private setExpeditionBadge(show: boolean): void {
+    const badge = this.root.querySelector<HTMLElement>('.expedition-entry-dot')
+    if (badge) badge.hidden = !show
+  }
+  private async refreshExpeditionBadge(force = false): Promise<void> {
+    if (!this.store.user) { this.setExpeditionBadge(false); return }
+    if (!force && Date.now() - this.expeditionBadgeCheckedAt < 20000) return
+    this.expeditionBadgeCheckedAt = Date.now()
+    try {
+      const state = await this.store.expedition()
+      this.expeditionBadgeDay = state.day
+      this.setExpeditionBadge(!state.mine)
+    } catch { /* Keep the last badge state on a temporary network failure. */ }
+  }
   private refreshMailBadge(force = false): void {
     this.renderMailBadge()
     if (!this.store.user || (!force && Date.now() - this.mailCheckedAt < 20000)) return
@@ -1851,9 +1867,11 @@ export class GachaUi {
   private popReveal(item: RevealItem, index: number, total: number): void {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
     if (!node) return
+    const grade = item.grade ? item.grade.replace(/^★\s*/, '') : '노멀'
     const counter = total > 1 ? `<small class="pop-count">${index + 1} / ${total}</small>` : ''
     const hint = total > 1 ? '<small class="pop-more">화면을 누르면 다음으로 넘어가요</small>' : ''
     node.innerHTML = `<div class="pop-card${item.rare ? ' is-rare' : ''}" style="--friend:${item.color};--accent:${item.accent}">
+        <span class="pop-grade">${grade}</span>
         <span class="pop-burst">${item.rare ? `${item.grade ?? '★'} 뿅!` : '뿅!'}</span>
         ${counter}
         <span class="pop-photo"><img src="${item.image}" alt="${item.name}" /></span>

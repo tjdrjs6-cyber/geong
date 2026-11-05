@@ -2960,3 +2960,20 @@ html body > #geongi-version {
 .gacha-boot .boot-capsule{background:rgba(255,250,246,.92)}
 .gacha-boot h1,.gacha-boot p{color:#fffaf1;text-shadow:0 2px 7px rgba(25,29,55,.9),0 1px 3px rgba(25,29,55,.85)}
 .gacha-boot .boot-track{border:1px solid rgba(255,255,255,.65);background:rgba(255,246,237,.65);box-shadow:0 2px 9px rgba(18,26,53,.35)}
+
+/* v0.73: gacha reveal grade and daily expedition deployment reminder */
+#ui .pop-card .pop-grade {position:absolute;top:14px;left:14px;z-index:3;padding:5px 10px;border-radius:14px;background:#fff8ec;color:#6d5058;border:1.5px solid #f0d5c5;font-size:12px;font-weight:900;box-shadow:0 2px 6px #6d50581c;}
+#ui .expedition-entry {position:relative;}
+#ui .expedition-entry-dot:not([hidden]) {display:block;position:absolute;right:9px;top:8px;width:12px;height:12px;border-radius:50%;background:#ff3f55;border:2px solid white;box-shadow:0 0 0 1px #e94254,0 2px 5px #0002;z-index:5;}
+
+/* v0.74: preserve the supplied meadow illustration's portrait proportions. */
+.gacha-screen, .gacha-screen.is-active {
+  background-color:#92cff7!important;
+  background-image:url('/lobby_meadow.png')!important;
+  background-repeat:no-repeat!important;
+  background-position:center center!important;
+  background-size:auto 100%!important;
+}
+@media (max-aspect-ratio: 9/16) {
+  .gacha-screen, .gacha-screen.is-active { background-size:cover!important; }
+}
