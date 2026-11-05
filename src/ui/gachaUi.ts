@@ -418,7 +418,7 @@ export class GachaUi {
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
-          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab">🧸 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab">🌸 데코</button></div>
+          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -1408,7 +1408,7 @@ export class GachaUi {
         const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
-          <span class="user-main"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b><i class="user-bar"><i style="width:${percent}%"></i></i></span>
+          <span class="user-main"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/><b>+${user.weaponLevel??0}</b></span>` : ''}<i class="user-bar"><i style="width:${percent}%"></i></i></span>
           <span class="user-count">${(user.privacy?.char ?? true) || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${(user.privacy?.deco ?? true) || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
         </button>`
       }).join('')}</div>`
@@ -1571,11 +1571,11 @@ export class GachaUi {
     const status=this.root.querySelector<HTMLElement>('.expedition-status')
     if(status)status.textContent=hp===0?'보스 토벌 성공! 우편함에서 보상을 받아주세요! 🎁':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
-    if(members){const html=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
+    if(members){const html=room.members.map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${battlePower(m.characterId)+(m.weaponLevel===null||m.weaponLevel===undefined?0:(m.weaponLevel<=14?m.weaponLevel+1:m.weaponLevel===20?50:20+(m.weaponLevel-15)*5))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party){const html=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px">${m.weapon && ['pink','blue','yellow'].includes(m.weapon) ? `<span class="forge-weapon-tag"><img src="/assets/forge/badge_${m.weapon}.png" alt="장착 무기"/><b>+${Number(m.weaponLevel)||0}</b></span>` : ''}<span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    if(party){const html=room.members.map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker){const html=hp===0?'보스가 처치됐어요. 📬 우편함에서 500코인 보상을 수령해 주세요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+    if(picker){const html=hp===0?'보스가 처치됐어요. 📬 우편함에서 500코인 보상을 수령해 주세요.':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)+(this.store.forge?.bonus??0)}${this.store.forge?` (무기 +${this.store.forge.bonus})`:``}</small></span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
       if(picker.innerHTML!==html){
         const choices=picker.querySelector<HTMLElement>('.expedition-choices')
@@ -1928,7 +1928,7 @@ export class GachaUi {
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
       const icon = secondUnit.querySelector<HTMLElement>('.bf-friend-icon')
       const power = secondUnit.querySelector<HTMLElement>('.bf-friend-power')
-      if (body) body.innerHTML = second ? `${this.store.forge ? `<span class="forge-weapon-tag"><img src="/assets/forge/badge_${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
+      if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
       if (icon) icon.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="" />` : ''
       if (power) power.textContent = second ? `⚔ ${battlePower(second.id)}` : ''
     }
@@ -1938,9 +1938,9 @@ export class GachaUi {
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
       const icon = unit.querySelector<HTMLElement>('.bf-friend-icon')
       const power = unit.querySelector<HTMLElement>('.bf-friend-power')
-      if (body) body.innerHTML = fighter ? `${this.store.forge ? `<span class="forge-weapon-tag"><img src="/assets/forge/badge_${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `${this.store.forge ? `<span class="battle-weapon-strike" aria-label="강화 무기 +${this.store.forge.level}"><img src="/assets/forge/badge_${this.store.forge.weapon}.png" alt=""/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
       if (icon) icon.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="" />` : ''
-      if (power) power.textContent = fighter ? `⚔ ${battlePower(fighter.id)}` : ''
+      if (power) power.textContent = fighter ? `⚔ ${battlePower(fighter.id)+(this.store.forge?.bonus??0)}` : ''
     }
     this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter))
     this.renderBattleStatus()

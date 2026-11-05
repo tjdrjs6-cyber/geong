@@ -646,8 +646,9 @@ async function expeditionSettle(conn, day, serverId, now) {
   let hp=Number(boss.hp),last=Number(boss.last_tick)
   const ticks=hp>0 ? Math.max(0,Math.floor((now-last)/EXP_TICK)) : 0
   if(ticks) {
-    const [members]=await conn.query('SELECT character_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
-    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0),0)
+    const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
+    // One permanent weapon bonus per participating account, regardless of party size.
+    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level))),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
@@ -1064,7 +1065,7 @@ const routes = {
   'GET /api/users': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, d.items, p.show_char, p.show_deco, p.show_house FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
+    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, f.weapon AS forge_weapon, f.level AS forge_level, d.items, p.show_char, p.show_deco, p.show_house FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_forge f ON f.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
     const users = rows.map(row => {
       const me = Number(row.id) === Number(account.id)
       const privacy = { char: row.show_char === null || row.show_char === undefined ? true : Boolean(row.show_char), deco: row.show_deco === null || row.show_deco === undefined ? true : Boolean(row.show_deco), house: row.show_house === null || row.show_house === undefined ? true : Boolean(row.show_house) }
@@ -1072,7 +1073,7 @@ const routes = {
       const owned = me || privacy.char ? rawOwned : []
       const decos = me || privacy.deco ? Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {})) : []
       const featured = row.featured && rawOwned.includes(row.featured) ? row.featured : (rawOwned[0] || null)
-      return { nickname: row.nickname, owned, decos, featured, me, privacy }
+      return { nickname: row.nickname, owned, decos, featured, me, privacy, weapon: row.forge_weapon || null, weaponLevel: row.forge_weapon ? Number(row.forge_level) : null }
     })
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
