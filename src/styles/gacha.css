@@ -3171,3 +3171,20 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .rps-screen.is-active { pointer-events:auto!important; }
 #ui .rps-screen.is-active button { pointer-events:auto!important; touch-action:manipulation; }
 #ui .rps-screen:not(.is-active) { pointer-events:none!important; }
+
+/* v0.94: state transitions and gentle Momonga wiggle */
+#ui .rps-screen.rps-loading .rps-choice-row,
+#ui .rps-screen.rps-loading .rps-decision,
+#ui .rps-screen.rps-loading .rps-stage-label {visibility:hidden}
+#ui .rps-screen.rps-resting .rps-choice-row,
+#ui .rps-screen.rps-resting .rps-decision {display:none!important}
+#ui .rps-chiikawa {transform-origin:50% 85%;animation:rps-momonga-wiggle 1.8s ease-in-out infinite;will-change:transform}
+@keyframes rps-momonga-wiggle {
+  0%,100% {transform:rotate(-3deg) translateY(0)}
+  25% {transform:rotate(3deg) translateY(-5px)}
+  50% {transform:rotate(-2deg) translateY(0)}
+  75% {transform:rotate(3deg) translateY(-3px)}
+}
+@media (prefers-reduced-motion:reduce) {#ui .rps-chiikawa {animation:none}}
+#ui .rps-decision button {transition:transform .15s ease,background-color .15s ease}
+#ui .rps-decision button:active {transform:scale(.96)}
