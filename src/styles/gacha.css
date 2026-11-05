@@ -3639,3 +3639,39 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 }
 .battle-field .bf-enemy .bf-bar-track {min-width:22px!important;}
 .expedition-projectile {transform-origin:center center!important;}
+
+/* v1.73: HP label remains fully visible; bar extends slightly to either side. */
+.battle-field .bf-enemy .bf-bar {
+  width:min(355px, 91cqw)!important; max-width:none!important;
+  min-width:0!important; box-sizing:border-box!important;
+  padding:6px 9px!important; gap:7px!important;
+  overflow:visible!important; flex-wrap:nowrap!important;
+  transform:translateX(-50%); left:50%; position:relative;
+}
+.battle-field .bf-enemy .bf-bar-track {flex:1 1 32px!important;min-width:25px!important;}
+.battle-field .bf-enemy .bf-enemy-hp {
+  flex:0 0 auto!important;white-space:nowrap!important;
+  font-size:clamp(10px,2.5cqw,13px)!important;letter-spacing:-.3px!important;
+  overflow:visible!important;
+}
+/* The weapon and fighters land at 16% of each 3-second cycle, immediately retreat,
+   then rest at their home positions until the next cycle. */
+@keyframes battle-strike-return-v173 {
+  0%,4% {transform:translate(var(--strike-start-x),var(--strike-start-y)) rotate(var(--strike-start-r));}
+  16% {transform:translate(var(--strike-hit-x),var(--strike-hit-y)) rotate(var(--strike-hit-r));}
+  29% {transform:translate(var(--strike-start-x),var(--strike-start-y)) rotate(var(--strike-start-r));}
+  29.01%,100% {transform:translate(var(--strike-start-x),var(--strike-start-y)) rotate(var(--strike-start-r));}
+}
+.battle-field.is-fighting .bf-friend-body,
+.battle-field.is-fighting > .battle-weapon-strike {
+  animation:battle-strike-return-v173 3s cubic-bezier(.35,0,.3,1) var(--battle-cycle-offset,0s) infinite!important;
+}
+/* Stable 3-second expedition cycle: short wind-up, smooth 1-second flight, no reset jump. */
+@keyframes exp-shot-smooth-v173 {
+  0%,5% {opacity:0;transform:translate3d(0,0,0) scale(.7);}
+  7% {opacity:1;transform:translate3d(0,0,0) scale(1);}
+  33.333% {opacity:1;transform:translate3d(var(--shot-x),var(--shot-y),0) scale(1.15);}
+  34%,100% {opacity:0;transform:translate3d(var(--shot-x),var(--shot-y),0) scale(.25);}
+}
+.expedition-projectile {animation:exp-shot-smooth-v173 3s linear infinite!important;animation-delay:0s!important;will-change:transform,opacity;}
+.expedition-fighter {backface-visibility:hidden;will-change:transform;}
