@@ -2947,3 +2947,16 @@ html body > #geongi-version {
   transition:none!important;
   will-change:auto!important;
 }
+
+/* v0.72 — portrait camp illustration on loading screen */
+.gacha-boot.is-active{
+  background-color:#4c5e8a;
+  background-image:linear-gradient(180deg,rgba(20,27,52,.06),rgba(20,27,52,.14)),url('/boot_camp_night.webp');
+  background-position:center center;
+  background-repeat:no-repeat;
+  background-size:cover;
+  min-height:100%;
+}
+.gacha-boot .boot-capsule{background:rgba(255,250,246,.92)}
+.gacha-boot h1,.gacha-boot p{color:#fffaf1;text-shadow:0 2px 7px rgba(25,29,55,.9),0 1px 3px rgba(25,29,55,.85)}
+.gacha-boot .boot-track{border:1px solid rgba(255,255,255,.65);background:rgba(255,246,237,.65);box-shadow:0 2px 9px rgba(18,26,53,.35)}
