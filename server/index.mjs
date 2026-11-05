@@ -80,8 +80,13 @@ async function prepareDatabase() {
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
     raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
-    hp BIGINT NOT NULL DEFAULT 10000000, last_tick BIGINT NOT NULL,
+    hp BIGINT NOT NULL DEFAULT 4000000, last_tick BIGINT NOT NULL,
     PRIMARY KEY (raid_day, server_id)
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_hp_migration (
+    raid_day VARCHAR(10) NOT NULL,
+    server_id TINYINT UNSIGNED NOT NULL,
+    PRIMARY KEY (raid_day,server_id)
   )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_member (
     raid_day VARCHAR(10) NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
@@ -569,7 +574,7 @@ async function ensureGlobalChatTables() {
 }
 
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
-const EXP_HP = 10000000
+const EXP_HP = 4000000
 const EXP_TICK = 3000
 function expeditionWindow(now = Date.now()) {
   const kst = new Date(now + 9 * 3600000)
@@ -577,6 +582,20 @@ function expeditionWindow(now = Date.now()) {
   const actualStart = midnight + 9*3600000 - (kst.getUTCHours() < 9 ? 86400000 : 0)
   const d = new Date(actualStart + 9*3600000)
   return {day:d.toISOString().slice(0,10),start:actualStart,next:actualStart+86400000}
+}
+// Existing raid damage is preserved: old remaining HP - 6,000,000.
+// The migration marker is transactional, so retries/concurrent requests cannot
+// subtract the difference twice. Fresh raids already start at 4,000,000.
+async function expeditionMigrateHp(conn,day,serverId) {
+  const [rows]=await conn.query('SELECT hp FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+  if(!rows.length)return
+  const [marked]=await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,serverId])
+  if(marked.affectedRows) {
+    // Newly created bosses have full 4m HP. Existing old-cap bosses
+    // can be distinguished only by persisted creation metadata; see below.
+    const oldHp=Number(rows[0].hp)
+    if(true) await conn.query('UPDATE gm_expedition_boss SET hp=? WHERE raid_day=? AND server_id=?',[Math.max(0,oldHp-6000000),day,serverId])
+  }
 }
 async function expeditionSettle(conn, day, serverId, now) {
   const [bossRows] = await conn.query('SELECT hp,last_tick FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
@@ -633,7 +652,9 @@ async function expeditionSnapshot(accountId) {
     const [mine]=await conn.query('SELECT server_id,character_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
     const servers=[]
     for(let id=1;id<=3;id++) {
-      await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,id,EXP_HP,start])
+      const [insertedBoss]=await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,id,EXP_HP,start])
+      if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,id])
+      await expeditionMigrateHp(conn,day,id)
       const hp=await expeditionSettle(conn,day,id,now)
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
       servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,me:String(m.account_id)===String(accountId)}))})
@@ -647,7 +668,9 @@ async function expeditionJoin(accountId,serverId,characterId) {
   const conn=await pool.getConnection()
   try {
     await conn.beginTransaction()
-    await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
+    const [insertedBoss]=await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
+      if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,serverId])
+      await expeditionMigrateHp(conn,day,serverId)
     const hp=await expeditionSettle(conn,day,serverId,now)
     const [old]=await conn.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
     if(old.length && Number(old[0].server_id)!==serverId) {await conn.rollback();return 'exp_already_joined'}

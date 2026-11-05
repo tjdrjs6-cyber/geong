@@ -260,7 +260,17 @@ export class RemoteGachaStore {
     }catch(error){if(error instanceof RequestError)throw error;throw new RequestError('network_timeout')}
     finally{clearTimeout(timeout)}
   }
-  async rps():Promise<RpsState> {return request<RpsState>('rps')}
+  async rps():Promise<RpsState> {
+    const controller=new AbortController()
+    const timeout=setTimeout(()=>controller.abort(),5000)
+    try {
+      const response=await fetch('/api/rps',{credentials:'include',cache:'no-store',signal:controller.signal})
+      const data=await response.json().catch(()=>({error:'invalid_response'})) as RpsState & {error?:string}
+      if(!response.ok)throw new RequestError(data.error||`http_${response.status}`)
+      return data
+    }catch(error){if(error instanceof RequestError)throw error;throw new RequestError('rps_load_timeout')}
+    finally{clearTimeout(timeout)}
+  }
   async rpsStart():Promise<RpsState> {return this.rpsRequest('rps/start',{})}
   async rpsChoose(move:string):Promise<RpsState> {return request<RpsState>('rps/choose',{move})}
   async rpsResolve():Promise<RpsState> {return request<RpsState>('rps/resolve',{})}
