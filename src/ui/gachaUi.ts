@@ -70,6 +70,7 @@ export class GachaUi {
   private rpsResolving = false
   private expedition: ExpeditionState | null = null
   private expeditionServer = 1
+  private expeditionPreviousHp = new Map<number, number>()
   private expeditionTimer = 0
   private expeditionLoading = false
   private expeditionBadgeCheckedAt = 0
@@ -569,7 +570,7 @@ export class GachaUi {
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
-    if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.show('expedition');return}
+    if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.show('expedition');return}
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
@@ -1653,6 +1654,26 @@ export class GachaUi {
     const room=state.servers.find(r=>r.id===this.expeditionServer)!
     this.root.querySelectorAll<HTMLButtonElement>('.expedition-server-tabs button').forEach(b=>b.classList.toggle('selected',Number(b.dataset.id)===room.id))
     const hp=Math.max(0,room.hp)
+    // Show only damage actually confirmed by the server, not a guessed per-hit value.
+    const oldHp=this.expeditionPreviousHp.get(room.id)
+    this.expeditionPreviousHp.set(room.id,hp)
+    if(oldHp!==undefined && hp<oldHp && room.members.length>0){
+      const cave=this.root.querySelector<HTMLElement>('.expedition-cave')
+      const bossHit=this.root.querySelector<HTMLElement>('.expedition-boss')
+      if(cave){
+        const popup=document.createElement('span')
+        popup.className='expedition-damage-number'
+        popup.textContent=`-${(oldHp-hp).toLocaleString('ko-KR')}`
+        cave.appendChild(popup)
+        window.setTimeout(()=>popup.remove(),1150)
+      }
+      if(bossHit){
+        bossHit.classList.remove('expedition-impact')
+        void bossHit.offsetWidth
+        bossHit.classList.add('expedition-impact')
+        window.setTimeout(()=>bossHit.classList.remove('expedition-impact'),650)
+      }
+    }
     const label=this.root.querySelector<HTMLElement>('.exp-hp');if(label)label.textContent=hp.toLocaleString('ko-KR')
     const fill=this.root.querySelector<HTMLElement>('.expedition-hp-fill');if(fill)fill.style.width=`${hp/4000000*100}%`
     const percent=this.root.querySelector<HTMLElement>('.expedition-hp-percent');if(percent)percent.textContent=`${(hp/4000000*100).toFixed(2)}%`

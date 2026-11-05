@@ -3587,3 +3587,12 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-field.is-fighting .bf-friend-body {animation:bf-attack-v166 3s linear var(--battle-cycle-offset,0s) infinite!important;}
 .battle-field.is-fighting > .battle-weapon-strike {animation:arena-weapon-v166 3s linear var(--battle-cycle-offset,0s) infinite!important;}
 .battle-field .bf-hit {color:#e00000!important;-webkit-text-fill-color:#e00000!important;-webkit-text-stroke:.7px #720000!important;text-shadow:0 1px 2px rgba(255,255,255,.9),0 2px 5px rgba(90,0,0,.45)!important;}
+
+/* v1.67: remove decorative diamond sparkle from battle field only */
+.battle-field .bf-spark { display:none!important; animation:none!important; }
+
+/* v1.68: server-confirmed expedition damage at boss impact */
+.expedition-damage-number{position:absolute;z-index:15;left:50%;top:35%;transform:translate(-50%,0);color:#ff2020!important;font-size:clamp(24px,6vw,42px);font-weight:1000;-webkit-text-stroke:1px #6d0808;text-shadow:0 2px 2px #fff,0 3px 8px #360000;pointer-events:none;white-space:nowrap;animation:exp-damage-pop 1.1s ease-out forwards}
+@keyframes exp-damage-pop{0%{opacity:0;transform:translate(-50%,15px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.2)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-48px) scale(1)}}
+.expedition-boss.expedition-impact:not(.defeated){animation:exp-impact-flash .6s ease-out!important}
+@keyframes exp-impact-flash{0%,100%{filter:drop-shadow(0 8px 7px #001a36aa);transform:translateX(-50%)}20%{filter:brightness(1.8) drop-shadow(0 0 18px #ff4545);transform:translateX(calc(-50% + 8px)) rotate(3deg)}45%{transform:translateX(calc(-50% - 7px)) rotate(-3deg)}}
