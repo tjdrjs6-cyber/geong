@@ -3470,3 +3470,14 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   50%{filter:drop-shadow(0 0 10px #ffe66e) drop-shadow(0 0 19px #ffcc33)}
 }
 @media(prefers-reduced-motion:reduce){.forge-aura.aura-20>img,.forge-aura.aura-20::before,.forge-aura.aura-20::after{animation:none!important;opacity:1}}
+
+/* v152: keep forge weapon and enhancement label readable on desktop/mobile */
+.forge-current{width:100%;box-sizing:border-box;min-width:0;gap:clamp(8px,2vw,14px)}
+.forge-current>.forge-aura{flex:0 1 46%;width:46%;min-width:0;max-width:46%;height:clamp(85px,22vw,140px)}
+.forge-current>.forge-aura>img{display:block;width:100%;height:100%;object-fit:contain}
+/* Previous >div selector also matched the text panel, but not the span image wrapper. */
+.forge-current>div{flex:1 1 0;min-width:0;max-width:54%;gap:clamp(5px,1vw,9px);font-size:clamp(11px,2.7vw,14px);overflow-wrap:normal;word-break:keep-all}
+.forge-current>div>b{font-size:clamp(12px,3vw,16px)}
+.forge-current>div>strong{display:block;white-space:nowrap;font-size:clamp(12px,3.2vw,19px);letter-spacing:-.055em;line-height:1.3}
+.forge-current>div>span{font-size:clamp(11px,2.6vw,14px);line-height:1.35;white-space:normal;word-break:keep-all}
+@media(max-width:380px){.forge-current{padding:9px;gap:7px}.forge-current>.forge-aura{flex-basis:42%;width:42%;max-width:42%}.forge-current>div{max-width:58%}.forge-current>div>strong{font-size:12px;letter-spacing:-.07em}}

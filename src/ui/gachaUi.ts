@@ -2109,7 +2109,7 @@ export class GachaUi {
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}<em class="is-power">⚔ ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
+            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}<em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
@@ -2122,7 +2122,7 @@ export class GachaUi {
       const power = secondUnit.querySelector<HTMLElement>('.bf-friend-power')
       if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
       if (name) name.textContent = second ? fullName(second) : ''
-      if (power) power.textContent = second ? `⚔ ${battlePower(second.id)}` : ''
+      if (power) power.textContent = second ? `전투력 ${battlePower(second.id)}` : ''
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second)')
     if (unit) {
@@ -2132,18 +2132,12 @@ export class GachaUi {
       const power = unit.querySelector<HTMLElement>('.bf-friend-power')
       if (body) body.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
       if (name) name.textContent = fighter ? fullName(fighter) : ''
-      if (power) power.textContent = fighter ? `⚔ ${battlePower(fighter.id)+(this.store.forge?.bonus??0)}` : ''
+      if (power) power.textContent = fighter ? `전투력 ${battlePower(fighter.id)}` : ''
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {
       battleField.querySelector('.battle-weapon-strike')?.remove()
-      if (fighter && this.store.forge && ['pink','blue','yellow'].includes(this.store.forge.weapon)) {
-        const weapon = document.createElement('div')
-        weapon.className = `battle-weapon-strike forge-aura ${weaponAuraClass(this.store.forge.level)}`
-        weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
-        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b>`
-        battleField.appendChild(weapon)
-      }
+
     }
     this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter))
     this.renderBattleStatus()
@@ -2171,7 +2165,7 @@ export class GachaUi {
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
     if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
-    if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 합산 전투력 ⚔ ${view.power} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
+    if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 캐릭터 전투력 ${battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0)} · 무기 전투력 ${this.store.forge?.bonus ?? 0} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
     const hp = this.root.querySelector<HTMLElement>('.battle-hp')
     if (hp) hp.textContent = `${view.hp} / ${ENEMY_HP}`
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
