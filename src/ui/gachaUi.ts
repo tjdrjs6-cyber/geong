@@ -939,35 +939,45 @@ export class GachaUi {
           await new Promise(resolve => window.setTimeout(resolve, 310))
         }
         if (!result.won) {
-          if (msg) msg.textContent = '이동 중 인형이 떨어졌어요! 출구 가까이 있는 인형이 더 유리해요.'
+          if (msg) msg.textContent = '이동 중 인형이 떨어졌어요! 멀리 있는 인형일수록 성공 확률이 높아요.'
           // Stop movement and place the toy immediately, without a shrinking/fading
           // drop animation that leaves a visible trail on the machine background.
           toy.style.transition = 'none'
           toy.classList.remove('is-lifted', 'is-dropped')
           // A failed grab stays where it fell, including after leaving or reloading.
           const landedFraction = Math.min(.86, endStep / steps)
-          // Near-chute misses bounce slightly backward, away from the exit,
-          // instead of landing directly in the prize opening.
-          const nearChute = landedFraction >= .65
-          const bounceBack = nearChute ? 5 + (landedFraction - .65) * 12 : 0
-          const horizontalAway = startX <= exitX ? -1 : 1
-          let landedX = Math.max(10, Math.min(90, startX + (exitX - startX) * landedFraction + horizontalAway * bounceBack))
-          let landedY = Math.min(69, Math.max(18, startY + (exitY - startY) * landedFraction + gripOffsetY + (nearChute ? 2.5 : 0)))
-          // Failed plushes must not straddle the prize opening. Keep the entire
-          // doll outside the rendered chute rectangle, not just its center.
+          // Land just BELOW the exact release point, with small independent
+          // variations on each attempt. Never force misses to the chute's left.
+          const releaseX = startX + (exitX - startX) * landedFraction
+          const releaseY = startY + (exitY - startY) * landedFraction + gripOffsetY
+          const jitterX = (Math.random() - .5) * 6
+          const jitterY = 4 + Math.random() * 4
+          let landedX = Math.max(10, Math.min(90, releaseX + jitterX))
+          let landedY = Math.max(18, Math.min(69, releaseY + jitterY))
+          // Keep the whole plush outside the prize chute (including a safety
+          // margin), choosing the nearest valid side based on drop location.
           if (machine && chute) {
             const mb = machine.getBoundingClientRect()
             const cb = chute.getBoundingClientRect()
-            const toyHalfW = toy.getBoundingClientRect().width / 2
-            const toyHalfH = toy.getBoundingClientRect().height / 2
-            const centerX = mb.left + mb.width * landedX / 100
-            const centerY = mb.top + mb.height * landedY / 100
-            const pad = 8
-            if (centerX + toyHalfW > cb.left - pad && centerX - toyHalfW < cb.right + pad &&
-                centerY + toyHalfH > cb.top - pad && centerY - toyHalfH < cb.bottom + pad) {
-              // Push back to the playfield side, leaving a visible gap.
-              landedX = Math.max(10, Math.min(90, (cb.left - pad - toyHalfW - mb.left) / mb.width * 100))
-              landedY = Math.max(18, Math.min(69, landedY))
+            const toyBox = toy.getBoundingClientRect()
+            const halfW = toyBox.width / 2 + 9
+            const halfH = toyBox.height / 2 + 9
+            const minX = (cb.left - halfW - mb.left) / mb.width * 100
+            const maxX = (cb.right + halfW - mb.left) / mb.width * 100
+            const minY = (cb.top - halfH - mb.top) / mb.height * 100
+            const maxY = (cb.bottom + halfH - mb.top) / mb.height * 100
+            if (landedX > minX && landedX < maxX && landedY > minY && landedY < maxY) {
+              // Prefer dropping below the chute, where the toy actually falls.
+              // If there is insufficient space, choose the closest other side.
+              const candidates = [
+                {x:landedX,y:maxY + 1},
+                {x:minX - 1,y:landedY},
+                {x:maxX + 1,y:landedY},
+                {x:landedX,y:minY - 1},
+              ].filter(pt => pt.x >= 10 && pt.x <= 90 && pt.y >= 18 && pt.y <= 69)
+              const target = candidates.sort((a,b) =>
+                Math.hypot(a.x-landedX,a.y-landedY) - Math.hypot(b.x-landedX,b.y-landedY))[0]
+              if(target){landedX=target.x;landedY=target.y}
             }
           }
           if (originalToy) {

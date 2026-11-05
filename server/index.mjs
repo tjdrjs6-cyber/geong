@@ -1253,10 +1253,11 @@ const routes = {
       const x = Math.max(0, Math.min(100, Number(body.x) || 0))
       const y = Math.max(0, Math.min(100, Number(body.y) || 0))
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
-      // Exact success probabilities by distance band. Band 6 is deliberately
-      // more generous than bands 3–5 per the game's configured rules.
-      const bandChances = [0, .50, .47, .26, .22, .18, .34]
-      const probability = segments <= 6 ? bandChances[segments] : bandChances[6] * .89 ** (segments - 6)
+      // Increasing final win chance with distance from the chute.
+      // This is one server-side roll per pickup, not one roll per travel step.
+      // Farther bands beyond 8 retain the 40% cap.
+      const bandChances = [0, .30, .40, .50, .60, .70, .80, .85, .90]
+      const probability = bandChances[Math.min(segments, 8)]
       const won = aligned === true && randomInt(1000000) < Math.round(probability * 1000000)
       // Failed grabs release the plush at a random point along the trip.
       // Failed pickups more often release near the start or midpoint.
