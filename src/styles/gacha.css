@@ -3223,3 +3223,14 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .diamond-icon{display:inline-block;width:1.35em;height:1.35em;object-fit:contain;vertical-align:-.26em;flex-shrink:0}
 #ui .diamond-wallet .diamond-icon{width:22px;height:22px;vertical-align:middle}
 #ui .storage-diamonds .diamond-icon{width:25px;height:25px}
+
+/* v1.03: keep hand illustrations inside their cards and tighten lower controls. */
+#ui .rps-screen .rps-scene {gap:clamp(3px,.65vh,7px)!important;padding-bottom:10px!important;}
+#ui .rps-screen .rps-countdown:empty {display:none!important;}
+#ui .rps-screen .rps-opponent-choice:not([hidden]) {min-height:34px!important;margin:0!important;gap:5px!important;line-height:1.1!important;}
+#ui .rps-screen .rps-opponent-choice img {height:34px!important;width:42px!important;object-fit:contain!important;}
+#ui .rps-screen .rps-choice-row {margin-top:0!important;gap:6px!important;}
+#ui .rps-screen .rps-choice-row button {min-width:0!important;min-height:77px!important;padding:8px 9px!important;gap:2px!important;overflow:visible!important;box-sizing:border-box!important;}
+#ui .rps-screen .rps-choice-row button img {display:block!important;box-sizing:border-box!important;width:65%!important;height:43px!important;max-width:70px!important;max-height:43px!important;object-fit:contain!important;flex-shrink:0!important;}
+#ui .rps-screen .rps-decision {margin-top:0!important;margin-bottom:0!important;}
+@media(max-height:700px){#ui .rps-screen .rps-choice-row button{min-height:68px!important;}#ui .rps-screen .rps-choice-row button img{height:35px!important;max-height:35px!important;}}
