@@ -70,6 +70,9 @@ export class GachaUi {
   private rpsResolving = false
   private expedition: ExpeditionState | null = null
   private expeditionServer = 1
+  private expeditionPendingDamage = new Map<number, number>()
+  private expeditionImpactTimer = 0
+  private expeditionImpactServer = 0
   private expeditionPreviousHp = new Map<number, number>()
   private expeditionTimer = 0
   private expeditionLoading = false
@@ -143,7 +146,7 @@ export class GachaUi {
     })
     this.root.dataset.activeScreen = screen
     window.clearInterval(this.expeditionTimer)
-    if (screen === 'expedition') {void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)}
+    if (screen === 'expedition') {this.expeditionPendingDamage.clear();this.startExpeditionImpactClock();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
     window.clearInterval(this.rpsTimer)
     if (screen === 'rps') {
       this.rpsState=null
@@ -570,8 +573,8 @@ export class GachaUi {
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
-    if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.show('expedition');return}
-    if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;if(this.expedition)this.renderExpedition();return}
+    if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.expeditionPendingDamage.clear();this.show('expedition');return}
+    if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.expeditionImpactServer=this.expeditionServer;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
@@ -1648,6 +1651,39 @@ export class GachaUi {
     this.expeditionLoading=true
     try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad)this.expeditionServer=this.expedition.mine?.serverId??1;this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
+  private startExpeditionImpactClock():void {
+    window.clearInterval(this.expeditionImpactTimer)
+    this.expeditionImpactServer=this.expeditionServer
+    // Fighters launch at 0s; projectile reaches the boss at 1s of each 3s cycle.
+    const contact=()=>{
+      if(this.screen!=='expedition')return
+      const room=this.expedition?.servers.find(r=>r.id===this.expeditionServer)
+      const damage=this.expeditionPendingDamage.get(this.expeditionServer)??0
+      if(!room || !room.members.length || damage<=0)return
+      this.expeditionPendingDamage.delete(this.expeditionServer)
+      const cave=this.root.querySelector<HTMLElement>('.expedition-cave')
+      const boss=this.root.querySelector<HTMLElement>('.expedition-boss')
+      if(cave){
+        const popup=document.createElement('span')
+        popup.className='expedition-damage-number'
+        popup.textContent=`-${damage.toLocaleString('ko-KR')}`
+        cave.appendChild(popup)
+        window.setTimeout(()=>popup.remove(),1150)
+      }
+      if(boss && room.hp>0){
+        boss.classList.remove('expedition-impact')
+        void boss.offsetWidth
+        boss.classList.add('expedition-impact')
+        window.setTimeout(()=>boss.classList.remove('expedition-impact'),650)
+      }
+    }
+    window.setTimeout(()=>{
+      if(this.screen!=='expedition')return
+      contact()
+      this.expeditionImpactTimer=window.setInterval(contact,3000)
+    },1000)
+  }
+
   private renderExpedition():void {
     const state=this.expedition
     if(!state)return
@@ -1658,21 +1694,8 @@ export class GachaUi {
     const oldHp=this.expeditionPreviousHp.get(room.id)
     this.expeditionPreviousHp.set(room.id,hp)
     if(oldHp!==undefined && hp<oldHp && room.members.length>0){
-      const cave=this.root.querySelector<HTMLElement>('.expedition-cave')
-      const bossHit=this.root.querySelector<HTMLElement>('.expedition-boss')
-      if(cave){
-        const popup=document.createElement('span')
-        popup.className='expedition-damage-number'
-        popup.textContent=`-${(oldHp-hp).toLocaleString('ko-KR')}`
-        cave.appendChild(popup)
-        window.setTimeout(()=>popup.remove(),1150)
-      }
-      if(bossHit){
-        bossHit.classList.remove('expedition-impact')
-        void bossHit.offsetWidth
-        bossHit.classList.add('expedition-impact')
-        window.setTimeout(()=>bossHit.classList.remove('expedition-impact'),650)
-      }
+      // Queue server-confirmed HP loss until the next projectile contact.
+      this.expeditionPendingDamage.set(room.id,(this.expeditionPendingDamage.get(room.id)??0)+(oldHp-hp))
     }
     const label=this.root.querySelector<HTMLElement>('.exp-hp');if(label)label.textContent=hp.toLocaleString('ko-KR')
     const fill=this.root.querySelector<HTMLElement>('.expedition-hp-fill');if(fill)fill.style.width=`${hp/4000000*100}%`

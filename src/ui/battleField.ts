@@ -30,7 +30,7 @@ export function battleFieldMarkup(): string {
     <img class="bf-scene bf-scene-background" src="/assets/battle_background_v163.png" alt="" aria-hidden="true" draggable="false" />
     <div class="bf-title"><span>⚔</span> 토벌장 <span>⚔</span></div>
     <div class="bf-unit bf-enemy">
-      <div class="bf-bar"><i class="bf-bar-icon">🐛</i><span class="bf-bar-track"><b class="bf-enemy-fill"></b></span><em class="bf-enemy-hp">20,000 / 20,000 · 100%</em></div>
+      <div class="bf-bar"><span class="bf-bar-track"><b class="bf-enemy-fill"></b></span><em class="bf-enemy-hp">20,000 / 20,000 · 100%</em></div>
       <div class="bf-body bf-enemy-body">${monsterSvg()}</div>
       <span class="bf-hit">-10</span>
     </div>
