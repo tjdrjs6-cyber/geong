@@ -146,7 +146,7 @@ export class GachaUi {
     })
     this.root.dataset.activeScreen = screen
     window.clearInterval(this.expeditionTimer)
-    if (screen === 'expedition') {this.expeditionPendingDamage.clear();this.startExpeditionImpactClock();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
+    if (screen === 'expedition') {this.expeditionPendingDamage.clear();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
     window.clearInterval(this.rpsTimer)
     if (screen === 'rps') {
       this.rpsState=null
@@ -1649,7 +1649,7 @@ export class GachaUi {
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad)this.expeditionServer=this.expedition.mine?.serverId??1;this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private startExpeditionImpactClock():void {
     window.clearInterval(this.expeditionImpactTimer)
@@ -1711,23 +1711,28 @@ export class GachaUi {
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${battlePower(m.characterId)+(m.weaponLevel===null||m.weaponLevel===undefined?0:(m.weaponLevel<=14?m.weaponLevel+1:m.weaponLevel===20?50:20+(m.weaponLevel-15)*5))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
     if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
-    // Aim each projectile at the actual center of the boss, independent of viewport width and row.
-    // CSS transforms are relative to the projectile's own untransformed position.
+    // Position the first shots only after the expedition panel is laid out.
+    // The original immediate measurement could read zero/stale coordinates on entry.
     if(party && boss && hp>0){
-      const target=boss.getBoundingClientRect()
-      const cx=target.left+target.width/2
-      const cy=target.top+target.height/2
-      party.querySelectorAll<HTMLElement>('.expedition-projectile').forEach(shot=>{
-        const source=shot.getBoundingClientRect()
-        // Undo the currently animated translation by measuring the offset parent instead.
-        const fighter=shot.closest<HTMLElement>('.expedition-combatant')
-        if(!fighter)return
-        const base=fighter.getBoundingClientRect()
-        const startX=base.left+base.width/2
-        const startY=base.bottom-32-4.5
-        shot.style.setProperty('--shot-x',`${Math.round(cx-startX)}px`)
-        shot.style.setProperty('--shot-y',`${Math.round(cy-startY)}px`)
-      })
+      const activeServer=room.id
+      window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>{
+        if(this.screen!=='expedition' || this.expeditionServer!==activeServer || !party.isConnected || !boss.isConnected)return
+        const target=boss.getBoundingClientRect()
+        if(target.width<=0 || target.height<=0)return
+        const cx=target.left+target.width/2
+        const cy=target.top+target.height/2
+        party.querySelectorAll<HTMLElement>('.expedition-projectile').forEach(shot=>{
+          const fighter=shot.closest<HTMLElement>('.expedition-combatant')
+          if(!fighter)return
+          const base=fighter.getBoundingClientRect()
+          if(base.width<=0 || base.height<=0)return
+          const startX=base.left+base.width/2
+          const startY=base.bottom-32-4.5
+          shot.style.setProperty('--shot-x',`${Math.round(cx-startX)}px`)
+          shot.style.setProperty('--shot-y',`${Math.round(cy-startY)}px`)
+          shot.classList.add('shot-ready')
+        })
+      }))
     }
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
     if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)+(this.store.forge?.bonus??0)}${this.store.forge?` (무기 +${this.store.forge.bonus})`:``}</small></span></button>`).join('')}</div>`
