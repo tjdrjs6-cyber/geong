@@ -1098,7 +1098,7 @@ export class GachaUi {
     screen.classList.remove('rps-loading')
     const resting=state.used && ['lost','claimed'].includes(state.phase) && !state.admin
     screen.classList.toggle('rps-resting',resting)
-    if(start)start.hidden=state.used || state.phase!=='none'
+    if(start)start.hidden=!(state.phase==='none' || (state.admin && ['lost','claimed'].includes(state.phase)))
     if(claim)claim.hidden=state.phase!=='won'||state.stage>=5
     if(next)next.hidden=!['won','draw'].includes(state.phase)||state.stage>=5&&state.phase==='won'
     if(next)next.textContent=state.phase==='draw'?'무승부! 다시 하기':`다음 단계 도전! (승리 시 ×${rewards[Math.min(state.stage,4)]})`
@@ -1118,7 +1118,7 @@ export class GachaUi {
       state.phase==='draw'?`둘 다 ${names[state.opponent]||''}! 비겼어요. 다시 도전!`:
       state.phase==='won'?`모몽가는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
       state.phase==='lost'?(state.used&&!state.admin?`다음 가위바위보까지 기다려 주세요!\n${this.rpsWaitText(state.nextAt)}\n\n${state.choice?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다.`:'아무것도 내지 않아서 졌어요!'}\n보상은 모두 사라졌어요.`:state.choice?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다.\n보상은 모두 사라졌어요.`:'아무것도 내지 않아서 졌어요!\n보상은 모두 사라졌어요.'):
-      state.phase==='claimed'?`보상 ${state.coins||rewards[(state.stage||1)-1]}코인을 받았어요!`:
+      state.phase==='claimed'?`보상 ${state.coins||rewards[(state.stage||1)-1]}코인을 받았어요!${state.admin?' 다시 도전할 수 있어요!':''}`:
       state.used?'이번 가위바위보는 끝났어요. 다음 도전 시간이 될 때까지 기다려 주세요!':'모몽가와 가위바위보를 시작해요!'
     if(state.phase==='won'&&state.stage===5&&claim){claim.hidden=false;claim.textContent='200코인 받기'}
     else if(claim)claim.textContent='코인 받고 그만하기'

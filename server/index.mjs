@@ -692,7 +692,7 @@ const rpsSlot = () => {
   return `${new Date(now).toISOString().slice(0,10)}-${Math.floor((now % 86400000) / 10800000)}`
 }
 const rpsNextAt = () => Math.floor((Date.now()+9*3600000)/10800000+1)*10800000-9*3600000
-const rpsAdmin = account => account.username === 'tjdrjs885' && Boolean(account.is_admin)
+const rpsAdmin = account => account.username === 'tjdrjs885' // Dedicated unlimited-play account; independent of is_admin DB flag
 const emptyRps = () => ({slot:'',stage:1,phase:'none',choice:'',deadline:0,result:'',opponent:''})
 async function rpsRow(db,id,lock=false) {
   const [rows]=await db.query(`SELECT * FROM gm_rps WHERE account_id=?${lock?' FOR UPDATE':''}`,[id])
@@ -794,7 +794,7 @@ const routes = {
       return {coins,phase:'claimed'}
     }))
     if(out.error)return send(res,409,out)
-    send(res,200,{...out,save:await getSave(account.id)})
+    send(res,200,{...out,admin:rpsAdmin(account),used:!rpsAdmin(account),nextAt:rpsNextAt(),save:await getSave(account.id)})
   },
   'GET /api/expedition/badge': async (req,res) => {
     const account=await currentAccount(req)
