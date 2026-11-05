@@ -400,7 +400,7 @@ export class GachaUi {
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
             <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw_open.png" alt="" /></div>
-            <div class="claw-toys"></div><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
+            <div class="claw-toys"></div><img class="claw-missed-sticker" src="/assets/claw/claw_missed.png" alt="놓쳤다!" aria-hidden="true" /><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
           <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1개</small></button></div>
           <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
@@ -991,6 +991,18 @@ export class GachaUi {
           toy.style.left = `${landedX}%`
           toy.style.top = `${landedY}%`
           void toy.offsetWidth
+          // Briefly show the supplied sticker between the release claw and fallen doll.
+          const sticker = this.root.querySelector<HTMLElement>('.claw-missed-sticker')
+          if (sticker) {
+            const midX = Math.max(10, Math.min(90, (releaseX + landedX) / 2))
+            const midY = Math.max(10, Math.min(90, (releaseY + landedY) / 2))
+            sticker.style.left = `${midX}%`
+            sticker.style.top = `${midY}%`
+            sticker.classList.remove('is-visible')
+            void sticker.offsetWidth
+            sticker.classList.add('is-visible')
+            window.setTimeout(() => sticker.classList.remove('is-visible'), 850)
+          }
           // Do not restore the old transition: it can animate from the dropped
           // coordinates to the saved position and leave a ghost/trail.
         }

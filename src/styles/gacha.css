@@ -3237,3 +3237,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* v1.09: normalize Hachiware plush size relative to the other claw dolls. */
 .gacha-modal.claw-screen .claw-single-toy[data-toy-id="hachiware"]{width:52px!important;height:52px!important;}
+
+/* v1.17: small temporary missed-claw sticker between release point and doll */
+.gacha-modal.claw-screen .claw-missed-sticker{position:absolute;z-index:12;width:clamp(38px,12%,62px);height:auto;object-fit:contain;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease}
+.gacha-modal.claw-screen .claw-missed-sticker.is-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
