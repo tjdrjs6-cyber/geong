@@ -2137,7 +2137,15 @@ export class GachaUi {
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {
       battleField.querySelector('.battle-weapon-strike')?.remove()
-
+      // Keep the character's displayed power separate from the weapon bonus.
+      // Restore the existing weapon attack animation at its original arena position.
+      if (fighter && this.store.forge && ['pink','blue','yellow'].includes(this.store.forge.weapon)) {
+        const weapon = document.createElement('div')
+        weapon.className = `battle-weapon-strike forge-aura ${weaponAuraClass(this.store.forge.level)}`
+        weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
+        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b>`
+        battleField.appendChild(weapon)
+      }
     }
     this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter))
     this.renderBattleStatus()
@@ -2165,7 +2173,15 @@ export class GachaUi {
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
     if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
-    if (status) status.textContent = fighter ? `토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'} · 캐릭터 전투력 ${battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0)} · 무기 전투력 ${this.store.forge?.bonus ?? 0} (캐릭터를 눌러 교체/해제)` : '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
+    if (status) {
+      if (fighter) {
+        const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0)
+        const weaponPower = this.store.forge?.bonus ?? 0
+        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>무기 전투력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
+      } else {
+        status.textContent = '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
+      }
+    }
     const hp = this.root.querySelector<HTMLElement>('.battle-hp')
     if (hp) hp.textContent = `${view.hp} / ${ENEMY_HP}`
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')

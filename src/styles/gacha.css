@@ -3481,3 +3481,25 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .forge-current>div>strong{display:block;white-space:nowrap;font-size:clamp(12px,3.2vw,19px);letter-spacing:-.055em;line-height:1.3}
 .forge-current>div>span{font-size:clamp(11px,2.6vw,14px);line-height:1.35;white-space:normal;word-break:keep-all}
 @media(max-width:380px){.forge-current{padding:9px;gap:7px}.forge-current>.forge-aura{flex-basis:42%;width:42%;max-width:42%}.forge-current>div{max-width:58%}.forge-current>div>strong{font-size:12px;letter-spacing:-.07em}}
+
+/* v154: constrain forge dialog to the actual game container on wide PC screens.
+   vw refers to the browser window, not the narrow game panel. */
+.gacha-modal.forge-screen {grid-template-columns:minmax(0,1fr);min-width:0;box-sizing:border-box;overflow:hidden;}
+.gacha-modal.forge-screen > .forge-card {width:min(100%,520px)!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-self:center;}
+.gacha-modal.forge-screen .forge-body {width:100%;min-width:0;box-sizing:border-box;overflow-x:hidden;}
+.gacha-modal.forge-screen .forge-current {max-width:100%;}
+.gacha-modal.forge-screen .forge-current > div {min-width:0;}
+
+/* v155: battle summary wraps into its own rows without covering character cards. */
+.battle-panel .battle-status { display:block; margin:4px 0 8px; line-height:1.45; overflow-wrap:normal; word-break:keep-all; }
+.battle-status-row { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:3px 12px; }
+.battle-status-row > span { display:inline-flex; align-items:baseline; gap:4px; white-space:nowrap; }
+.battle-status-row b { font-weight:800; }
+.battle-total-power { color:#a24c4c; font-weight:800; }
+.battle-status-help { display:block; margin-top:3px; font-size:11px; color:#88777a; }
+.weed-screen .weed-panel.battle-panel .field-info-sticky { position:relative; z-index:2; flex:0 0 auto; }
+.weed-screen .weed-panel.battle-panel .battle-picker { min-height:0; overflow-y:auto; position:relative; z-index:1; }
+@media(max-width:480px) {
+ .battle-status-row { gap:2px 9px; font-size:11px; }
+ .battle-status-help { font-size:10px; }
+}
