@@ -3253,7 +3253,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* v1.20: Tap the selected lobby friend to cycle compact illustrated tips. */
 .toon-stage .toon-hero { pointer-events: auto; }
- to {opacity:1;transform:translateY(0) scale(1)} }
+
 
 /* v1.21: halve the tap target without shrinking the visible featured friend. */
 .gacha-screen .toon-hero { pointer-events:none !important; }
