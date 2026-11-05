@@ -30,6 +30,8 @@ function mailTime(at: number): string {
 export class GachaUi {
   screen: Screen = 'boot'
   private readonly root = document.getElementById('ui')!
+  private heroTipIndex = 0
+  private heroTipTimer = 0
   private toastTimer = 0
   private wheelSpinning = false
   private wheelTurn = 0
@@ -119,6 +121,7 @@ export class GachaUi {
       usersCard?.classList.remove('privacy-mode')
       usersCard?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden')
     }
+    if (screen !== 'title') this.hideHeroTip()
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
       const active = node.dataset.screen === screen
@@ -303,7 +306,7 @@ export class GachaUi {
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
-          <div class="toon-hero"><img class="toon-hero-img" alt="" /></div>
+          <div class="toon-hero"><button type="button" class="toon-hero-touch" data-action="hero-tip" aria-label="대표 캐릭터를 눌러 게임 팁 보기"><img class="toon-hero-img" alt="" /></button><img class="toon-hero-tip" src="/hero_tip_1.png" alt="게임 팁" hidden /></div>
           <span class="toon-hero-name"></span>
           <i class="toon-capsule"></i>
         </section>
@@ -457,6 +460,7 @@ export class GachaUi {
     if (!action) return
     this.audio.unlock()
     this.audio.play('ui')
+    if (action === 'hero-tip') { this.nextHeroTip(); return }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
     if (action === 'rps-start') {await this.rpsAction('start');return}
@@ -1386,6 +1390,27 @@ export class GachaUi {
     if (!this.store.data.owned.length) { grid.innerHTML = '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'; return }
     grid.innerHTML = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).map(character => `<button class="featured-pick${current === character.id ? ' is-active' : ''}" role="listitem" data-action="featured-pick" data-id="${character.id}" aria-pressed="${current === character.id}" ${current === character.id ? 'disabled aria-disabled="true"' : ''}>
         <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><b>${character.name}</b>${character.variant ? `<em>${character.variant}</em>` : ''}${current === character.id ? '<small class="featured-selected-label">✓ 선택됨</small>' : ''}</button>`).join('')
+  }
+
+  private hideHeroTip(): void {
+    window.clearTimeout(this.heroTipTimer)
+    const tip = this.root.querySelector<HTMLImageElement>('.toon-hero-tip')
+    if (tip) tip.hidden = true
+  }
+
+  private nextHeroTip(): void {
+    if (this.screen !== 'title') return
+    const tip = this.root.querySelector<HTMLImageElement>('.toon-hero-tip')
+    if (!tip) return
+    this.heroTipIndex = (this.heroTipIndex % 4) + 1
+    tip.src = `/hero_tip_${this.heroTipIndex}.png`
+    tip.alt = ['하우스에서 매시간마다 랜덤코인을 얻을 수 있다고!', '보관함에서 중복 캐릭터와 데코를 판매할 수 있어!', '가위바위보에서 연속으로 5번 이기면 최대 200코인을 얻을 수 있어!', '원정대는 하루에 한번 꼭 배치해!'][this.heroTipIndex - 1]
+    tip.hidden = false
+    tip.classList.remove('tip-appear')
+    void tip.offsetWidth
+    tip.classList.add('tip-appear')
+    window.clearTimeout(this.heroTipTimer)
+    this.heroTipTimer = window.setTimeout(() => { tip.hidden = true }, 3200)
   }
 
   /** The account's representative friend: the saved choice if still owned, else the first collected, else 치이카와. */
