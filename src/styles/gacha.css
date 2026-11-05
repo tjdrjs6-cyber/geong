@@ -3250,7 +3250,6 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-modal.claw-screen .claw-balance-count .diamond-value {font-size:27px;font-weight:900}
 .gacha-modal.claw-screen .claw-balance-unit {font-size:17px}
 .gacha-modal.claw-screen .claw-balance-help {font-size:12px;margin:4px 0 7px;color:#79515b}
-<<<<<<< HEAD
 
 /* v1.20: Tap the selected lobby friend to cycle compact illustrated tips. */
 .toon-stage .toon-hero { pointer-events: auto; }
@@ -3287,5 +3286,3 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .bf-friend-body{position:relative}
 .bf-friend-body .forge-weapon-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:30}
 .bf-friend-body .forge-weapon-tag img{width:22px!important;height:17px!important}
-=======
->>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df

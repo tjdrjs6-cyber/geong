@@ -762,7 +762,6 @@ const rpsPublic = (row,admin=false) => ({
   reward:rpsRewards[Math.min(4,Number(row.stage)-1)]
 })
 const routes = {
-<<<<<<< HEAD
   'GET /api/forge': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, {error:'login_required'})
@@ -817,8 +816,6 @@ const routes = {
       send(res,200,{success,forge:{weapon:rows[0].weapon,level:newLevel,bonus:forgeBonus(newLevel)},save:await getSave(account.id)})
     } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
   },
-=======
->>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
   'GET /api/rps': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -1318,33 +1315,12 @@ const routes = {
     send(res, 200, { save: outcome.state, results: outcome.results, dupes })
   },
   'POST /api/claw/refresh': async (req, res) => {
-<<<<<<< HEAD
-=======
-    const account = await currentAccount(req)
-    if (!account) return send(res, 401, { error: 'login_required' })
-    const conn = await pool.getConnection()
-    try {
-      await conn.beginTransaction()
-      const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
-      if (!rows.length || (!account.is_admin && Number(rows[0].diamonds) < 2)) {
-        await conn.rollback()
-        return send(res, 400, { error: 'not_enough_diamonds' })
-      }
-      if (!account.is_admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 2 WHERE account_id = ?', [account.id])
-      await conn.commit()
-      return send(res, 200, { save: await getSave(account.id) })
-    } catch (error) { await conn.rollback().catch(() => {}); throw error }
-    finally { conn.release() }
-  },
-  'POST /api/claw/play': async (req, res) => {
->>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     await rechargeDiamonds(account.id)
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-<<<<<<< HEAD
       const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       if (!rows.length || (!account.is_admin && Number(rows[0].diamonds) < 2)) {
         await conn.rollback()
@@ -1363,8 +1339,6 @@ const routes = {
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-=======
->>>>>>> 80304f260da02520091cc7cb6c8bacbc9cda53df
       const body = await readJson(req)
       const { aligned } = body
       const admin = Boolean(account.is_admin)
