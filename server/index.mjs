@@ -1083,7 +1083,7 @@ const routes = {
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
       // Exact success probabilities by distance band. Band 6 is deliberately
       // more generous than bands 3–5 per the game's configured rules.
-      const bandChances = [0, .65, .62, .36, .31, .26, .45]
+      const bandChances = [0, .62, .59, .33, .28, .23, .42]
       const probability = segments <= 6 ? bandChances[segments] : bandChances[6] * .89 ** (segments - 6)
       const won = aligned === true && randomInt(1000000) < Math.round(probability * 1000000)
       // Failed grabs release the plush at a random point along the trip.

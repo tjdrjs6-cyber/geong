@@ -681,6 +681,8 @@ export class GachaUi {
       for (let attempt = 0; attempt < 80; attempt++) {
         x = 16 + Math.random() * 68
         y = 22 + Math.random() * 46
+        // Never spawn inside or immediately beside the upper-right prize chute.
+        if (x > 64 && y < 42) continue
         if (this.clawToys.every(other => other === toy || other.id === id || Math.hypot(other.x - x, other.y - y) >= 21)) break
       }
       toy.x = x; toy.y = y
@@ -785,6 +787,7 @@ export class GachaUi {
     const directions: Record<string, [number, number]> = { 'claw-up':[0,-2.8], 'claw-down':[0,2.8], 'claw-left':[-2.8,0], 'claw-right':[2.8,0] }
     const move = directions[action]
     if (!move) return
+    this.clawTargetId = null // A previous successful grab must not remain selected while moving.
     this.clawX = Math.max(10, Math.min(90, this.clawX + move[0]))
     this.clawY = Math.max(10, Math.min(90, this.clawY + move[1]))
     this.updateClawPosition()
@@ -818,6 +821,8 @@ export class GachaUi {
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
     if (btn) btn.disabled = true
+    if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
+    this.root.querySelectorAll<HTMLElement>('.claw-single-toy').forEach(node => node.classList.remove('is-lifted', 'is-dropped'))
     let wonToy = false
     try {
       const aligned = this.clawTouchesToy()
@@ -957,6 +962,7 @@ export class GachaUi {
         clawArm.style.removeProperty('transition')
       }
       this.setClawClosed(false)
+      this.clawTargetId = null
       this.clawBusy=false
       if(btn) btn.disabled=false
     }
