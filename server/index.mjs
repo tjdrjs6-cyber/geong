@@ -743,8 +743,8 @@ const routes = {
     if(!rpsMoves.includes(move))return send(res,400,{error:'rps_move'})
     const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot!==rpsSlot()||row.phase!=='choosing'||Date.now()>Number(row.deadline))return {error:'rps_closed'}
-      await conn.query("UPDATE gm_rps SET choice=?,phase='waiting' WHERE account_id=?",[move,account.id])
-      return {phase:'waiting',deadline:Number(row.deadline),choice:move,stage:Number(row.stage)}
+      await conn.query("UPDATE gm_rps SET choice=? WHERE account_id=?",[move,account.id])
+      return {...rpsPublic({...row,choice:move},rpsAdmin(account)),phase:'choosing'}
     }))
     send(res,out.error?409:200,out)
   },

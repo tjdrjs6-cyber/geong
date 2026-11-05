@@ -214,7 +214,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="weed-title">제초장</b>
-          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
+          <div class="wallet weed-wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
         <div class="weed-field">${weedFieldMarkup()}</div>
         <div class="weed-panel">
@@ -251,9 +251,9 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="house-title">하우스</b>
-          <div class="wallet weed-wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
+          <div class="wallet weed-wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
-        <div class="house-scroll-viewport" aria-label="세로형 하우스 꾸미기 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><span class="house-coin-face">✿</span><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
+        <div class="house-scroll-viewport" aria-label="세로형 하우스 꾸미기 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><img class="house-coin-face" src="/assets/coin.png" alt=""/><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
         <div class="weed-panel house-panel">
           <div class="field-info-sticky">
@@ -275,9 +275,9 @@ export class GachaUi {
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><span>3시간마다 1회</span></header>
         <div class="rps-scene">
           <h2>나랑 가위바위보 하자!</h2>
-          <div class="rps-stage-label">1단계 · 10코인</div>
+          <div class="rps-stage-label">1단계 · <img class="rps-coin" src="/assets/coin.png" alt="코인"/> <b class="rps-coin-count">×10</b></div>
           <img class="rps-chiikawa" src="/rps_momonga.png" alt="모몽가"/>
-          <p class="rps-message">가위바위보를 시작해 보세요!</p>
+          <p class="rps-message">가위바위보를 시작해 보세요!</p><div class="rps-opponent-choice" hidden><span>모몽가가 낸 것</span><img src="/rps_rock.png" alt="모몽가의 선택"/><strong></strong></div>
           <strong class="rps-countdown"></strong>
           <div class="rps-choice-row">
             <button data-action="rps-move" data-move="rock"><img src="/rps_rock.png" alt=""/>바위</button>
@@ -294,7 +294,7 @@ export class GachaUi {
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
-          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
+          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
@@ -318,7 +318,7 @@ export class GachaUi {
       </main>
       <div class="insufficient-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="insufficient-title" aria-describedby="insufficient-message">
         <div class="insufficient-card">
-          <span class="insufficient-icon" aria-hidden="true">🪙</span>
+          <img class="insufficient-icon" src="/assets/coin.png" alt=""/>
           <h2 id="insufficient-title">코인이 부족해요!</h2>
           <p id="insufficient-message"></p>
           <button type="button" data-action="insufficient-close" class="insufficient-close">확인</button>
@@ -1045,7 +1045,7 @@ export class GachaUi {
         action==='claim'?await this.store.rpsClaim():await this.store.rpsChoose(move)
       this.rpsState=state
       this.renderRps()
-      if(action==='claim'){this.renderWallet();void this.refreshRpsBadge()}
+      if(action==='claim'){await this.store.restore();this.renderWallet();void this.refreshRpsBadge()}
     }catch(e){
       this.handleError(e)
       const message=this.root.querySelector<HTMLElement>('.rps-message')
@@ -1094,18 +1094,26 @@ export class GachaUi {
     const next=screen.querySelector<HTMLButtonElement>('[data-action="rps-next"]')
     const moves=screen.querySelectorAll<HTMLButtonElement>('[data-action="rps-move"]')
     const rewards=[10,20,50,100,200]
-    if(label)label.textContent=`${state.stage||1}단계 · ${rewards[(state.stage||1)-1]}코인`
+    if(label)label.innerHTML=`${state.stage||1}단계 · <img class="rps-coin" src="/assets/coin.png" alt="코인"/> <b class="rps-coin-count">×${rewards[(state.stage||1)-1]}</b>`
     screen.classList.remove('rps-loading')
     const resting=state.used && ['lost','claimed'].includes(state.phase) && !state.admin
     screen.classList.toggle('rps-resting',resting)
     if(start)start.hidden=state.used || state.phase!=='none'
     if(claim)claim.hidden=state.phase!=='won'||state.stage>=5
     if(next)next.hidden=!['won','draw'].includes(state.phase)||state.stage>=5&&state.phase==='won'
-    if(next)next.textContent=state.phase==='draw'?'무승부! 다시 하기':`다음 단계 도전! (승리 시 ${rewards[Math.min(state.stage,4)]}코인)`
+    if(next)next.textContent=state.phase==='draw'?'무승부! 다시 하기':`다음 단계 도전! (승리 시 ×${rewards[Math.min(state.stage,4)]})`
     moves.forEach(b=>{b.disabled=state.phase!=='choosing';b.classList.toggle('is-selected',state.choice===b.dataset.move)})
-    if(countdown)countdown.textContent=resting&&state.nextAt?this.rpsWaitText(state.nextAt):''
+    const opponentBox=screen.querySelector<HTMLElement>('.rps-opponent-choice')
+    const opponentImage=opponentBox?.querySelector<HTMLImageElement>('img')
+    const opponentText=opponentBox?.querySelector<HTMLElement>('strong')
+    const moveNames:Record<string,string>={rock:'바위',scissors:'가위',paper:'보'}
+    const showOpponent=['won','lost','draw','claimed'].includes(state.phase)&&Boolean(state.opponent)
+    if(opponentBox)opponentBox.hidden=!showOpponent
+    if(showOpponent&&opponentImage){opponentImage.src=`/rps_${state.opponent}.png`;opponentImage.alt=`모몽가가 낸 ${moveNames[state.opponent]}`}
+    if(showOpponent&&opponentText)opponentText.textContent=moveNames[state.opponent]||''
+    if(countdown)countdown.textContent=state.nextAt&&state.used&&!state.admin&&!['choosing','waiting'].includes(state.phase)?this.rpsWaitText(state.nextAt):''
     const names:Record<string,string>={rock:'바위',scissors:'가위',paper:'보'}
-    if(msg)msg.textContent=state.phase==='choosing'?'5초 안에 가위·바위·보를 골라주세요!':
+    if(msg)msg.textContent=state.phase==='choosing'?(state.choice?'선택을 바꿀 수 있어요! 5초가 끝나면 확정돼요.':'5초 안에 가위·바위·보를 골라주세요!'):
       state.phase==='waiting'?'선택 완료! 모몽가의 선택을 기다려요…':
       state.phase==='draw'?`둘 다 ${names[state.opponent]||''}! 비겼어요. 다시 도전!`:
       state.phase==='won'?`모몽가는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
