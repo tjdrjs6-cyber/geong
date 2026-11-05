@@ -1128,8 +1128,7 @@ export class GachaUi {
         // switching screens or leaving a permanent result panel behind.
         if (deco) {
           const duplicate = (previousDecos[deco.id] ?? 0) > 0
-          const reveal = this.decoReveal({ id: deco.id, duplicate, bonus: 0 })
-          reveal.tag = duplicate ? '중복 획득! · 보관함에 1개 추가' : '새로운 데코 발견! · 보관함에 저장'
+          const reveal = this.decoReveal({ id: deco.id, duplicate, bonus: result.bonus })
           this.popReveal(reveal, 0, 1)
           const revealNode = this.root.querySelector<HTMLElement>('.pop-reveal')
           const dismiss = () => { window.clearTimeout(hideTimer); this.hidePop(); revealNode?.removeEventListener('pointerdown', dismiss) }
@@ -1645,7 +1644,7 @@ export class GachaUi {
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {this.expedition=await this.store.expedition();this.expeditionServer=this.expedition.mine?.serverId??1;this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad)this.expeditionServer=this.expedition.mine?.serverId??1;this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private renderExpedition():void {
     const state=this.expedition
