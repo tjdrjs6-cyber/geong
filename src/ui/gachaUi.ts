@@ -695,22 +695,23 @@ export class GachaUi {
     const arm = this.root.querySelector<HTMLElement>('.claw-arm')
     if (!arm) return false
     const a = arm.getBoundingClientRect()
-    // The two lower claw tips (not just the nonexistent legacy .claw-head)
-    // can touch any part of a plush to initiate a pickup.
-    const tips = [
-      { x: a.left + a.width * .23, y: a.top + a.height * .87 },
-      { x: a.left + a.width * .77, y: a.top + a.height * .87 },
-      { x: a.left + a.width * .50, y: a.top + a.height * .73 },
-    ]
+    // Require the plush's CENTER to sit between the claw jaws.
+    // A grazing contact with the outer tips no longer counts as a pickup.
+    const gripX = a.left + a.width * .50
+    const gripY = a.top + a.height * .80
     let nearest = Infinity
     this.root.querySelectorAll<HTMLElement>('.claw-single-toy').forEach(toy => {
       const b = toy.getBoundingClientRect()
-      const gap = Math.max(4, Math.min(a.width, a.height) * .08)
-      for (const tip of tips) {
-        const dx = Math.max(b.left - tip.x, 0, tip.x - b.right)
-        const dy = Math.max(b.top - tip.y, 0, tip.y - b.bottom)
-        const dist = Math.hypot(dx, dy)
-        if (dist <= gap && dist < nearest) { nearest = dist; this.clawTargetId = toy.dataset.toyId ?? null }
+      const centerX = b.left + b.width / 2
+      const centerY = b.top + b.height / 2
+      const dx = Math.abs(centerX - gripX)
+      const dy = Math.abs(centerY - gripY)
+      const xTolerance = Math.min(a.width * .16, b.width * .32)
+      const yTolerance = Math.min(a.height * .14, b.height * .36)
+      const distance = Math.hypot(dx / xTolerance, dy / yTolerance)
+      if (dx <= xTolerance && dy <= yTolerance && distance < nearest) {
+        nearest = distance
+        this.clawTargetId = toy.dataset.toyId ?? null
       }
     })
     return this.clawTargetId !== null
