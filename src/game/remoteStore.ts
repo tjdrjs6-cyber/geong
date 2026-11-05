@@ -3,6 +3,7 @@ import type { CharacterId, GachaSave, PullCount, PullResult } from './collection
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
+export type RpsState = { used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
 export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
@@ -248,6 +249,16 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
+  async rps():Promise<RpsState> {return request<RpsState>('rps')}
+  async rpsStart():Promise<RpsState> {return request<RpsState>('rps/start',{})}
+  async rpsChoose(move:string):Promise<RpsState> {return request<RpsState>('rps/choose',{move})}
+  async rpsResolve():Promise<RpsState> {return request<RpsState>('rps/resolve',{})}
+  async rpsNext():Promise<RpsState> {return request<RpsState>('rps/next',{})}
+  async rpsClaim():Promise<RpsState> {
+    const result=await request<RpsState>('rps/claim',{})
+    if(result.save)this.data=result.save
+    return result
+  }
   async expedition():Promise<ExpeditionState> {return request<ExpeditionState>('expedition')}
   async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }

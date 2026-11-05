@@ -35,6 +35,16 @@ async function prepareDatabase() {
     waitForConnections: true,
   })
   // Additive, repeatable migration; existing accounts and saves are preserved.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_rps (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    slot VARCHAR(24) NOT NULL DEFAULT '',
+    stage TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    phase VARCHAR(16) NOT NULL DEFAULT 'none',
+    choice VARCHAR(8) NOT NULL DEFAULT '',
+    deadline BIGINT NOT NULL DEFAULT 0,
+    result VARCHAR(8) NOT NULL DEFAULT '',
+    opponent VARCHAR(8) NOT NULL DEFAULT ''
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_profile_privacy (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     show_char TINYINT(1) NOT NULL DEFAULT 1,
@@ -635,7 +645,112 @@ async function expeditionJoin(accountId,serverId,characterId) {
     await conn.commit();return null
   } catch(e){await conn.rollback();if(e.code==='ER_DUP_ENTRY')return 'exp_already_joined';throw e}finally{conn.release()}
 }
+const rpsRewards = [10,20,50,100,200]
+const rpsMoves = ['rock','scissors','paper']
+const rpsSlot = () => {
+  const now = Date.now() + 9 * 3600000
+  return `${new Date(now).toISOString().slice(0,10)}-${Math.floor((now % 86400000) / 10800000)}`
+}
+async function rpsRow(db,id,lock=false) {
+  await db.query("INSERT IGNORE INTO gm_rps (account_id) VALUES (?)",[id])
+  const [rows] = await db.query(`SELECT * FROM gm_rps WHERE account_id = ?${lock?' FOR UPDATE':''}`,[id])
+  return rows[0]
+}
+async function rpsTransaction(id, callback) {
+  const conn=await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const row=await rpsRow(conn,id,true)
+    const result=await callback(conn,row)
+    await conn.commit()
+    return result
+  } catch(e) {await conn.rollback().catch(()=>{});throw e}
+  finally {conn.release()}
+}
+const rpsPublic = row => ({
+  used:row.slot===rpsSlot(), stage:Number(row.stage),
+  phase:row.slot===rpsSlot()?row.phase:'none',
+  deadline:Number(row.deadline), choice:row.choice,
+  result:row.result, opponent:row.opponent,
+  reward:rpsRewards[Math.min(4,Number(row.stage)-1)]
+})
 const routes = {
+  'GET /api/rps': async(req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    send(res,200,rpsPublic(await rpsRow(pool,account.id)))
+  },
+  'POST /api/rps/start': async(req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    const out=await rpsTransaction(account.id,async(conn,row)=>{
+      if(row.slot===rpsSlot())return {error:'rps_used',...rpsPublic(row)}
+      await conn.query("UPDATE gm_rps SET slot=?,stage=1,phase='choosing',choice='',deadline=?,result='',opponent='' WHERE account_id=?",[rpsSlot(),Date.now()+5000,account.id])
+      return {used:true,stage:1,phase:'choosing',deadline:Date.now()+5000,reward:10}
+    })
+    send(res,out.error?409:200,out)
+  },
+  'POST /api/rps/choose': async(req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {move}=await readJson(req)
+    if(!rpsMoves.includes(move))return send(res,400,{error:'rps_move'})
+    const out=await rpsTransaction(account.id,async(conn,row)=>{
+      if(row.slot!==rpsSlot()||row.phase!=='choosing'||Date.now()>Number(row.deadline))return {error:'rps_closed'}
+      await conn.query("UPDATE gm_rps SET choice=?,phase='waiting' WHERE account_id=?",[move,account.id])
+      return {phase:'waiting',deadline:Number(row.deadline),choice:move,stage:Number(row.stage)}
+    })
+    send(res,out.error?409:200,out)
+  },
+  'POST /api/rps/resolve': async(req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    const out=await rpsTransaction(account.id,async(conn,row)=>{
+      if(row.slot!==rpsSlot())return {error:'rps_closed'}
+      if(row.phase!=='choosing'&&row.phase!=='waiting')return rpsPublic(row)
+      if(Date.now()<Number(row.deadline))return {error:'rps_wait'}
+      const opponent=rpsMoves[randomInt(3)]
+      const choice=row.choice
+      const result=!choice?'lose':choice===opponent?'draw':
+        ((choice==='rock'&&opponent==='scissors')||(choice==='scissors'&&opponent==='paper')||(choice==='paper'&&opponent==='rock'))?'win':'lose'
+      const finalWin=result==='win'&&Number(row.stage)===5
+      const phase=finalWin?'claimed':result==='lose'?'lost':result==='win'?'won':'draw'
+      await conn.query("UPDATE gm_rps SET phase=?,result=?,opponent=? WHERE account_id=?",[phase,result,opponent,account.id])
+      if(finalWin)await conn.query("UPDATE gm_saves SET gems=gems+200 WHERE account_id=?",[account.id])
+      return {...rpsPublic({...row,phase,result,opponent}),phase,result,opponent,coins:finalWin?200:undefined}
+    })
+    send(res,out.error?409:200,out)
+  },
+  'POST /api/rps/next': async(req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    const out=await rpsTransaction(account.id,async(conn,row)=>{
+      if(row.slot!==rpsSlot()||!['won','draw'].includes(row.phase))return {error:'rps_closed'}
+      if(row.phase==='won'&&Number(row.stage)>=5)return {error:'rps_closed'}
+      const stage=Number(row.stage)+(row.phase==='won'?1:0)
+      const deadline=Date.now()+5000
+      await conn.query("UPDATE gm_rps SET stage=?,phase='choosing',choice='',deadline=?,result='',opponent='' WHERE account_id=?",[stage,deadline,account.id])
+      return {used:true,stage,phase:'choosing',deadline,reward:rpsRewards[stage-1]}
+    })
+    send(res,out.error?409:200,out)
+  },
+  'POST /api/rps/claim': async(req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    const out=await rpsTransaction(account.id,async(conn,row)=>{
+      if(row.slot!==rpsSlot()||row.phase!=='won')return {error:'rps_closed'}
+      const coins=rpsRewards[Number(row.stage)-1]
+      await conn.query("UPDATE gm_rps SET phase='claimed' WHERE account_id=?",[account.id])
+      await conn.query("UPDATE gm_saves SET gems=gems+? WHERE account_id=?",[coins,account.id])
+      return {coins,phase:'claimed'}
+    })
+    if(out.error)return send(res,409,out)
+    send(res,200,{...out,save:await getSave(account.id)})
+  },
   'GET /api/expedition': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})

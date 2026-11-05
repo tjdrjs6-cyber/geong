@@ -3059,3 +3059,59 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   display:block!important;position:absolute!important;left:auto!important;right:-11px!important;top:-5px!important;
   width:12px!important;height:12px!important;z-index:10!important;
 }
+
+/* v0.82: comfortable legendary styling — no flashing, sweeping, or brightness pulses. */
+#ui .collection-grid .friend-card.tier-legendary,
+#ui .result-list .result-friend.result-tier-legendary,
+#ui .pop-card.tier-legendary .pop-grade,
+.collection-grid .friend-card.tier-legendary,
+.result-list .result-friend.result-tier-legendary {
+  animation: none !important;
+  filter: none !important;
+  transition: border-color .3s ease, box-shadow .3s ease;
+}
+#ui .collection-grid .friend-card.tier-legendary::after,
+#ui .result-list .result-friend.result-tier-legendary::after,
+.collection-grid .friend-card.tier-legendary::after,
+.result-list .result-friend.result-tier-legendary::after {
+  display: none !important;
+  animation: none !important;
+  content: none !important;
+}
+#ui .collection-grid .friend-card.tier-legendary,
+#ui .result-list .result-friend.result-tier-legendary {
+  border-color: #d5ad54 !important;
+  background: #fff9e9 !important;
+  box-shadow: 0 0 0 1px rgba(213,173,84,.22) !important;
+}
+#ui .pop-card.tier-legendary .pop-grade {
+  background: #fff3cf !important;
+  box-shadow: 0 0 4px rgba(213,173,84,.18) !important;
+}
+
+/* v0.83 - Chiikawa rock-paper-scissors */
+#ui .rps-lobby-tab {position:absolute;top:90px;left:8px;z-index:12;display:flex;align-items:center;gap:5px;border:2px solid #e9c4e0;border-radius:18px;background:#fff1fa;padding:5px 8px;color:#75516d;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 5px #9a6d8d24}
+#ui .rps-lobby-tab img {width:22px;height:22px;object-fit:contain}
+#ui .rps-lobby-tab .rps-lobby-status {font-size:9px;color:#9a7690}
+#ui .rps-lobby-tab.is-used {background:#e5e5e5;border-color:#c8c8c8;color:#858585;filter:grayscale(1)}
+#ui .rps-screen {position:absolute;inset:0;z-index:15;display:none;background:#a6dafa}
+#ui .rps-screen.is-active {display:flex;flex-direction:column}
+#ui .rps-screen .weed-header {flex-shrink:0;z-index:2}
+#ui .rps-scene {flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;gap:7px;padding:12px 12px 28px;background:linear-gradient(180deg,#93d1ff 0%,#b8e7ff 38%,#c3e98e 40%,#e0f6a3 100%);text-align:center;overflow-y:auto}
+#ui .rps-scene h2 {font-size:23px;color:#54362c;text-shadow:0 2px #fff;line-height:1.25}
+#ui .rps-stage-label {background:#fff8dc;border:2px solid #865a43;border-radius:30px;padding:7px 20px;font-weight:900;color:#795039}
+#ui .rps-chiikawa {display:block;width:min(53vw,205px);height:min(34vh,260px);object-fit:contain;filter:drop-shadow(0 5px 3px #6f944b50)}
+#ui .rps-message {background:#ffffffd9;border:2px solid #fff;border-radius:16px;padding:12px 14px;font-size:14px;font-weight:800;color:#59403d;max-width:95%}
+#ui .rps-countdown {font-size:24px;color:#ad5d61;min-height:28px}
+#ui .rps-choice-row {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:380px}
+#ui .rps-choice-row button {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:3px solid #6b4639;border-radius:22px;background:#ffe0e5;min-height:92px;font-size:15px;font-weight:900;color:#604338;box-shadow:0 4px 0 #ffffffb0;cursor:pointer}
+#ui .rps-choice-row button:nth-child(2){background:#fff3bc}
+#ui .rps-choice-row button:nth-child(3){background:#d7f0ff}
+#ui .rps-choice-row button span {font-size:37px}
+#ui .rps-choice-row button:disabled {opacity:.55;cursor:default}
+#ui .rps-choice-row button.is-selected {outline:3px solid #f5a4a7;opacity:1}
+#ui .rps-decision {display:flex;flex-wrap:wrap;justify-content:center;gap:9px;width:100%}
+#ui .rps-decision button {border:2px solid #8b5e4c;border-radius:18px;background:#fff8f1;color:#6e4438;padding:11px 15px;font-weight:900;cursor:pointer}
+#ui .rps-decision button[data-action="rps-next"]{background:#ffda85}
+#ui .rps-decision button[hidden] {display:none!important}
+@media (max-height:700px) {#ui .rps-scene {justify-content:flex-start}#ui .rps-chiikawa {height:145px}#ui .rps-choice-row button {min-height:65px}#ui .rps-choice-row button span{font-size:26px}}

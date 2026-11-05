@@ -2,7 +2,7 @@ import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'
 import { BATTLE_TICK_MS, ENEMY_HP, battlePower, CHARACTERS, DAILY_GIFT, NEW_ENTRY_BONUS, RARE_NEW_BONUS, PULL_OPTIONS, characterById, fullName, type Character, pullCost, STARTING_COINS, ROULETTE_PRIZES, type CharacterId, type PullCount, type PullResult } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
-import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, type ExpeditionState, type ProfilePrivacy, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICES, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
+import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, type ExpeditionState, type RpsState, type ProfilePrivacy, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICES, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
 import { weedFieldMarkup } from './weedField'
 import { battleFieldMarkup } from './battleField'
 import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
@@ -14,7 +14,7 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -59,6 +59,9 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
+  private rpsState: RpsState | null = null
+  private rpsTimer = 0
+  private rpsResolving = false
   private expedition: ExpeditionState | null = null
   private expeditionServer = 1
   private expeditionTimer = 0
@@ -86,13 +89,14 @@ export class GachaUi {
     window.addEventListener('pointerup', () => this.stopClawHold())
     window.addEventListener('pointercancel', () => this.stopClawHold())
     window.addEventListener('blur', () => this.stopClawHold())
-    window.setInterval(() => { void this.tickSettle(); if (this.screen === 'title') void this.refreshExpeditionBadge(true) }, 60_000)
+    window.setInterval(() => { void this.tickSettle(); if (this.screen === 'title') void this.refreshExpeditionBadge(true); void this.refreshRpsBadge() }, 60_000)
     this.root.querySelector<HTMLFormElement>('.auth-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitAuth() })
     this.root.querySelector<HTMLFormElement>('.nickname-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitNickname() })
     this.house = new HouseView(this.root.querySelector<HTMLElement>('.house-screen')!, this.store, { toast: text => this.toast(text), error: error => this.handleError(error), wallet: () => this.renderWallet() })
     this.renderWallet()
     this.renderCollection()
     void this.refreshExpeditionBadge(true)
+    void this.refreshRpsBadge()
     this.chatBadgeTimer = window.setInterval(() => { if (this.screen === 'title') void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge() }, 12000)
     // Keep the 2D stage (floor + name tag) clear of the bottom controls, whatever their height.
     const fitStage = (): void => {
@@ -124,6 +128,8 @@ export class GachaUi {
     this.root.dataset.activeScreen = screen
     window.clearInterval(this.expeditionTimer)
     if (screen === 'expedition') {void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)}
+    window.clearInterval(this.rpsTimer)
+    if (screen === 'rps') {void this.openRps();this.rpsTimer=window.setInterval(()=>void this.tickRps(),120)}
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
     if (screen === 'claw') { this.restoreClawToys(); this.resetClawToExit(); this.renderClaw() }
@@ -135,7 +141,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true) }
+    if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); this.weedTimer = window.setInterval(() => this.renderWeedStatus(), 1000) }
     if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 1000) }
@@ -255,12 +261,33 @@ export class GachaUi {
         <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 우편함으로 500코인 보상 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
+      <section class="rps-screen" data-screen="rps" aria-hidden="true">
+        <header class="weed-header"><button class="weed-back" data-action="close">← 로비로</button><b>치이카와 가위바위보</b><small>3시간마다 1회</small></header>
+        <div class="rps-scene">
+          <h2>나랑 가위바위보 하자!</h2>
+          <div class="rps-stage-label">1단계 · 10코인</div>
+          <img class="rps-chiikawa" src="/assets/chars/chiikawa.png" alt="치이카와"/>
+          <p class="rps-message">가위바위보를 시작해 보세요!</p>
+          <strong class="rps-countdown"></strong>
+          <div class="rps-choice-row">
+            <button data-action="rps-move" data-move="rock"><span>✊</span>바위</button>
+            <button data-action="rps-move" data-move="scissors"><span>✌️</span>가위</button>
+            <button data-action="rps-move" data-move="paper"><span>✋</span>보</button>
+          </div>
+          <div class="rps-decision">
+            <button data-action="rps-start">도전 시작!</button>
+            <button data-action="rps-claim" hidden>코인 받고 그만하기</button>
+            <button data-action="rps-next" hidden>다음 단계 도전!</button>
+          </div>
+        </div>
+      </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><span class="coin-icon">✿</span><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span>💎</span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button></div>
+        <button class="rps-lobby-tab" data-action="rps"><img src="/assets/chars/momonga.png" alt=""/> <b>가위바위보</b><span class="rps-lobby-status">3시간마다 1회</span></button>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></nav>
@@ -422,6 +449,11 @@ export class GachaUi {
     this.audio.unlock()
     this.audio.play('ui')
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
+    if (action === 'rps') {this.show('rps');return}
+    if (action === 'rps-start') {await this.rpsAction('start');return}
+    if (action === 'rps-next') {await this.rpsAction('next');return}
+    if (action === 'rps-claim') {await this.rpsAction('claim');return}
+    if (action === 'rps-move' && button?.dataset.move) {await this.rpsAction('choose',button.dataset.move);return}
     if (action === 'claw') { this.show('claw'); return }
     if (action?.startsWith('claw-')) {
       if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
@@ -970,6 +1002,82 @@ export class GachaUi {
       this.clawBusy=false
       if(btn) btn.disabled=false
     }
+  }
+
+  private async refreshRpsBadge():Promise<void> {
+    if(!this.store.user)return
+    try {
+      const state=await this.store.rps()
+      const tab=this.root.querySelector<HTMLButtonElement>('.rps-lobby-tab')
+      const status=tab?.querySelector<HTMLElement>('.rps-lobby-status')
+      tab?.classList.toggle('is-used',state.used)
+      if(status)status.textContent=state.used?'✓ 참여 완료':'3시간마다 1회'
+    }catch { /* transient connection failure */ }
+  }
+
+  private async openRps():Promise<void> {
+    try {this.rpsState=await this.store.rps();this.renderRps()}
+    catch(e){this.handleError(e)}
+  }
+  private async rpsAction(action:'start'|'next'|'claim'|'choose',move=''):Promise<void> {
+    if(this.rpsResolving)return
+    this.rpsResolving=true
+    try {
+      const state=action==='start'?await this.store.rpsStart():
+        action==='next'?await this.store.rpsNext():
+        action==='claim'?await this.store.rpsClaim():await this.store.rpsChoose(move)
+      this.rpsState=state
+      this.renderRps()
+      if(action==='claim'){this.renderWallet();void this.refreshRpsBadge()}
+    }catch(e){this.handleError(e);void this.openRps()}
+    finally {this.rpsResolving=false}
+  }
+  private async tickRps():Promise<void> {
+    if(this.screen!=='rps'||!this.rpsState)return
+    const state=this.rpsState
+    const countdown=this.root.querySelector<HTMLElement>('.rps-countdown')
+    if(['choosing','waiting'].includes(state.phase)) {
+      const remain=Math.max(0,state.deadline-Date.now())
+      if(countdown)countdown.textContent=`${(remain/1000).toFixed(1)}초`
+      if(remain===0&&!this.rpsResolving){
+        this.rpsResolving=true
+        try{this.rpsState=await this.store.rpsResolve();if(this.rpsState.phase==='claimed'){await this.store.restore();this.renderWallet()}this.renderRps()}
+        catch(e){this.handleError(e)}
+        finally{this.rpsResolving=false}
+      }
+    }
+  }
+  private renderRps():void {
+    const state=this.rpsState
+    if(!state)return
+    const screen=this.root.querySelector<HTMLElement>('.rps-screen')
+    if(!screen)return
+    const label=screen.querySelector<HTMLElement>('.rps-stage-label')
+    const msg=screen.querySelector<HTMLElement>('.rps-message')
+    const countdown=screen.querySelector<HTMLElement>('.rps-countdown')
+    const start=screen.querySelector<HTMLButtonElement>('[data-action="rps-start"]')
+    const claim=screen.querySelector<HTMLButtonElement>('[data-action="rps-claim"]')
+    const next=screen.querySelector<HTMLButtonElement>('[data-action="rps-next"]')
+    const moves=screen.querySelectorAll<HTMLButtonElement>('[data-action="rps-move"]')
+    const rewards=[10,20,50,100,200]
+    if(label)label.textContent=`${state.stage||1}단계 · ${rewards[(state.stage||1)-1]}코인`
+    if(start)start.hidden=state.used
+    if(claim)claim.hidden=state.phase!=='won'||state.stage>=5
+    if(next)next.hidden=!['won','draw'].includes(state.phase)||state.stage>=5&&state.phase==='won'
+    if(next)next.textContent=state.phase==='draw'?'무승부! 다시 하기':'다음 단계 도전!'
+    moves.forEach(b=>{b.disabled=state.phase!=='choosing';b.classList.toggle('is-selected',state.choice===b.dataset.move)})
+    if(countdown)countdown.textContent=''
+    const names:Record<string,string>={rock:'바위',scissors:'가위',paper:'보'}
+    if(msg)msg.textContent=state.phase==='choosing'?'5초 안에 가위·바위·보를 골라주세요!':
+      state.phase==='waiting'?'선택 완료! 치이카와의 선택을 기다려요…':
+      state.phase==='draw'?`둘 다 ${names[state.opponent]||''}! 비겼어요. 다시 도전!`:
+      state.phase==='won'?`치이카와는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
+      state.phase==='lost'?`치이카와는 ${names[state.opponent]||''}! 치이카와가 이겼습니다. 보상은 모두 사라졌어요.`:
+      state.phase==='claimed'?`보상 ${state.coins||rewards[(state.stage||1)-1]}코인을 받았어요!`:
+      state.used?'이번 3시간 도전은 완료했어요. 다음 정각에 만나요!':'치이카와와 가위바위보를 시작해요!'
+    if(state.phase==='won'&&state.stage===5&&claim){claim.hidden=false;claim.textContent='200코인 받기'}
+    else if(claim)claim.textContent='코인 받고 그만하기'
+    void this.refreshRpsBadge()
   }
 
   private renderWallet(): void {
