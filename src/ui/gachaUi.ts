@@ -433,7 +433,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button></div>
-          <button class="modal-primary storage-bulk-sell" data-action="storage-bulk-sell" disabled>🪙 중복 일괄 판매</button>
+          <button class="modal-primary storage-bulk-sell" data-action="storage-bulk-sell" disabled>중복 일괄 판매</button>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -535,7 +535,7 @@ export class GachaUi {
     if (action === 'forge-select' && button?.dataset.weapon) {
       if(this.busy || this.store.forge)return
       const weapon=button.dataset.weapon as 'pink'|'blue'|'yellow'
-      if(!window.confirm('한 번 선택하면 무기를 영구적으로 바꿀 수 없습니다. 선택하시겠습니까?'))return
+      if(!await this.confirmForgeWeapon())return
       this.busy=true
       try {await this.store.selectForge(weapon);this.toast('무기를 영구적으로 선택했어요!');this.renderForge()}
       catch(e){this.handleError(e)}finally{this.busy=false}
@@ -1811,7 +1811,7 @@ export class GachaUi {
       const count = bulkItems.reduce((sum, item) => sum + item.count, 0)
       const coins = bulkItems.reduce((sum, item) => sum + item.count * item.price, 0)
       bulkButton.disabled = count === 0
-      bulkButton.textContent = count ? `🪙 중복 일괄 판매 · ${count.toLocaleString('ko-KR')}개 (+${coins.toLocaleString('ko-KR')}코인)` : '🪙 중복 일괄 판매 · 판매할 중복 없음'
+      bulkButton.textContent = count ? `중복 일괄 판매 · ${count.toLocaleString('ko-KR')}개 (+${coins.toLocaleString('ko-KR')}코인)` : '중복 일괄 판매 · 판매할 중복 없음'
     }
     const sellButtons = (kind: 'char' | 'deco', id: string, extra: number, price: number) => extra > 0
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 팔기 +${price}</button>${extra > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${extra}">모두 팔기 +${extra * price}</button>` : ''}</div>`
@@ -1850,13 +1850,63 @@ export class GachaUi {
     })).filter(item => item.count > 0)
   }
 
+  private confirmForgeWeapon(): Promise<boolean> {
+    return new Promise(resolve => {
+      const dialog = document.createElement('dialog')
+      dialog.className = 'storage-confirm-dialog'
+      dialog.setAttribute('aria-label', '무기 선택 확인')
+      dialog.innerHTML = `<div class="storage-confirm-content"><div class="storage-confirm-heading">대장간 · 무기 선택</div><p>이 무기를 선택할까요?</p><p class="forge-confirm-warning">한 번 선택하면 무기를 영구적으로 변경할 수 없어요!</p><div class="storage-confirm-actions"><button type="button" data-choice="cancel">취소</button><button type="button" data-choice="ok">선택하기</button></div></div>`
+      document.body.appendChild(dialog)
+      let settled = false
+      const finish = (ok: boolean) => {
+        if (settled) return
+        settled = true
+        dialog.close()
+        dialog.remove()
+        resolve(ok)
+      }
+      dialog.addEventListener('click', event => {
+        const choice = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice]')?.dataset.choice
+        if (choice) finish(choice === 'ok')
+        else if (event.target === dialog) finish(false)
+      })
+      dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false) })
+      dialog.showModal()
+    })
+  }
+
+  private confirmBulkSell(): Promise<boolean> {
+    return new Promise(resolve => {
+      const dialog = document.createElement('dialog')
+      dialog.className = 'storage-confirm-dialog'
+      dialog.setAttribute('aria-label', '중복 일괄 판매 확인')
+      dialog.innerHTML = `<div class="storage-confirm-content"><div class="storage-confirm-heading">중복 일괄 판매</div><p>중복을 모두 판매할까요?</p><div class="storage-confirm-actions"><button type="button" data-choice="cancel">취소</button><button type="button" data-choice="ok">판매하기</button></div></div>`
+      document.body.appendChild(dialog)
+      let settled = false
+      const finish = (ok: boolean) => {
+        if (settled) return
+        settled = true
+        dialog.close()
+        dialog.remove()
+        resolve(ok)
+      }
+      dialog.addEventListener('click', event => {
+        const choice = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice]')?.dataset.choice
+        if (choice) finish(choice === 'ok')
+        else if (event.target === dialog) finish(false)
+      })
+      dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false) })
+      dialog.showModal()
+    })
+  }
+
   private async sellBulk(button: HTMLButtonElement): Promise<void> {
     const items = this.getBulkSellItems()
     if (!items.length) { this.toast('판매할 중복 아이템이 없어요.'); return }
     const count = items.reduce((sum, item) => sum + item.count, 0)
     const expected = items.reduce((sum, item) => sum + item.count * item.price, 0)
     const label = this.storageTab === 'char' ? '캐릭터' : '데코'
-    if (!window.confirm(`${label} 중복 ${count.toLocaleString('ko-KR')}개를 모두 판매할까요?\n예상 획득: ${expected.toLocaleString('ko-KR')}코인\n원본과 하우스 배치 아이템은 남습니다.`)) return
+    if (!await this.confirmBulkSell()) return
     button.disabled = true
     let sold = 0
     let earned = 0

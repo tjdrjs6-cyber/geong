@@ -3396,3 +3396,48 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .user-weapon-badge>.forge-aura>img{width:48px;height:23px;object-fit:contain}
 .user-name-line .user-weapon-badge .forge-aura>img{width:37px!important;height:19px!important}
 @media(prefers-reduced-motion:reduce){.forge-aura>img,.forge-aura::after{animation:none!important}}
+
+/* v148: in-game confirmation instead of browser confirm */
+.storage-confirm-dialog{border:0;border-radius:24px;padding:0;max-width:min(340px,calc(100vw - 36px));width:100%;background:#fffaf7;color:#59454c;box-shadow:0 16px 60px #59454c45;text-align:center}
+.storage-confirm-dialog::backdrop{background:rgba(42,30,38,.48)}
+.storage-confirm-content{padding:27px 22px 22px}
+.storage-confirm-heading{font-size:13px;font-weight:800;color:#d77d98;letter-spacing:.04em}
+.storage-confirm-content p{font-size:18px;font-weight:800;margin:20px 0 25px}
+.storage-confirm-actions{display:flex;gap:10px}
+.storage-confirm-actions button{flex:1;border:0;border-radius:14px;padding:13px 8px;font-weight:800;cursor:pointer;background:#f2e8e6;color:#6d5960}
+.storage-confirm-actions button[data-choice="ok"]{background:#e58da4;color:white}
+
+.forge-confirm-warning{font-size:13px!important;font-weight:600!important;line-height:1.6;color:#a76c79;margin:-12px 0 22px!important}
+
+/* v150: weapon-attached +20 glints, compact battle level, clearer user badges */
+/* Sparkles follow the weapon element rather than floating beyond its corners. */
+.forge-aura.aura-20::after{
+  content:'✦';position:absolute;z-index:4;
+  left:44%;top:43%;right:auto;
+  font-size:clamp(9px,1.8cqw,15px);line-height:1;
+  color:#fffbea;text-shadow:0 0 4px #fff,0 0 9px #ffd746;
+  transform-origin:center;animation:forge-weapon-glint 1.6s ease-in-out infinite;
+  pointer-events:none;
+}
+.forge-aura.aura-20::before{
+  content:'✧';position:absolute;z-index:4;
+  left:66%;top:53%;font-size:clamp(7px,1.3cqw,11px);line-height:1;
+  color:#fff9d0;text-shadow:0 0 5px #ffd746;
+  animation:forge-weapon-glint 1.6s ease-in-out -.8s infinite;
+  pointer-events:none;
+}
+@keyframes forge-weapon-glint{0%,100%{opacity:.12;scale:.65}48%{opacity:1;scale:1.16}70%{opacity:.35;scale:.85}}
+.battle-field > .battle-weapon-strike b{
+  right:8%!important;bottom:23%!important;
+  font-size:clamp(10px,2.4cqw,14px)!important;
+  border-width:1px!important;border-radius:6px!important;
+  padding:0 3px!important;line-height:1.15!important;
+}
+.user-name-line .user-weapon-badge .forge-aura>img{
+  width:43px!important;height:23px!important;
+  image-rendering:auto;
+  filter:drop-shadow(0 1px 1px #5b403b55);
+}
+.user-name-line .user-weapon-badge b{font-size:13px!important;line-height:1.15!important}
+.user-name-line .user-weapon-badge{gap:2px!important}
+@media(prefers-reduced-motion:reduce){.forge-aura.aura-20::before,.forge-aura.aura-20::after{animation:none!important;opacity:.85}}
