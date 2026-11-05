@@ -306,10 +306,11 @@ export class GachaUi {
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
-          <div class="toon-hero"><button type="button" class="toon-hero-touch" data-action="hero-tip" aria-label="대표 캐릭터를 눌러 게임 팁 보기"><img class="toon-hero-img" alt="" /></button><img class="toon-hero-tip" src="/hero_tip_1.png" alt="게임 팁" hidden /></div>
+          <div class="toon-hero"><img class="toon-hero-img" alt="" /><button type="button" class="toon-hero-touch" data-action="hero-tip" aria-label="대표 캐릭터를 눌러 게임 팁 보기"></button></div>
           <span class="toon-hero-name"></span>
           <i class="toon-capsule"></i>
         </section>
+        <img class="toon-hero-tip" src="/hero_tip_1.png" alt="게임 팁" hidden />
         <aside class="collection-peek"><span class="peek-flowers">✿　✿　✿</span><b class="collection-count">0 / ${CHARACTERS.length}</b><small>도감 수집</small><button class="soft-button" data-action="collection">캐릭터 도감</button><b class="deco-count">0 / ${DECOS.length}</b><button class="soft-button" data-action="decos">데코 도감</button></aside>
         <footer class="gacha-actions">
           <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
@@ -1405,6 +1406,16 @@ export class GachaUi {
     this.heroTipIndex = (this.heroTipIndex % 4) + 1
     tip.src = `/hero_tip_${this.heroTipIndex}.png`
     tip.alt = ['하우스에서 매시간마다 랜덤코인을 얻을 수 있다고!', '보관함에서 중복 캐릭터와 데코를 판매할 수 있어!', '가위바위보에서 연속으로 5번 이기면 최대 200코인을 얻을 수 있어!', '원정대는 하루에 한번 꼭 배치해!'][this.heroTipIndex - 1]
+    // The bubble is a direct child of the screen, outside the clipped stage
+    // and above the navigation, wallet, and other lobby UI layers.
+    const hero = this.root.querySelector<HTMLElement>('.toon-hero')
+    const screen = this.root.querySelector<HTMLElement>('.gacha-screen')
+    if (hero && screen) {
+      const h = hero.getBoundingClientRect()
+      const g = screen.getBoundingClientRect()
+      tip.style.left = `${h.left - g.left + h.width * .73}px`
+      tip.style.top = `${h.top - g.top - h.height * .22}px`
+    }
     tip.hidden = false
     tip.classList.remove('tip-appear')
     void tip.offsetWidth
