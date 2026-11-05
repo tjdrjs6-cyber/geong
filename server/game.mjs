@@ -91,7 +91,7 @@ export function settleWeed(since, now, interval = WEED_HOUR_MS) {
 /** Hunting ground: the enemy has 100 HP and takes the friend's power as damage every 5 minutes. */
 export const ENEMY_HP = 20_000
 export const BATTLE_TICK_MS = 3_000
-export const BATTLE_DIAMOND_CHANCE = 0.4
+export const BATTLE_DIAMOND_CHANCE = 1
 /** Battle power per friend. */
 export const POWER = {chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 10, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50, honey: 13, ode: 25, ode_prison: 40}
 /** Settles elapsed attacks: returns defeated enemies (1 coin each), the leftover damage and the new tick anchor. */
@@ -99,9 +99,7 @@ export function settleBattle(since, damage, now, power) {
   const ticks = Math.max(0, Math.floor((now - since) / BATTLE_TICK_MS))
   const total = damage + ticks * power
   const defeated = Math.floor(total / ENEMY_HP)
-  let diamonds = 0
-  for (let i = 0; i < defeated; i += 1) if (Math.random() < BATTLE_DIAMOND_CHANCE) diamonds += 1
-  return { kills: diamonds, damage: total % ENEMY_HP, since: since + ticks * BATTLE_TICK_MS }
+  return { kills: defeated, damage: total % ENEMY_HP, since: since + ticks * BATTLE_TICK_MS }
 }
 
 /** 데코 뽑기: 50 decorations with equal chance; 20 coins each, 10 pulls for 180. */

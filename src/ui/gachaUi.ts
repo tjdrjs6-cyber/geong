@@ -169,7 +169,7 @@ export class GachaUi {
     if (screen === 'title') { requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); this.weedTimer = window.setInterval(() => this.renderWeedStatus(), 1000) }
-    if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 1000) }
+    if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
     if (screen === 'nickname') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#nickname-input')?.focus(), 50)
     if (screen === 'auth') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#auth-username')?.focus(), 50)
   }
@@ -2174,7 +2174,7 @@ export class GachaUi {
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
-    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP * 0.4).toFixed(2)}개/시간 (예상)`
+    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP).toFixed(2)}개/시간`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
       if (fighter) {
@@ -2198,6 +2198,7 @@ export class GachaUi {
       const enemy = this.root.querySelector<HTMLElement>('.bf-enemy')
       if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
       if (enemy) { enemy.classList.remove('is-hit'); void enemy.offsetWidth; enemy.classList.add('is-hit') }
+      field?.classList.remove('battle-impact'); void field?.offsetWidth; field?.classList.add('battle-impact')
     }
     this.lastEnemyHp = view.hp
   }

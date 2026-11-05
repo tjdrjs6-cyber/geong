@@ -3543,3 +3543,28 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* v1.63: supplied battle-ground artwork, behind existing combat elements */
 .battle-field > .bf-scene-background { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; pointer-events:none; z-index:0; }
+
+/* v1.64: synchronized impact and smoother return; red, legible floating damage. */
+@keyframes bf-attack-v164 {
+  0%, 65% {transform:translateX(0) rotate(0deg)}
+  76% {transform:translateX(4%) rotate(3deg)}
+  91% {transform:translateX(-24%) rotate(-9deg)}
+  94% {transform:translateX(-24%) rotate(-9deg)}
+  97% {transform:translateX(-9%) rotate(-3deg)}
+  100% {transform:translateX(0) rotate(0deg)}
+}
+@keyframes arena-weapon-v164 {
+  0%, 65% {transform:translate(15%,0) rotate(12deg)}
+  76% {transform:translate(-12%,-2%) rotate(-5deg)}
+  91%, 94% {transform:translate(-55%,-7%) rotate(-28deg)}
+  97% {transform:translate(-9%,-1%) rotate(0deg)}
+  100% {transform:translate(15%,0) rotate(12deg)}
+}
+.battle-field.is-fighting .bf-friend-body {animation:bf-attack-v164 3s linear var(--battle-cycle-offset,0s) infinite!important;}
+.battle-field.is-fighting > .battle-weapon-strike {animation:arena-weapon-v164 3s linear var(--battle-cycle-offset,0s) infinite!important;}
+.battle-field .bf-hit {color:#e80016!important;-webkit-text-stroke:1.5px #fff!important;text-shadow:0 2px 0 #7e0610,0 3px 8px #fff,0 0 6px #ff6a6a!important;font-size:clamp(28px,7cqw,40px)!important;z-index:15!important;}
+.battle-field .bf-hit.is-showing {animation:bf-hit-v164 .9s ease-out both!important;}
+@keyframes bf-hit-v164 {0%{opacity:0;transform:translate(-50%,12px) scale(.65)}15%,50%{opacity:1;transform:translate(-50%,0) scale(1.22)}100%{opacity:0;transform:translate(-50%,-42px) scale(1)}}
+.battle-field .bf-enemy.is-hit .bf-enemy-body {animation:bf-impact-v164 .45s ease-out!important;}
+@keyframes bf-impact-v164 {0%,100%{transform:translate(0,0) scale(1);filter:none}15%{transform:translate(-9px,2px) scale(.93);filter:brightness(1.6) saturate(1.5)}40%{transform:translate(7px,-2px) scale(1.05);filter:brightness(1.25)}65%{transform:translate(-4px,1px) scale(.98)}}
+.battle-field .bf-enemy-fill {transition:transform .15s ease-out!important;}
