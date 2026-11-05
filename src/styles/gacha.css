@@ -2836,3 +2836,453 @@ html body > #geongi-version {
 /* v0.51: keep weed speed and combat power on separate lines on mobile and desktop. */
 .collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot{min-height:39px}
 .collection-grid:not(.deco-grid) .friend-card .friend-bonus-slot .friend-bonus{line-height:1.45;white-space:normal}
+
+/* v0.53: explicit paid claw arrangement refresh */
+.claw-refresh{display:block;margin:8px auto 12px;padding:8px 14px;border:1px solid #e9c6ce;border-radius:18px;background:#fff2f4;color:#9b596d;font-weight:700;cursor:pointer;max-width:100%;font-size:13px}
+.claw-refresh:disabled{opacity:.5;cursor:wait}
+
+/* v0.57: Usagi face replaces the teddy bear in claw heading. */
+#claw-title .claw-title-usagi { display:inline-block; width:1.45em; height:1.45em; object-fit:contain; vertical-align:middle; margin-right:.1em; }
+
+
+/* v0.60: hand-drawn pastel pink paw-pad controls inspired by the supplied reference. */
+.gacha-modal.claw-screen .claw-controls { gap: clamp(16px,5vw,35px); align-items:center; padding:8px 0 5px; }
+.gacha-modal.claw-screen .claw-arrows { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.gacha-modal.claw-screen .claw-arrows>div { display:flex; gap:5px; margin-top:0; }
+.gacha-modal.claw-screen .claw-arrows button {
+  position:relative; display:inline-flex; justify-content:center; align-items:center;
+  width:49px; height:45px; min-width:0!important; min-height:0!important; padding:0;
+  border:2.5px solid #bd7797!important; border-radius:48% 52% 45% 48% / 52% 53% 45% 46%!important;
+  background:#ffeaf2!important; box-shadow:0 4px 0 #edbfd1, inset 0 3px 0 #fff8fb;
+  color:#895a70!important; font-size:21px!important; line-height:1; font-weight:900;
+  text-shadow:0 1px 0 #fff; transform:rotate(-3deg); transition:transform .12s,box-shadow .12s;
+}
+.gacha-modal.claw-screen .claw-arrows>button {transform:rotate(2deg)}
+.gacha-modal.claw-screen .claw-arrows>div button:nth-child(2) {transform:rotate(3deg)}
+.gacha-modal.claw-screen .claw-arrows button:active {transform:translateY(3px) scale(.96);box-shadow:0 1px 0 #edbfd1}
+.gacha-modal.claw-screen .claw-play {
+  position:relative; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  width:117px; min-width:117px!important; height:88px; min-height:88px!important;
+  padding:6px 10px 5px; border:3px solid #bd7797!important;
+  border-radius:43% 46% 38% 42% / 38% 40% 44% 46%!important;
+  background:#ffed9f!important; color:#88516b!important;
+  box-shadow:0 4px 0 #f2c5b8,inset 0 0 0 3px #fff6cf,inset 0 4px 0 #fffbe6;
+  transform:rotate(3deg); font-size:17px!important; line-height:1.05;
+}
+.gacha-modal.claw-screen .claw-play::before,.gacha-modal.claw-screen .claw-play::after {
+  content:'';position:absolute;top:-7px;width:18px;height:15px;background:#ffed9f;
+  border:3px solid #bd7797;border-bottom:0;border-radius:80% 80% 0 0;z-index:-1;
+}
+.gacha-modal.claw-screen .claw-play::before {left:15px;transform:rotate(-18deg)}
+.gacha-modal.claw-screen .claw-play::after {right:15px;transform:rotate(18deg)}
+.gacha-modal.claw-screen .claw-play-face {display:block;width:37px;height:32px;object-fit:contain;margin:0 auto 0;pointer-events:none}
+.gacha-modal.claw-screen .claw-play-label {display:block;font-weight:900;letter-spacing:-.5px}
+.gacha-modal.claw-screen .claw-play small {display:block;font-size:10px;line-height:1.1;margin-top:2px}
+.gacha-modal.claw-screen .claw-play:active {transform:rotate(3deg) translateY(3px) scale(.97)}
+@media(max-width:380px) {
+ .gacha-modal.claw-screen .claw-controls {gap:14px}
+ .gacha-modal.claw-screen .claw-arrows button {width:43px;height:40px;font-size:19px!important}
+ .gacha-modal.claw-screen .claw-play {width:105px;min-width:105px!important;height:82px;min-height:82px!important}
+}
+
+/* v0.61: machine and toy positions share one coordinate system, so fallen dolls stay put. */
+.gacha-modal.claw-screen .claw-toys {inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100%!important;height:100%!important;display:block!important;pointer-events:none}
+/* Keep the face and text upright while preserving the hand-drawn button silhouette. */
+.gacha-modal.claw-screen .claw-play {transform:rotate(0deg)!important}
+.gacha-modal.claw-screen .claw-play:active {transform:translateY(3px) scale(.97)!important}
+
+/* v0.62: fast press-and-hold claw arrows, without touch page scrolling */
+.gacha-modal.claw-screen .claw-arrows button {touch-action:none;user-select:none;-webkit-user-select:none;}
+.gacha-modal.claw-screen .claw-arm {transition:left .09s linear,top .09s linear;}
+
+/* v0.63: user-supplied claw and machine illustration */
+.gacha-modal.claw-screen .claw-machine {
+ background:#ffe8ee url('/assets/claw/machine.png') center center / 100% 100% no-repeat!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ aspect-ratio:1448 / 1086;height:auto!important;min-height:0!important;
+}
+.gacha-modal.claw-screen.is-active .claw-machine {height:auto!important;min-height:0!important;}
+.gacha-modal.claw-screen .claw-chute {
+ position:absolute!important;left:71%!important;top:17%!important;right:auto!important;bottom:auto!important;
+ width:17%!important;height:18%!important;border:0!important;padding:0!important;
+ background:transparent!important;box-shadow:none!important;color:transparent!important;
+ pointer-events:none!important;
+}
+.gacha-modal.claw-screen .claw-arm {width:13%!important;height:20%!important;z-index:8!important;display:block!important;overflow:visible!important;}
+.gacha-modal.claw-screen .claw-graphic {display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 2px #8c566555);}
+.gacha-modal.claw-screen .claw-single-toy {z-index:3;}
+.gacha-modal.claw-screen .claw-single-toy.is-lifted {z-index:9;}
+
+/* v0.64: larger open/closed illustrated claw, preserve the center alignment. */
+.gacha-modal.claw-screen .claw-arm {width:20%!important;height:29%!important;}
+.gacha-modal.claw-screen .claw-arm.is-dropping {transform:translate(-50%,-44%)!important;}
+.gacha-modal.claw-screen .claw-graphic {object-fit:contain!important;}
+
+/* v0.67: prevent ghosting while carrying plushes and avoid the initial jump. */
+.gacha-modal.claw-screen .claw-single-toy.is-lifted {
+  transform:translate(-50%,-50%)!important;
+  filter:none!important;
+  opacity:1!important;
+  backface-visibility:hidden;
+  will-change:left,top;
+}
+.gacha-modal.claw-screen .claw-single-toy:not(.is-lifted) {will-change:auto;}
+
+/* Honey portrait is normalized to the same square canvas as other characters. */
+.collection-grid .friend-card .friend-avatar img[src*="/honey.png"] {
+  transform:none !important;
+  animation:none !important;
+}
+
+/* v0.69: no drop ghosting or image smear; plushes never cover bottom bezel. */
+.gacha-modal.claw-screen .claw-single-toy,
+.gacha-modal.claw-screen .claw-single-toy.is-dropped {
+  filter:none!important;
+  box-shadow:none!important;
+  opacity:1!important;
+  transform:translate(-50%,-50%)!important;
+  backface-visibility:hidden;
+}
+.gacha-modal.claw-screen .claw-single-toy:not(.is-lifted) {
+  transition:none!important;
+  will-change:auto!important;
+}
+
+/* v0.72 — portrait camp illustration on loading screen */
+.gacha-boot.is-active{
+  background-color:#4c5e8a;
+  background-image:linear-gradient(180deg,rgba(20,27,52,.06),rgba(20,27,52,.14)),url('/boot_camp_night.webp');
+  background-position:center center;
+  background-repeat:no-repeat;
+  background-size:cover;
+  min-height:100%;
+}
+.gacha-boot .boot-capsule{background:rgba(255,250,246,.92)}
+.gacha-boot h1,.gacha-boot p{color:#fffaf1;text-shadow:0 2px 7px rgba(25,29,55,.9),0 1px 3px rgba(25,29,55,.85)}
+.gacha-boot .boot-track{border:1px solid rgba(255,255,255,.65);background:rgba(255,246,237,.65);box-shadow:0 2px 9px rgba(18,26,53,.35)}
+
+/* v0.73: gacha reveal grade and daily expedition deployment reminder */
+#ui .pop-card .pop-grade {position:absolute;top:14px;left:14px;z-index:3;padding:5px 10px;border-radius:14px;background:#fff8ec;color:#6d5058;border:1.5px solid #f0d5c5;font-size:12px;font-weight:900;box-shadow:0 2px 6px #6d50581c;}
+#ui .expedition-entry {position:relative;}
+#ui .expedition-entry-dot:not([hidden]) {display:block;position:absolute;right:9px;top:8px;width:12px;height:12px;border-radius:50%;background:#ff3f55;border:2px solid white;box-shadow:0 0 0 1px #e94254,0 2px 5px #0002;z-index:5;}
+
+/* v0.74: preserve the supplied meadow illustration's portrait proportions. */
+.gacha-screen, .gacha-screen.is-active {
+  background-color:#92cff7!important;
+  background-image:url('/lobby_meadow.png')!important;
+  background-repeat:no-repeat!important;
+  background-position:center center!important;
+  background-size:auto 100%!important;
+}
+@media (max-aspect-ratio: 9/16) {
+  .gacha-screen, .gacha-screen.is-active { background-size:cover!important; }
+}
+
+/* v0.75: pulled character borders match encyclopedia tier colors. */
+.result-list .result-friend.result-tier-normal {border:2px solid #e7d5cb;}
+.result-list .result-friend.result-tier-rare {border:2px solid #a8d8ec;box-shadow:inset 0 0 0 1px #e2f5ff;}
+.result-list .result-friend.result-tier-epic {border:2px solid #f0b7a0;box-shadow:0 0 0 1px rgba(217,67,79,.12);}
+.result-list .result-friend.result-tier-unique {border:2px solid #d6a8f0;box-shadow:0 0 0 1px rgba(155,79,214,.15);}
+.result-list .result-friend.result-tier-legendary {border:2px solid #e7b53b;background:linear-gradient(110deg,#fff7d8,#fffdf3);box-shadow:0 0 0 1px rgba(244,195,55,.3);}
+/* Keep the unread badge fully within the mailbox button's visible bounds. */
+.gacha-modal .profile-actions .profile-mail {position:relative;overflow:visible;padding-right:24px!important;}
+.gacha-modal .profile-actions .profile-mail .mail-badge {top:2px!important;right:3px!important;z-index:3;transform:none!important;}
+
+/* v0.76: ONE shared tier palette for encyclopedia and pull results. */
+.collection-grid .friend-card.tier-normal, .result-list .result-friend.result-tier-normal {border:2px solid #e7d5cb!important;box-shadow:none!important;}
+.collection-grid .friend-card.tier-rare, .result-list .result-friend.result-tier-rare {border:2px solid #a8d8ec!important;box-shadow:0 0 0 2px rgba(168,216,236,.35)!important;}
+.collection-grid .friend-card.tier-epic, .result-list .result-friend.result-tier-epic {border:2px solid #f0b7a0!important;box-shadow:0 0 0 2px rgba(240,183,160,.45)!important;}
+.collection-grid .friend-card.tier-unique, .result-list .result-friend.result-tier-unique {border:2px solid #d6a8f0!important;box-shadow:0 0 0 2px rgba(200,150,240,.5)!important;}
+.collection-grid .friend-card.tier-legendary, .result-list .result-friend.result-tier-legendary {border:2px solid #e7b53b!important;background:linear-gradient(160deg,#fff7d8,#fffdf3)!important;box-shadow:0 0 0 2px rgba(244,195,55,.65)!important;}
+.collection-grid .friend-card .friend-avatar img, .result-list .result-friend .result-avatar img {width:100%;height:100%;object-fit:contain;object-position:center;}
+
+/* v0.77 - matching sparkle intensity across encyclopedia, result, and popup badge */
+@keyframes geongiTierPulse {0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
+@keyframes geongiTierSweep {from{background-position:180% 0}to{background-position:-180% 0}}
+.collection-grid .friend-card.tier-epic,.result-list .result-friend.result-tier-epic,
+.collection-grid .friend-card.tier-unique,.result-list .result-friend.result-tier-unique,
+.collection-grid .friend-card.tier-legendary,.result-list .result-friend.result-tier-legendary{position:relative;isolation:isolate}
+.collection-grid .friend-card.tier-epic,.result-list .result-friend.result-tier-epic{animation:geongiTierPulse 4.5s ease-in-out infinite}
+.collection-grid .friend-card.tier-unique,.result-list .result-friend.result-tier-unique{animation:geongiTierPulse 2.8s ease-in-out infinite}
+.collection-grid .friend-card.tier-legendary,.result-list .result-friend.result-tier-legendary{animation:geongiTierPulse 1.5s ease-in-out infinite}
+.collection-grid .friend-card.tier-epic::after,.collection-grid .friend-card.tier-unique::after,.collection-grid .friend-card.tier-legendary::after,
+.result-list .result-friend.result-tier-epic::after,.result-list .result-friend.result-tier-unique::after,.result-list .result-friend.result-tier-legendary::after{
+content:"";pointer-events:none;position:absolute;inset:0;border-radius:inherit;z-index:2;
+background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,transparent 61%);background-size:250% 100%;animation:geongiTierSweep 6s linear infinite}
+.collection-grid .friend-card.tier-unique::after,.result-list .result-friend.result-tier-unique::after{animation-duration:3.5s}
+.collection-grid .friend-card.tier-legendary::after,.result-list .result-friend.result-tier-legendary::after{animation-duration:1.8s}
+#ui .pop-card.tier-epic .pop-grade{background:#fff0e7;border-color:#f0b7a0;color:#b9653d;animation:geongiTierPulse 4.5s infinite}
+#ui .pop-card.tier-unique .pop-grade{background:#f6e9ff;border-color:#d6a8f0;color:#9146bc;animation:geongiTierPulse 2.8s infinite}
+#ui .pop-card.tier-legendary .pop-grade{background:linear-gradient(110deg,#fff4b7,#fffef0,#ffdf73);border-color:#e7b53b;color:#936000;box-shadow:0 0 14px #f4c337a0;animation:geongiTierPulse 1.5s infinite}
+@media(prefers-reduced-motion:reduce){.collection-grid .friend-card,.result-list .result-friend,#ui .pop-card .pop-grade{animation:none!important}.collection-grid .friend-card::after,.result-list .result-friend::after{animation:none!important;display:none}}
+
+/* v0.78: the banner is decorative; only the expedition label button opens the screen. */
+#ui .gacha-screen > .expedition-entry {cursor:default!important;}
+#ui .gacha-screen > .expedition-entry > img {pointer-events:none!important;}
+#ui .gacha-screen > .expedition-entry .expedition-entry-label {cursor:pointer!important;position:relative!important;overflow:visible!important;}
+#ui .gacha-screen > .expedition-entry .expedition-entry-dot:not([hidden]) {
+ top:-5px!important;right:-12px!important;left:auto!important;display:block!important;
+ width:11px!important;height:11px!important;z-index:8!important;
+}
+/* Result list: tier label immediately before probability. */
+#ui .result-list .result-chance {display:flex;align-items:center;gap:6px;white-space:nowrap;}
+#ui .result-list .result-grade {font-size:10px;font-weight:900;padding:2px 5px;border-radius:8px;border:1px solid #e7d5cb;color:#78645e;background:#fff8f1;}
+#ui .result-list .result-grade-rare {border-color:#a8d8ec;color:#4185a2;background:#eaf8ff;}
+#ui .result-list .result-grade-epic {border-color:#f0b7a0;color:#b9653d;background:#fff0e7;}
+#ui .result-list .result-grade-unique {border-color:#d6a8f0;color:#9146bc;background:#f6e9ff;}
+#ui .result-list .result-grade-legendary {border-color:#e7b53b;color:#936000;background:#fff3bc;}
+/* Collection only: no sparkle on epic/unique, subtle shimmer on legendary. */
+#ui .collection-grid .friend-card.tier-epic,
+#ui .collection-grid .friend-card.tier-unique {animation:none!important;filter:none!important;}
+#ui .collection-grid .friend-card.tier-epic::after,
+#ui .collection-grid .friend-card.tier-unique::after {animation:none!important;display:none!important;}
+#ui .collection-grid .friend-card.tier-legendary {animation:geongiTierPulse 7s ease-in-out infinite!important;}
+#ui .collection-grid .friend-card.tier-legendary::after {animation:geongiTierShine 9s linear infinite!important;opacity:.24!important;}
+/* Standardize ODE character scale inside collection card and reveal result. */
+#ui .collection-grid .friend-card .friend-avatar img[src$="/ode.png"],
+#ui .collection-grid .friend-card .friend-avatar img[src$="/ode_prison.png"],
+#ui .result-list .result-avatar img[src$="/ode.png"],
+#ui .result-list .result-avatar img[src$="/ode_prison.png"] {
+ width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important;transform:scale(.85)!important;
+}
+
+/* v0.79: banner is not a clickable expedition entry; only its separate label is. */
+#ui .gacha-screen > .expedition-entry {cursor:default!important;pointer-events:none!important;}
+#ui .gacha-screen > .expedition-entry > .expedition-banner-image {pointer-events:none!important;}
+#ui .gacha-screen > .expedition-entry > button.expedition-entry-label {
+  pointer-events:auto!important;cursor:pointer!important;appearance:none!important;
+  font-family:inherit!important;font-weight:900!important;color:inherit!important;
+  position:relative!important;overflow:visible!important;
+}
+#ui .gacha-screen > .expedition-entry > button.expedition-entry-label > .expedition-entry-dot:not([hidden]) {
+  display:block!important;position:absolute!important;left:auto!important;right:-11px!important;top:-5px!important;
+  width:12px!important;height:12px!important;z-index:10!important;
+}
+
+/* v0.82: comfortable legendary styling — no flashing, sweeping, or brightness pulses. */
+#ui .collection-grid .friend-card.tier-legendary,
+#ui .result-list .result-friend.result-tier-legendary,
+#ui .pop-card.tier-legendary .pop-grade,
+.collection-grid .friend-card.tier-legendary,
+.result-list .result-friend.result-tier-legendary {
+  animation: none !important;
+  filter: none !important;
+  transition: border-color .3s ease, box-shadow .3s ease;
+}
+#ui .collection-grid .friend-card.tier-legendary::after,
+#ui .result-list .result-friend.result-tier-legendary::after,
+.collection-grid .friend-card.tier-legendary::after,
+.result-list .result-friend.result-tier-legendary::after {
+  display: none !important;
+  animation: none !important;
+  content: none !important;
+}
+#ui .collection-grid .friend-card.tier-legendary,
+#ui .result-list .result-friend.result-tier-legendary {
+  border-color: #d5ad54 !important;
+  background: #fff9e9 !important;
+  box-shadow: 0 0 0 1px rgba(213,173,84,.22) !important;
+}
+#ui .pop-card.tier-legendary .pop-grade {
+  background: #fff3cf !important;
+  box-shadow: 0 0 4px rgba(213,173,84,.18) !important;
+}
+
+/* v0.83 - Chiikawa rock-paper-scissors */
+#ui .rps-lobby-tab {position:absolute;top:90px;left:8px;z-index:12;display:flex;align-items:center;gap:5px;border:2px solid #e9c4e0;border-radius:18px;background:#fff1fa;padding:5px 8px;color:#75516d;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 5px #9a6d8d24}
+#ui .rps-lobby-tab img {width:22px;height:22px;object-fit:contain}
+#ui .rps-lobby-tab .rps-lobby-status {font-size:9px;color:#9a7690}
+#ui .rps-lobby-tab.is-used {background:#e5e5e5;border-color:#c8c8c8;color:#858585;filter:grayscale(1)}
+#ui .rps-screen {position:absolute;inset:0;z-index:15;display:none;background:#a6dafa}
+#ui .rps-screen.is-active {display:flex;flex-direction:column}
+#ui .rps-screen .weed-header {flex-shrink:0;z-index:2}
+#ui .rps-scene {flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;gap:7px;padding:12px 12px 28px;background:linear-gradient(180deg,#93d1ff 0%,#b8e7ff 38%,#c3e98e 40%,#e0f6a3 100%);text-align:center;overflow-y:auto}
+#ui .rps-scene h2 {font-size:23px;color:#54362c;text-shadow:0 2px #fff;line-height:1.25}
+#ui .rps-stage-label {background:#fff8dc;border:2px solid #865a43;border-radius:30px;padding:7px 20px;font-weight:900;color:#795039}
+#ui .rps-chiikawa {display:block;width:min(53vw,205px);height:min(34vh,260px);object-fit:contain;filter:drop-shadow(0 5px 3px #6f944b50)}
+#ui .rps-message {background:#ffffffd9;border:2px solid #fff;border-radius:16px;padding:12px 14px;font-size:14px;font-weight:800;color:#59403d;max-width:95%}
+#ui .rps-countdown {font-size:24px;color:#ad5d61;min-height:28px}
+#ui .rps-choice-row {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:380px}
+#ui .rps-choice-row button {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:3px solid #6b4639;border-radius:22px;background:#ffe0e5;min-height:92px;font-size:15px;font-weight:900;color:#604338;box-shadow:0 4px 0 #ffffffb0;cursor:pointer}
+#ui .rps-choice-row button:nth-child(2){background:#fff3bc}
+#ui .rps-choice-row button:nth-child(3){background:#d7f0ff}
+#ui .rps-choice-row button span {font-size:37px}
+#ui .rps-choice-row button:disabled {opacity:.55;cursor:default}
+#ui .rps-choice-row button.is-selected {outline:3px solid #f5a4a7;opacity:1}
+#ui .rps-decision {display:flex;flex-wrap:wrap;justify-content:center;gap:9px;width:100%}
+#ui .rps-decision button {border:2px solid #8b5e4c;border-radius:18px;background:#fff8f1;color:#6e4438;padding:11px 15px;font-weight:900;cursor:pointer}
+#ui .rps-decision button[data-action="rps-next"]{background:#ffda85}
+#ui .rps-decision button[hidden] {display:none!important}
+@media (max-height:700px) {#ui .rps-scene {justify-content:flex-start}#ui .rps-chiikawa {height:145px}#ui .rps-choice-row button {min-height:65px}#ui .rps-choice-row button span{font-size:26px}}
+
+/* v0.84: RPS belongs inside the existing right-side reward stack,
+   directly below roulette, never as an independently positioned element. */
+.gacha-screen > .top-rewards > .rps-lobby-tab {
+ position:relative!important;top:auto!important;left:auto!important;right:auto!important;
+ width:100%!important;min-height:34px!important;max-width:100%!important;
+ margin:0!important;display:flex!important;flex-direction:row!important;
+ justify-content:flex-start!important;align-items:center!important;gap:3px!important;
+ padding:4px!important;box-sizing:border-box!important;
+ z-index:auto!important;white-space:nowrap!important;
+ border:1px solid #efb5d4!important;border-radius:12px!important;
+ background:#fff2f9!important;color:#80596f!important;
+ font-size:10px!important;box-shadow:none!important;
+}
+.gacha-screen > .top-rewards > .rps-lobby-tab .reward-icon {display:flex;align-items:center;justify-content:center;flex:0 0 20px;}
+.gacha-screen > .top-rewards > .rps-lobby-tab .reward-icon img {width:20px!important;height:20px!important;object-fit:contain!important;}
+.gacha-screen > .top-rewards > .rps-lobby-tab > span:last-child {min-width:0;display:flex;flex-direction:column;align-items:flex-start;}
+.gacha-screen > .top-rewards > .rps-lobby-tab b {font-size:10px!important;line-height:1.2!important;}
+.gacha-screen > .top-rewards > .rps-lobby-tab .rps-lobby-status {font-size:8px!important;line-height:1.2!important;display:block!important;}
+.gacha-screen > .top-rewards > .rps-lobby-tab.is-used {background:#e6e6e6!important;border-color:#c9c9c9!important;color:#777!important;filter:grayscale(1);}
+
+/* v0.85: dedicated RPS layout, no inherited header title collisions. */
+#ui .rps-screen .weed-header {display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;padding:10px 12px!important;min-height:56px!important;box-sizing:border-box!important;}
+#ui .rps-screen .weed-header .weed-back {position:static!important;transform:none!important;inset:auto!important;white-space:nowrap!important;padding:7px 10px!important;font-size:12px!important;}
+#ui .rps-screen .weed-header > b {position:static!important;transform:none!important;inset:auto!important;text-align:center!important;font-size:clamp(14px,3.8vw,20px)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.25!important;}
+#ui .rps-screen .weed-header > small {position:static!important;transform:none!important;inset:auto!important;font-size:10px!important;white-space:nowrap!important;}
+#ui .rps-scene {background:linear-gradient(180deg,#a4d8ff 0%,#c2e7ff 45%,#c9e99d 46%,#e1f4a7 100%);}
+#ui .rps-scene .rps-chiikawa {width:min(74vw,320px)!important;height:min(41vh,340px)!important;max-width:90%!important;object-fit:contain!important;filter:drop-shadow(0 5px 3px #65844b35)!important;}
+#ui .rps-choice-row button {min-height:95px!important;}
+#ui .rps-choice-row button img {display:block;width:80%!important;max-width:94px!important;height:62px!important;object-fit:contain!important;}
+#ui .rps-choice-row button span {display:none!important;}
+@media(max-width:390px){#ui .rps-screen .weed-header{gap:4px!important;padding:8px 6px!important;}#ui .rps-screen .weed-header>small{font-size:9px!important;}#ui .rps-scene .rps-chiikawa{height:min(38vh,280px)!important;}}
+
+/* v0.86: single-line header, compact mobile-safe RPS layout */
+#ui .rps-screen {height:100%;min-height:0;overflow:hidden;}
+#ui .rps-screen .rps-header {flex:0 0 42px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 12px;box-sizing:border-box;background:#b0dbff;}
+#ui .rps-screen .rps-header .rps-back {font-size:13px;font-weight:700;border:1px solid #dcc9b7;border-radius:18px;padding:7px 12px;background:#fff;color:#694a42;}
+#ui .rps-screen .rps-header span {font-size:11px;color:#654d49;white-space:nowrap;}
+#ui .rps-screen .rps-scene {display:flex;flex:1 1 0;min-height:0;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;gap:clamp(7px,1.4vh,15px);padding:12px 12px 22px;}
+#ui .rps-screen .rps-scene h2 {font-size:clamp(17px,5vw,23px);flex:0 0 auto;margin:2px 0;white-space:normal;}
+#ui .rps-screen .rps-stage-label {flex:0 0 auto;font-size:15px;padding:5px 17px;}
+#ui .rps-screen .rps-scene .rps-chiikawa {width:min(68vw,290px)!important;height:clamp(150px,30vh,280px)!important;max-height:30vh!important;flex:0 0 auto;}
+#ui .rps-screen .rps-message {flex:0 0 auto;margin:0;font-size:13px;padding:9px 12px;}
+#ui .rps-screen .rps-countdown {flex:0 0 auto;min-height:22px;font-size:20px;}
+#ui .rps-screen .rps-choice-row {flex:0 0 auto;gap:7px;}
+#ui .rps-screen .rps-choice-row button {min-height:74px!important;border-radius:17px;font-size:12px;padding:5px;}
+#ui .rps-screen .rps-choice-row button img {max-height:45px!important;height:45px!important;max-width:85%!important;}
+#ui .rps-screen .rps-decision {flex:0 0 auto;margin-bottom:8px;}
+#ui .rps-screen .rps-decision button {padding:10px 13px;font-size:14px;}
+@media(max-height:670px){#ui .rps-screen .rps-scene .rps-chiikawa{height:140px!important;max-height:140px!important;}#ui .rps-screen .rps-choice-row button{min-height:60px!important;}#ui .rps-screen .rps-choice-row button img{height:33px!important;}}
+
+/* v0.92: RPS was visible but completely non-interactive because #ui uses
+   pointer-events:none. Explicitly opt the standalone RPS screen back in. */
+#ui .rps-screen.is-active { pointer-events:auto!important; }
+#ui .rps-screen.is-active button { pointer-events:auto!important; touch-action:manipulation; }
+#ui .rps-screen:not(.is-active) { pointer-events:none!important; }
+
+/* v0.94: state transitions and gentle Momonga wiggle */
+#ui .rps-screen.rps-loading .rps-choice-row,
+#ui .rps-screen.rps-loading .rps-decision,
+#ui .rps-screen.rps-loading .rps-stage-label {visibility:hidden}
+#ui .rps-screen.rps-resting .rps-choice-row,
+#ui .rps-screen.rps-resting .rps-decision {display:none!important}
+#ui .rps-chiikawa {transform-origin:50% 85%;animation:rps-momonga-wiggle 1.8s ease-in-out infinite;will-change:transform}
+@keyframes rps-momonga-wiggle {
+  0%,100% {transform:rotate(-3deg) translateY(0)}
+  25% {transform:rotate(3deg) translateY(-5px)}
+  50% {transform:rotate(-2deg) translateY(0)}
+  75% {transform:rotate(3deg) translateY(-3px)}
+}
+@media (prefers-reduced-motion:reduce) {#ui .rps-chiikawa {animation:none}}
+#ui .rps-decision button {transition:transform .15s ease,background-color .15s ease}
+#ui .rps-decision button:active {transform:scale(.96)}
+
+/* v0.95: opponent reveal, keep all three selectable hand images visible */
+#ui .rps-opponent-choice:not([hidden]){display:flex;align-items:center;justify-content:center;gap:9px;font-size:14px;color:#634536;font-weight:800;min-height:45px}
+#ui .rps-opponent-choice[hidden]{display:none!important}
+#ui .rps-opponent-choice img{height:42px;width:50px;object-fit:contain}
+#ui .rps-screen .rps-choice-row button:disabled{opacity:.78}
+#ui .rps-screen .rps-choice-row button.is-selected{outline:4px solid #e18b7c;outline-offset:-3px;transform:translateY(-2px)}
+
+/* v0.96: user-supplied full-screen arena artwork. Cover the whole play area
+   while retaining its original aspect ratio; no stretching. */
+#ui .rps-screen.is-active {
+  background: url('/rps_arena_background.png') center center / cover no-repeat !important;
+}
+#ui .rps-screen .rps-header { background: transparent !important; }
+#ui .rps-screen .rps-scene {
+  background: transparent !important;
+}
+
+/* v0.97: supplied coin illustration throughout the game. */
+#ui .coin-icon{display:inline-block;width:23px;height:23px;object-fit:contain;vertical-align:middle;flex-shrink:0}
+#ui .house-coin{border:0;background:transparent;box-shadow:none}
+#ui .house-coin-face{display:block;width:100%;height:100%;object-fit:contain}
+#ui .insufficient-icon{display:block;width:68px;height:68px;object-fit:contain;margin:auto}
+#ui .rps-stage-label{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+#ui .rps-coin{display:inline-block;width:27px;height:27px;object-fit:contain;vertical-align:middle}
+#ui .rps-coin-count{font-size:1.08em;white-space:nowrap}
+
+/* v0.98: no transient loading banner, preserve deliberate line breaks. */
+#ui .rps-screen.rps-loading .rps-message,#ui .rps-screen.rps-loading .rps-countdown{visibility:hidden}
+#ui .rps-screen .rps-message{white-space:pre-line}
+
+/* v0.99 user-provided diamond art */
+#ui .diamond-icon{display:inline-block;width:1.35em;height:1.35em;object-fit:contain;vertical-align:-.26em;flex-shrink:0}
+#ui .diamond-wallet .diamond-icon{width:22px;height:22px;vertical-align:middle}
+#ui .storage-diamonds .diamond-icon{width:25px;height:25px}
+
+/* v1.03: keep hand illustrations inside their cards and tighten lower controls. */
+#ui .rps-screen .rps-scene {gap:clamp(3px,.65vh,7px)!important;padding-bottom:10px!important;}
+#ui .rps-screen .rps-countdown:empty {display:none!important;}
+#ui .rps-screen .rps-opponent-choice:not([hidden]) {min-height:34px!important;margin:0!important;gap:5px!important;line-height:1.1!important;}
+#ui .rps-screen .rps-opponent-choice img {height:34px!important;width:42px!important;object-fit:contain!important;}
+#ui .rps-screen .rps-choice-row {margin-top:0!important;gap:6px!important;}
+#ui .rps-screen .rps-choice-row button {min-width:0!important;min-height:77px!important;padding:8px 9px!important;gap:2px!important;overflow:visible!important;box-sizing:border-box!important;}
+#ui .rps-screen .rps-choice-row button img {display:block!important;box-sizing:border-box!important;width:65%!important;height:43px!important;max-width:70px!important;max-height:43px!important;object-fit:contain!important;flex-shrink:0!important;}
+#ui .rps-screen .rps-decision {margin-top:0!important;margin-bottom:0!important;}
+@media(max-height:700px){#ui .rps-screen .rps-choice-row button{min-height:68px!important;}#ui .rps-screen .rps-choice-row button img{height:35px!important;max-height:35px!important;}}
+
+/* v1.09: normalize Hachiware plush size relative to the other claw dolls. */
+.gacha-modal.claw-screen .claw-single-toy[data-toy-id="hachiware"]{width:52px!important;height:52px!important;}
+
+/* v1.17: small temporary missed-claw sticker between release point and doll */
+.gacha-modal.claw-screen .claw-missed-sticker{position:absolute;z-index:12;width:clamp(38px,12%,62px);height:auto;object-fit:contain;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease}
+.gacha-modal.claw-screen .claw-missed-sticker.is-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* v1.19: prominent diamond count on claw screen */
+.gacha-modal.claw-screen .claw-balance {display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:7px auto 4px!important;padding:9px 14px;border:2px solid #f3c4dc;border-radius:18px;background:#fff5fc;max-width:max-content;box-shadow:0 3px 0 #f8dce9;color:#855069}
+.gacha-modal.claw-screen .claw-balance-title {font-size:14px;font-weight:800;white-space:nowrap}
+.gacha-modal.claw-screen .claw-balance-count {display:inline-flex;align-items:center;gap:4px;font-size:24px;line-height:1.2;font-weight:900;color:#ad568e;font-variant-numeric:tabular-nums}
+.gacha-modal.claw-screen .claw-balance-count .diamond-icon {width:32px!important;height:32px!important;object-fit:contain;vertical-align:middle}
+.gacha-modal.claw-screen .claw-balance-count .diamond-value {font-size:27px;font-weight:900}
+.gacha-modal.claw-screen .claw-balance-unit {font-size:17px}
+.gacha-modal.claw-screen .claw-balance-help {font-size:12px;margin:4px 0 7px;color:#79515b}
+
+/* v1.20: Tap the selected lobby friend to cycle compact illustrated tips. */
+.toon-stage .toon-hero { pointer-events: auto; }
+ to {opacity:1;transform:translateY(0) scale(1)} }
+
+/* v1.21: halve the tap target without shrinking the visible featured friend. */
+.gacha-screen .toon-hero { pointer-events:none !important; }
+.gacha-screen .toon-hero-img { pointer-events:none !important; }
+/* Portal-like placement as a direct child of the lobby, not the clipped stage. */
+
+/* v1.24 blacksmith */
+.gacha-nav .nav-forge {order:99}
+.forge-card {width:min(94vw,520px);max-height:92dvh;overflow:auto;background:#fff2df}
+.forge-body {background:linear-gradient(#ffffffa6,#ffffffa6),url('/assets/forge/background.png') center/cover;min-height:380px;padding:18px 12px;border-radius:18px;text-align:center}
+.forge-warning,.forge-note {background:#fff9eddd;padding:10px;border-radius:12px;font-size:13px;color:#714e38}
+.forge-weapons {display:flex;gap:8px;margin-top:22px}
+.forge-weapons button {flex:1;min-width:0;background:#fff9f0ed;border:2px solid #e6b87b;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:9px;color:#6c442d}
+.forge-weapons img {width:100%;height:92px;object-fit:contain}
+.forge-weapons b {font-size:12px}.forge-weapons small {font-size:11px}
+.forge-current {display:flex;align-items:center;gap:12px;background:#fff8edeb;border-radius:14px;padding:12px}
+.forge-current>img {width:48%;height:140px;object-fit:contain}
+.forge-current>div {display:flex;flex-direction:column;gap:9px;text-align:left;font-size:14px;color:#66422e}
+.forge-current strong {font-size:19px;color:#ad6032}
+.forge-cost {background:#fff9edeb;border-radius:14px;margin:14px 0;padding:10px;font-size:14px;color:#62422d}
+.forge-cost p {margin:6px 0}.forge-cost img {width:23px;height:23px;object-fit:contain;vertical-align:middle}
+.forge-upgrade {display:block;margin:12px auto;border:0;background:none;width:min(240px,70%);cursor:pointer}
+.forge-upgrade img {display:block;width:100%;height:auto}
+.forge-max {padding:18px;background:#fff8d8;border-radius:12px;font-weight:700}
+
+/* Weapon + enhancement level badge on expedition names and battle characters */
+.forge-weapon-tag{display:inline-flex;align-items:center;justify-content:center;gap:2px;position:relative;z-index:25;background:#fff9e9ed;border:1px solid #b57a40;border-radius:12px;padding:1px 4px;color:#64391c;font-size:11px;font-weight:900;white-space:nowrap;line-height:1.1;box-shadow:0 1px 4px #53371b55;pointer-events:none}
+.forge-weapon-tag img{width:22px!important;height:17px!important;object-fit:contain!important;flex-shrink:0}
+.expedition-combatant .forge-weapon-tag{display:flex;margin:0 auto 2px;max-width:max-content}
+.bf-friend-body{position:relative}
+.bf-friend-body .forge-weapon-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:30}
+.bf-friend-body .forge-weapon-tag img{width:22px!important;height:17px!important}

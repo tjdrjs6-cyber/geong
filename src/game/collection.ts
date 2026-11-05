@@ -8,7 +8,7 @@ export const CHARACTERS = [
   { id: 'kurimanju', name: '쿠리만쥬', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 2, color: '#f8e9d4', accent: '#b08a62' },
   { id: 'shisa', name: '시사', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 2, color: '#fff0dc', accent: '#eba65a' },
   { id: 'kani', name: '카니', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 2, color: '#ffeef2', accent: '#ec8fa8' },
-  { id: 'goblin', name: '그늘리', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 1, color: '#eef6e2', accent: '#8cb86a' },
+  { id: 'goblin', name: '고블린', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 1, color: '#eef6e2', accent: '#8cb86a' },
   { id: 'rakko', name: '랏코', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 10, color: '#f1f1ef', accent: '#a8b0b5' },
   { id: 'armor1', name: '갑옷씨1', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 15, color: '#f0f0f3', accent: '#9a98a3' },
   { id: 'armor2', name: '갑옷씨2', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 15, color: '#f3ece6', accent: '#a8948a' },
@@ -21,8 +21,8 @@ export const CHARACTERS = [
   { id: 'm_shisa', name: '시사', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 5, power: 3, color: '#fff0dc', accent: '#8ccf6a' },
   { id: 'm_kani', name: '카니', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 5, power: 3, color: '#ffeef2', accent: '#8ccf6a' },
   { id: 'm_rakko', name: '랏코', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 5, power: 15, color: '#f1f1ef', accent: '#8ccf6a' },
-  { id: 'hanip', name: '한입이', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 10, power: 2, color: '#eeecf3', accent: '#8f88a3' },
-  { id: 'duip', name: '두입이', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 10, power: 2, color: '#eeecf3', accent: '#8f88a3' },
+  { id: 'hanip', name: '한잎이', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 10, power: 2, color: '#eeecf3', accent: '#8f88a3' },
+  { id: 'duip', name: '두잎이', variant: '인어의섬', probability: 2, tier: 'mermaid', weedBonus: 10, power: 2, color: '#eeecf3', accent: '#8f88a3' },
   { id: 'siren', name: '세이렌', variant: '', probability: 0.85, tier: 'rare', weedBonus: 40, power: 20, color: '#ffe9e9', accent: '#d9434f' },
   { id: 'shimajiro', name: '시마지로', variant: '', probability: 0.85, tier: 'rare', weedBonus: 10, power: 30, color: '#f7efe2', accent: '#7a5a46' },
   { id: 'anoko', name: '아노코', variant: '', probability: 0.85, tier: 'rare', weedBonus: 30, power: 25, color: '#fff3e2', accent: '#f0a040' },
@@ -41,7 +41,7 @@ export const CHARACTERS = [
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; diamonds?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
