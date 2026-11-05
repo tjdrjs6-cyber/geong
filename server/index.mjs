@@ -756,8 +756,15 @@ const routes = {
       if(row.slot!==rpsSlot())return {error:'rps_closed'}
       if(row.phase!=='choosing'&&row.phase!=='waiting')return rpsPublic(row,rpsAdmin(account))
       if(Date.now()<Number(row.deadline))return {error:'rps_wait'}
-      const opponent=rpsMoves[Math.floor(Math.random()*rpsMoves.length)]
       const choice=row.choice
+      // A draw occurs about 15% of the time; otherwise wins and losses
+      // are evenly distributed. No move still counts as a loss.
+      const opponent=choice ? (() => {
+        const roll=Math.random()
+        if(roll<0.15)return choice
+        const other=rpsMoves.filter(move=>move!==choice)
+        return other[roll<0.575?0:1]
+      })() : rpsMoves[Math.floor(Math.random()*rpsMoves.length)]
       const result=!choice?'lose':choice===opponent?'draw':
         ((choice==='rock'&&opponent==='scissors')||(choice==='scissors'&&opponent==='paper')||(choice==='paper'&&opponent==='rock'))?'win':'lose'
       const finalWin=result==='win'&&Number(row.stage)===5
@@ -1248,11 +1255,13 @@ const routes = {
       const segments = Math.max(1, Math.ceil(Math.hypot(x - 88, y - 12) / 14))
       // Exact success probabilities by distance band. Band 6 is deliberately
       // more generous than bands 3–5 per the game's configured rules.
-      const bandChances = [0, .62, .59, .33, .28, .23, .42]
+      const bandChances = [0, .50, .47, .26, .22, .18, .34]
       const probability = segments <= 6 ? bandChances[segments] : bandChances[6] * .89 ** (segments - 6)
       const won = aligned === true && randomInt(1000000) < Math.round(probability * 1000000)
       // Failed grabs release the plush at a random point along the trip.
-      const dropAt = aligned === true && !won ? 1 + randomInt(segments) : -1
+      // Failed pickups more often release near the start or midpoint.
+      const dropAt = aligned === true && !won
+        ? Math.max(1, Math.min(segments, Math.ceil((Math.random() ** 1.6) * segments))) : -1
       const chance = aligned === true ? Math.round(probability * 100) : 0
       const prize = won ? DECO_IDS[randomInt(DECO_IDS.length)] : null
       if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
