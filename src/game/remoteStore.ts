@@ -186,6 +186,9 @@ export class RemoteGachaStore {
     this.data=result.save
     return result.success
   }
+  async diamondRecharge(): Promise<{ diamonds: number; nextAt: number | null; now: number; max: number }> {
+    return request('diamonds/recharge')
+  }
   async restore(): Promise<AuthUser | null> {
     const payload = await request<AccountPayload & { autoEarned?: number }>('me')
     this.lastAutoEarned = payload.autoEarned ?? 0

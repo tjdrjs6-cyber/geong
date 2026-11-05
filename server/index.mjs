@@ -1028,6 +1028,16 @@ const routes = {
     if (token) await pool.query('DELETE FROM gm_sessions WHERE token_hash = ?', [tokenHash(token)])
     send(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) })
   },
+  'GET /api/diamonds/recharge': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await rechargeDiamonds(account.id)
+    const [rows] = await pool.query('SELECT s.diamonds, r.last_ms FROM gm_saves s LEFT JOIN gm_diamond_recharge r ON r.account_id = s.account_id WHERE s.account_id = ?', [account.id])
+    const diamonds = Number(rows[0]?.diamonds ?? 0)
+    const now = Date.now()
+    const nextAt = diamonds >= 20 ? null : Number(rows[0]?.last_ms ?? now) + DIAMOND_RECHARGE_MS
+    send(res, 200, { diamonds, nextAt, now, max: 20 })
+  },
   'GET /api/me': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 200, { user: null })

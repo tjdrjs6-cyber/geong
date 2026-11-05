@@ -70,6 +70,9 @@ export class GachaUi {
   private expeditionBadgeDay = ''
   private users: PublicUser[] = []
   private privacy: ProfilePrivacy = { char: true, deco: true, house: true }
+  private diamondNextAt: number | null = null
+  private diamondRefreshBusy = false
+  private diamondLastRefresh = 0
 
   constructor(private readonly store: RemoteGachaStore, private readonly audio: Audio, private readonly actions: Actions) {
     this.root.innerHTML = this.template()
@@ -94,6 +97,8 @@ export class GachaUi {
     this.root.querySelector<HTMLFormElement>('.nickname-form')?.addEventListener('submit', event => { event.preventDefault(); void this.submitNickname() })
     this.house = new HouseView(this.root.querySelector<HTMLElement>('.house-screen')!, this.store, { toast: text => this.toast(text), error: error => this.handleError(error), wallet: () => this.renderWallet() })
     this.renderWallet()
+    window.setInterval(() => this.tickDiamondRecharge(), 1000)
+    void this.refreshDiamondRecharge()
     this.renderCollection()
     void this.refreshExpeditionBadge(true)
     void this.refreshRpsBadge()
@@ -295,7 +300,7 @@ export class GachaUi {
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
-          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/></span><strong class="diamond-value">0</strong><span>다이아</span></div></div>
+          <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/></span><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
@@ -474,7 +479,7 @@ export class GachaUi {
     }
     const level=forge.level
     const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5][level]
-    body.innerHTML=`<div class="forge-current"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+    body.innerHTML=`<div class="forge-current"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
   }
 
   private async playForgeUpgradeAnimation(success: boolean): Promise<void> {
@@ -1259,10 +1264,43 @@ export class GachaUi {
     if(this.screen==='title')void this.refreshRpsBadge()
   }
 
+  private async refreshDiamondRecharge(): Promise<void> {
+    if (!this.store.user || this.diamondRefreshBusy) return
+    this.diamondRefreshBusy = true
+    try {
+      const state = await this.store.diamondRecharge()
+      this.diamondNextAt = state.nextAt
+      this.diamondLastRefresh = Date.now()
+      this.store.data.diamonds = state.diamonds
+      this.renderWallet()
+    } catch { /* 로그인 전 또는 일시적인 연결 문제: 다음 주기에 다시 시도 */ }
+    finally { this.diamondRefreshBusy = false }
+  }
+
+  private tickDiamondRecharge(): void {
+    const amount = this.store.data.diamonds ?? 0
+    const label = this.root.querySelector<HTMLElement>('.diamond-recharge-countdown')
+    if (!label) return
+    if (!this.store.user) { label.textContent = '로그인 후 충전'; return }
+    if (amount >= 20 || this.isAdmin) { label.textContent = '최대 보유'; return }
+    if (this.diamondNextAt === null) {
+      label.textContent = '충전 확인 중'
+    } else {
+      const remaining = Math.max(0, Math.ceil((this.diamondNextAt - Date.now()) / 1000))
+      const minutes = Math.floor(remaining / 60)
+      const seconds = remaining % 60
+      label.textContent = `충전까지 ${minutes}:${String(seconds).padStart(2, '0')}`
+    }
+    if ((this.diamondNextAt !== null && Date.now() >= this.diamondNextAt) || Date.now() - this.diamondLastRefresh > 60000) {
+      void this.refreshDiamondRecharge()
+    }
+  }
+
   private renderWallet(): void {
     this.root.querySelectorAll<HTMLElement>('.wallet-value').forEach(balance => { balance.textContent = this.isAdmin ? '∞' : this.store.data.gems.toLocaleString('ko-KR') })
     this.root.querySelectorAll<HTMLElement>('.fragment-value').forEach(el => { el.textContent = (this.isAdmin ? '∞' : (this.store.data.fragments ?? 0).toLocaleString('ko-KR')) })
     this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
+    this.tickDiamondRecharge()
     const rate = `+${this.store.hourlyRate().toFixed(2)} 코인/시간`
     this.root.querySelectorAll<HTMLElement>('.wallet-rate').forEach(node => { node.textContent = rate })
     const count = this.store.data.owned.length
@@ -1408,7 +1446,7 @@ export class GachaUi {
         const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
-          <span class="user-main"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/><b>+${user.weaponLevel??0}</b></span>` : ''}<i class="user-bar"><i style="width:${percent}%"></i></i></span>
+          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
           <span class="user-count">${(user.privacy?.char ?? true) || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${(user.privacy?.deco ?? true) || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
         </button>`
       }).join('')}</div>`
@@ -1938,9 +1976,20 @@ export class GachaUi {
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
       const icon = unit.querySelector<HTMLElement>('.bf-friend-icon')
       const power = unit.querySelector<HTMLElement>('.bf-friend-power')
-      if (body) body.innerHTML = fighter ? `${this.store.forge ? `<span class="battle-weapon-strike" aria-label="강화 무기 +${this.store.forge.level}"><img src="/assets/forge/badge_${this.store.forge.weapon}.png" alt=""/><b>+${this.store.forge.level}</b></span>` : ''}<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
       if (icon) icon.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="" />` : ''
       if (power) power.textContent = fighter ? `⚔ ${battlePower(fighter.id)+(this.store.forge?.bonus??0)}` : ''
+    }
+    const battleField = this.root.querySelector<HTMLElement>('.battle-field')
+    if (battleField) {
+      battleField.querySelector('.battle-weapon-strike')?.remove()
+      if (fighter && this.store.forge && ['pink','blue','yellow'].includes(this.store.forge.weapon)) {
+        const weapon = document.createElement('div')
+        weapon.className = 'battle-weapon-strike'
+        weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
+        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b>`
+        battleField.appendChild(weapon)
+      }
     }
     this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter))
     this.renderBattleStatus()
