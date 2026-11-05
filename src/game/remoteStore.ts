@@ -270,6 +270,7 @@ export class RemoteGachaStore {
     if(result.save)this.data=result.save
     return result
   }
+  async expeditionBadge():Promise<{day:string;deployed:boolean}> {return request('expedition/badge')}
   async expedition():Promise<ExpeditionState> {return request<ExpeditionState>('expedition')}
   async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }

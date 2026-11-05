@@ -608,6 +608,23 @@ async function expeditionSettle(conn, day, serverId, now) {
   }
   return hp
 }
+// Retrying a deadlocked transaction is safe: InnoDB rolls back the victim.
+const isDbContention = error => ['ER_LOCK_DEADLOCK','ER_LOCK_WAIT_TIMEOUT'].includes(error?.code)
+async function retryDbContention(task, attempts=3) {
+  for(let attempt=0;attempt<attempts;attempt++) {
+    try {return await task()}
+    catch(error) {
+      if(!isDbContention(error)||attempt===attempts-1)throw error
+      await new Promise(resolve=>setTimeout(resolve,50*(attempt+1)+Math.floor(Math.random()*70)))
+    }
+  }
+}
+// A badge must never mutate boss rows or settle rewards. This query is read-only.
+async function expeditionBadge(accountId) {
+  const {day}=expeditionWindow()
+  const [rows]=await pool.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=? LIMIT 1',[day,accountId])
+  return {day,deployed:rows.length>0}
+}
 async function expeditionSnapshot(accountId) {
   const now=Date.now(), {day,start,next}=expeditionWindow(now)
   const conn=await pool.getConnection()
@@ -652,8 +669,11 @@ const rpsSlot = () => {
   return `${new Date(now).toISOString().slice(0,10)}-${Math.floor((now % 86400000) / 10800000)}`
 }
 async function rpsRow(db,id,lock=false) {
-  await db.query("INSERT IGNORE INTO gm_rps (account_id) VALUES (?)",[id])
-  const [rows] = await db.query(`SELECT * FROM gm_rps WHERE account_id = ?${lock?' FOR UPDATE':''}`,[id])
+  const sql=`SELECT * FROM gm_rps WHERE account_id = ?${lock?' FOR UPDATE':''}`
+  let [rows]=await db.query(sql,[id])
+  if(rows.length)return rows[0]
+  await db.query('INSERT IGNORE INTO gm_rps (account_id) VALUES (?)',[id])
+  ;[rows]=await db.query(sql,[id])
   return rows[0]
 }
 async function rpsTransaction(id, callback) {
@@ -684,11 +704,11 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     await readJson(req)
-    const out=await rpsTransaction(account.id,async(conn,row)=>{
+    const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot===rpsSlot())return {error:'rps_used',...rpsPublic(row)}
       await conn.query("UPDATE gm_rps SET slot=?,stage=1,phase='choosing',choice='',deadline=?,result='',opponent='' WHERE account_id=?",[rpsSlot(),Date.now()+5000,account.id])
       return {used:true,stage:1,phase:'choosing',deadline:Date.now()+5000,reward:10}
-    })
+    }))
     send(res,out.error?409:200,out)
   },
   'POST /api/rps/choose': async(req,res) => {
@@ -696,18 +716,18 @@ const routes = {
     if(!account)return send(res,401,{error:'login_required'})
     const {move}=await readJson(req)
     if(!rpsMoves.includes(move))return send(res,400,{error:'rps_move'})
-    const out=await rpsTransaction(account.id,async(conn,row)=>{
+    const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot!==rpsSlot()||row.phase!=='choosing'||Date.now()>Number(row.deadline))return {error:'rps_closed'}
       await conn.query("UPDATE gm_rps SET choice=?,phase='waiting' WHERE account_id=?",[move,account.id])
       return {phase:'waiting',deadline:Number(row.deadline),choice:move,stage:Number(row.stage)}
-    })
+    }))
     send(res,out.error?409:200,out)
   },
   'POST /api/rps/resolve': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     await readJson(req)
-    const out=await rpsTransaction(account.id,async(conn,row)=>{
+    const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot!==rpsSlot())return {error:'rps_closed'}
       if(row.phase!=='choosing'&&row.phase!=='waiting')return rpsPublic(row)
       if(Date.now()<Number(row.deadline))return {error:'rps_wait'}
@@ -720,50 +740,55 @@ const routes = {
       await conn.query("UPDATE gm_rps SET phase=?,result=?,opponent=? WHERE account_id=?",[phase,result,opponent,account.id])
       if(finalWin)await conn.query("UPDATE gm_saves SET gems=gems+200 WHERE account_id=?",[account.id])
       return {...rpsPublic({...row,phase,result,opponent}),phase,result,opponent,coins:finalWin?200:undefined}
-    })
+    }))
     send(res,out.error?409:200,out)
   },
   'POST /api/rps/next': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     await readJson(req)
-    const out=await rpsTransaction(account.id,async(conn,row)=>{
+    const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot!==rpsSlot()||!['won','draw'].includes(row.phase))return {error:'rps_closed'}
       if(row.phase==='won'&&Number(row.stage)>=5)return {error:'rps_closed'}
       const stage=Number(row.stage)+(row.phase==='won'?1:0)
       const deadline=Date.now()+5000
       await conn.query("UPDATE gm_rps SET stage=?,phase='choosing',choice='',deadline=?,result='',opponent='' WHERE account_id=?",[stage,deadline,account.id])
       return {used:true,stage,phase:'choosing',deadline,reward:rpsRewards[stage-1]}
-    })
+    }))
     send(res,out.error?409:200,out)
   },
   'POST /api/rps/claim': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     await readJson(req)
-    const out=await rpsTransaction(account.id,async(conn,row)=>{
+    const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot!==rpsSlot()||row.phase!=='won')return {error:'rps_closed'}
       const coins=rpsRewards[Number(row.stage)-1]
       await conn.query("UPDATE gm_rps SET phase='claimed' WHERE account_id=?",[account.id])
       await conn.query("UPDATE gm_saves SET gems=gems+? WHERE account_id=?",[coins,account.id])
       return {coins,phase:'claimed'}
-    })
+    }))
     if(out.error)return send(res,409,out)
     send(res,200,{...out,save:await getSave(account.id)})
+  },
+  'GET /api/expedition/badge': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    send(res,200,await expeditionBadge(account.id))
   },
   'GET /api/expedition': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    send(res,200,await expeditionSnapshot(account.id))
+    send(res,200,await retryDbContention(()=>expeditionSnapshot(account.id)))
   },
   'POST /api/expedition/join': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const {serverId,characterId}=await readJson(req)
     if(![1,2,3].includes(serverId)||typeof characterId!=='string'||!CHARACTER_IDS.includes(characterId))return send(res,400,{error:'not_owned'})
-    const error=await expeditionJoin(account.id,serverId,characterId)
+    const error=await retryDbContention(()=>expeditionJoin(account.id,serverId,characterId))
     if(error)return send(res,409,{error})
-    send(res,200,await expeditionSnapshot(account.id))
+    send(res,200,await retryDbContention(()=>expeditionSnapshot(account.id)))
   },
   'GET /api/global-chat': async (req, res) => {
     await ensureGlobalChatTables()

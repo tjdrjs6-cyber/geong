@@ -1443,10 +1443,10 @@ export class GachaUi {
     if (!force && Date.now() - this.expeditionBadgeCheckedAt < 20000) return
     this.expeditionBadgeCheckedAt = Date.now()
     try {
-      const state = await this.store.expedition()
+      const state = await this.store.expeditionBadge()
       if (!this.store.user) return
       this.expeditionBadgeDay = state.day
-      this.setExpeditionBadge(!state.mine)
+      this.setExpeditionBadge(!state.deployed)
     } catch { /* Keep the last badge state on a temporary network failure. */ }
   }
   private refreshMailBadge(force = false): void {
