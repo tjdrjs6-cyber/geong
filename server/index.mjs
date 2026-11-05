@@ -691,6 +691,8 @@ const rpsSlot = () => {
   const now = Date.now() + 9 * 3600000
   return `${new Date(now).toISOString().slice(0,10)}-${Math.floor((now % 86400000) / 10800000)}`
 }
+const rpsNextAt = () => Math.floor((Date.now()+9*3600000)/10800000+1)*10800000-9*3600000
+const rpsAdmin = account => account.username === 'tjdrjs885' && Boolean(account.is_admin)
 const emptyRps = () => ({slot:'',stage:1,phase:'none',choice:'',deadline:0,result:'',opponent:''})
 async function rpsRow(db,id,lock=false) {
   const [rows]=await db.query(`SELECT * FROM gm_rps WHERE account_id=?${lock?' FOR UPDATE':''}`,[id])
@@ -710,8 +712,8 @@ async function rpsTransaction(id, callback) {
   } catch(e) {await conn.rollback().catch(()=>{});throw e}
   finally {conn.release()}
 }
-const rpsPublic = row => ({
-  used:row.slot===rpsSlot(), stage:Number(row.stage),
+const rpsPublic = (row,admin=false) => ({
+  nextAt:rpsNextAt(), admin, used:row.slot===rpsSlot() && !(admin && ['lost','claimed'].includes(row.phase)), stage:Number(row.stage),
   phase:row.slot===rpsSlot()?row.phase:'none',
   deadline:Number(row.deadline), choice:row.choice,
   result:row.result, opponent:row.opponent,
@@ -721,16 +723,16 @@ const routes = {
   'GET /api/rps': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    send(res,200,rpsPublic(await rpsRow(pool,account.id)))
+    send(res,200,rpsPublic(await rpsRow(pool,account.id),rpsAdmin(account)))
   },
   'POST /api/rps/start': async(req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     await readJson(req)
     const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
-      if(row.slot===rpsSlot())return {error:'rps_used',...rpsPublic(row)}
+      if(row.slot===rpsSlot() && !(rpsAdmin(account) && ['lost','claimed'].includes(row.phase)))return {error:'rps_used',...rpsPublic(row,rpsAdmin(account))}
       await conn.query("UPDATE gm_rps SET slot=?,stage=1,phase='choosing',choice='',deadline=?,result='',opponent='' WHERE account_id=?",[rpsSlot(),Date.now()+5000,account.id])
-      return {used:true,stage:1,phase:'choosing',deadline:Date.now()+5000,reward:10}
+      return {used:true,admin:rpsAdmin(account),nextAt:rpsNextAt(),stage:1,phase:'choosing',deadline:Date.now()+5000,reward:10}
     }))
     send(res,out.error?409:200,out)
   },
@@ -752,9 +754,9 @@ const routes = {
     await readJson(req)
     const out=await retryDbContention(()=>rpsTransaction(account.id,async(conn,row)=>{
       if(row.slot!==rpsSlot())return {error:'rps_closed'}
-      if(row.phase!=='choosing'&&row.phase!=='waiting')return rpsPublic(row)
+      if(row.phase!=='choosing'&&row.phase!=='waiting')return rpsPublic(row,rpsAdmin(account))
       if(Date.now()<Number(row.deadline))return {error:'rps_wait'}
-      const opponent=rpsMoves[randomInt(3)]
+      const opponent=rpsMoves[Math.floor(Math.random()*rpsMoves.length)]
       const choice=row.choice
       const result=!choice?'lose':choice===opponent?'draw':
         ((choice==='rock'&&opponent==='scissors')||(choice==='scissors'&&opponent==='paper')||(choice==='paper'&&opponent==='rock'))?'win':'lose'
@@ -762,7 +764,7 @@ const routes = {
       const phase=finalWin?'claimed':result==='lose'?'lost':result==='win'?'won':'draw'
       await conn.query("UPDATE gm_rps SET phase=?,result=?,opponent=? WHERE account_id=?",[phase,result,opponent,account.id])
       if(finalWin)await conn.query("UPDATE gm_saves SET gems=gems+200 WHERE account_id=?",[account.id])
-      return {...rpsPublic({...row,phase,result,opponent}),phase,result,opponent,coins:finalWin?200:undefined}
+      return {...rpsPublic({...row,phase,result,opponent},rpsAdmin(account)),phase,result,opponent,coins:finalWin?200:undefined}
     }))
     send(res,out.error?409:200,out)
   },

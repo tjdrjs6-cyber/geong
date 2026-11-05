@@ -130,8 +130,11 @@ export class GachaUi {
     if (screen === 'expedition') {void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)}
     window.clearInterval(this.rpsTimer)
     if (screen === 'rps') {
-      this.rpsState={used:false,stage:1,phase:'none',deadline:0}
-      this.renderRps()
+      this.rpsState=null
+      const start=this.root.querySelector<HTMLButtonElement>('[data-action="rps-start"]')
+      if(start)start.hidden=true
+      const msg=this.root.querySelector<HTMLElement>('.rps-message')
+      if(msg)msg.textContent='게임 상태를 확인하고 있어요…'
       const message=this.root.querySelector<HTMLElement>('.rps-message')
       if(message)message.textContent='게임 상태를 확인하고 있어요…'
       void this.openRps()
@@ -1017,7 +1020,7 @@ export class GachaUi {
       const tab=this.root.querySelector<HTMLButtonElement>('.rps-lobby-tab')
       const status=tab?.querySelector<HTMLElement>('.rps-lobby-status')
       tab?.classList.toggle('is-used',state.used)
-      if(status)status.textContent=state.used?'✓ 참여 완료':'3시간마다 1회'
+      if(status)status.textContent=state.admin?'무제한 도전':state.used?'✓ 참여 완료':'3시간마다 1회'
     }catch { /* transient connection failure */ }
   }
 
@@ -1028,7 +1031,7 @@ export class GachaUi {
       const message=this.root.querySelector<HTMLElement>('.rps-message')
       if(message)message.textContent=`서버 응답 오류 (${e instanceof Error?e.message:'알 수 없는 오류'}). 다시 시도하거나 로비로 돌아가 주세요.`
       const start=this.root.querySelector<HTMLButtonElement>('[data-action="rps-start"]')
-      if(start){start.disabled=false;start.hidden=false}
+      if(start){start.disabled=false;start.hidden=true}
     }
   }
   private async rpsAction(action:'start'|'next'|'claim'|'choose',move=''):Promise<void> {
@@ -1055,6 +1058,13 @@ export class GachaUi {
     if(this.screen!=='rps'||!this.rpsState)return
     const state=this.rpsState
     const countdown=this.root.querySelector<HTMLElement>('.rps-countdown')
+    if(state.used && ['lost','claimed'].includes(state.phase) && !state.admin && state.nextAt) {
+      const left=Math.max(0,state.nextAt-Date.now())
+      const h=Math.floor(left/3600000),m=Math.floor(left%3600000/60000),sec=Math.floor(left%60000/1000)
+      if(countdown)countdown.textContent=`다음 도전까지 ${h}시간 ${m}분 ${sec}초 남았어요`
+      if(left===0){void this.openRps()}
+      return
+    }
     if(['choosing','waiting'].includes(state.phase)) {
       const remain=Math.max(0,state.deadline-Date.now())
       if(countdown)countdown.textContent=`${(remain/1000).toFixed(1)}초`
@@ -1091,9 +1101,9 @@ export class GachaUi {
       state.phase==='waiting'?'선택 완료! 모몽가의 선택을 기다려요…':
       state.phase==='draw'?`둘 다 ${names[state.opponent]||''}! 비겼어요. 다시 도전!`:
       state.phase==='won'?`모몽가는 ${names[state.opponent]||''}! 이겼어요! ${state.stage===5?'200코인을 받아주세요!':'그만할까요, 계속할까요?'}`:
-      state.phase==='lost'?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다. 보상은 모두 사라졌어요.`:
+      state.phase==='lost'?(state.choice?`모몽가는 ${names[state.opponent]||''}! 모몽가가 이겼습니다. 보상은 모두 사라졌어요.`:'아무것도 내지 않아서 졌어요! 보상은 모두 사라졌어요.'):
       state.phase==='claimed'?`보상 ${state.coins||rewards[(state.stage||1)-1]}코인을 받았어요!`:
-      state.used?'이번 3시간 도전은 완료했어요. 다음 정각에 만나요!':'모몽가와 가위바위보를 시작해요!'
+      state.used?'이번 가위바위보는 끝났어요. 다음 도전까지 기다려 주세요!':'모몽가와 가위바위보를 시작해요!'
     if(state.phase==='won'&&state.stage===5&&claim){claim.hidden=false;claim.textContent='200코인 받기'}
     else if(claim)claim.textContent='코인 받고 그만하기'
     if(this.screen==='title')void this.refreshRpsBadge()
