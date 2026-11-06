@@ -1,6 +1,8 @@
 import type { CharacterId } from './collection'
-/** 2D cartoon character art (transparent PNG), served locally in dev and from managed storage in builds. */
+/** 2D cartoon character art. New PNGs must use scripts/normalize-character-art.py to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
+  kurimanju_bean: '/assets/chars/kurimanju_bean.png',
+  rakko_limited: '/assets/chars/rakko_limited.png',
   honey: '/assets/chars/honey.png',
   ode: '/assets/chars/ode.png',
   ode_prison: '/assets/chars/ode_prison.png',
@@ -41,6 +43,8 @@ const previewUrls: Record<CharacterId, string> = {
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
+  kurimanju_bean: '/assets/chars/kurimanju_bean.png',
+  rakko_limited: '/assets/chars/rakko_limited.png',
   honey: '/assets/chars/honey.png',
   ode: '/assets/chars/ode.png',
   ode_prison: '/assets/chars/ode_prison.png',
