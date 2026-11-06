@@ -3728,3 +3728,35 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   max-height: 112px;
   object-fit: contain;
 }
+
+/* v1.82: restore the beetle's visible size without cancelling its bobbing motion. */
+.weed-field .weed-beetle-helper {
+  width: clamp(41px, 10.5vmin, 77px) !important;
+  animation: beetle-bob 1.8s ease-in-out infinite !important;
+  transform-origin: center bottom;
+}
+/* Show the full total weeding bonus, even on narrow mobile screens. */
+.weed-screen .weed-panel .weed-status,
+.weed-status {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere;
+  line-height: 1.4 !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* v1.83: beetle helper is half the size of a deployed field character.
+   Size the wrapper directly (never scale it), so beetle-bob keeps moving. */
+.weed-screen .weed-field .weed-beetle-helper {
+  width: min(19cqw, 100px) !important;
+  max-width: 50% !important;
+  height: auto !important;
+  transform: none;
+  animation: beetle-bob 1.8s ease-in-out infinite !important;
+}
+.weed-screen .weed-field .weed-beetle-helper > img {
+  width: 100% !important;
+  height: auto !important;
+}
