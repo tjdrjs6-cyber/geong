@@ -1,5 +1,5 @@
 import type { CharacterId } from './collection'
-/** 2D cartoon character art. New PNGs must use scripts/normalize-character-art.py to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
+/** 2D cartoon character art. New PNGs should use a centered square transparent canvas with minimal padding to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
   kurimanju_bean: '/assets/chars/kurimanju_bean.png',
   rakko_limited: '/assets/chars/rakko_limited.png',

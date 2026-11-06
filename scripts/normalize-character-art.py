@@ -1,13 +1,13 @@
-"""Normalize newly added character PNGs to the shared 1086x1448 transparent canvas.
+"""Normalize newly added character PNGs to the shared 1024x1024 transparent canvas.
 Usage: python scripts/normalize-character-art.py path/to/new_character.png [more.png ...]
 Keep all screen-specific sizing in existing UI CSS; don't apply per-character CSS scales.
 """
 from PIL import Image
 from pathlib import Path
 import sys
-CANVAS=(1086,1448)
-TARGET_HEIGHT_RATIO=0.78
-TARGET_WIDTH_RATIO=0.82
+CANVAS=(1024,1024)
+TARGET_HEIGHT_RATIO=0.88
+TARGET_WIDTH_RATIO=0.88
 
 def normalize(path):
     path=Path(path)
