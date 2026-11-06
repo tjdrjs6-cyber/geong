@@ -3821,3 +3821,10 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen .market-options .nav-button { width:100%; min-height:34px; justify-content:center; }
 .gacha-screen .nav-market[aria-expanded="true"] { background:#ffe4ee !important; }
 .gacha-screen .nav-market .chiikawa-tab-icon img { width:100%;height:100%;object-fit:contain; }
+
+/* v197: keep flyout menus visible beyond the left navigation rail */
+.gacha-screen > .gacha-nav { overflow:visible !important; }
+.gacha-screen .activity-menu, .gacha-screen .market-menu { overflow:visible !important; z-index:90; }
+.gacha-screen .activity-options:not([hidden]), .gacha-screen .market-options:not([hidden]) { display:flex !important; position:absolute !important; left:calc(100% + 7px) !important; right:auto !important; top:0 !important; z-index:200 !important; width:100px !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important; }
+.gacha-screen .activity-options .nav-button, .gacha-screen .market-options .nav-button { background:linear-gradient(145deg,#fffdfa,#e9f9f0) !important; border-color:#b9e6d0 !important; box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25 !important; }
+.gacha-screen .nav-activity, .gacha-screen .nav-activity[aria-expanded="true"] { background:linear-gradient(145deg,#fffef9,#e9f9f0) !important; border-color:#b9e6d0 !important; box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25 !important; }
