@@ -3894,3 +3894,42 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen .nav-activity, .gacha-screen .activity-options [data-action="weed"] { position:relative; }
 .gacha-screen .wild-weed-alert-dot:not([hidden]) { display:block !important; position:absolute; right:5px; top:4px; width:11px; height:11px; box-sizing:border-box; border-radius:50%; background:#ed334b; border:2px solid #fff; box-shadow:0 0 0 1px #d83a4c; z-index:15; pointer-events:none; }
 .gacha-screen .wild-weed-alert-dot[hidden] { display:none !important; }
+
+/* v208: match existing compact lobby badges; 3x wild-weed artwork. */
+.gacha-screen .wild-weed-alert-dot:not([hidden]) {width:10px!important;height:10px!important;top:5px!important;right:7px!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #e65a65!important;}
+.wild-weed-pick {width:clamp(135px,36vw,228px)!important;height:clamp(135px,36vw,228px)!important;}
+
+/* v208: shrink all lobby notification dots by 50% (including expedition). */
+#ui .gacha-screen .announcement-dot:not([hidden]),
+#ui .gacha-screen .global-chat-dot:not([hidden]),
+#ui .gacha-screen .wild-weed-alert-dot:not([hidden]),
+#ui .gacha-screen .expedition-entry-dot:not([hidden]) {
+  width:5px!important;height:5px!important;border-width:1px!important;
+}
+
+/* v209: shake the weed itself while a 3-second press is in progress. */
+#ui .wild-weed-pick.is-holding > img {
+  transform-origin: 50% 90%;
+  animation: geongi-weed-pull-shake .24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes geongi-weed-pull-shake {
+  0% { transform: rotate(-9deg) translateX(-3px); }
+  100% { transform: rotate(9deg) translateX(3px); }
+}
+/* v209: every lobby red notification dot has one identical size and border. */
+#ui .gacha-screen .announcement-dot:not([hidden]),
+#ui .gacha-screen .global-chat-dot:not([hidden]),
+#ui .gacha-screen .wild-weed-alert-dot:not([hidden]),
+#ui .gacha-screen .expedition-entry-dot:not([hidden]),
+#ui .gacha-screen > .expedition-entry .expedition-entry-label .expedition-entry-dot:not([hidden]) {
+  width: 7px !important;
+  height: 7px !important;
+  min-width: 7px !important;
+  min-height: 7px !important;
+  box-sizing: border-box !important;
+  border: 1px solid #fff !important;
+  border-radius: 50% !important;
+  background: #f13e50 !important;
+  box-shadow: 0 0 0 1px #e65a65 !important;
+}

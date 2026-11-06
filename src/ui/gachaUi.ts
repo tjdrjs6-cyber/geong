@@ -552,13 +552,14 @@ export class GachaUi {
     const items=screen.querySelector<HTMLElement>('.shop-items')
     if(!items)return
     if(this.shopTab==='sell'){
-      items.innerHTML=([['normal',this.store.wildWeed?.count??0,'잡초',5,'/field_wild_weed.png'],['golden',this.store.wildWeed?.goldenCount??0,'황금잡초',50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([type,count,name,price,img])=>`<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">전체 판매</button></div>`).join('') || '<div class="shop-empty-note">인벤토리에 판매할 아이템이 없어요.</div>'
+      items.innerHTML=([['normal',this.store.wildWeed?.count??0,'잡초',5,'/field_wild_weed.png'],['golden',this.store.wildWeed?.goldenCount??0,'황금잡초',50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([type,count,name,price,img])=>`<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">인벤토리에 판매할 아이템이 없어요.</div>'
     }else{
       items.innerHTML=`<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')} · 강화파편 ${(this.store.data.fragments??0).toLocaleString('ko-KR')}개</div>${[1,10].map(n=>`<div class="shop-product"><img src="/assets/enhancement_fragment.png" alt="강화파편"/><div><strong>강화파편 ${n}개</strong><small><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> ${n*5}코인</small></div><button data-action="shop-buy" data-quantity="${n}" ${Number(this.store.data.gems??0)<n*5?'disabled':''}>구매</button></div>`).join('')}`
     }
   }
 
   private shopPendingQuantity = 0
+  private shopPendingSell: {type: 'normal' | 'golden'; count: number} | null = null
 
   private showShopDialog(message: string, quantity = 0): void {
     const dialog = this.root.querySelector<HTMLElement>('.shop-dialog')
@@ -567,9 +568,9 @@ export class GachaUi {
     const label = dialog.querySelector<HTMLElement>('#shop-dialog-message')
     if (label) label.textContent = message
     const cancel = dialog.querySelector<HTMLButtonElement>('[data-action="shop-dialog-cancel"]')
-    if (cancel) cancel.hidden = quantity === 0
+    if (cancel) cancel.hidden = quantity === 0 && !this.shopPendingSell
     const confirm = dialog.querySelector<HTMLButtonElement>('[data-action="shop-dialog-confirm"]')
-    if (confirm) confirm.textContent = quantity ? '구매' : '확인'
+    if (confirm) confirm.textContent = this.shopPendingSell ? '판매' : quantity ? '구매' : '확인'
     dialog.hidden = false
   }
 
@@ -577,6 +578,7 @@ export class GachaUi {
     const dialog = this.root.querySelector<HTMLElement>('.shop-dialog')
     if (dialog) dialog.hidden = true
     this.shopPendingQuantity = 0
+    this.shopPendingSell = null
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
@@ -625,15 +627,26 @@ export class GachaUi {
       const type=button?.dataset.weedType==='golden'?'golden':'normal'
       const count=type==='golden'?(this.store.wildWeed?.goldenCount??0):(this.store.wildWeed?.count??0)
       if(!count || this.busy)return
-      this.busy=true
-      try {await this.store.sellWildWeed(count,type);this.renderShop();this.renderWallet();this.showShopDialog('판매완료!')}
-      catch(e){this.handleError(e)}finally{this.busy=false}
+      this.shopPendingSell = {type,count}
+      this.showShopDialog('판매하시겠습니까?')
       return
     }
     if (action === 'shop-dialog-cancel') { this.hideShopDialog(); return }
     if (action === 'shop-dialog-confirm') {
       const quantity = this.shopPendingQuantity
+      const pendingSell = this.shopPendingSell
       this.hideShopDialog()
+      if (pendingSell) {
+        if (this.busy) return
+        this.busy = true
+        try {
+          await this.store.sellWildWeed(pendingSell.count, pendingSell.type)
+          this.renderShop()
+          this.renderWallet()
+          this.showShopDialog('판매완료!')
+        } catch(e) { this.handleError(e) } finally { this.busy = false }
+        return
+      }
       if (!quantity) return
       if (this.busy) return
       if (Number(this.store.data.gems??0) < quantity*5) { this.showShopDialog('코인이 부족해요!'); return }
