@@ -3968,3 +3968,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* v212: remove the hold progress ring entirely. */
 #ui .wild-weed-progress { display:none !important; }
+
+/* v213: mobile-only wild weed 30% larger; hold message above the sprite. */
+#ui .wild-weed-pick .wild-weed-hold-text {
+  bottom:calc(100% + 8px)!important;
+  top:auto!important;
+}
+@media (max-width: 767px) {
+  #ui .wild-weed-pick {
+    width:clamp(105.3px,28.08vw,177.84px)!important;
+    height:clamp(105.3px,28.08vw,177.84px)!important;
+  }
+}
