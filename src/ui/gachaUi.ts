@@ -100,7 +100,7 @@ export class GachaUi {
       event.preventDefault()
       target.classList.add('is-holding')
       window.clearTimeout(this.wildWeedHold)
-      this.wildWeedHold=window.setTimeout(()=>{target.classList.remove('is-holding');void this.pickWildWeed()},3000)
+      this.wildWeedHold=window.setTimeout(()=>{target.classList.remove('is-holding');void this.pickWildWeed()},this.store.wildWeed?.type==='golden'?3600:2400)
     })
     const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedHold);this.root.querySelector('.wild-weed-pick')?.classList.remove('is-holding')}
     window.addEventListener('pointerup',cancelWeedHold)
@@ -253,7 +253,7 @@ export class GachaUi {
           <b id="weed-title">제초장</b>
           <div class="wallet weed-wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
-        <div class="weed-field">${weedFieldMarkup()}<button type="button" class="wild-weed-pick" aria-label="잡초 3초간 누르기" hidden><img src="/field_wild_weed.png" alt="잡초"/><span class="wild-weed-progress"></span></button></div>
+        <div class="weed-field">${weedFieldMarkup()}<button type="button" class="wild-weed-pick" aria-label="잡초 길게 누르기" hidden><img src="/field_wild_weed.png" alt="잡초"/><span class="wild-weed-hold-text">잡초를 뽑는 중입니다.</span></button></div>
         <div class="weed-panel">
           <div class="field-info-sticky">
           <p class="weed-status"></p>
@@ -552,7 +552,7 @@ export class GachaUi {
     const items=screen.querySelector<HTMLElement>('.shop-items')
     if(!items)return
     if(this.shopTab==='sell'){
-      items.innerHTML=([['normal',this.store.wildWeed?.count??0,'잡초',5,'/field_wild_weed.png'],['golden',this.store.wildWeed?.goldenCount??0,'황금잡초',50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([type,count,name,price,img])=>`<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">인벤토리에 판매할 아이템이 없어요.</div>'
+      items.innerHTML=`<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')}</div>` + (([['normal',this.store.wildWeed?.count??0,'잡초',5,'/field_wild_weed.png'],['golden',this.store.wildWeed?.goldenCount??0,'황금잡초',50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([type,count,name,price,img])=>`<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">인벤토리에 판매할 아이템이 없어요.</div>')
     }else{
       items.innerHTML=`<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')} · 강화파편 ${(this.store.data.fragments??0).toLocaleString('ko-KR')}개</div>${[1,10].map(n=>`<div class="shop-product"><img src="/assets/enhancement_fragment.png" alt="강화파편"/><div><strong>강화파편 ${n}개</strong><small><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> ${n*5}코인</small></div><button data-action="shop-buy" data-quantity="${n}" ${Number(this.store.data.gems??0)<n*5?'disabled':''}>구매</button></div>`).join('')}`
     }
@@ -2302,6 +2302,7 @@ export class GachaUi {
     const weed=this.store.wildWeed,button=this.root.querySelector<HTMLElement>('.wild-weed-pick')
     if(!button)return
     button.hidden=!weed?.visible
+    button.classList.toggle('is-golden',weed?.type==='golden')
     if(weed?.visible){const img=button.querySelector('img');if(img)img.src=weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png';button.style.left=`${weed.x}%`;button.style.top=`${weed.y}%`}
   }
   private async pickWildWeed(): Promise<void> {
