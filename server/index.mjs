@@ -668,8 +668,8 @@ async function expeditionSettle(conn, day, serverId, now) {
           // System mail: reward is credited only when the recipient claims it.
           // The mail `coins` column is the game's coin balance (`gm_saves.gems`).
           await conn.query(
-            'INSERT INTO gm_mail (from_id,to_id,message,coins,sent_day,created_ms) VALUES (?,?,?,?,?,?)',
-            [0,player.account_id,'원정대 보스를 토벌하였습니다!',500,day,now]
+            'INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',
+            [0,player.account_id,'원정대 보스를 토벌하였습니다!',300,30,day,now]
           )
           await trimInbox(conn,player.account_id)
         }

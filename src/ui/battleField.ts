@@ -34,9 +34,9 @@ export function battleFieldMarkup(): string {
       <div class="bf-body bf-enemy-body">${monsterSvg()}</div>
       <span class="bf-hit">-10</span>
     </div>
-    <div class="bf-unit bf-friend bf-friend-second is-empty"><div class="bf-friend-label"><span class="bf-friend-name"></span><em class="bf-friend-power"></em></div><div class="bf-body bf-friend-body"></div></div>
+    <div class="bf-unit bf-friend bf-friend-second is-empty"><div class="bf-body bf-friend-body"></div></div>
     <div class="bf-unit bf-friend is-empty">
-      <div class="bf-friend-label"><span class="bf-friend-name"></span><em class="bf-friend-power"></em></div>
+      
       <div class="bf-body bf-friend-body"></div>
     </div>`
 }

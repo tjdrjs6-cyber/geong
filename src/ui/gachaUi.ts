@@ -289,7 +289,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-party"></div><div class="expedition-defeated-message" aria-live="polite" hidden>보스가 토벌되었습니다.</div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 우편함으로 500코인 보상 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 우편함으로 300코인 + 강화파편 30개 보상 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="rps-screen" data-screen="rps" aria-hidden="true">
@@ -2195,21 +2195,13 @@ export class GachaUi {
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
-      const name = secondUnit.querySelector<HTMLElement>('.bf-friend-name')
-      const power = secondUnit.querySelector<HTMLElement>('.bf-friend-power')
       if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
-      if (name) name.textContent = second ? fullName(second) : ''
-      if (power) power.textContent = second ? `전투력 ${battlePower(second.id)}` : ''
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
-      const name = unit.querySelector<HTMLElement>('.bf-friend-name')
-      const power = unit.querySelector<HTMLElement>('.bf-friend-power')
       if (body) body.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
-      if (name) name.textContent = fighter ? fullName(fighter) : ''
-      if (power) power.textContent = fighter ? `전투력 ${battlePower(fighter.id)}` : ''
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {
