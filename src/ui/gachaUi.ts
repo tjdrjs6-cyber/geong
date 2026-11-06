@@ -1545,7 +1545,10 @@ export class GachaUi {
     if (!grid) return
     const current = this.heroId()
     if (!this.store.data.owned.length) { grid.innerHTML = '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'; return }
-    grid.innerHTML = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).map(character => `<button class="featured-pick${current === character.id ? ' is-active' : ''}" role="listitem" data-action="featured-pick" data-id="${character.id}" aria-pressed="${current === character.id}" ${current === character.id ? 'disabled aria-disabled="true"' : ''}>
+    grid.innerHTML = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).sort((a, b) => {
+      const rank = { legendary: 0, super: 1, rare: 2, mermaid: 3, normal: 4 }
+      return rank[a.tier] - rank[b.tier] || a.name.localeCompare(b.name, 'ko') || (a.variant ?? '').localeCompare(b.variant ?? '', 'ko')
+    }).map(character => `<button class="featured-pick${current === character.id ? ' is-active' : ''}" role="listitem" data-action="featured-pick" data-id="${character.id}" aria-pressed="${current === character.id}" ${current === character.id ? 'disabled aria-disabled="true"' : ''}>
         <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><b>${character.name}</b>${character.variant ? `<em>${character.variant}</em>` : ''}${current === character.id ? '<small class="featured-selected-label">✓ 선택됨</small>' : ''}</button>`).join('')
   }
 
@@ -2174,7 +2177,7 @@ export class GachaUi {
       const friend = walker.querySelector<HTMLElement>('.weed-friend')
       if (!friend) return
       friend.classList.toggle('is-empty', !character)
-      friend.innerHTML = character ? `<img src="/assets/weed/${character.id}.png" alt="제초 중인 ${fullName(character)}" />` : ''
+      friend.innerHTML = character ? `<img src="/assets/weed/${character.id}.png" onerror="this.onerror=null;this.src='${CHARACTER_IMAGE_URLS[character.id]}'" alt="제초 중인 ${fullName(character)}" />` : ''
     })
     this.renderBeetle()
     this.renderWeedStatus()

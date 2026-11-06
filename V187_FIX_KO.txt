@@ -1,0 +1,1 @@
+v187: 제초장 신규 캐릭터 이미지 누락 수정. kurimanju_bean, rakko_limited의 weed 이미지 추가 및 이미지 로드 실패 시 chars 이미지 대체 표시.
