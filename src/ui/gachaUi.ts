@@ -45,6 +45,7 @@ export class GachaUi {
   private userTab: 'char' | 'deco' | 'house' = 'char'
   private mailTab: 'in' | 'sent' = 'in'
   private wildWeedHold = 0
+  private wildWeedTargetId = 0
   private wildWeedBusy = false
   private wildWeedLastSlot = -1
   private shopTab: 'buy' | 'sell' = 'buy'
@@ -99,10 +100,11 @@ export class GachaUi {
       if(!target || this.wildWeedBusy)return
       event.preventDefault()
       target.classList.add('is-holding')
+      this.wildWeedTargetId=Number(target.dataset.weedId)
       window.clearTimeout(this.wildWeedHold)
-      this.wildWeedHold=window.setTimeout(()=>{target.classList.remove('is-holding');void this.pickWildWeed()},this.store.wildWeed?.type==='golden'?3600:2400)
+      this.wildWeedHold=window.setTimeout(()=>{target.classList.remove('is-holding');void this.pickWildWeed(Number(target.dataset.weedId))},target.dataset.weedType==='golden'?3600:2400)
     })
-    const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedHold);this.root.querySelector('.wild-weed-pick')?.classList.remove('is-holding')}
+    const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedHold);this.root.querySelectorAll('.wild-weed-pick').forEach(el=>el.classList.remove('is-holding'))}
     window.addEventListener('pointerup',cancelWeedHold)
     window.addEventListener('pointercancel',cancelWeedHold)
     window.addEventListener('blur',cancelWeedHold)
@@ -253,7 +255,7 @@ export class GachaUi {
           <b id="weed-title">제초장</b>
           <div class="wallet weed-wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
-        <div class="weed-field">${weedFieldMarkup()}<button type="button" class="wild-weed-pick" aria-label="잡초 길게 누르기" hidden><img src="/field_wild_weed.png" alt="잡초"/><span class="wild-weed-hold-text">잡초를 뽑는 중입니다.</span></button></div>
+        <div class="weed-field">${weedFieldMarkup()}<div class="wild-weed-spawns"></div></div>
         <div class="weed-panel">
           <div class="field-info-sticky">
           <p class="weed-status"></p>
@@ -2299,16 +2301,15 @@ export class GachaUi {
     this.root.querySelectorAll<HTMLElement>('.wild-weed-alert-dot').forEach(dot => { dot.hidden = !visible })
   }
   private renderWildWeed(): void {
-    const weed=this.store.wildWeed,button=this.root.querySelector<HTMLElement>('.wild-weed-pick')
-    if(!button)return
-    button.hidden=!weed?.visible
-    button.classList.toggle('is-golden',weed?.type==='golden')
-    if(weed?.visible){const img=button.querySelector('img');if(img)img.src=weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png';button.style.left=`${weed.x}%`;button.style.top=`${weed.y}%`}
+    const field=this.root.querySelector<HTMLElement>('.wild-weed-spawns')
+    if(!field)return
+    const weeds=this.store.wildWeed?.weeds??[]
+    field.innerHTML=weeds.map(weed=>`<button type="button" class="wild-weed-pick${weed.type==='golden'?' is-golden':''}" data-weed-id="${weed.id}" data-weed-type="${weed.type}" aria-label="잡초 길게 누르기" style="left:${weed.x}%;top:${weed.y}%"><img src="${weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png'}" alt="잡초"/><span class="wild-weed-hold-text">잡초를 뽑는 중입니다.</span></button>`).join('')
   }
-  private async pickWildWeed(): Promise<void> {
-    if(this.wildWeedBusy||!this.store.wildWeed?.visible)return
+  private async pickWildWeed(id:number): Promise<void> {
+    if(this.wildWeedBusy||!this.store.wildWeed?.weeds.some(w=>w.id===id))return
     this.wildWeedBusy=true
-    try {await this.store.pickWildWeed();this.renderWildWeed();this.updateWildWeedDots();this.toast('잡초 채집 완료! 인벤토리에 추가했어요!')}
+    try {await this.store.pickWildWeed(id);this.renderWildWeed();this.updateWildWeedDots();this.toast('잡초 채집 완료! 인벤토리에 추가했어요!')}
     catch(e){this.handleError(e);void this.loadWildWeed()}
     finally{this.wildWeedBusy=false}
   }

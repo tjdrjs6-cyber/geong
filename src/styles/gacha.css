@@ -3980,3 +3980,8 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
     height:clamp(105.3px,28.08vw,177.84px)!important;
   }
 }
+
+/* v214: bring the hold label a little closer to the weed and layer up to 5 weeds. */
+#ui .wild-weed-pick .wild-weed-hold-text { bottom:calc(100% + 1px)!important; }
+#ui .wild-weed-spawns {position:absolute;inset:0;pointer-events:none;z-index:18;}
+#ui .wild-weed-spawns .wild-weed-pick {pointer-events:auto;}

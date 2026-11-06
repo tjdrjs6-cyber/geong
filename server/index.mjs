@@ -108,6 +108,16 @@ async function prepareDatabase() {
     golden_inventory INT UNSIGNED NOT NULL DEFAULT 0,
     weed_type VARCHAR(12) NOT NULL DEFAULT 'normal'
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_wild_weed_spawns (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    account_id BIGINT UNSIGNED NOT NULL,
+    spawn_slot BIGINT NOT NULL,
+    pos_x SMALLINT NOT NULL,
+    pos_y SMALLINT NOT NULL,
+    weed_type VARCHAR(12) NOT NULL DEFAULT 'normal',
+    picked TINYINT(1) NOT NULL DEFAULT 0,
+    KEY ix_wild_spawns_account (account_id, picked, spawn_slot)
+  )`)
   for (const field of ["golden_inventory INT UNSIGNED NOT NULL DEFAULT 0", "weed_type VARCHAR(12) NOT NULL DEFAULT 'normal'"]) {
     try { await pool.query(`ALTER TABLE gm_wild_weeds ADD COLUMN ${field}`) } catch(error) { if(!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   }
@@ -783,21 +793,38 @@ const rpsPublic = (row,admin=false) => ({
   result:row.result, opponent:row.opponent,
   reward:rpsRewards[Math.min(4,Number(row.stage)-1)]
 })
-// Spawn once per account at the first observed hourly slot. An unpicked weed persists.
+// Persist up to five unpicked weeds; spawn one at each elapsed hour even if older weeds remain.
 const WILD_WEED_HOUR = 3600000
 async function wildWeedState(accountId, db=pool) {
-  const slot = Math.floor(Date.now()/WILD_WEED_HOUR)
+  const slot=Math.floor(Date.now()/WILD_WEED_HOUR)
   await db.query('INSERT IGNORE INTO gm_wild_weeds (account_id,spawn_slot,picked_slot,pos_x,pos_y,weed_type) VALUES (?,?,?,?,?,?)', [accountId,slot,-1,12+Math.floor(Math.random()*76),49+Math.floor(Math.random()*38),Math.random()<0.15?'golden':'normal'])
-  const [rows]=await db.query('SELECT * FROM gm_wild_weeds WHERE account_id=? FOR UPDATE',[accountId])
-  const row=rows[0]
-  if (Number(row.spawn_slot)===0 || (Number(row.picked_slot)>=Number(row.spawn_slot) && slot>Number(row.picked_slot))) {
-    const x=12+Math.floor(Math.random()*76),y=49+Math.floor(Math.random()*38)
-    const type=Math.random()<0.15?'golden':'normal'
-    await db.query('UPDATE gm_wild_weeds SET spawn_slot=?,pos_x=?,pos_y=?,weed_type=? WHERE account_id=?',[slot,x,y,type,accountId])
-    row.weed_type=type
-    row.spawn_slot=slot;row.pos_x=x;row.pos_y=y
+  const [baseRows]=await db.query('SELECT * FROM gm_wild_weeds WHERE account_id=? FOR UPDATE',[accountId])
+  const base=baseRows[0]
+  const [allRows]=await db.query('SELECT * FROM gm_wild_weed_spawns WHERE account_id=? ORDER BY spawn_slot,id FOR UPDATE',[accountId])
+  // Migrate the old single-weed state once, without losing uncollected weeds.
+  if(allRows.length===0 && Number(base.picked_slot)<Number(base.spawn_slot)) {
+    await db.query('INSERT INTO gm_wild_weed_spawns (account_id,spawn_slot,pos_x,pos_y,weed_type) VALUES (?,?,?,?,?)',[accountId,Number(base.spawn_slot),base.pos_x,base.pos_y,base.weed_type])
   }
-  return {visible:Number(row.picked_slot)<Number(row.spawn_slot),x:Number(row.pos_x),y:Number(row.pos_y),count:Number(row.inventory),goldenCount:Number(row.golden_inventory),type:row.weed_type==='golden'?'golden':'normal',slot:Number(row.spawn_slot),nextAt:(slot+1)*WILD_WEED_HOUR}
+  const [activeRows]=await db.query('SELECT * FROM gm_wild_weed_spawns WHERE account_id=? AND picked=0 ORDER BY spawn_slot,id FOR UPDATE',[accountId])
+  let active=activeRows
+  // Use the legacy spawn_slot as the last processed hour, including when already at capacity.
+  let last=Number(base.spawn_slot)
+  if(last<slot){
+    const newCount=Math.min(5-active.length,slot-last)
+    for(let i=0;i<newCount;i++){
+      let x=12+Math.floor(Math.random()*76),y=49+Math.floor(Math.random()*38)
+      for(let attempt=0;attempt<20 && active.some(w=>Math.hypot(Number(w.pos_x)-x,Number(w.pos_y)-y)<20);attempt++){
+        x=12+Math.floor(Math.random()*76);y=49+Math.floor(Math.random()*38)
+      }
+      const type=Math.random()<0.15?'golden':'normal'
+      const spawnSlot=last+i+1
+      const [insert]=await db.query('INSERT INTO gm_wild_weed_spawns (account_id,spawn_slot,pos_x,pos_y,weed_type) VALUES (?,?,?,?,?)',[accountId,spawnSlot,x,y,type])
+      active.push({id:insert.insertId,spawn_slot:spawnSlot,pos_x:x,pos_y:y,weed_type:type})
+    }
+    await db.query('UPDATE gm_wild_weeds SET spawn_slot=? WHERE account_id=?',[slot,accountId])
+  }
+  const weeds=active.map(w=>({id:Number(w.id),x:Number(w.pos_x),y:Number(w.pos_y),type:w.weed_type==='golden'?'golden':'normal'}))
+  return {visible:weeds.length>0,weeds,x:weeds[0]?.x??50,y:weeds[0]?.y??70,type:weeds[0]?.type??'normal',count:Number(base.inventory),goldenCount:Number(base.golden_inventory),slot,nextAt:(slot+1)*WILD_WEED_HOUR}
 }
 const routes = {
   'POST /api/wild-weed/state': async (req,res) => {
@@ -810,13 +837,16 @@ const routes = {
     if(!account)return send(res,401,{error:'login_required'})
     const result=await inTransaction(async conn=>{
       const weed=await wildWeedState(account.id,conn)
-      if(!weed.visible)return {error:'weed_already_picked'}
-      if(weed.type==='golden') {
-        await conn.query('UPDATE gm_wild_weeds SET picked_slot=spawn_slot, golden_inventory=golden_inventory+1 WHERE account_id=?',[account.id])
-        return {weed:{...weed,visible:false,goldenCount:weed.goldenCount+1}}
+      const {id}=await readJson(req)
+      const picked=weed.weeds.find(w=>w.id===Number(id))
+      if(!picked)return {error:'weed_already_picked'}
+      await conn.query('UPDATE gm_wild_weed_spawns SET picked=1 WHERE account_id=? AND id=? AND picked=0',[account.id,picked.id])
+      if(picked.type==='golden') {
+        await conn.query('UPDATE gm_wild_weeds SET golden_inventory=golden_inventory+1 WHERE account_id=?',[account.id])
+        return {weed:{...weed,weeds:weed.weeds.filter(w=>w.id!==picked.id),visible:weed.weeds.length>1,goldenCount:weed.goldenCount+1}}
       }
-      await conn.query('UPDATE gm_wild_weeds SET picked_slot=spawn_slot, inventory=inventory+1 WHERE account_id=?',[account.id])
-      return {weed:{...weed,visible:false,count:weed.count+1}}
+      await conn.query('UPDATE gm_wild_weeds SET inventory=inventory+1 WHERE account_id=?',[account.id])
+      return {weed:{...weed,weeds:weed.weeds.filter(w=>w.id!==picked.id),visible:weed.weeds.length>1,count:weed.count+1}}
     })
     if(result.error)return send(res,409,result)
     send(res,200,result)
