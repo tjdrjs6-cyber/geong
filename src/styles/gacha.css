@@ -3846,3 +3846,19 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen .menu-toggle-arrow { display:block; width:13px; height:13px; object-fit:contain; flex:0 0 13px; margin-left:auto; transition:transform .16s ease; }
 .gacha-screen .nav-activity[aria-expanded="true"] .menu-toggle-arrow,
 .gacha-screen .nav-market[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1); }
+
+/* v200: Prevent invisible modal layers from intercepting marketplace touches.
+   The marketplace must sit above inactive dialogs, with active controls clickable. */
+#ui .gacha-modal:not(.is-active) { pointer-events:none !important; }
+#ui .shop-screen { z-index:60 !important; pointer-events:none; }
+#ui .shop-screen.is-active { display:flex !important; visibility:visible !important; pointer-events:auto !important; }
+#ui .shop-screen.is-active .shop-header,
+#ui .shop-screen.is-active .shop-panel,
+#ui .shop-screen.is-active button { pointer-events:auto !important; touch-action:manipulation; }
+
+/* v201: larger menu arrows and compact character faces in flyouts */
+.gacha-screen .menu-toggle-arrow { width:39px !important; height:39px !important; flex:0 0 39px !important; max-width:39px !important; }
+.gacha-screen .activity-options .chiikawa-tab-icon,
+.gacha-screen .market-options .chiikawa-tab-icon { display:inline-flex !important; width:15px !important; height:15px !important; flex:0 0 15px !important; align-items:center; justify-content:center; }
+.gacha-screen .activity-options .chiikawa-tab-icon img,
+.gacha-screen .market-options .chiikawa-tab-icon img { display:block; width:100% !important; height:100% !important; object-fit:contain; }

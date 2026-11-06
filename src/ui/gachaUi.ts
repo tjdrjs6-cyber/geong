@@ -325,7 +325,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed">제초장</button><button type="button" class="nav-button" data-action="battle">토벌장</button><button type="button" class="nav-button" data-action="claw">인형뽑기</button></div></div><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge">대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button></div></div></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></div></div><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button></div></div></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -553,6 +553,10 @@ export class GachaUi {
       const menu = this.root.querySelector<HTMLElement>('.market-options')
       const toggle = this.root.querySelector<HTMLButtonElement>('.nav-market')
       if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
+      const otherMenu = this.root.querySelector<HTMLElement>(action === 'market-toggle' ? '.activity-options' : '.market-options')
+      const otherToggle = this.root.querySelector<HTMLButtonElement>(action === 'market-toggle' ? '.nav-activity' : '.nav-market')
+      if (otherMenu) otherMenu.hidden = true
+      otherToggle?.setAttribute('aria-expanded', 'false')
       return
     }
     if (['forge','shop'].includes(action)) {
@@ -565,6 +569,10 @@ export class GachaUi {
       const menu = this.root.querySelector<HTMLElement>('.activity-options')
       const toggle = this.root.querySelector<HTMLButtonElement>('.nav-activity')
       if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
+      const otherMenu = this.root.querySelector<HTMLElement>(action === 'market-toggle' ? '.activity-options' : '.market-options')
+      const otherToggle = this.root.querySelector<HTMLButtonElement>(action === 'market-toggle' ? '.nav-activity' : '.nav-market')
+      if (otherMenu) otherMenu.hidden = true
+      otherToggle?.setAttribute('aria-expanded', 'false')
       return
     }
     if (['weed','battle','claw'].includes(action)) {
@@ -575,7 +583,7 @@ export class GachaUi {
     }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
-    if (action === 'shop') {this.shopTab='buy';this.renderShop();this.show('shop');return}
+    if (action === 'shop') {this.shopTab='buy';this.show('shop');this.renderShop();return}
     if (action === 'shop-tab' && button?.dataset.tab) {this.shopTab=button.dataset.tab==='sell'?'sell':'buy';this.renderShop();return}
     if (action === 'shop-buy' && button?.dataset.quantity) {
       if(this.busy)return
