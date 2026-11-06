@@ -144,11 +144,11 @@ export class RemoteGachaStore {
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
   weedHourlyRate(): number {
-    return (this.weed?.members ?? []).reduce((sum, m) => sum + weedCoinsPerHour(m.id), 0) * (this.weed?.beetle ? 2 : 1)
+    return ((this.weed?.members.length ?? 0) ? 2 * (1 + (this.weed?.members ?? []).reduce((sum, m) => sum + (weedCoinsPerHour(m.id) / 2 - 1), 0)) : 0) * (this.weed?.beetle ? 2 : 1)
   }
   hourlyRate(): number {
     const hour = 3_600_000
-    const weed = (this.weed?.members ?? []).reduce((sum, m) => sum + weedCoinsPerHour(m.id), 0) * (this.weed?.beetle ? 2 : 1)
+    const weed = ((this.weed?.members.length ?? 0) ? 2 * (1 + (this.weed?.members ?? []).reduce((sum, m) => sum + (weedCoinsPerHour(m.id) / 2 - 1), 0)) : 0) * (this.weed?.beetle ? 2 : 1)
     return weed
   }
   /** Server credits weeding + battle coins without opening those screens. */

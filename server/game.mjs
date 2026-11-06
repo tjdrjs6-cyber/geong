@@ -83,6 +83,13 @@ export const WEED_HOUR_MS = 60 * 60 * 1000
 export const WEED_COINS_PER_HOUR = 2
 export const weedCoinsPerHour = id => WEED_COINS_PER_HOUR * (1 + (WEED_BONUS[id] ?? 0) / 100)
 export const weedIntervalMs = id => WEED_HOUR_MS
+/** One shared 2-coin base for the entire field; bonuses add together. */
+export const weedFieldRate = ids => ids.length ? WEED_COINS_PER_HOUR * (1 + ids.reduce((sum, id) => sum + (WEED_BONUS[id] ?? 0), 0) / 100) : 0
+export const weedFieldEarnedBetweenSlots = (ids, fromSlot, toSlot) => {
+  if (!ids.length || toSlot <= fromSlot) return 0
+  const units = 200 + 2 * ids.reduce((sum, id) => sum + (WEED_BONUS[id] ?? 0), 0)
+  return Math.max(0, Math.floor(toSlot * units / 100 + 1e-7) - Math.floor(fromSlot * units / 100 + 1e-7))
+}
 export const weedEarnedBetweenSlots = (id, fromSlot, toSlot) => Math.max(0, Math.floor(toSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7) - Math.floor(fromSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7))
 export function settleWeed(since, now, interval = WEED_HOUR_MS) {
   if (!Number.isFinite(since) || now <= since) return { coins: 0, since: Math.min(since, now) }

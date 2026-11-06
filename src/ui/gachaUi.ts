@@ -242,7 +242,7 @@ export class GachaUi {
           <div class="field-info-sticky">
           <p class="weed-status"></p>
           <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 정각 지급까지</small></span><span><b class="weed-rate">0.00</b><small>제초 코인/시간 · 자동 지급</small></span></div>
-          <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 친구마다 기본 시간당 2코인, 제초 보너스에 따라 지급 코인이 증가해요. 매시각 정각에 자동 지급되며 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
+          <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 제초장 전체 기본 시간당 2코인, 제초 보너스에 따라 지급 코인이 증가해요. 매시각 정각에 자동 지급되며 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
           </div>
           <div class="weed-beetle-slot" hidden></div>
           <div class="weed-picker" role="list" aria-label="제초할 친구 고르기"></div>
@@ -589,7 +589,7 @@ export class GachaUi {
     if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
-    if (action === 'user-sort') { const mode = (target.closest<HTMLElement>('[data-sort]')?.dataset.sort); if (mode === 'name' || mode === 'level') { this.userSortMode = mode; this.renderUsers() } return }
+    if (action === 'user-sort') { const mode = button.dataset.sort; if (mode === 'name' || mode === 'level') { this.userSortMode = mode; this.renderUsers() } return }
     if (action === 'users') { const card = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card'); card?.classList.remove('privacy-mode'); card?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden'); this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
