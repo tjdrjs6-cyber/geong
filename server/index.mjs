@@ -803,12 +803,12 @@ const routes = {
   'POST /api/wild-weed/state': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    send(res,200,{weed:await withTransaction(conn=>wildWeedState(account.id,conn))})
+    send(res,200,{weed:await inTransaction(conn=>wildWeedState(account.id,conn))})
   },
   'POST /api/wild-weed/pick': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const result=await withTransaction(async conn=>{
+    const result=await inTransaction(async conn=>{
       const weed=await wildWeedState(account.id,conn)
       if(!weed.visible)return {error:'weed_already_picked'}
       if(weed.type==='golden') {
@@ -824,7 +824,7 @@ const routes = {
   'POST /api/wild-weed/sell': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const result=await withTransaction(async conn=>{
+    const result=await inTransaction(async conn=>{
       const weed=await wildWeedState(account.id,conn)
       const {count,type}=await readJson(req)
       const golden=type==='golden'
