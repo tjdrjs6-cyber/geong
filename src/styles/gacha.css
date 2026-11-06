@@ -3933,3 +3933,22 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   background: #f13e50 !important;
   box-shadow: 0 0 0 1px #e65a65 !important;
 }
+
+/* v210: match ALL red alerts to the activity alert, including the expedition overlay. */
+#ui .gacha-screen .announcement-dot:not([hidden]),
+#ui .gacha-screen .global-chat-dot:not([hidden]),
+#ui .gacha-screen .wild-weed-alert-dot:not([hidden]),
+#ui .gacha-screen .expedition-entry-dot:not([hidden]),
+#ui .gacha-screen > .expedition-entry .expedition-entry-dot:not([hidden]),
+#ui .gacha-screen > .expedition-entry > button.expedition-entry-label > .expedition-entry-dot:not([hidden]),
+#ui .gacha-screen > .expedition-entry .expedition-entry-label .expedition-entry-dot:not([hidden]) {
+ width:7px!important;height:7px!important;min-width:7px!important;min-height:7px!important;
+ max-width:7px!important;max-height:7px!important;padding:0!important;
+ box-sizing:border-box!important;border:1px solid white!important;border-radius:50%!important;
+ background:#f13e50!important;box-shadow:0 0 0 1px #e65a65!important;
+}
+/* v210: weed sprite is half the v209 size, on phones and desktops. */
+#ui .wild-weed-pick {width:clamp(67.5px,18vw,114px)!important;height:clamp(67.5px,18vw,114px)!important;}
+/* v210: thicker white three-second hold indicator. */
+#ui .wild-weed-pick .wild-weed-progress {inset:-7px!important;border-width:8px!important;border-style:solid!important;border-color:transparent!important;}
+#ui .wild-weed-pick.is-holding .wild-weed-progress {border-color:#fff!important;filter:drop-shadow(0 0 2px rgba(70,50,35,.65));animation:wild-weed-hold 3s linear forwards;}
