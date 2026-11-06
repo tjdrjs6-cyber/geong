@@ -1,4 +1,4 @@
-import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, weedIntervalMs } from './collection'
+import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
@@ -123,14 +123,14 @@ export class RemoteGachaStore {
   pendingWeedCoins(): number {
     if (!this.weed) return 0
     const now = this.serverNow()
-    return this.weed.members.reduce((sum, m) => sum + Math.max(0, Math.floor((now - m.since) / weedIntervalMs(m.id))), 0) * (this.weed.beetle ? 2 : 1)
+    return this.weed.members.reduce((sum, m) => sum + weedEarnedBetweenSlots(m.id, Math.floor(m.since / WEED_HOUR_MS), Math.floor(now / WEED_HOUR_MS)), 0) * (this.weed.beetle ? 2 : 1)
   }
 
   /** Milliseconds until the next weeding coin. */
   nextWeedCoinIn(): number {
     if (!this.weed) return WEED_HOUR_MS
     const now = this.serverNow()
-    return Math.min(...this.weed.members.map(m => { const interval = weedIntervalMs(m.id); return interval - (Math.max(0, now - m.since) % interval) }), WEED_HOUR_MS)
+    return WEED_HOUR_MS - (now % WEED_HOUR_MS)
   }
 
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
@@ -144,11 +144,11 @@ export class RemoteGachaStore {
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
   weedHourlyRate(): number {
-    return (this.weed?.members ?? []).reduce((sum, m) => sum + 3_600_000 / weedIntervalMs(m.id), 0) * (this.weed?.beetle ? 2 : 1)
+    return (this.weed?.members ?? []).reduce((sum, m) => sum + weedCoinsPerHour(m.id), 0) * (this.weed?.beetle ? 2 : 1)
   }
   hourlyRate(): number {
     const hour = 3_600_000
-    const weed = (this.weed?.members ?? []).reduce((sum, m) => sum + hour / weedIntervalMs(m.id), 0) * (this.weed?.beetle ? 2 : 1)
+    const weed = (this.weed?.members ?? []).reduce((sum, m) => sum + weedCoinsPerHour(m.id), 0) * (this.weed?.beetle ? 2 : 1)
     return weed
   }
   /** Server credits weeding + battle coins without opening those screens. */

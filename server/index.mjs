@@ -6,7 +6,7 @@ import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual
 import { promisify } from 'node:util'
 import mysql from 'mysql2/promise'
 import { houseCoinFor, houseCoinSlot, HOUSE_COIN_MS, BEETLE_ID, weedCoinMultiplier, WEED_MAX } from './game.mjs'
-import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
+import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots, WEED_HOUR_MS, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
 
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
@@ -564,11 +564,11 @@ async function updateWeed(accountId, op = {}) {
     // Settle every member at the multiplier that applied until now.
     let earned = 0
     members = members.map(m => {
-      const settled = settleWeed(m.since, now, weedIntervalMs(m.id))
-      earned += settled.coins * weedCoinMultiplier(beetle)
-      return { id: m.id, since: settled.since }
+      const paidHours = Math.max(0, Math.floor(now / WEED_HOUR_MS) - Math.floor(m.since / WEED_HOUR_MS))
+      earned += weedEarnedBetweenSlots(m.id, Math.floor(m.since / WEED_HOUR_MS), Math.floor(now / WEED_HOUR_MS)) * weedCoinMultiplier(beetle)
+      return { id: m.id, since: Math.floor(now / WEED_HOUR_MS) * WEED_HOUR_MS }
     })
-    if (op.add) { members.push({ id: op.add, since: now }); if (op.add === BEETLE_ID) beetle = false }
+    if (op.add) { members.push({ id: op.add, since: Math.floor(now / WEED_HOUR_MS) * WEED_HOUR_MS }); if (op.add === BEETLE_ID) beetle = false }
     if (op.remove) members = members.filter(m => m.id !== op.remove)
     if (op.beetle !== undefined) {
       if (op.beetle) {

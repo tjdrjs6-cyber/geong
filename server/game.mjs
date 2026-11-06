@@ -80,8 +80,10 @@ export function validateNickname(nickname) {
 
 /** Weeding pays 1 coin per interval (1 hour, shorter with a speed bonus); partial intervals carry over. */
 export const WEED_HOUR_MS = 60 * 60 * 1000
-export const WEED_COINS_PER_HOUR = 1
-export const weedIntervalMs = id => Math.round(WEED_HOUR_MS / (1 + (WEED_BONUS[id] ?? 0) / 100))
+export const WEED_COINS_PER_HOUR = 2
+export const weedCoinsPerHour = id => WEED_COINS_PER_HOUR * (1 + (WEED_BONUS[id] ?? 0) / 100)
+export const weedIntervalMs = id => WEED_HOUR_MS
+export const weedEarnedBetweenSlots = (id, fromSlot, toSlot) => Math.max(0, Math.floor(toSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7) - Math.floor(fromSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7))
 export function settleWeed(since, now, interval = WEED_HOUR_MS) {
   if (!Number.isFinite(since) || now <= since) return { coins: 0, since: Math.min(since, now) }
   const steps = Math.floor((now - since) / interval)

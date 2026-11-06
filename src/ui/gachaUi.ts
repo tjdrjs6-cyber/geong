@@ -79,6 +79,7 @@ export class GachaUi {
   private expeditionBadgeCheckedAt = 0
   private expeditionBadgeDay = ''
   private users: PublicUser[] = []
+  private userSortMode: 'name' | 'level' = 'name'
   private privacy: ProfilePrivacy = { char: true, deco: true, house: true }
   private diamondNextAt: number | null = null
   private diamondServerOffset = 0
@@ -240,8 +241,8 @@ export class GachaUi {
         <div class="weed-panel">
           <div class="field-info-sticky">
           <p class="weed-status"></p>
-          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 코인까지</small></span><span><b class="weed-rate">0.00</b><small>제초 코인/시간 · 자동 지급</small></span></div>
-          <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 친구마다 1시간에 1코인씩(제초 속도 보너스 적용) 자동으로 지갑에 들어오고, 앱을 닫아도 계속 모여요. 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
+          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 정각 지급까지</small></span><span><b class="weed-rate">0.00</b><small>제초 코인/시간 · 자동 지급</small></span></div>
+          <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 친구마다 기본 시간당 2코인, 제초 보너스에 따라 지급 코인이 증가해요. 매시각 정각에 자동 지급되며 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
           </div>
           <div class="weed-beetle-slot" hidden></div>
           <div class="weed-picker" role="list" aria-label="제초할 친구 고르기"></div>
@@ -588,6 +589,7 @@ export class GachaUi {
     if (action === 'announcement-send') { await this.sendAnnouncement(); return }
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
+    if (action === 'user-sort') { const mode = (target.closest<HTMLElement>('[data-sort]')?.dataset.sort); if (mode === 'name' || mode === 'level') { this.userSortMode = mode; this.renderUsers() } return }
     if (action === 'users') { const card = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card'); card?.classList.remove('privacy-mode'); card?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden'); this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
@@ -1484,8 +1486,12 @@ export class GachaUi {
     const body = this.root.querySelector<HTMLElement>('.users-body')
     if (!body) return
     if (!this.users.length) { body.innerHTML = '<p class="users-empty">아직 닉네임을 정한 유저가 없어요.</p>'; return }
-    body.innerHTML = `<p class="collection-summary">가입한 유저 ${this.users.length}명 · 닉네임을 누르면 그 유저의 도감을 볼 수 있어요.</p>
-      <div class="users-list" role="list">${this.users.map(user => {
+    const sortedUsers = [...this.users].sort((a, b) => this.userSortMode === 'level'
+      ? ((b.weaponLevel ?? 0) - (a.weaponLevel ?? 0)) || a.nickname.localeCompare(b.nickname, 'ko')
+      : a.nickname.localeCompare(b.nickname, 'ko'))
+    body.innerHTML = `<div class="users-sort-tabs" role="group" aria-label="유저 정렬 방식"><button type="button" class="users-sort-tab${this.userSortMode === 'name' ? ' is-active' : ''}" data-action="user-sort" data-sort="name" aria-pressed="${this.userSortMode === 'name'}">이름</button><button type="button" class="users-sort-tab${this.userSortMode === 'level' ? ' is-active' : ''}" data-action="user-sort" data-sort="level" aria-pressed="${this.userSortMode === 'level'}">강화레벨</button></div>
+      <p class="collection-summary">가입한 유저 ${this.users.length}명 · 닉네임을 누르면 그 유저의 도감을 볼 수 있어요.</p>
+      <div class="users-list" role="list">${sortedUsers.map(user => {
         const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
@@ -2304,7 +2310,7 @@ export class GachaUi {
     const weeding = members[0]
     const status = this.root.querySelector<HTMLElement>('.weed-status')
     if (status) status.textContent = members.length
-      ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX})${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
+      ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 제초 보너스 총 +${members.reduce((sum, c) => sum + c.weedBonus, 0)}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
       : (this.store.data.owned.length ? `아래에서 제초할 친구를 골라 주세요. (최대 ${WEED_MAX}명)` : '친구를 뽑으면 제초를 맡길 수 있어요.')
     const rateNode = this.root.querySelector<HTMLElement>('.weed-rate')
     if (rateNode) rateNode.textContent = this.store.weedHourlyRate().toFixed(2)

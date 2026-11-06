@@ -3687,3 +3687,17 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-field .bf-enemy .bf-enemy-hp {font-size:10px!important;letter-spacing:-.45px!important;white-space:nowrap!important;}
 /* Hide first-flight projectiles until their destination has been measured. */
 .expedition-projectile:not(.shot-ready){animation:none!important;opacity:0!important;}
+
+/* v175: user list sort tabs */
+.gacha-modal[data-screen="users"] .users-sort-tabs{display:flex;gap:6px;justify-content:flex-start;margin:4px 0 10px;padding:0 2px;}
+.gacha-modal[data-screen="users"] .users-sort-tab{border:1px solid #efc9d4;border-radius:999px;background:#fff9f8;color:#855c67;font:inherit;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;}
+.gacha-modal[data-screen="users"] .users-sort-tab.is-active{background:#e991a9;color:#fff;border-color:#e991a9;}
+
+/* v1.76: lower the hunting-ground weapon so its strike lands on the monster torso.
+   Position only: keep the shared 3-second character/weapon animation intact. */
+.battle-field > .battle-weapon-strike {
+  top: 61% !important;
+}
+
+/* v1.77: deployed beetle appears at 40% of previous size. */
+.weed-field .weed-beetle-helper { transform:scale(.4); transform-origin:center center; }

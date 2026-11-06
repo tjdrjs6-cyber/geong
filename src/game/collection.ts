@@ -75,8 +75,14 @@ export function newEntryBonus(id: CharacterId): number {
 }
 /** Weeding: 1 coin per hour, sped up by the friend's weeding bonus (+10% or +20%). */
 export const WEED_HOUR_MS = 60 * 60 * 1000
-export function weedIntervalMs(id: CharacterId): number {
-  return Math.round(WEED_HOUR_MS / (1 + characterById(id).weedBonus / 100))
+export function weedIntervalMs(_id: CharacterId): number { return WEED_HOUR_MS }
+export function weedCoinsPerHour(id: CharacterId): number {
+  return 2 * (1 + characterById(id).weedBonus / 100)
+}
+
+export function weedEarnedBetweenSlots(id: CharacterId, fromSlot: number, toSlot: number): number {
+  const units = 200 + 2 * characterById(id).weedBonus
+  return Math.max(0, Math.floor(toSlot * units / 100 + 1e-7) - Math.floor(fromSlot * units / 100 + 1e-7))
 }
 const VALID_IDS = new Set<string>(CHARACTERS.map(character => character.id))
 
