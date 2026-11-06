@@ -3862,3 +3862,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen .market-options .chiikawa-tab-icon { display:inline-flex !important; width:15px !important; height:15px !important; flex:0 0 15px !important; align-items:center; justify-content:center; }
 .gacha-screen .activity-options .chiikawa-tab-icon img,
 .gacha-screen .market-options .chiikawa-tab-icon img { display:block; width:100% !important; height:100% !important; object-fit:contain; }
+
+/* v202: 장터 전용 게임 내 확인/완료 팝업 및 갑옷씨 헤더 */
+#ui .shop-header strong { display:flex; align-items:center; justify-content:center; gap:5px; }
+#ui .shop-header-face { width:26px; height:26px; object-fit:contain; }
+#ui .shop-dialog[hidden] { display:none !important; }
+#ui .shop-dialog { position:absolute; inset:0; z-index:120; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(47,32,27,.36); pointer-events:auto; }
+#ui .shop-dialog-card { width:min(90%,340px); box-sizing:border-box; padding:22px 16px 16px; border:3px solid #d7bda4; border-radius:25px; background:#fffaf0; box-shadow:0 8px 25px #38251b50; text-align:center; color:#654334; }
+#ui .shop-dialog-card p { margin:0 0 19px; font-size:16px; font-weight:800; line-height:1.6; word-break:keep-all; }
+#ui .shop-dialog-actions { display:flex; justify-content:center; gap:9px; }
+#ui .shop-dialog-actions button { flex:1; min-height:42px; border:1px solid #d9baa3; border-radius:16px; background:#fff; color:#6b4c3b; font-weight:800; font-size:15px; cursor:pointer; }
+#ui .shop-dialog-actions button[data-action="shop-dialog-confirm"] { background:#e7a1ae; color:white; border-color:#e7a1ae; }
+#ui .shop-dialog-actions button[hidden] { display:none !important; }

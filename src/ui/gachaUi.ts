@@ -294,8 +294,8 @@ export class GachaUi {
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
-        <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong>🛍️ 장터</strong><span aria-hidden="true"></span></header>
-        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button data-action="shop-tab" data-tab="buy" class="is-active">구매</button><button data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-items"></div></div></div>
+        <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong><img class="shop-header-face" src="/shop_armor_face.png" alt="갑옷씨 얼굴"/> 장터</strong><span aria-hidden="true"></span></header>
+        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button data-action="shop-tab" data-tab="buy" class="is-active">구매</button><button data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
       </section>
       <section class="rps-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><span>3시간마다 1회</span></header>
@@ -543,6 +543,27 @@ export class GachaUi {
     }
   }
 
+  private shopPendingQuantity = 0
+
+  private showShopDialog(message: string, quantity = 0): void {
+    const dialog = this.root.querySelector<HTMLElement>('.shop-dialog')
+    if (!dialog) return
+    this.shopPendingQuantity = quantity
+    const label = dialog.querySelector<HTMLElement>('#shop-dialog-message')
+    if (label) label.textContent = message
+    const cancel = dialog.querySelector<HTMLButtonElement>('[data-action="shop-dialog-cancel"]')
+    if (cancel) cancel.hidden = quantity === 0
+    const confirm = dialog.querySelector<HTMLButtonElement>('[data-action="shop-dialog-confirm"]')
+    if (confirm) confirm.textContent = quantity ? '구매' : '확인'
+    dialog.hidden = false
+  }
+
+  private hideShopDialog(): void {
+    const dialog = this.root.querySelector<HTMLElement>('.shop-dialog')
+    if (dialog) dialog.hidden = true
+    this.shopPendingQuantity = 0
+  }
+
   private async onClick(event: MouseEvent): Promise<void> {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]')
     const action = button?.dataset.action
@@ -583,16 +604,30 @@ export class GachaUi {
     }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
-    if (action === 'shop') {this.shopTab='buy';this.show('shop');this.renderShop();return}
+    if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');this.renderShop();return}
     if (action === 'shop-tab' && button?.dataset.tab) {this.shopTab=button.dataset.tab==='sell'?'sell':'buy';this.renderShop();return}
+    if (action === 'shop-dialog-cancel') { this.hideShopDialog(); return }
+    if (action === 'shop-dialog-confirm') {
+      const quantity = this.shopPendingQuantity
+      this.hideShopDialog()
+      if (!quantity) return
+      if (this.busy) return
+      if (Number(this.store.data.gems??0) < quantity*5) { this.showShopDialog('코인이 부족해요!'); return }
+      this.busy = true
+      try {
+        await this.store.buyShopFragments(quantity)
+        this.renderShop()
+        this.renderWallet()
+        this.showShopDialog('구매완료!')
+      } catch(e) { this.handleError(e) } finally { this.busy = false }
+      return
+    }
     if (action === 'shop-buy' && button?.dataset.quantity) {
-      if(this.busy)return
-      const quantity=Number(button.dataset.quantity)
-      if(quantity!==1&&quantity!==10)return
-      if(Number(this.store.data.gems??0)<quantity*5){this.toast('코인이 부족해요!');return}
-      if(!window.confirm(`강화파편 ${quantity}개를 ${quantity*5}코인으로 구매할까요?`))return
-      this.busy=true
-      try{await this.store.buyShopFragments(quantity);this.renderShop();this.renderWallet();this.toast(`강화파편 ${quantity}개를 구매했어요!`)}catch(e){this.handleError(e)}finally{this.busy=false}
+      if (this.busy) return
+      const quantity = Number(button.dataset.quantity)
+      if (quantity !== 1 && quantity !== 10) return
+      if (Number(this.store.data.gems??0) < quantity*5) { this.showShopDialog('코인이 부족해요!'); return }
+      this.showShopDialog(`강화파편 ${quantity}개를 ${quantity*5}코인으로 구매할까요?`, quantity)
       return
     }
     if (action === 'rps-start') {await this.rpsAction('start');return}
