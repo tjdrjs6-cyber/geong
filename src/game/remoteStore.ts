@@ -176,6 +176,10 @@ export class RemoteGachaStore {
     return result.earned
   }
 
+  async buyShopFragments(quantity: 1 | 10): Promise<void> {
+    const result=await request<{save:GachaSave}>('shop/buy',{quantity})
+    this.data=result.save
+  }
   async loadForge(): Promise<void> { this.forge = (await request<{forge:ForgeState|null}>('forge')).forge }
   async selectForge(weapon: ForgeState['weapon']): Promise<void> {
     this.forge=(await request<{forge:ForgeState}>('forge/select',{weapon})).forge

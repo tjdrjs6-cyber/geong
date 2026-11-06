@@ -61,12 +61,14 @@ export class HouseView {
     this.layout.friends = this.layout.friends.filter(friend => this.store.data.owned.includes(friend.id as CharacterId))
     this.selected = null
     this.render()
-    void this.loadCoin()
+    this.hooks.coinAvailable(false)
+    this.coin = null
+    this.renderCoin()
   }
 
   /** Handles house-specific button actions; returns true when the action was consumed. */
   handle(action: string, button: HTMLElement): boolean {
-    if (action === 'house-coin') { void this.takeCoin(); return true }
+    if (action === 'house-coin') return true
     if (action === 'house-tab') { this.tab = button.dataset.tab === 'friend' ? 'friend' : 'deco'; this.renderPanel(); return true }
     if (action === 'house-add' && button.dataset.id) { this.addPiece(button.dataset.id as DecoId); return true }
     if (action === 'house-friend' && button.dataset.id) { this.placeFriend(button.dataset.id as CharacterId); return true }

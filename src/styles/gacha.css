@@ -3760,3 +3760,64 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   width: 100% !important;
   height: auto !important;
 }
+
+/* v190 storage inventory placeholder */
+.storage-screen .auth-tabs.user-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.storage-screen .auth-tabs.user-tabs .auth-tab{min-width:0;padding:9px 2px;font-size:clamp(10px,2.7vw,14px);white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:2px}
+.storage-screen .storage-tab-face{width:20px;height:20px;margin-right:0;flex-shrink:0}
+.storage-screen .storage-bulk-sell[hidden]{display:none!important}
+.storage-screen .inventory-empty{grid-column:1/-1;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;color:#78676c;padding:24px 12px}
+.storage-screen .inventory-empty-icon{font-size:40px}
+.storage-screen .inventory-empty small{font-size:12px;color:#a4969a}
+
+/* v191: Shop below RPS in the existing right-side reward column. */
+.gacha-screen>.top-rewards>.shop-lobby-tab{position:relative!important;inset:auto!important;width:100%!important;min-width:0!important;min-height:34px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:4px!important;padding:4px 6px!important;margin:0!important;border:1px solid #e9c6a3!important;border-radius:12px!important;background:#fff4e3!important;color:#795239!important;box-sizing:border-box!important;box-shadow:none!important;font-size:10px!important;cursor:pointer}
+.gacha-screen>.top-rewards>.shop-lobby-tab .reward-icon{flex:0 0 20px;display:flex;justify-content:center;font-size:17px}
+.gacha-screen>.top-rewards>.shop-lobby-tab b{font-size:10px;white-space:nowrap}
+#ui .shop-screen{position:absolute;inset:0;z-index:15;display:none;flex-direction:column;min-height:0;overflow:hidden;background:#f9ecd8}
+#ui .shop-screen.is-active{display:flex}
+#ui .shop-header{flex:0 0 48px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:6px;padding:6px 10px;background:#fff7ed;color:#654334;box-sizing:border-box}
+#ui .shop-header button{justify-self:start;border:1px solid #dfc4ae;border-radius:20px;background:#fff;padding:7px 10px;color:#6d4a39;font-weight:700;cursor:pointer;white-space:nowrap}
+#ui .shop-header strong{text-align:center;font-size:18px;white-space:nowrap}
+#ui .shop-scene{position:relative;flex:1;min-height:0;background-image:url('/shop_background.png');background-position:center center;background-size:100% 100%;background-repeat:no-repeat}
+#ui .shop-empty{position:absolute;top:58%;left:50%;transform:translateX(-50%);width:max-content;max-width:86%;padding:9px 15px;border-radius:16px;background:#fffaf0df;border:1px solid #ead6ba;color:#795947;font-weight:700;font-size:12px;text-align:center}
+
+/* Shop clerk: anchored in the middle of the original shop background on both PC and mobile. */
+#ui .shop-armor-clerk{position:absolute;left:50%;top:49%;transform:translate(-50%,-50%);width:37%;height:29%;object-fit:contain;object-position:center;pointer-events:none;user-select:none;z-index:1}
+#ui .shop-empty{top:auto;bottom:7%;z-index:2}
+
+/* v193: shop icon matches adjacent rock-paper-scissors icon */
+.gacha-screen>.top-rewards>.shop-lobby-tab .reward-icon{flex:0 0 20px!important;width:20px!important;height:20px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:transparent!important;border-radius:0!important}
+.gacha-screen>.top-rewards>.shop-lobby-tab .reward-icon img{width:20px!important;height:20px!important;object-fit:contain!important;display:block!important}
+
+/* v194: shop buying and inventory selling */
+#ui .shop-panel{position:absolute;left:5%;right:5%;bottom:4%;z-index:4;max-height:48%;overflow:auto;background:#fffaf0f2;border:2px solid #dfc8ad;border-radius:18px;padding:10px;box-shadow:0 5px 18px #583e3422}
+#ui .shop-tabs{display:flex;gap:8px;margin-bottom:9px}
+#ui .shop-tabs button{flex:1;border:1px solid #d8bca2;background:#fff;border-radius:15px;padding:9px;color:#6d4a39;font-weight:800;cursor:pointer}
+#ui .shop-tabs button.is-active{background:#e6a3ae;color:#fff;border-color:#e6a3ae}
+#ui .shop-balance{font-size:12px;color:#795947;text-align:center;margin:6px 0 10px;overflow-wrap:anywhere}
+#ui .shop-product{display:flex;align-items:center;gap:9px;padding:9px 6px;border-top:1px solid #ead9c5;color:#654334}
+#ui .shop-product img{width:36px;height:36px;object-fit:contain;flex-shrink:0}
+#ui .shop-product div{display:flex;flex-direction:column;flex:1;gap:3px;min-width:0}
+#ui .shop-product small{color:#946b42}
+#ui .shop-product button{border:0;border-radius:12px;padding:8px 12px;background:#e797a7;color:white;font-weight:800;cursor:pointer}
+#ui .shop-product button:disabled{opacity:.45;cursor:not-allowed}
+#ui .shop-empty-note{text-align:center;color:#795947;font-size:12px;line-height:1.7;padding:18px 4px}
+
+/* v195: lobby character and expandable activity navigation */
+.gacha-screen .toon-hero { width:min(34.32cqw,191.4px) !important; }
+.gacha-screen .activity-menu { position:relative; width:100%; flex-shrink:0; }
+.gacha-screen .activity-menu > .nav-button { width:100%; }
+.gacha-screen .activity-options:not([hidden]) { display:flex; flex-direction:column; gap:5px; position:absolute; left:calc(100% + 6px); top:0; width:clamp(82px,24cqw,106px); z-index:80; }
+.gacha-screen .activity-options[hidden] { display:none !important; }
+.gacha-screen .activity-options .nav-button { width:100%; min-height:34px; justify-content:center; }
+.gacha-screen .nav-activity[aria-expanded="true"] { background:#ffe4ee !important; }
+
+/* v196: expandable shop grouping for forge and marketplace */
+.gacha-screen .market-menu { position:relative; width:100%; flex-shrink:0; order:99; }
+.gacha-screen .market-menu > .nav-button { width:100%; }
+.gacha-screen .market-options:not([hidden]) { display:flex; flex-direction:column; gap:5px; position:absolute; left:calc(100% + 6px); top:0; width:clamp(82px,24cqw,106px); z-index:81; }
+.gacha-screen .market-options[hidden] { display:none !important; }
+.gacha-screen .market-options .nav-button { width:100%; min-height:34px; justify-content:center; }
+.gacha-screen .nav-market[aria-expanded="true"] { background:#ffe4ee !important; }
+.gacha-screen .nav-market .chiikawa-tab-icon img { width:100%;height:100%;object-fit:contain; }

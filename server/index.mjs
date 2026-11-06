@@ -771,6 +771,22 @@ const rpsPublic = (row,admin=false) => ({
   reward:rpsRewards[Math.min(4,Number(row.stage)-1)]
 })
 const routes = {
+  'POST /api/shop/buy': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {quantity}=await readJson(req)
+    if(quantity!==1 && quantity!==10)return send(res,400,{error:'invalid_shop_quantity'})
+    const cost=quantity*5
+    const conn=await pool.getConnection()
+    try{
+      await conn.beginTransaction()
+      const [rows]=await conn.query('SELECT gems FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(!rows.length || Number(rows[0].gems)<cost){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
+      await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments+? WHERE account_id=?',[cost,quantity,account.id])
+      await conn.commit()
+      send(res,200,{save:await getSave(account.id)})
+    }catch(e){await conn.rollback().catch(()=>{});throw e}finally{conn.release()}
+  },
   'GET /api/forge': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, {error:'login_required'})
@@ -1111,38 +1127,12 @@ const routes = {
   'GET /api/house/coin': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const now = Date.now()
-    const slot = houseCoinSlot(now)
-    const row = await houseCoinRow(pool, account.id)
-    const coin = Number(row.last_slot) >= slot ? null : houseCoinFor(row.salt, slot)
-    send(res, 200, { coin, nextAt: (slot + 1) * HOUSE_COIN_MS, now })
+    send(res, 200, { coin: null, nextAt: 0, now: Date.now() })
   },
   'POST /api/house/coin': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const { slot } = await readJson(req)
-    const now = Date.now()
-    const current = houseCoinSlot(now)
-    if (Number(slot) !== current) return send(res, 400, { error: 'house_coin_gone' })
-    const conn = await pool.getConnection()
-    let coins = 0
-    try {
-      await conn.beginTransaction()
-      await conn.query('SELECT gems FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
-      const row = await houseCoinRow(conn, account.id, true)
-      if (Number(row.last_slot) >= current) { await conn.rollback(); return send(res, 400, { error: 'house_coin_taken' }) }
-      coins = houseCoinFor(row.salt, current).coins
-      await conn.query('UPDATE gm_house_coin SET last_slot = ? WHERE account_id = ?', [current, account.id])
-      const [updated] = await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, account.id])
-      if (!updated.affectedRows) await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?)', [account.id, STARTING_COINS + coins, '[]', ''])
-      await conn.commit()
-    } catch (error) {
-      await conn.rollback().catch(() => {})
-      throw error
-    } finally {
-      conn.release()
-    }
-    send(res, 200, { coins, save: await getSave(account.id), nextAt: (current + 1) * HOUSE_COIN_MS, now })
+    send(res, 410, { error: 'house_coin_disabled' })
   },
   'POST /api/users/house': async (req, res) => {
     const account = await currentAccount(req)

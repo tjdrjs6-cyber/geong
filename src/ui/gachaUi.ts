@@ -18,7 +18,7 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'forge'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -44,7 +44,8 @@ export class GachaUi {
   private houseBadgeBusy = false
   private userTab: 'char' | 'deco' | 'house' = 'char'
   private mailTab: 'in' | 'sent' = 'in'
-  private storageTab: 'char' | 'deco' = 'char'
+  private shopTab: 'buy' | 'sell' = 'buy'
+  private storageTab: 'char' | 'deco' | 'inventory' = 'char'
   private noticeTimer = 0
   private chatTimer = 0
   private chatBadgeTimer = 0
@@ -274,7 +275,7 @@ export class GachaUi {
           <b id="house-title">하우스</b>
           <div class="wallet weed-wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
-        <div class="house-scroll-viewport" aria-label="세로형 하우스 꾸미기 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><button type="button" class="house-coin" data-action="house-coin" hidden aria-label="코인 줍기"><img class="house-coin-face" src="/assets/coin.png" alt=""/><b class="house-coin-amount"></b></button><span class="house-coin-timer" aria-live="polite"></span><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
+        <div class="house-scroll-viewport" aria-label="세로형 하우스 꾸미기 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
         <div class="weed-panel house-panel">
           <div class="field-info-sticky">
@@ -291,6 +292,10 @@ export class GachaUi {
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-party"></div><div class="expedition-defeated-message" aria-live="polite" hidden>보스가 토벌되었습니다.</div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
         <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 우편함으로 300코인 + 강화파편 30개 보상 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
+      </section>
+      <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
+        <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong>🛍️ 장터</strong><span aria-hidden="true"></span></header>
+        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button data-action="shop-tab" data-tab="buy" class="is-active">구매</button><button data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-items"></div></div></div>
       </section>
       <section class="rps-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><span>3시간마다 1회</span></header>
@@ -320,7 +325,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><button class="nav-button nav-weed" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장</button><button class="nav-button nav-battle" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>토벌장</button><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스<i class="house-coin-dot" hidden></i></button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><button class="nav-button nav-forge" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동</button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed">제초장</button><button type="button" class="nav-button" data-action="battle">토벌장</button><button type="button" class="nav-button" data-action="claw">인형뽑기</button></div></div><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button class="nav-button nav-claw" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점</button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge">대장간</button><button type="button" class="nav-button" data-action="shop">장터</button></div></div></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -438,7 +443,7 @@ export class GachaUi {
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
-          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button></div>
+          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 인벤토리</button></div>
           <button class="modal-primary storage-bulk-sell" data-action="storage-bulk-sell" disabled>중복 일괄 판매</button>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
@@ -525,14 +530,63 @@ export class GachaUi {
     } finally { overlay.remove() }
   }
 
+  private renderShop(): void {
+    const screen=this.root.querySelector('.shop-screen')
+    if(!screen)return
+    screen.querySelectorAll<HTMLButtonElement>('.shop-tabs button').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===this.shopTab))
+    const items=screen.querySelector<HTMLElement>('.shop-items')
+    if(!items)return
+    if(this.shopTab==='sell'){
+      items.innerHTML='<div class="shop-empty-note">인벤토리에 판매할 아이템이 아직 없어요.<br>판매 가능한 아이템은 추후 추가됩니다.</div>'
+    }else{
+      items.innerHTML=`<div class="shop-balance">🪙 보유 코인 ${this.store.data.gems.toLocaleString('ko-KR')} · 강화파편 ${(this.store.data.fragments??0).toLocaleString('ko-KR')}개</div>${[1,10].map(n=>`<div class="shop-product"><img src="/assets/enhancement_fragment.png" alt="강화파편"/><div><strong>강화파편 ${n}개</strong><small>🪙 ${n*5}코인</small></div><button data-action="shop-buy" data-quantity="${n}" ${this.store.data.gems<n*5?'disabled':''}>구매</button></div>`).join('')}`
+    }
+  }
+
   private async onClick(event: MouseEvent): Promise<void> {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]')
     const action = button?.dataset.action
     if (!action) return
     this.audio.unlock()
     this.audio.play('ui')
+    if (action === 'market-toggle') {
+      const menu = this.root.querySelector<HTMLElement>('.market-options')
+      const toggle = this.root.querySelector<HTMLButtonElement>('.nav-market')
+      if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
+      return
+    }
+    if (['forge','shop'].includes(action)) {
+      const menu = this.root.querySelector<HTMLElement>('.market-options')
+      const toggle = this.root.querySelector<HTMLButtonElement>('.nav-market')
+      if (menu) menu.hidden = true
+      toggle?.setAttribute('aria-expanded','false')
+    }
+    if (action === 'activity-toggle') {
+      const menu = this.root.querySelector<HTMLElement>('.activity-options')
+      const toggle = this.root.querySelector<HTMLButtonElement>('.nav-activity')
+      if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
+      return
+    }
+    if (['weed','battle','claw'].includes(action)) {
+      const menu = this.root.querySelector<HTMLElement>('.activity-options')
+      const toggle = this.root.querySelector<HTMLButtonElement>('.nav-activity')
+      if (menu) menu.hidden = true
+      toggle?.setAttribute('aria-expanded','false')
+    }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
+    if (action === 'shop') {this.shopTab='buy';this.show('shop');this.renderShop();return}
+    if (action === 'shop-tab' && button?.dataset.tab) {this.shopTab=button.dataset.tab==='sell'?'sell':'buy';this.renderShop();return}
+    if (action === 'shop-buy' && button?.dataset.quantity) {
+      if(this.busy)return
+      const quantity=Number(button.dataset.quantity)
+      if(quantity!==1&&quantity!==10)return
+      if(this.store.data.gems<quantity*5){this.toast('코인이 부족해요!');return}
+      if(!window.confirm(`강화파편 ${quantity}개를 ${quantity*5}코인으로 구매할까요?`))return
+      this.busy=true
+      try{await this.store.buyShopFragments(quantity);this.renderShop();this.renderWallet();this.toast(`강화파편 ${quantity}개를 구매했어요!`)}catch(e){this.handleError(e)}finally{this.busy=false}
+      return
+    }
     if (action === 'rps-start') {await this.rpsAction('start');return}
     if (action === 'rps-next') {await this.rpsAction('next');return}
     if (action === 'rps-claim') {await this.rpsAction('claim');return}
@@ -601,7 +655,7 @@ export class GachaUi {
     if (action === 'mail-claim-all') { await this.claimMail(); return }
     if (action === 'mail-tab' && button.dataset.tab) { this.mailTab = button.dataset.tab === 'sent' ? 'sent' : 'in'; if (this.lastBox) this.renderMail(this.lastBox); return }
     if (action === 'mail-delete' && button.dataset.id) { await this.deleteMail(Number(button.dataset.id), button.dataset.box === 'sent' ? 'sent' : 'in'); return }
-    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'deco' ? 'deco' : 'char'; this.renderStorage(); return }
+    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'deco' ? 'deco' : 'char'; this.renderStorage(); return }
     if (action === 'storage-bulk-sell') { await this.sellBulk(button); return }
     if (action === 'sell' && button.dataset.id && button.dataset.kind) { await this.sell(button.dataset.kind === 'deco' ? 'deco' : 'char', button.dataset.id, Number(button.dataset.count) || 1, button); return }
     if (action === 'suggest-reply' && button.dataset.id) { await this.replySuggestion(Number(button.dataset.id)); return }
@@ -1186,13 +1240,7 @@ export class GachaUi {
   }
 
   private async refreshHouseCoinBadge(): Promise<void> {
-    if (this.houseBadgeBusy || this.screen !== 'title') return
-    this.houseBadgeBusy = true
-    try {
-      const state = await this.store.houseCoin()
-      if (this.screen === 'title') this.setHouseCoinDot(Boolean(state.coin))
-    } catch { /* Keep the last known badge when offline. */ }
-    finally { this.houseBadgeBusy = false }
+    this.setHouseCoinDot(false)
   }
 
   private async refreshRpsBadge():Promise<void> {
@@ -1886,17 +1934,21 @@ export class GachaUi {
     })
     if (!grid) return
     const bulkButton = this.root.querySelector<HTMLButtonElement>('.storage-bulk-sell')
-    const bulkItems = this.getBulkSellItems()
+    const bulkItems = this.storageTab === 'inventory' ? [] : this.getBulkSellItems()
     if (bulkButton) {
       const count = bulkItems.reduce((sum, item) => sum + item.count, 0)
       const coins = bulkItems.reduce((sum, item) => sum + item.count * item.price, 0)
+      bulkButton.hidden = this.storageTab === 'inventory'
       bulkButton.disabled = count === 0
       bulkButton.textContent = count ? `중복 일괄 판매 · ${count.toLocaleString('ko-KR')}개 (+${coins.toLocaleString('ko-KR')}코인)` : '중복 일괄 판매 · 판매할 중복 없음'
     }
     const sellButtons = (kind: 'char' | 'deco', id: string, extra: number, price: number) => extra > 0
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 팔기 +${price}</button>${extra > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${extra}">모두 팔기 +${extra * price}</button>` : ''}</div>`
       : '<small class="storage-keep">중복 없음</small>'
-    if (this.storageTab === 'char') {
+    if (this.storageTab === 'inventory') {
+      if (summary) summary.textContent = '아이템은 추후 업데이트에서 추가될 예정이에요.'
+      grid.innerHTML = '<div class="inventory-empty"><span class="inventory-empty-icon">🎒</span><strong>아직 보관된 아이템이 없어요.</strong><small>새로운 아이템이 추가되면 이곳에서 확인할 수 있어요!</small></div>'
+    } else if (this.storageTab === 'char') {
       const owned = CHARACTERS.filter(c => this.store.data.owned.includes(c.id))
       const extras = owned.reduce((sum, c) => sum + (this.store.dupes[c.id] ?? 0), 0)
       if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 중복 판매: 노말 3 · 레어 5 · 에픽 10 · 유니크 30코인 (원본 1개는 남아요).`
