@@ -98,6 +98,19 @@ async function prepareDatabase() {
     raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
     account_id BIGINT UNSIGNED NOT NULL, PRIMARY KEY (raid_day, server_id, account_id)
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_wild_weeds (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    spawn_slot BIGINT NOT NULL DEFAULT 0,
+    picked_slot BIGINT NOT NULL DEFAULT -1,
+    pos_x SMALLINT NOT NULL DEFAULT 50,
+    pos_y SMALLINT NOT NULL DEFAULT 70,
+    inventory INT UNSIGNED NOT NULL DEFAULT 0,
+    golden_inventory INT UNSIGNED NOT NULL DEFAULT 0,
+    weed_type VARCHAR(12) NOT NULL DEFAULT 'normal'
+  )`)
+  for (const field of ["golden_inventory INT UNSIGNED NOT NULL DEFAULT 0", "weed_type VARCHAR(12) NOT NULL DEFAULT 'normal'"]) {
+    try { await pool.query(`ALTER TABLE gm_wild_weeds ADD COLUMN ${field}`) } catch(error) { if(!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_weeding (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     character_id VARCHAR(20) NOT NULL,
@@ -770,7 +783,61 @@ const rpsPublic = (row,admin=false) => ({
   result:row.result, opponent:row.opponent,
   reward:rpsRewards[Math.min(4,Number(row.stage)-1)]
 })
+// Spawn once per account at the first observed hourly slot. An unpicked weed persists.
+const WILD_WEED_HOUR = 3600000
+async function wildWeedState(accountId, db=pool) {
+  const slot = Math.floor(Date.now()/WILD_WEED_HOUR)
+  await db.query('INSERT IGNORE INTO gm_wild_weeds (account_id,spawn_slot,picked_slot,pos_x,pos_y,weed_type) VALUES (?,?,?,?,?,?)', [accountId,slot,-1,12+Math.floor(Math.random()*76),49+Math.floor(Math.random()*38),Math.random()<0.15?'golden':'normal'])
+  const [rows]=await db.query('SELECT * FROM gm_wild_weeds WHERE account_id=? FOR UPDATE',[accountId])
+  const row=rows[0]
+  if (Number(row.spawn_slot)===0 || (Number(row.picked_slot)>=Number(row.spawn_slot) && slot>Number(row.picked_slot))) {
+    const x=12+Math.floor(Math.random()*76),y=49+Math.floor(Math.random()*38)
+    const type=Math.random()<0.15?'golden':'normal'
+    await db.query('UPDATE gm_wild_weeds SET spawn_slot=?,pos_x=?,pos_y=?,weed_type=? WHERE account_id=?',[slot,x,y,type,accountId])
+    row.weed_type=type
+    row.spawn_slot=slot;row.pos_x=x;row.pos_y=y
+  }
+  return {visible:Number(row.picked_slot)<Number(row.spawn_slot),x:Number(row.pos_x),y:Number(row.pos_y),count:Number(row.inventory),goldenCount:Number(row.golden_inventory),type:row.weed_type==='golden'?'golden':'normal',slot:Number(row.spawn_slot),nextAt:(slot+1)*WILD_WEED_HOUR}
+}
 const routes = {
+  'POST /api/wild-weed/state': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    send(res,200,{weed:await withTransaction(conn=>wildWeedState(account.id,conn))})
+  },
+  'POST /api/wild-weed/pick': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const result=await withTransaction(async conn=>{
+      const weed=await wildWeedState(account.id,conn)
+      if(!weed.visible)return {error:'weed_already_picked'}
+      if(weed.type==='golden') {
+        await conn.query('UPDATE gm_wild_weeds SET picked_slot=spawn_slot, golden_inventory=golden_inventory+1 WHERE account_id=?',[account.id])
+        return {weed:{...weed,visible:false,goldenCount:weed.goldenCount+1}}
+      }
+      await conn.query('UPDATE gm_wild_weeds SET picked_slot=spawn_slot, inventory=inventory+1 WHERE account_id=?',[account.id])
+      return {weed:{...weed,visible:false,count:weed.count+1}}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,result)
+  },
+  'POST /api/wild-weed/sell': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const result=await withTransaction(async conn=>{
+      const weed=await wildWeedState(account.id,conn)
+      const {count,type}=await readJson(req)
+      const golden=type==='golden'
+      const owned=golden?weed.goldenCount:weed.count
+      if(!Number.isSafeInteger(count)||count<1||count>owned)return {error:'not_enough_weeds'}
+      await conn.query(`UPDATE gm_wild_weeds SET ${golden?'golden_inventory':'inventory'}=${golden?'golden_inventory':'inventory'}-? WHERE account_id=?`,[count,account.id])
+      await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[count*(golden?50:5),account.id])
+      return {weed:{...weed,...(golden?{goldenCount:owned-count}:{count:owned-count})}}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,{...result,save:await getSave(account.id)})
+  },
+
   'POST /api/shop/buy': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})

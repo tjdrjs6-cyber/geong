@@ -3874,3 +3874,23 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .shop-dialog-actions button { flex:1; min-height:42px; border:1px solid #d9baa3; border-radius:16px; background:#fff; color:#6b4c3b; font-weight:800; font-size:15px; cursor:pointer; }
 #ui .shop-dialog-actions button[data-action="shop-dialog-confirm"] { background:#e7a1ae; color:white; border-color:#e7a1ae; }
 #ui .shop-dialog-actions button[hidden] { display:none !important; }
+
+/* v203: distinct storage tabs and centered empty inventory state */
+.storage-screen .auth-tabs.user-tabs{gap:7px!important;padding:6px!important;background:#f4e9e7!important;border-radius:16px!important}
+.storage-screen .auth-tabs.user-tabs .auth-tab{border:2px solid #dec7c5!important;border-radius:13px!important;background:#fffaf9!important;box-shadow:0 2px 0 rgba(122,80,88,.07)!important;min-height:45px!important;color:#80666d!important}
+.storage-screen .auth-tabs.user-tabs .auth-tab.is-active{border-color:#e69eae!important;background:#fff!important;color:#d36e89!important;box-shadow:0 0 0 1px rgba(230,158,174,.22)!important}
+.storage-screen .inventory-empty{grid-column:1/-1!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;margin:0 auto!important;padding:24px 16px!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;gap:10px!important;text-align:center!important;white-space:normal!important;overflow-wrap:break-word!important}
+.storage-screen .inventory-empty strong,.storage-screen .inventory-empty small{display:block!important;width:100%!important;max-width:300px!important;margin:0 auto!important;text-align:center!important;line-height:1.6!important;white-space:normal!important;word-break:keep-all!important}
+
+/* Wild weed: server-owned hourly spawn, hold 3s to collect. */
+.wild-weed-pick {position:absolute;z-index:18;transform:translate(-50%,-50%);width:clamp(45px,12vw,76px);height:clamp(45px,12vw,76px);border:0;background:transparent;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+.wild-weed-pick[hidden]{display:none!important}
+.wild-weed-pick img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.wild-weed-progress{position:absolute;inset:-5px;border:4px solid transparent;border-radius:50%;pointer-events:none}
+.wild-weed-pick.is-holding .wild-weed-progress{border-color:#81b64a;animation:wild-weed-hold 3s linear forwards}
+@keyframes wild-weed-hold{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+
+/* v206: unpicked weed notification on activity and weeding menus */
+.gacha-screen .nav-activity, .gacha-screen .activity-options [data-action="weed"] { position:relative; }
+.gacha-screen .wild-weed-alert-dot:not([hidden]) { display:block !important; position:absolute; right:5px; top:4px; width:11px; height:11px; box-sizing:border-box; border-radius:50%; background:#ed334b; border:2px solid #fff; box-shadow:0 0 0 1px #d83a4c; z-index:15; pointer-events:none; }
+.gacha-screen .wild-weed-alert-dot[hidden] { display:none !important; }

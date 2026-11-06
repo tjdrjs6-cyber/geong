@@ -103,6 +103,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
 }
 
 /** Server-backed coins and collection for the signed-in account. */
+export type WildWeed = { visible:boolean; x:number; y:number; count:number; goldenCount:number; type:'normal'|'golden'; slot:number; nextAt:number }
 export class RemoteGachaStore {
   data: GachaSave = { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
   user: AuthUser | null = null
@@ -176,6 +177,13 @@ export class RemoteGachaStore {
     return result.earned
   }
 
+  wildWeed: WildWeed | null = null
+  async loadWildWeed(): Promise<void> { this.wildWeed=(await request<{weed:WildWeed}>('wild-weed/state',{})).weed }
+  async pickWildWeed(): Promise<void> { this.wildWeed=(await request<{weed:WildWeed}>('wild-weed/pick',{})).weed }
+  async sellWildWeed(count:number,type:'normal'|'golden'='normal'): Promise<void> {
+    const result=await request<{weed:WildWeed;save:GachaSave}>('wild-weed/sell',{count,type})
+    this.wildWeed=result.weed;this.data=result.save
+  }
   async buyShopFragments(quantity: 1 | 10): Promise<void> {
     const result=await request<{save:GachaSave}>('shop/buy',{quantity})
     this.data=result.save
