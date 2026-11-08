@@ -4021,3 +4021,23 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .lottery-results{width:100%;max-width:420px;max-height:140px;overflow:auto;display:grid;gap:4px}
 #ui .lottery-result{display:flex;justify-content:space-between;background:#fff;border-radius:9px;padding:5px 10px;font-size:12px}
 #ui .lottery-skip{background:#fff;border:1px solid #977;border-radius:10px;padding:7px;font-weight:900}
+
+/* test.009: stable lottery viewport, swipe-to-reveal, modal alert */
+#ui .lottery-screen .lottery-scene{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;padding-bottom:170px;align-content:start;scrollbar-gutter:stable}
+#ui .lottery-screen .lottery-momonga{position:sticky!important;bottom:0!important;left:50%;z-index:0}
+#ui .lottery-prizes,#ui .lottery-purchase,#ui .lottery-results{flex-shrink:0}
+#ui .lottery-ticket{position:relative;overflow:hidden;width:min(100%,350px);height:128px;box-sizing:border-box;padding:0;border:3px dashed #a97b4a;touch-action:pan-y;flex-shrink:0}
+#ui .lottery-ticket-under,#ui .lottery-ticket-cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:5px;flex-direction:column;font-size:14px;text-align:center}
+#ui .lottery-ticket-under{background:#fff7e7;color:#633e30}
+#ui .lottery-ticket-under img{height:68px;width:68px;object-fit:contain}
+#ui .lottery-ticket-cover{background:repeating-linear-gradient(135deg,#ffe1a7,#ffe1a7 12px,#fff0ce 12px,#fff0ce 24px);border-right:3px dashed #b98362;cursor:grab;touch-action:none;user-select:none;font-size:40px;z-index:2}
+#ui .lottery-ticket-cover span{font-size:14px}
+#ui .lottery-winners{font-size:11px;background:#fff9e9dd;padding:7px;border-radius:9px;width:min(100%,420px);box-sizing:border-box;min-height:28px}
+#ui .lottery-result{min-height:24px}
+#ui .lottery-results{max-height:115px;overflow-y:auto}
+.lottery-alert{position:fixed;inset:0;margin:auto;border:0;background:transparent;padding:12px;max-width:min(90vw,360px);z-index:2147483647}
+.lottery-alert::backdrop{background:rgba(0,0,0,.55)}
+.lottery-alert-inner{border:3px solid #d6a777;border-radius:20px;padding:24px;background:#fff8ed;text-align:center;color:#603c30;box-shadow:0 12px 40px #0004}
+.lottery-alert-inner button{background:#ffe0a1;border:2px solid #b88762;border-radius:12px;padding:9px 30px;font-weight:800}
+
+#ui .lottery-reset{align-self:center;border:2px solid #a67857;border-radius:10px;background:#fff2d8;color:#6e422f;font-weight:800;padding:8px 12px}

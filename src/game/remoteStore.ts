@@ -276,7 +276,8 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
-  async lottery():Promise<{remaining:number[];total:number;price:number}>{return request('lottery')}
+  async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
   async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;duplicate:boolean}[]}>{
     const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;duplicate:boolean}[];save:GachaSave}>('lottery/buy',{count})
     this.data=result.save

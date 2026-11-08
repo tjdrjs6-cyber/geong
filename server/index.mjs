@@ -861,7 +861,22 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
-    send(res,200,lotteryView(parseJson(rows[0].remaining)))
+    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade<>'G' ORDER BY h.id DESC LIMIT 12`)
+    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),winners})
+  },
+  'POST /api/lottery/reset': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    if(process.env.TEST_SERVER!=='true'||String(account.username).toLowerCase()!=='test')return send(res,403,{error:'test_only'})
+    const conn=await pool.getConnection()
+    try{
+      await conn.beginTransaction()
+      await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
+      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,2,2,2,91])])
+      await conn.query('DELETE FROM gm_lottery_history')
+      await conn.commit()
+    }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+    send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,91]),winners:[]})
   },
   'POST /api/lottery/buy': async (req,res) => {
     const account=await currentAccount(req)
