@@ -58,10 +58,31 @@ export function pull(state, count, randomInt) {
   return { ok: true, state: { ...state, gems, owned: [...owned] }, results }
 }
 
+/** ISO week start (Monday) in Korea, and cumulative attendance within that week. */
+export function attendanceWeek(now = new Date()) {
+  const today = checkInDay(now)
+  const weekday = attendanceDay(now)
+  const monday = new Date(`${today}T12:00:00Z`)
+  monday.setUTCDate(monday.getUTCDate() - weekday + 1)
+  return monday.toISOString().slice(0, 10)
+}
+export function attendanceDay(now = new Date()) {
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now)
+  return ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 })[weekday]
+}
 export function claimDaily(state, now = new Date()) {
   const today = checkInDay(now)
   if (state.lastDaily === today) return { ok: false, error: 'already_checked_in', state }
-  return { ok: true, state: { ...state, gems: state.gems + DAILY_GIFT, lastDaily: today } }
+  const week = attendanceWeek(now)
+  const count = state.attendanceWeek === week ? Math.min(7, Number(state.attendanceCount) || 0) : 0
+  const day = count + 1
+  const coins = day <= 5 ? day * 10 : 0
+  const boxes = day >= 6 ? 1 : 0
+  return { ok: true, coins, boxes, day, state: {
+    ...state, gems: state.gems + coins, lastDaily: today,
+    attendanceWeek: week, attendanceCount: day,
+    pendingRandomBoxes: (state.pendingRandomBoxes || 0) + boxes,
+  } }
 }
 
 export const USERNAME_RULE = /^[A-Za-z0-9_가-힣]{3,20}$/

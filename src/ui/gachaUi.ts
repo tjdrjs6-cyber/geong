@@ -205,6 +205,41 @@ export class GachaUi {
     this.root.querySelector('.boot-track')?.setAttribute('aria-valuenow', String(Math.round(bounded * 100)))
   }
 
+  private openAttendancePopup(): void {
+    document.getElementById('attendance-popup')?.remove()
+    const now = new Date()
+    const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now)
+    const dayOfWeek = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[weekday]
+    const monday = new Date(`${today}T12:00:00Z`)
+    monday.setUTCDate(monday.getUTCDate() - dayOfWeek + 1)
+    const week = monday.toISOString().slice(0, 10)
+    const count = this.store.data.attendanceWeek === week ? (this.store.data.attendanceCount ?? 0) : 0
+    const claimed = this.store.data.lastDaily === today
+    const next = Math.min(7, count + 1)
+    const popup = document.createElement('dialog')
+    popup.id = 'attendance-popup'
+    popup.setAttribute('aria-label', '출석체크 보상')
+    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2>🎁 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?'🪙':'🎁'}</span><b>${i<5?`${(i+1)*10}코인`:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
+    document.body.appendChild(popup)
+    popup.querySelector('.attendance-close')?.addEventListener('click', () => popup.close())
+    popup.addEventListener('click', event => { if (event.target === popup) popup.close() })
+    popup.addEventListener('close', () => popup.remove())
+    popup.querySelector('.attendance-claim')?.addEventListener('click', async () => {
+      if (this.busy) return
+      this.busy = true
+      try {
+        const reward = await this.store.claimDaily()
+        if (reward.claimed) {
+          this.audio.play('pickup')
+          popup.close()
+          this.toast(reward.boxes ? '출석 완료! 랜덤박스 1개를 받았어요.' : `출석 완료! ${reward.coins}코인을 받았어요.`)
+        } else { popup.close(); this.toast('오늘은 이미 출석했어요.') }
+      } catch (error) { this.handleError(error) } finally { this.busy = false; this.renderWallet() }
+    })
+    popup.showModal()
+  }
+
   private template(): string {
     return `
       <section class="gacha-boot is-active" data-screen="boot" aria-live="polite">
@@ -339,7 +374,7 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></div></div><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button></div></div></nav>
@@ -762,14 +797,7 @@ export class GachaUi {
     if (action === 'roulette') { this.show('roulette'); this.renderWallet(); return }
     if (action === 'roulette-spin') { await this.spinRoulette(); return }
     if (action === 'daily') {
-      this.busy = true
-      try {
-        if (await this.store.claimDaily()) {
-          this.audio.play('pickup')
-          this.toast(`출석 완료! ${DAILY_GIFT}코인을 받았어요.`)
-        } else this.toast('오늘은 이미 출석했어요.')
-      } catch (error) { this.handleError(error) } finally { this.busy = false }
-      this.renderWallet()
+      this.openAttendancePopup()
       return
     }
     if (action === 'pull') {
@@ -1483,16 +1511,26 @@ export class GachaUi {
     if (collectionCount) collectionCount.textContent = `${count} / ${CHARACTERS.length}`
     const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
     const alreadyClaimed = this.store.data.lastDaily === today
+    const currentWeek = (() => {
+      const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(new Date())
+      const day = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[weekday]
+      const monday = new Date(`${today}T12:00:00Z`)
+      monday.setUTCDate(monday.getUTCDate() - day + 1)
+      return monday.toISOString().slice(0, 10)
+    })()
+    const count = this.store.data.attendanceWeek === currentWeek ? (this.store.data.attendanceCount ?? 0) : 0
+    const nextDay = Math.min(7, count + (alreadyClaimed ? 0 : 1))
+    const attendanceReward = nextDay >= 6 ? '랜덤박스 1개' : `${nextDay * 10} 코인`
     const name = this.root.querySelector<HTMLElement>('.account-name')
     if (name) name.textContent = this.store.user ? `${this.isAdmin ? '👑 운영자 · ' : ''}${this.store.user.nickname ?? this.store.user.username} 님` : ''
     const daily = this.root.querySelector<HTMLButtonElement>('[data-action="daily"]')
     if (daily) {
-      daily.disabled = alreadyClaimed
+      daily.disabled = false
       daily.classList.toggle('is-used', alreadyClaimed)
       const dailyLabel = daily.querySelector<HTMLElement>('b')
       if (dailyLabel) dailyLabel.textContent = alreadyClaimed ? '출석 완료 ✓' : '출석 체크'
       const copy = daily.querySelector<HTMLElement>('.daily-copy')
-      if (copy) copy.textContent = alreadyClaimed ? '수령 완료 · 내일 다시' : `+${DAILY_GIFT} 코인 받기`
+      if (copy) copy.textContent = alreadyClaimed ? '수령 완료 · 내일 다시' : `${attendanceReward} 받기`
     }
     const rouletteSlot = `${today}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}`
     const spun = this.store.data.lastRoulette === rouletteSlot

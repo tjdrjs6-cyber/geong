@@ -7,6 +7,6 @@ if (!match) throw new Error('Cannot find test version badge');
 const next = Number(match[1]) + 1;
 if (next > 999) throw new Error('Test version limit reached');
 const version = `test.${String(next).padStart(3, '0')}`;
-const updated = html.replace(/(<div id="geongi-version" aria-label=")[^"]*(">)[^<]*(<\/div>)/, `$1게임 버전 ${version}$2${version}$3`);
+const updated = html.replace(/(<div id="geongi-version" aria-label=")[^"]*(">)[^<]*(<\/div>)/, (_whole, a, b, c) => `${a}게임 버전 ${version}${b}${version}${c}`);
 writeFileSync(file, updated);
 console.log(version);

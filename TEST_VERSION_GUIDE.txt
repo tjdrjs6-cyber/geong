@@ -1,3 +1,2 @@
-Current test version: test.001
-Before each subsequent test update, run: node scripts/bump-test-version.mjs
-Then commit and deploy the updated files. This changes test.001 to test.002, then test.003, etc. A Railway redeploy alone does not increment the version.
+Current test version: test.004
+Next update: test.005

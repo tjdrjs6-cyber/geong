@@ -43,7 +43,7 @@ export const CHARACTERS = [
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -108,6 +108,8 @@ export function parseGachaSave(raw: string | null): GachaSave {
       gems: validGems,
       owned,
       lastDaily,
+      attendanceWeek: typeof data.attendanceWeek === 'string' ? data.attendanceWeek : '',
+      attendanceCount: typeof data.attendanceCount === 'number' ? data.attendanceCount : 0,
     }
   } catch {
     return base
@@ -149,7 +151,14 @@ export class GachaStore {
   claimDaily(now = new Date()): boolean {
     const today = localDay(now)
     if (this.data.lastDaily === today) return false
-    this.update({ gems: this.data.gems + DAILY_GIFT, lastDaily: today })
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now)
+    const weekDay = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[weekday]
+    const monday = new Date(`${today}T12:00:00Z`)
+    monday.setUTCDate(monday.getUTCDate() - weekDay + 1)
+    const week = monday.toISOString().slice(0, 10)
+    const count = this.data.attendanceWeek === week ? (this.data.attendanceCount ?? 0) : 0
+    const day = Math.min(7, count + 1)
+    this.update({ gems: this.data.gems + (day <= 5 ? day * 10 : 0), lastDaily: today, attendanceWeek: week, attendanceCount: day, pendingRandomBoxes: (this.data.pendingRandomBoxes ?? 0) + (day >= 6 ? 1 : 0) })
     return true
   }
 

@@ -398,10 +398,10 @@ export class RemoteGachaStore {
       throw error
     }
   }
-  async claimDaily(): Promise<boolean> {
-    const result = await request<{ claimed: boolean; save: GachaSave }>('daily', {})
+  async claimDaily(): Promise<{ claimed: boolean; coins: number; boxes: number }> {
+    const result = await request<{ claimed: boolean; coins: number; boxes: number; save: GachaSave }>('daily', {})
     this.data = result.save
-    return result.claimed
+    return { claimed: result.claimed, coins: result.coins ?? 0, boxes: result.boxes ?? 0 }
   }
 
   private apply(payload: AccountPayload): void {

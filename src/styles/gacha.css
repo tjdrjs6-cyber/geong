@@ -3985,3 +3985,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .wild-weed-pick .wild-weed-hold-text { bottom:calc(100% + 1px)!important; }
 #ui .wild-weed-spawns {position:absolute;inset:0;pointer-events:none;z-index:18;}
 #ui .wild-weed-spawns .wild-weed-pick {pointer-events:auto;}
+
+/* test.004 attendance reward dialog - native top-layer modal */
+#attendance-popup{border:0;border-radius:22px;padding:0;width:min(440px,calc(100vw - 24px));max-height:90dvh;overflow:auto;color:#694f58;background:#fffaf5;box-shadow:0 18px 70px #0005}
+#attendance-popup::backdrop{background:rgba(20,13,23,.7)}
+.attendance-popup-inner{padding:24px 18px;text-align:center;position:relative}
+.attendance-popup-inner h2{font-size:23px;margin:6px 0}.attendance-popup-inner p{font-size:12px;margin:8px 0 18px}
+.attendance-close{position:absolute;right:12px;top:8px;background:transparent;border:0;font-size:28px;color:#806772;cursor:pointer}
+.attendance-reward-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.attendance-reward{min-height:92px;border:1px solid #e8d8d5;border-radius:13px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px}
+.attendance-reward small{font-size:11px}.attendance-reward span{font-size:25px}.attendance-reward b{font-size:11px}.attendance-reward em{font-size:9px;color:#63816a;font-style:normal}
+.attendance-reward.received{background:#eaf1e9}.attendance-reward.upcoming{border:2px solid #e4a0ae;background:#fff0f4}
+.attendance-claim{width:100%;border:0;border-radius:13px;padding:14px;background:#e6a2b4;color:#fff;font-weight:700;cursor:pointer}.attendance-claim:disabled{background:#aaa;cursor:default}
