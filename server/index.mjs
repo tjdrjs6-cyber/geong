@@ -349,7 +349,12 @@ async function currentAccount(req) {
     'SELECT a.id, a.username, a.nickname, a.is_admin FROM gm_sessions s JOIN gm_accounts a ON a.id = s.account_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP()',
     [tokenHash(token)],
   )
-  return rows[0] ?? null
+  const account = rows[0] ?? null
+  // Test-only replenishment. Never enable TEST_SERVER on the production service.
+  if (account && process.env.TEST_SERVER === 'true' && account.username === 'test') {
+    await pool.query('UPDATE gm_saves SET gems = 1000000000, diamonds = 1000000000, fragments = 1000000000 WHERE account_id = ?', [account.id])
+  }
+  return account
 }
 
 /** Runs a read-modify-write of one account's save inside a row-locked transaction. */
