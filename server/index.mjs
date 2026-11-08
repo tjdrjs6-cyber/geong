@@ -35,6 +35,16 @@ async function prepareDatabase() {
     waitForConnections: true,
   })
   // Additive, repeatable migration; existing accounts and saves are preserved.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_lottery_pool (
+    id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )`)
+  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,2,2,2,91])])
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_lottery_history (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL,
+    grade CHAR(1) NOT NULL, character_id VARCHAR(40), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (account_id)
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_rps (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     slot VARCHAR(24) NOT NULL DEFAULT '',
@@ -842,7 +852,58 @@ async function wildWeedState(accountId, db=pool) {
   const weeds=active.map(w=>({id:Number(w.id),x:Number(w.pos_x),y:Number(w.pos_y),type:w.weed_type==='golden'?'golden':'normal'}))
   return {visible:weeds.length>0,weeds,x:weeds[0]?.x??50,y:weeds[0]?.y??70,type:weeds[0]?.type??'normal',count:Number(base.inventory),goldenCount:Number(base.golden_inventory),slot,nextAt:(slot+1)*WILD_WEED_HOUR}
 }
+const LOTTERY_IDS = ['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi',null]
+const LOTTERY_GRADES = ['A','B','C','D','E','F','G']
+const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:100})
+
 const routes = {
+  'GET /api/lottery': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
+    send(res,200,lotteryView(parseJson(rows[0].remaining)))
+  },
+  'POST /api/lottery/buy': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {count}=await readJson(req)
+    if(!Number.isSafeInteger(count)||count<1||count>100)return send(res,400,{error:'invalid_count'})
+    const conn=await pool.getConnection()
+    let outcome
+    try {
+      await conn.beginTransaction()
+      const [poolRows]=await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
+      const remaining=parseJson(poolRows[0].remaining)
+      if(count>remaining.reduce((a,b)=>a+b,0)) {outcome={error:'sold_out'}}
+      else {
+        const [saves]=await conn.query('SELECT gems, owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+        if(!saves.length||Number(saves[0].gems)<count*100)outcome={error:'not_enough_coins'}
+        else {
+          const owned=normalizeOwned(parseJson(saves[0].owned))
+          const [dupeRows]=await conn.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[account.id])
+          const dupes=dupeRows.length?parseJson(dupeRows[0].items):{}
+          const results=[]
+          for(let i=0;i<count;i++){
+            const total=remaining.reduce((a,b)=>a+b,0)
+            let ticket=randomInt(total),index=0
+            while(ticket>=remaining[index]){ticket-=remaining[index];index++}
+            remaining[index]--
+            const id=LOTTERY_IDS[index]
+            if(id){if(owned.includes(id))dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
+            results.push({grade:LOTTERY_GRADES[index],id,duplicate:!!id&&dupes[id]>0})
+          }
+          await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
+          await conn.query('UPDATE gm_saves SET gems=gems-?,owned=? WHERE account_id=?',[count*100,JSON.stringify(owned),account.id])
+          await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
+          for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
+          outcome={...lotteryView(remaining),results}
+        }
+      }
+      if(outcome.error)await conn.rollback();else await conn.commit()
+    }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+    if(outcome.error)return send(res,400,outcome)
+    send(res,200,{...outcome,save:await getSave(account.id)})
+  },
   'POST /api/wild-weed/state': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})

@@ -3999,6 +3999,25 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .attendance-claim{width:100%;border:0;border-radius:13px;padding:14px;background:#e6a2b4;color:#fff;font-weight:700;cursor:pointer}.attendance-claim:disabled{background:#aaa;cursor:default}
 
 /* test.005: attendance Kani icon and in-game coin art */
-.attendance-kani-button{width:34px;height:34px;object-fit:contain;display:block}
+.attendance-kani-button{width:20px!important;height:20px!important;object-fit:contain;display:block}
 .attendance-kani-title{width:38px;height:38px;object-fit:contain;vertical-align:middle;margin-right:5px}
 .attendance-reward .attendance-coin-image{width:30px;height:30px;object-fit:contain;display:block}
+
+/* test.008 shared first-prize lottery */
+#ui .lottery-screen .lottery-scene{position:relative;gap:8px;padding-bottom:160px;justify-content:flex-start}
+#ui .lottery-screen .lottery-momonga{position:absolute!important;bottom:0;left:50%;transform:translateX(-50%);height:145px!important;width:170px!important;pointer-events:none;animation:lottery-bob 2s ease-in-out infinite}
+@keyframes lottery-bob{0%,100%{transform:translate(-50%,0) rotate(-3deg)}50%{transform:translate(-50%,-12px) rotate(3deg)}}
+#ui .lottery-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;width:100%;max-width:420px}
+#ui .lottery-prize{background:#fff9ec;border:2px solid #e5c59b;border-radius:12px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px}
+#ui .lottery-prize img{width:45px;height:45px;object-fit:contain}#ui .lottery-prize small{font-size:10px}
+#ui .lottery-purchase{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;background:#ffffffde;padding:10px;border-radius:15px;width:100%;max-width:420px}
+#ui .lottery-purchase input{width:65px;padding:6px;border-radius:8px;border:1px solid #b98d77}
+#ui .lottery-purchase button{border:1px solid #9e7062;border-radius:10px;background:#ffe3a8;padding:8px;font-weight:800}
+#ui .lottery-price{width:100%;font-weight:900}
+#ui .lottery-ticket{font-size:48px;background:#fff4cd;border:3px dashed #a97b4a;padding:12px;border-radius:12px}
+#ui .lottery-ticket span{display:block;font-size:13px}
+#ui .lottery-tear{animation:lottery-tear .55s ease-in-out}
+@keyframes lottery-tear{0%{transform:rotate(0) scale(1)}45%{transform:rotate(-12deg) scale(1.1)}100%{transform:rotate(8deg) scale(1)}}
+#ui .lottery-results{width:100%;max-width:420px;max-height:140px;overflow:auto;display:grid;gap:4px}
+#ui .lottery-result{display:flex;justify-content:space-between;background:#fff;border-radius:9px;padding:5px 10px;font-size:12px}
+#ui .lottery-skip{background:#fff;border:1px solid #977;border-radius:10px;padding:7px;font-weight:900}

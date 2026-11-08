@@ -70,6 +70,11 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
+  private lotteryState: {remaining:number[];total:number;price:number}|null=null
+  private lotteryResults: {grade:string;id:string|null;duplicate:boolean}[]=[]
+  private lotteryRevealed=0
+  private lotteryTimer=0
+  private lotteryBusy=false
   private rpsState: RpsState | null = null
   private rpsTimer = 0
   private rpsResolving = false
@@ -167,17 +172,8 @@ export class GachaUi {
     window.clearInterval(this.expeditionTimer)
     if (screen === 'expedition') {this.expeditionPendingDamage.clear();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
     window.clearInterval(this.rpsTimer)
-    if (screen === 'rps') {
-      this.rpsState=null
-      const start=this.root.querySelector<HTMLButtonElement>('[data-action="rps-start"]')
-      if(start)start.hidden=true
-      this.root.querySelector<HTMLElement>('.rps-screen')?.classList.remove('rps-resting')
-      this.root.querySelector<HTMLElement>('.rps-screen')?.classList.add('rps-loading')
-      const message=this.root.querySelector<HTMLElement>('.rps-message')
-      if(message)message.textContent='' // Avoid a transient loading message
-      void this.openRps()
-      this.rpsTimer=window.setInterval(()=>void this.tickRps(),120)
-    }
+    window.clearInterval(this.lotteryTimer)
+    if(screen==='rps')void this.openLottery()
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
     if (screen === 'claw') { this.restoreClawToys(); this.resetClawToExit(); this.renderClaw() }
@@ -349,24 +345,15 @@ export class GachaUi {
         <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong><img class="shop-header-face" src="/shop_armor_face.png" alt="갑옷씨 얼굴"/> 장터</strong><span aria-hidden="true"></span></header>
         <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button data-action="shop-tab" data-tab="buy" class="is-active">구매</button><button data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
       </section>
-      <section class="rps-screen" data-screen="rps" aria-hidden="true">
-        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><span>3시간마다 1회</span></header>
-        <div class="rps-scene">
-          <h2>나랑 가위바위보 하자!</h2>
-          <div class="rps-stage-label">1단계 · <img class="rps-coin" src="/assets/coin.png" alt="코인"/> <b class="rps-coin-count">×10</b></div>
-          <img class="rps-chiikawa" src="/rps_momonga.png" alt="모몽가"/>
-          <p class="rps-message">가위바위보를 시작해 보세요!</p><div class="rps-opponent-choice" hidden><span>모몽가가 낸 것</span><img src="/rps_rock.png" alt="모몽가의 선택"/><strong></strong></div>
-          <strong class="rps-countdown"></strong>
-          <div class="rps-choice-row">
-            <button data-action="rps-move" data-move="rock"><img src="/rps_rock.png" alt=""/>바위</button>
-            <button data-action="rps-move" data-move="scissors"><img src="/rps_scissors.png" alt=""/>가위</button>
-            <button data-action="rps-move" data-move="paper"><img src="/rps_paper.png" alt=""/>보</button>
-          </div>
-          <div class="rps-decision">
-            <button data-action="rps-start">도전 시작!</button>
-            <button data-action="rps-claim" hidden>코인 받고 그만하기</button>
-            <button data-action="rps-next" hidden>다음 단계 도전!</button>
-          </div>
+      <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
+        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>제일복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
+        <div class="rps-scene lottery-scene">
+          <h2>🎟️ 제일복권</h2><p class="lottery-status">남은 복권 확인 중...</p>
+          <div class="lottery-prizes"></div>
+          <div class="lottery-ticket" hidden>🎫<span>복권을 뜯어보세요!</span></div>
+          <div class="lottery-results"></div>
+          <div class="lottery-purchase"><label>구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1"/></label><button data-action="lottery-all">남은 장수 선택</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
+          <img class="rps-chiikawa lottery-momonga" src="/rps_momonga.png" alt="모몽가"/>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -374,7 +361,7 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>제일복권</b><small class="rps-lobby-status">100코인 / 장</small></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></div></div><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button></div></div></nav>
@@ -658,6 +645,9 @@ export class GachaUi {
     }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
+    if (action === 'lottery-all') {const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input)input.value=String(this.lotteryState?.total||1);this.updateLotteryPrice();return}
+    if (action === 'lottery-buy') {await this.buyLottery();return}
+    if (action === 'lottery-skip') {this.skipLottery();return}
     if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');void this.loadWildWeed();this.renderShop();return}
     if (action === 'shop-tab' && button?.dataset.tab) {this.shopTab=button.dataset.tab==='sell'?'sell':'buy';this.renderShop();return}
     if (action === 'wild-weed-sell') {
@@ -1353,17 +1343,67 @@ export class GachaUi {
     this.setHouseCoinDot(false)
   }
 
-  private async refreshRpsBadge():Promise<void> {
-    if(!this.store.user)return
-    try {
-      const state=await this.store.rps()
-      const tab=this.root.querySelector<HTMLButtonElement>('.rps-lobby-tab')
-      const status=tab?.querySelector<HTMLElement>('.rps-lobby-status')
-      tab?.classList.toggle('is-used',state.used)
-      if(status)status.textContent=state.admin?'무제한 도전':state.used?'✓ 참여 완료':'3시간마다 1회'
-    }catch { /* transient connection failure */ }
+  private async openLottery():Promise<void>{
+    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.renderLottery()}
+    catch{const el=this.root.querySelector<HTMLElement>('.lottery-status');if(el)el.textContent='복권 정보를 불러오지 못했습니다.'}
   }
-
+  private updateLotteryPrice():void{
+    const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1)
+    const price=this.root.querySelector<HTMLElement>('.lottery-price')
+    if(price)price.textContent=`${Math.max(0,count)*100}코인`
+  }
+  private renderLottery():void{
+    const state=this.lotteryState;if(!state)return
+    const status=this.root.querySelector<HTMLElement>('.lottery-status')
+    if(status)status.textContent=`전체 100장 · 남은 복권 ${state.total}장`
+    const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
+    const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
+    if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize"><b>${'ABCDEFG'[i]}상</b>${i<6?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:'<span>꽝</span>'}<small>${n}장 남음</small></div>`).join('')
+    const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0}
+    const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
+    this.updateLotteryPrice()
+  }
+  private async buyLottery():Promise<void>{
+    if(this.lotteryBusy||!this.lotteryState)return
+    const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
+    if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.toast('구매 수량을 확인해주세요.');return}
+    this.lotteryBusy=true
+    try{
+      const result=await this.store.lotteryBuy(count)
+      this.lotteryState=result;this.lotteryResults=result.results;this.lotteryRevealed=0
+      this.renderWallet();this.renderLottery()
+      this.root.querySelector<HTMLElement>('.lottery-ticket')?.removeAttribute('hidden')
+      this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.removeAttribute('hidden')
+      this.root.querySelector<HTMLElement>('.lottery-results')!.innerHTML=''
+      window.clearInterval(this.lotteryTimer)
+      this.lotteryTimer=window.setInterval(()=>this.revealLottery(),650)
+    }catch(e){this.handleError(e)}
+    finally{this.lotteryBusy=false;this.renderLottery()}
+  }
+  private revealLottery():void{
+    if(this.lotteryRevealed>=this.lotteryResults.length){this.skipLottery();return}
+    this.lotteryRevealed++
+    const ticket=this.root.querySelector<HTMLElement>('.lottery-ticket')
+    if(ticket){ticket.classList.remove('lottery-tear');void ticket.offsetWidth;ticket.classList.add('lottery-tear')}
+    this.renderLotteryResults()
+    if(this.lotteryRevealed===this.lotteryResults.length)this.skipLottery()
+  }
+  private skipLottery():void{
+    window.clearInterval(this.lotteryTimer);this.lotteryRevealed=this.lotteryResults.length
+    this.renderLotteryResults()
+    this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
+    this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
+    this.renderCollection()
+  }
+  private renderLotteryResults():void{
+    const el=this.root.querySelector<HTMLElement>('.lottery-results');if(!el)return
+    el.innerHTML=this.lotteryResults.slice(0,this.lotteryRevealed).map((r,i)=>`<div class="lottery-result"><span>${i+1}번째</span><b>${r.grade}상</b><span>${r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}</span></div>`).join('')
+    el.scrollTop=el.scrollHeight
+  }
+  private async refreshRpsBadge():Promise<void>{
+    const status=this.root.querySelector<HTMLElement>('.rps-lobby-status')
+    if(status)status.textContent='100코인 / 장'
+  }
   private async openRps():Promise<void> {
     try {const state=await this.store.rps();if(this.screen!=='rps')return;this.rpsState=state;this.renderRps()}
     catch(e){
