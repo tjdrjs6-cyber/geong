@@ -1,2 +1,2 @@
-Current test version: test.004
-Next update: test.005
+Current test version: test.006
+Next update: test.007

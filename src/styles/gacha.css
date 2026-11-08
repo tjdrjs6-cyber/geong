@@ -3997,3 +3997,8 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .attendance-reward small{font-size:11px}.attendance-reward span{font-size:25px}.attendance-reward b{font-size:11px}.attendance-reward em{font-size:9px;color:#63816a;font-style:normal}
 .attendance-reward.received{background:#eaf1e9}.attendance-reward.upcoming{border:2px solid #e4a0ae;background:#fff0f4}
 .attendance-claim{width:100%;border:0;border-radius:13px;padding:14px;background:#e6a2b4;color:#fff;font-weight:700;cursor:pointer}.attendance-claim:disabled{background:#aaa;cursor:default}
+
+/* test.005: attendance Kani icon and in-game coin art */
+.attendance-kani-button{width:34px;height:34px;object-fit:contain;display:block}
+.attendance-kani-title{width:38px;height:38px;object-fit:contain;vertical-align:middle;margin-right:5px}
+.attendance-reward .attendance-coin-image{width:30px;height:30px;object-fit:contain;display:block}
