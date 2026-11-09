@@ -836,8 +836,8 @@ async function expeditionSettle(conn, day, serverId, now) {
   hp=Number(hp);last=Number(last);stage=Number(stage)
   const ticks=hp>0?Math.max(0,Math.floor((now-last)/EXP_TICK)):0
   if(ticks) {
-    const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
-    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?1:0),0)
+    const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped,a.equipped_grade AS accessory_grade FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
+    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 1):0),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
