@@ -4929,3 +4929,8 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* Navigation notification dots */
 #ui .gacha-nav .nav-button{position:relative}
 #ui .gacha-nav .geongi-keyring-dot:not([hidden]),#ui .gacha-nav .geongi-equipment-dot:not([hidden]){display:block;position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%;background:#f04448;border:2px solid #fff;box-shadow:0 1px 3px #0004;z-index:5;pointer-events:none}
+
+/* Weapon +23 orange aura, +25 orange aura with +20 sparkle animation */
+.forge-aura:is(.aura-23,.aura-25){--aura-color:#ff8a22!important}
+.forge-aura:is(.aura-23,.aura-25)>img{filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 10px var(--aura-color));animation:forge-aura-breathe 2.7s ease-in-out infinite}
+.forge-aura.aura-25::after{content:'✦';position:absolute;z-index:3;top:-13px;right:-8px;font-size:16px;color:#fff0ba;text-shadow:-19px 13px 0 #ff9d34,0 0 7px #ff8a22,0 0 13px #fff;animation:forge-aura-sparkle 1.45s ease-in-out infinite;pointer-events:none}

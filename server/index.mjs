@@ -578,8 +578,10 @@ async function suggestions(account) {
   }
 }
 const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
-const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5]
-const forgeBonus = level => level <= 14 ? level + 1 : level === 20 ? 50 : 20 + (level - 15) * 5
+const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1]
+const FORGE_COSTS = Array.from({length:25},(_,i)=>i<20?{coins:(i+1)*5,fragments:i+1}:{coins:[150,200,300,400,500][i-20],fragments:[25,30,40,50,60][i-20]})
+const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885' || account.nickname === '겅이'
+const forgeBonus = level => level <= 14 ? level + 1 : level === 19 ? 45 : level === 20 ? 50 : level >= 21 ? Math.min(100,50+(level-20)*10) : 20+(level-15)*5
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
 const ACCESSORY_GRADES = {rare:{cost:2,fragments:20,power:3},epic:{cost:5,fragments:50,power:5},unique:{cost:10,fragments:100,power:10},legendary:{cost:20,fragments:200,power:20},transcendent:{cost:40,fragments:400,power:30}}
 const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.power || 1) : 0
@@ -1213,8 +1215,8 @@ const routes = {
       const [rows] = await conn.query('SELECT weapon,level FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
       if (!rows.length) {await conn.rollback();return send(res,409,{error:'forge_no_weapon'})}
       const level=Number(rows[0].level)
-      if(level>=20){await conn.rollback();return send(res,409,{error:'forge_max'})}
-      const fragments=level+1, coins=(level+1)*5
+      if(level>=25){await conn.rollback();return send(res,409,{error:'forge_max'})}
+      const {fragments,coins}=FORGE_COSTS[level]
       if(!saves.length || (!rpsAdmin(account) && Number(saves[0].fragments)<fragments)){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
       if(!rpsAdmin(account) && Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
       // Settle battle damage with the OLD bonus before raising weapon level.
@@ -1228,7 +1230,7 @@ const routes = {
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
       }
-      const success=randomInt(100)<FORGE_CHANCES[level]
+      const success=forgeGuaranteed(account) || randomInt(100)<FORGE_CHANCES[level]
       await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[rpsAdmin(account)?0:coins,rpsAdmin(account)?0:fragments,earned,account.id])
       if(success) await conn.query('UPDATE gm_forge SET level=level+1 WHERE account_id=?',[account.id])
       await conn.commit()
