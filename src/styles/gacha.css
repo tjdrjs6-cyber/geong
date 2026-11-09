@@ -4503,3 +4503,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* test.071: supplied autumn lobby artwork and legible lottery prize names */
 .gacha-screen,.gacha-screen.is-active{background-image:url('/lobby_autumn_071.png')!important;background-color:#ffce76!important;background-position:center center!important;background-size:cover!important;background-repeat:no-repeat!important}
 #ui .lottery-screen .lottery-prize>span{display:block!important;width:100%!important;min-width:0!important;overflow-wrap:break-word!important;word-break:keep-all!important;text-align:center!important;font-size:clamp(9px,1.35dvh,11px)!important;line-height:1.15!important}
+
+/* test.072: place the lobby avatar over the picnic blanket and machine over the stump.
+   Hide only the decorative oval floor; retain the avatar's name badge. */
+#ui .gacha-screen .toon-stage .toon-floor{display:none!important;}
+#ui .gacha-screen .toon-stage .toon-hero{left:calc(50% - 26px)!important;bottom:calc(8% + 24px)!important;}
+#ui .gacha-screen .toon-stage .toon-hero-name{left:calc(50% - 26px)!important;bottom:calc(8% + 18px)!important;}
+#ui .gacha-screen .toon-stage .toon-machine{right:calc(max(8%, 50% - 250px) + 20px)!important;bottom:calc(30% + 20px)!important;}
+@media(max-width:480px){
+ #ui .gacha-screen .toon-stage .toon-hero{left:calc(50% - 20px)!important;bottom:calc(8% + 16px)!important;}
+ #ui .gacha-screen .toon-stage .toon-hero-name{left:calc(50% - 20px)!important;bottom:calc(8% + 10px)!important;}
+ #ui .gacha-screen .toon-stage .toon-machine{right:calc(8% + 15px)!important;bottom:calc(30% + 16px)!important;}
+}
