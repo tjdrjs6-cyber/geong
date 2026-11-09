@@ -3034,9 +3034,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       }
     }
     const retry=this.root.querySelector<HTMLButtonElement>('.battle-retry-challenge')
-    if(retry)retry.hidden=!fighter || this.store.battle?.retryStage !== view.stage+1
     const challenge = this.root.querySelector<HTMLButtonElement>('.battle-boss-challenge')
-    if (challenge) challenge.hidden = !fighter || view.stage % 10 !== 9 || !this.store.battle?.bossReady
+    // Boss challenge has priority when a failed boss sends the player back to stage 9.
+    const bossAvailable = Boolean(fighter && view.stage % 10 === 9 && this.store.battle?.bossReady)
+    if (challenge) challenge.hidden = !bossAvailable
+    if (retry) retry.hidden = bossAvailable || !fighter || this.store.battle?.retryStage !== view.stage + 1
     const time5 = this.root.querySelector<HTMLButtonElement>('.battle-test-time5')
     if (time5) time5.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !fighter
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
