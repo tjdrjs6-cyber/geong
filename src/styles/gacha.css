@@ -3805,7 +3805,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .shop-empty-note{text-align:center;color:#795947;font-size:12px;line-height:1.7;padding:18px 4px}
 
 /* v195: lobby character and expandable activity navigation */
-.gacha-screen .toon-hero { width:min(34.32cqw,191.4px) !important; }
+.gacha-screen .toon-hero { width:min(49.4208cqw,275.616px) !important; }
 .gacha-screen .activity-menu { position:relative; width:100%; flex-shrink:0; }
 .gacha-screen .activity-menu > .nav-button { width:100%; }
 .gacha-screen .activity-options:not([hidden]) { display:flex; flex-direction:column; gap:5px; position:absolute; left:calc(100% + 6px); top:0; width:clamp(82px,24cqw,106px); z-index:80; }
@@ -3985,3 +3985,581 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .wild-weed-pick .wild-weed-hold-text { bottom:calc(100% + 1px)!important; }
 #ui .wild-weed-spawns {position:absolute;inset:0;pointer-events:none;z-index:18;}
 #ui .wild-weed-spawns .wild-weed-pick {pointer-events:auto;}
+
+/* test.004 attendance reward dialog - native top-layer modal */
+#attendance-popup{border:0;border-radius:22px;padding:0;width:min(440px,calc(100vw - 24px));max-height:90dvh;overflow:auto;color:#694f58;background:#fffaf5;box-shadow:0 18px 70px #0005}
+#attendance-popup::backdrop{background:rgba(20,13,23,.7)}
+.attendance-popup-inner{padding:24px 18px;text-align:center;position:relative}
+.attendance-popup-inner h2{font-size:23px;margin:6px 0}.attendance-popup-inner p{font-size:12px;margin:8px 0 18px}
+.attendance-close{position:absolute;right:12px;top:8px;background:transparent;border:0;font-size:28px;color:#806772;cursor:pointer}
+.attendance-reward-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.attendance-reward{min-height:92px;border:1px solid #e8d8d5;border-radius:13px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px}
+.attendance-reward small{font-size:11px}.attendance-reward span{font-size:25px}.attendance-reward b{font-size:11px}.attendance-reward em{font-size:9px;color:#63816a;font-style:normal}
+.attendance-reward.received{background:#eaf1e9}.attendance-reward.upcoming{border:2px solid #e4a0ae;background:#fff0f4}
+.attendance-claim{width:100%;border:0;border-radius:13px;padding:14px;background:#e6a2b4;color:#fff;font-weight:700;cursor:pointer}.attendance-claim:disabled{background:#aaa;cursor:default}
+
+/* test.005: attendance Kani icon and in-game coin art */
+.attendance-kani-button{width:20px!important;height:20px!important;object-fit:contain;display:block}
+.attendance-kani-title{width:38px;height:38px;object-fit:contain;vertical-align:middle;margin-right:5px}
+.attendance-reward .attendance-coin-image{width:30px;height:30px;object-fit:contain;display:block}
+
+/* test.008 shared first-prize lottery */
+#ui .lottery-screen .lottery-scene{position:relative;gap:8px;padding-bottom:160px;justify-content:flex-start}
+#ui .lottery-screen .lottery-momonga{position:absolute!important;bottom:0;left:50%;transform:translateX(-50%);height:145px!important;width:170px!important;pointer-events:none;animation:lottery-bob 2s ease-in-out infinite}
+@keyframes lottery-bob{0%,100%{transform:translate(-50%,0) rotate(-3deg)}50%{transform:translate(-50%,-12px) rotate(3deg)}}
+#ui .lottery-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;width:100%;max-width:420px}
+#ui .lottery-prize{background:#fff9ec;border:2px solid #e5c59b;border-radius:12px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px}
+#ui .lottery-prize img{width:45px;height:45px;object-fit:contain}#ui .lottery-prize small{font-size:10px}
+#ui .lottery-purchase{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;background:#ffffffde;padding:10px;border-radius:15px;width:100%;max-width:420px}
+#ui .lottery-purchase input{width:65px;padding:6px;border-radius:8px;border:1px solid #b98d77}
+#ui .lottery-purchase button{border:1px solid #9e7062;border-radius:10px;background:#ffe3a8;padding:8px;font-weight:800}
+#ui .lottery-price{width:100%;font-weight:900}
+#ui .lottery-ticket{font-size:48px;background:#fff4cd;border:3px dashed #a97b4a;padding:12px;border-radius:12px}
+#ui .lottery-ticket span{display:block;font-size:13px}
+#ui .lottery-tear{animation:lottery-tear .55s ease-in-out}
+@keyframes lottery-tear{0%{transform:rotate(0) scale(1)}45%{transform:rotate(-12deg) scale(1.1)}100%{transform:rotate(8deg) scale(1)}}
+#ui .lottery-results{width:100%;max-width:420px;max-height:140px;overflow:auto;display:grid;gap:4px}
+#ui .lottery-result{display:flex;justify-content:space-between;background:#fff;border-radius:9px;padding:5px 10px;font-size:12px}
+#ui .lottery-skip{background:#fff;border:1px solid #977;border-radius:10px;padding:7px;font-weight:900}
+
+/* test.009: stable lottery viewport, swipe-to-reveal, modal alert */
+#ui .lottery-screen .lottery-scene{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;padding-bottom:170px;align-content:start;scrollbar-gutter:stable}
+#ui .lottery-screen .lottery-momonga{position:sticky!important;bottom:0!important;left:50%;z-index:0}
+#ui .lottery-prizes,#ui .lottery-purchase,#ui .lottery-results{flex-shrink:0}
+#ui .lottery-ticket{position:relative;overflow:hidden;width:min(100%,350px);height:128px;box-sizing:border-box;padding:0;border:3px dashed #a97b4a;touch-action:pan-y;flex-shrink:0}
+#ui .lottery-ticket-under,#ui .lottery-ticket-cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:5px;flex-direction:column;font-size:14px;text-align:center}
+#ui .lottery-ticket-under{background:#fff7e7;color:#633e30}
+#ui .lottery-ticket-under img{height:68px;width:68px;object-fit:contain}
+#ui .lottery-ticket-cover{background:repeating-linear-gradient(135deg,#ffe1a7,#ffe1a7 12px,#fff0ce 12px,#fff0ce 24px);border-right:3px dashed #b98362;cursor:grab;touch-action:none;user-select:none;font-size:40px;z-index:2}
+#ui .lottery-ticket-cover span{font-size:14px}
+#ui .lottery-winners{font-size:11px;background:#fff9e9dd;padding:7px;border-radius:9px;width:min(100%,420px);box-sizing:border-box;min-height:28px}
+#ui .lottery-result{min-height:24px}
+#ui .lottery-results{max-height:115px;overflow-y:auto}
+.lottery-alert{position:fixed;inset:0;margin:auto;border:0;background:transparent;padding:12px;max-width:min(90vw,360px);z-index:2147483647}
+.lottery-alert::backdrop{background:rgba(0,0,0,.55)}
+.lottery-alert-inner{border:3px solid #d6a777;border-radius:20px;padding:24px;background:#fff8ed;text-align:center;color:#603c30;box-shadow:0 12px 40px #0004}
+.lottery-alert-inner button{background:#ffe0a1;border:2px solid #b88762;border-radius:12px;padding:9px 30px;font-weight:800}
+
+#ui .lottery-reset{align-self:center;border:2px solid #a67857;border-radius:10px;background:#fff2d8;color:#6e422f;font-weight:800;padding:8px 12px}
+
+/* test.011: fixed lottery layout; only the results pane scrolls */
+#ui .lottery-screen{overflow:hidden!important;min-height:0!important}
+#ui .lottery-screen .lottery-scene{height:100%!important;min-height:0!important;overflow:hidden!important;padding-bottom:8px!important;display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:center!important;gap:5px!important;box-sizing:border-box!important}
+#ui .lottery-screen .lottery-momonga{display:none!important}
+#ui .lottery-screen .lottery-scene>h2{margin:0!important;flex-shrink:0}
+#ui .lottery-screen .lottery-status{margin:0!important;flex-shrink:0}
+#ui .lottery-screen .lottery-prizes{flex-shrink:0!important}
+#ui .lottery-screen .lottery-winners{flex-shrink:0!important;max-height:35px;overflow:hidden}
+#ui .lottery-screen .lottery-purchase{flex-shrink:0!important;margin:0!important}
+#ui .lottery-screen .lottery-ticket:not([hidden]){flex-shrink:0!important}
+#ui .lottery-screen .lottery-ticket[hidden]{display:none!important}
+#ui .lottery-screen .lottery-results{flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;scrollbar-gutter:stable;align-content:start;width:100%;max-width:420px}
+#ui .lottery-screen .lottery-result{flex-shrink:0}
+
+/* test.012 lottery image tear, balance and prominent prize */
+#ui .lottery-screen .lottery-heading{width:min(100%,420px);flex-shrink:0;background:rgba(72,40,29,.82);color:#fff9e9;border-radius:13px;padding:7px 12px;box-sizing:border-box;text-align:center;box-shadow:0 3px 12px #3c241c55}
+#ui .lottery-screen .lottery-heading h2{margin:0;font-size:19px;color:#fff!important;text-shadow:0 1px 3px #0009}
+#ui .lottery-screen .lottery-heading .lottery-status{color:#fff4d6!important;font-weight:800;text-shadow:0 1px 2px #0009}
+#ui .lottery-balance{display:flex;justify-content:center;align-items:center;gap:5px;font-size:13px;font-weight:800;color:#fff}
+#ui .lottery-balance img{height:19px;width:19px;object-fit:contain}
+#ui .lottery-ticket{width:min(100%,350px);height:180px;border:none;background:transparent;border-radius:10px}
+#ui .lottery-ticket-under{background:#fff5e6;border:2px dashed #8d513c;border-radius:12px}
+#ui .lottery-ticket-cover{background:transparent!important;border:none!important;display:block!important;inset:0!important;overflow:hidden;touch-action:none}
+#ui .lottery-ticket-top,#ui .lottery-ticket-peel{position:absolute;inset:0;background:url('/assets/lottery_ticket_custom.png') center/100% 100% no-repeat}
+#ui .lottery-ticket-top{clip-path:inset(0 0 45% 0);pointer-events:none}
+#ui .lottery-ticket-peel{clip-path:inset(55% 0 0 0);cursor:grab;touch-action:none;user-select:none;z-index:2;filter:drop-shadow(1px 3px 2px #5c332a55)}
+#ui .lottery-ticket-peel span{position:absolute;bottom:12%;left:7%;right:7%;font-size:11px;font-weight:900;color:#683b2c;background:#fff5e6d9;border-radius:8px;padding:4px;text-align:center;pointer-events:none}
+.lottery-win-dialog{position:fixed;inset:0;margin:auto;border:0;background:transparent;padding:12px;max-width:min(94vw,440px);z-index:2147483647}
+.lottery-win-dialog::backdrop{background:#000b}
+.lottery-win-card{display:flex;align-items:center;flex-direction:column;gap:12px;padding:24px 18px;background:#fff8e9;border:4px solid #e5aa77;border-radius:24px;text-align:center;color:#613e2e;box-shadow:0 15px 45px #0007}
+.lottery-win-card h2{font-size:26px;margin:0}.lottery-win-card img{height:min(40vh,230px);width:min(65vw,230px);object-fit:contain;filter:drop-shadow(0 8px 7px #0002)}
+.lottery-win-card strong{font-size:22px}.lottery-win-card p{font-weight:800;margin:0}.lottery-win-card button{background:#ffe0a1;border:2px solid #a87555;border-radius:12px;padding:12px 26px;font-weight:900}
+
+/* test.013: compact purchase state, no empty center until tickets are purchased */
+#ui .lottery-screen .lottery-scene{justify-content:flex-start!important}
+#ui .lottery-screen:not(.lottery-playing) .lottery-purchase{margin-top:10px!important}
+#ui .lottery-screen:not(.lottery-playing) .lottery-results{display:none!important}
+#ui .lottery-screen.lottery-playing .lottery-purchase{display:none!important}
+#ui .lottery-screen .lottery-prize{position:relative;overflow:hidden}
+#ui .lottery-screen .lottery-sold-stamp{position:absolute!important;left:6%!important;top:25%!important;width:88%!important;height:60%!important;object-fit:contain!important;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 2px #55332288)}
+#ui .lottery-screen .lottery-sold-out>img:not(.lottery-sold-stamp){opacity:.4}
+
+/* test.014: use supplied horizontal ticket artwork; only perforated lower area tears */
+#ui .lottery-ticket{width:min(100%,350px);height:auto;aspect-ratio:1600/900;overflow:hidden;background:transparent;border:0}
+#ui .lottery-ticket-cover{position:absolute;inset:0;overflow:hidden;touch-action:pan-y}
+#ui .lottery-ticket-top,#ui .lottery-ticket-peel{background-image:url('/assets/lottery_ticket_custom.png');background-position:center;background-repeat:no-repeat;background-size:100% 100%;position:absolute;inset:0}
+#ui .lottery-ticket-top{clip-path:inset(0 0 48% 0);pointer-events:none;z-index:1}
+#ui .lottery-ticket-peel{clip-path:inset(52% 0 0 0);touch-action:none;cursor:grab;z-index:2;filter:drop-shadow(2px 2px 2px #5c332a55)}
+#ui .lottery-ticket-peel span{position:absolute;bottom:13%;left:12%;right:12%;font-size:11px;background:#fff7e8d9;color:#683b2c}
+
+/* test.015: readable winner chips, no overlap, and concealed prizes */
+#ui .lottery-screen .lottery-winners{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:6px!important;max-height:none!important;min-height:36px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;background:rgba(65,36,27,.91)!important;color:#fffaf0!important;border:1px solid rgba(255,238,203,.7)!important;box-shadow:0 2px 8px #3a1e1980!important;padding:7px 9px!important;position:relative!important;z-index:1!important;}
+#ui .lottery-screen .lottery-winners>strong{flex:none;font-size:11px;color:#ffe2a4;text-shadow:0 1px 2px #000}
+#ui .lottery-screen .lottery-winner-item{flex:none;display:inline-flex;align-items:center;background:rgba(255,250,237,.17);border:1px solid #ffffff55;border-radius:8px;padding:4px 7px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 2px #000}
+#ui .lottery-screen .lottery-prizes,#ui .lottery-screen .lottery-ticket,#ui .lottery-screen .lottery-results,#ui .lottery-screen .lottery-purchase{position:relative;z-index:0}
+#ui .lottery-ticket-under{visibility:hidden}
+
+/* test.016: purchase confirmation and controlled quantity selector */
+#ui .lottery-purchase .lottery-count{pointer-events:none;cursor:default;background:#f4ede5;appearance:textfield;-moz-appearance:textfield}
+#ui .lottery-purchase .lottery-count::-webkit-inner-spin-button,#ui .lottery-purchase .lottery-count::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.lottery-confirm-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.lottery-multi-count{width:110px;max-width:100%;padding:9px;border:2px solid #c9a17e;border-radius:10px;font-size:18px;text-align:center}
+
+/* test.017: prevent iOS Safari input auto-zoom; display quantity cannot receive focus */
+#ui .lottery-purchase .lottery-count{font-size:16px!important;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#ui .lottery-purchase .lottery-count-display{display:inline-flex;align-items:center;gap:5px;font-size:14px}
+.lottery-multi-count{font-size:18px!important;touch-action:manipulation}
+
+/* test.019: My Room uses the same arrow and compact flyout layout as Activity/Shop. */
+.gacha-screen .myroom-menu { position:relative; width:100%; flex-shrink:0; overflow:visible !important; z-index:90; }
+.gacha-screen .myroom-menu > .nav-button { width:100%; }
+.gacha-screen .myroom-menu:has(.myroom-options:not([hidden])) { z-index:910 !important; }
+.gacha-screen .myroom-options[hidden] { display:none !important; }
+.gacha-screen .myroom-options:not([hidden]) { display:flex !important; flex-direction:column; gap:4px !important; position:absolute !important; left:calc(100% + 7px) !important; right:auto !important; top:0 !important; width:70px !important; z-index:950 !important; filter:drop-shadow(0 3px 5px #394b3a35); }
+.gacha-screen .myroom-options .nav-button { display:flex; align-items:center; justify-content:center; width:100% !important; min-height:24px !important; height:25px !important; padding:3px 2px !important; font-size:9px !important; line-height:1 !important; border-radius:11px !important; gap:2px !important; white-space:nowrap !important; background:linear-gradient(145deg,#fffdfa,#e9f9f0) !important; border-color:#b9e6d0 !important; box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25 !important; }
+.gacha-screen .myroom-options .chiikawa-tab-icon { display:inline-flex !important; width:15px !important; height:15px !important; flex:0 0 15px !important; align-items:center; justify-content:center; }
+.gacha-screen .myroom-options .chiikawa-tab-icon img { display:block; width:100% !important; height:100% !important; object-fit:contain; }
+.myroom-equipment-dialog { border:0; border-radius:20px; padding:0; max-width:min(92vw,420px); width:100%; background:#fffdf6; color:#493d35; box-shadow:0 15px 60px #0005; }
+.myroom-equipment-dialog::backdrop { background:#1c181a99; }
+.myroom-equipment-panel { position:relative; padding:24px 20px 20px; text-align:center; }
+.myroom-equipment-panel h2 { display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 20px; font-size:22px; }
+.myroom-equipment-panel h2 img { width:32px; height:32px; object-fit:contain; }
+.myroom-equipment-panel .forge-current { text-align:left; margin:0 auto 18px; }
+.myroom-equipment-close { position:absolute; right:10px; top:7px; border:0; background:transparent; font-size:30px; cursor:pointer; color:#78685c; }
+.myroom-equipment-note { font-size:14px; line-height:1.7; margin:16px 0; }
+.myroom-equipment-done { border:0; border-radius:12px; background:#a8dfc2; padding:11px 35px; font-weight:700; cursor:pointer; }
+
+/* test.021: align My Room arrow with Activity/Shop and mirror on expand. */
+.gacha-screen .nav-myroom { display:flex !important; align-items:center !important; }
+.gacha-screen .nav-myroom .menu-toggle-arrow { display:block; width:39px !important; height:39px !important; max-width:39px !important; flex:0 0 39px !important; object-fit:contain; margin-left:auto !important; transition:transform .16s ease; }
+.gacha-screen .nav-myroom[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1); }
+
+/* test.022: 장터 판매 분류 */
+.shop-sell-categories{display:flex;gap:6px;padding:8px 10px;flex-wrap:wrap;justify-content:center}
+.shop-sell-categories[hidden]{display:none!important}
+.shop-sell-categories button{border:2px solid #e5b8ca;border-radius:16px;background:#fff7fa;color:#664457;padding:7px 12px;font-weight:800;cursor:pointer}
+.shop-sell-categories button.is-active{background:#f7c8da;border-color:#d78baa}
+.shop-sell-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;padding:10px}
+.shop-sell-grid .storage-item{min-width:0}
+.shop-bulk-sell{display:block;margin:8px auto;padding:9px 12px;border-radius:14px;background:#ffe4ee;border:2px solid #d998b1;color:#704458;font-weight:800}
+.shop-bulk-sell:disabled{opacity:.5}
+
+/* test.023: compact right-side catalog entry matching daily/lottery chips. */
+.gacha-screen > .collection-peek,
+.gacha-screen > .collection-peek.collection-peek {
+  height:auto!important;min-height:0!important;max-height:none!important;
+  padding:0!important;gap:0!important;border:0!important;background:transparent!important;
+  box-shadow:none!important;overflow:visible!important;display:block!important;
+  top:calc(75px + var(--safe-t,0px))!important;
+}
+.gacha-screen > .collection-peek .catalog-lobby-tab {
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  gap:4px!important;width:100%!important;min-width:0!important;min-height:34px!important;
+  padding:4px 6px!important;box-sizing:border-box!important;border-radius:12px!important;
+  border:1px solid #e8b9cd!important;background:#fff0f6!important;color:#75536b!important;
+  font-size:10px!important;cursor:pointer;box-shadow:none!important;
+}
+.gacha-screen > .collection-peek .catalog-lobby-tab .reward-icon{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;height:20px!important;}
+.gacha-screen > .collection-peek .catalog-lobby-tab .reward-icon img{display:block!important;width:20px!important;height:20px!important;object-fit:contain!important;}
+.gacha-screen > .collection-peek .catalog-lobby-tab b{font-size:10px!important;white-space:nowrap!important;}
+.gacha-screen > .top-rewards {top:calc(115px + var(--safe-t,0px))!important;}
+.catalog-choice-card{max-width:380px!important;}
+.catalog-choice-list{display:grid;gap:12px;margin:20px 0 8px;}
+.catalog-choice-button{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:14px 16px;border:2px solid #f0c7d8;border-radius:18px;background:#fff6fa;color:#654c61;cursor:pointer;}
+.catalog-choice-button>img{width:40px;height:40px;object-fit:contain;flex:none;}
+.catalog-choice-button>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:4px;}
+.catalog-choice-button b{font-size:15px;}.catalog-choice-button small{font-size:12px;color:#987a8b;}
+.catalog-choice-button>span:last-child{font-size:28px;line-height:1;}
+
+/* test.027: marketplace controls stay fixed; only products scroll. */
+#ui .shop-screen.is-active .shop-panel {
+  top:34% !important; bottom:3% !important; max-height:none !important;
+  display:flex !important; flex-direction:column !important; overflow:hidden !important;
+  min-height:0 !important; padding:10px !important;
+}
+#ui .shop-panel .shop-tabs {flex:0 0 auto; margin-bottom:6px; position:relative; z-index:2;}
+#ui .shop-panel .shop-sell-categories:not([hidden]) {flex:0 0 auto; position:relative; z-index:2; padding:5px 0 9px; flex-wrap:nowrap;}
+#ui .shop-panel .shop-sell-categories button {flex:1; min-width:0; padding:9px 4px; touch-action:manipulation; position:relative; z-index:3;}
+#ui .shop-panel .shop-items {flex:1 1 auto; min-height:0; overflow-y:auto !important; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
+#ui .shop-panel .shop-sell-grid {grid-template-columns:repeat(2,minmax(0,1fr)); padding:6px 2px; gap:7px;}
+#ui .shop-panel .shop-sell-grid .storage-item {min-width:0;}
+@media(max-height:650px) {#ui .shop-screen.is-active .shop-panel {top:29% !important;}}
+
+/* test.029: raise the market panel and pin bulk sale above the scrolling products. */
+#ui .shop-screen.is-active .shop-panel {top:24% !important; bottom:2% !important;}
+#ui .shop-panel .shop-bulk-fixed:not([hidden]) {flex:0 0 auto; display:flex; justify-content:center; align-items:center; padding:2px 0 8px; border-bottom:1px solid #ead2dc; z-index:2;}
+#ui .shop-panel .shop-bulk-fixed[hidden] {display:none !important;}
+#ui .shop-panel .shop-bulk-fixed .shop-bulk-sell {margin:0; width:100%; max-width:360px; padding:8px 10px;}
+#ui .shop-panel .shop-items {flex:1 1 0 !important; min-height:0 !important; overflow-y:auto !important;}
+@media(max-height:650px) {#ui .shop-screen.is-active .shop-panel {top:20% !important;}}
+
+/* test.035: vertically center and enlarge the marketplace sales panel.
+   Equal breathing room above/below, with product list as the only scroll area. */
+#ui .shop-screen.is-active .shop-panel {
+  top:11% !important;
+  bottom:11% !important;
+  box-sizing:border-box;
+}
+@media (max-height:650px) {
+  #ui .shop-screen.is-active .shop-panel {
+    top:8% !important;
+    bottom:8% !important;
+  }
+}
+
+/* test.036: consistent typography across catalog selection labels and owned counts */
+#ui .catalog-choice-card .catalog-choice-button,
+#ui .catalog-choice-card .catalog-choice-button b,
+#ui .catalog-choice-card .catalog-choice-button small,
+#ui .catalog-choice-card .catalog-choice-button .collection-count,
+#ui .catalog-choice-card .catalog-choice-button .deco-count {
+  font-family: inherit !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+  letter-spacing: normal !important;
+  line-height: 1.4 !important;
+}
+#ui .catalog-choice-card .catalog-choice-button small { color: #987a8b; }
+#ui .catalog-choice-card .catalog-choice-button>span:last-child { font-size: 28px !important; }
+
+/* test.038: fixed weapon charm and accessory selection */
+.accessory-item{display:flex;align-items:center;gap:12px;padding:12px;background:#fff7fc;border:1px solid #efd9e8;border-radius:14px;margin:10px 0}
+.accessory-item>img{width:65px;height:75px;object-fit:contain;flex:none}
+.accessory-item>div{display:flex;flex-direction:column;gap:5px;font-size:13px}
+.accessory-item small{font-size:12px;color:#856a7a}
+.accessory-equip-section{margin:14px 0;text-align:left}
+.accessory-equip-button{display:block;width:100%;padding:10px;border:1px solid #dba6c5;border-radius:12px;background:#ffdeed;font-weight:700;color:#634057}
+.accessory-equip-button:disabled{opacity:.5}
+.accessory-weapon{position:relative;overflow:visible!important}
+.accessory-weapon .weapon-keyring{position:absolute!important;width:25%!important;height:32%!important;object-fit:contain!important;right:-7%!important;bottom:-10%!important;transform:none!important;animation:none!important;pointer-events:none}
+
+/* test.040 accessory collection: keep charm anchored at the weapon handle */
+.accessory-scroll{max-height:min(50vh,440px);overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+.accessory-equip-section .accessory-item{flex-wrap:wrap}
+.accessory-equip-section .accessory-item>div{flex:1;min-width:110px}
+.accessory-equip-section .accessory-equip-button{width:auto;flex:none;margin-left:auto}
+.accessory-weapon .weapon-keyring{position:absolute!important;right:-7%!important;bottom:-10%!important;width:25%!important;height:32%!important;pointer-events:none!important;animation:none!important;transform:none!important}
+
+/* test.043: accessory encyclopedia and equipment share the character/deco collection cards */
+.myroom-equipment-panel .accessory-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center;max-height:min(55vh,480px);overflow-y:auto;padding:4px;align-content:start}
+.myroom-equipment-panel .accessory-card{margin:0;min-width:0;padding:10px 5px;box-sizing:border-box}
+.myroom-equipment-panel .accessory-card .friend-avatar{width:min(100%,84px);margin-bottom:6px}
+.myroom-equipment-panel .accessory-card .friend-avatar img{width:100%;height:100%;object-fit:contain}
+.myroom-equipment-panel .accessory-card>b{font-size:12px;line-height:1.35;min-height:30px}
+.myroom-equipment-panel .accessory-card>small{font-size:10px;min-height:25px}
+.myroom-equipment-panel .accessory-card .friend-lock{margin-top:auto}
+.myroom-equipment-panel .accessory-card .accessory-equip-button{width:100%;margin-top:auto;padding:7px 2px;font-size:10px;flex:none}
+.myroom-equipment-panel .accessory-card.is-equipped{border:2px solid #e59bbd;background:#fff1f8}
+@media(max-width:380px){.myroom-equipment-panel .accessory-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* test.044: keyring attachment aligned with the weapon handle; visible in battle and badges */
+.accessory-weapon .weapon-keyring{right:1%!important;bottom:1%!important;width:25%!important;height:32%!important;object-fit:contain!important;transform:none!important;animation:none!important;z-index:5!important;filter:drop-shadow(0 1px 1px #563a2855)!important}
+.battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{position:absolute!important;right:1%!important;bottom:1%!important;width:25%!important;height:32%!important;max-width:none!important;transform:none!important;object-fit:contain!important;z-index:6!important}
+.user-weapon-badge .accessory-weapon>img.weapon-keyring{position:absolute!important;right:0!important;bottom:0!important;width:28%!important;height:42%!important;transform:none!important;z-index:5!important}
+
+/* test.045: preserve full keyring silhouettes inside encyclopedia/equipment cards */
+.myroom-equipment-panel .accessory-card .friend-avatar{width:100%!important;height:clamp(100px,18vw,145px)!important;min-height:100px!important;max-height:none!important;aspect-ratio:auto!important;overflow:visible!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:4px!important;box-sizing:border-box!important}
+.myroom-equipment-panel .accessory-card .friend-avatar img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;position:static!important;transform:none!important;clip-path:none!important}
+.myroom-equipment-panel .accessory-card{overflow:visible!important}
+.myroom-equipment-dialog .myroom-equipment-panel{max-height:90dvh;overflow-y:auto}
+
+/* test.046 alchemy */
+.alchemy-scroll{max-height:55vh;overflow:auto}.alchemy-group{border-bottom:1px solid #eee;padding:12px 0}.alchemy-group h3{display:flex;align-items:center;gap:8px;font-size:14px}.alchemy-group h3 img{width:36px;height:36px;object-fit:contain}.alchemy-recipes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.alchemy-recipe{display:flex;flex-direction:column;gap:4px;padding:9px;border:1px solid #ead6de;border-radius:10px;background:#fff8fa}.alchemy-recipe:disabled{opacity:.45}.alchemy-recipe small{font-size:11px}.alchemy-animation{display:flex;justify-content:space-around;animation:alchemy-merge .8s ease-in forwards}.alchemy-animation img{width:80px;height:80px;object-fit:contain}.alchemy-result{text-align:center}.alchemy-result-image{width:130px;height:130px;object-fit:contain;animation:alchemy-flash .8s ease-in-out infinite alternate}@keyframes alchemy-merge{to{gap:0;transform:scale(.65);opacity:0}}@keyframes alchemy-flash{to{filter:brightness(2) drop-shadow(0 0 22px gold)}}
+
+/* test.047: nudge charm slightly right/down; preserve tier glow over old rules */
+.accessory-weapon .weapon-keyring{right:2.5%!important;bottom:-0.5%!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa)) drop-shadow(0 0 3px var(--keyring-glow,#aaa))!important}
+.battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:2.5%!important;bottom:-0.5%!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
+.user-weapon-badge .accessory-weapon>img.weapon-keyring{right:1.5%!important;bottom:-1%!important;filter:drop-shadow(0 0 7px var(--keyring-glow,#aaa))!important}
+
+/* test.048: representative +20%, lottery ticket icon */
+.gacha-screen .toon-hero{width:min(59.30496cqw,330.7392px)!important;}
+#ui .lottery-title-icon{display:inline-block;width:31px;height:22px;object-fit:contain;vertical-align:middle;margin-right:5px;}
+#ui .rps-lobby-tab .reward-icon img{object-fit:contain!important;}
+
+/* test.049: compact alchemy and two-charm collision reveal */
+.alchemy-panel{max-width:560px!important}
+.alchemy-description{font-size:12px;margin:2px 0 9px!important}
+.alchemy-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:8px 0}
+.alchemy-pick{min-width:0;border:1px solid #e9dce1;border-radius:10px;background:#fff;padding:4px 2px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:11px;cursor:pointer}
+.alchemy-pick.selected{border:2px solid #ec8bb2;background:#fff0f5}
+.alchemy-pick img{width:36px;height:42px;object-fit:contain}
+.alchemy-pick span{white-space:nowrap;font-size:10px}
+.alchemy-inventory{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.alchemy-inventory>div{display:flex;align-items:center;gap:6px;background:#fff5f8;border:1px solid #efd6df;border-radius:10px;padding:7px;min-width:0}
+.alchemy-inventory img{width:34px;height:34px;object-fit:contain;flex-shrink:0}
+.alchemy-inventory span{font-size:11px;display:flex;flex-direction:column;min-width:0}
+.alchemy-inventory strong{font-size:15px;color:#a54770}
+.alchemy-panel .alchemy-recipes{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.alchemy-panel .alchemy-recipe{padding:8px 5px;gap:2px;min-height:68px}
+.alchemy-panel .alchemy-recipe.is-owned{background:#f4f4f4;opacity:.78;border-color:#ddd}
+.alchemy-panel .alchemy-recipe.is-owned strong{color:#57846a}
+.alchemy-result .alchemy-animation{position:relative;width:min(100%,320px);height:155px;margin:8px auto;display:block;animation:none;overflow:hidden}
+.alchemy-result .alchemy-animation img{position:absolute;top:20px;width:100px;height:110px;object-fit:contain;animation-duration:1.05s;animation-fill-mode:forwards;animation-timing-function:ease-in-out}
+.alchemy-result .alchemy-animation img:first-child{left:0;animation-name:alchemy-left-collision}
+.alchemy-result .alchemy-animation img:nth-child(2){right:0;animation-name:alchemy-right-collision}
+.alchemy-impact{position:absolute;left:50%;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;transform:translate(-50%,-50%) scale(0);animation:alchemy-white-impact .65s .72s ease-out forwards;pointer-events:none}
+.alchemy-reveal{opacity:0;animation:alchemy-reveal-in .4s 1.05s forwards}
+.alchemy-result .alchemy-result-image{animation:none!important;filter:drop-shadow(0 0 9px var(--alchemy-grade-glow))!important}
+@keyframes alchemy-left-collision{0%{transform:translateX(0);opacity:1}72%{transform:translateX(105px);opacity:1}85%,100%{transform:translateX(105px) scale(.55);opacity:0}}
+@keyframes alchemy-right-collision{0%{transform:translateX(0);opacity:1}72%{transform:translateX(-105px);opacity:1}85%,100%{transform:translateX(-105px) scale(.55);opacity:0}}
+@keyframes alchemy-white-impact{0%,15%{transform:translate(-50%,-50%) scale(0);opacity:0}40%{transform:translate(-50%,-50%) scale(22);opacity:1}100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
+@keyframes alchemy-reveal-in{to{opacity:1}}
+.battle-field>.battle-weapon-strike>b{display:none!important}
+
+/* test.050: centered, larger, slower alchemy sequence; no vertical jump */
+.alchemy-result{width:min(94vw,520px)!important;max-width:520px!important;box-sizing:border-box}
+.alchemy-result .alchemy-stage{position:relative;width:100%;height:clamp(270px,58vw,370px);margin:12px auto 16px;overflow:hidden;isolation:isolate}
+.alchemy-result .alchemy-animation{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;overflow:visible!important}
+.alchemy-result .alchemy-animation img{position:absolute!important;top:50%!important;width:clamp(125px,34%,180px)!important;height:clamp(180px,85%,310px)!important;object-fit:contain!important;animation-duration:2.2s!important;animation-timing-function:cubic-bezier(.45,0,.35,1)!important;animation-fill-mode:forwards!important;transform-origin:center center}
+.alchemy-result .alchemy-animation img:first-child{left:0!important;animation-name:alchemy050-left!important}
+.alchemy-result .alchemy-animation img:nth-child(2){right:0!important;animation-name:alchemy050-right!important}
+.alchemy-result .alchemy-impact{top:50%!important;left:50%!important;animation:alchemy050-impact .85s 1.78s ease-out both!important;z-index:3}
+.alchemy-result .alchemy-reveal{position:absolute!important;inset:0!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;animation:alchemy050-reveal .9s 2.25s ease-out forwards!important;z-index:4;pointer-events:none}
+.alchemy-result .alchemy-reveal .alchemy-result-image{width:clamp(170px,53%,245px)!important;height:clamp(195px,78%,285px)!important;object-fit:contain!important;flex:0 1 auto;min-height:0}
+.alchemy-result .alchemy-reveal h3{margin:0;font-size:18px}.alchemy-result .alchemy-reveal p{margin:0;font-size:14px}
+@keyframes alchemy050-left{0%,12%{transform:translateY(-50%) translateX(0) scale(1);opacity:1}78%{transform:translateY(-50%) translateX(100%) scale(1);opacity:1}88%,100%{transform:translateY(-50%) translateX(100%) scale(.7);opacity:0}}
+@keyframes alchemy050-right{0%,12%{transform:translateY(-50%) translateX(0) scale(1);opacity:1}78%{transform:translateY(-50%) translateX(-100%) scale(1);opacity:1}88%,100%{transform:translateY(-50%) translateX(-100%) scale(.7);opacity:0}}
+@keyframes alchemy050-impact{0%,15%{transform:translate(-50%,-50%) scale(0);opacity:0}42%{transform:translate(-50%,-50%) scale(26);opacity:1}100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
+@keyframes alchemy050-reveal{0%{opacity:0;transform:scale(.75)}100%{opacity:1;transform:scale(1)}}
+/* Unified weapon/keyring anchor across forge, equipment, and battle. */
+.forge-current .accessory-weapon,.battle-field .battle-weapon-strike.accessory-weapon{position:relative!important;overflow:visible!important}
+.forge-current .accessory-weapon>img:first-child,.battle-field .battle-weapon-strike.accessory-weapon>img:first-child{object-fit:contain!important}
+.forge-current .accessory-weapon>img.weapon-keyring,.battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{position:absolute!important;right:2%!important;bottom:0%!important;width:25%!important;height:32%!important;object-fit:contain!important;transform:none!important;max-width:none!important;z-index:7!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
+
+/* test.051: 30% faster weeds, visible remaining time */
+#ui .wild-weed-pick.is-holding .wild-weed-progress{animation-duration:1.68s!important}
+#ui .wild-weed-pick.is-holding.is-golden .wild-weed-progress{animation-duration:2.52s!important}
+#ui .wild-weed-pick .wild-weed-hold-text{bottom:calc(100% + 6px)!important;min-width:106px;text-align:center;font-variant-numeric:tabular-nums}
+/* Compact alchemy result modal with precise symmetrical center collision */
+.alchemy-dialog .alchemy-result{max-height:min(92dvh,720px)!important;overflow:hidden!important;padding:12px 16px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:space-between!important}
+.alchemy-dialog .alchemy-result h2{margin:0!important;font-size:18px!important}
+.alchemy-dialog .alchemy-result .alchemy-stage{width:100%!important;height:min(58dvh,380px)!important;margin:2px auto!important;flex:1 1 auto!important;min-height:170px!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img{width:44%!important;max-width:190px!important;height:85%!important;top:50%!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:first-child{left:0!important;animation-name:alchemy051-left!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:nth-child(2){right:0!important;animation-name:alchemy051-right!important}
+.alchemy-dialog .alchemy-result .alchemy-reveal .alchemy-result-image{width:min(60%,230px)!important;height:75%!important}
+.alchemy-dialog .alchemy-result .myroom-equipment-done{margin:4px auto 0!important;flex:0 0 auto!important}
+@keyframes alchemy051-left{0%,12%{transform:translate(0,-50%);opacity:1}78%{transform:translate(calc(50% + 6.82%),-50%);opacity:1}88%,100%{transform:translate(calc(50% + 6.82%),-50%) scale(.7);opacity:0}}
+@keyframes alchemy051-right{0%,12%{transform:translate(0,-50%);opacity:1}78%{transform:translate(calc(-50% - 6.82%),-50%);opacity:1}88%,100%{transform:translate(calc(-50% - 6.82%),-50%) scale(.7);opacity:0}}
+
+.alchemy-dialog .alchemy-result .alchemy-animation img:first-child{left:50%!important;right:auto!important;animation-name:alchemy051-center-left!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:nth-child(2){left:50%!important;right:auto!important;animation-name:alchemy051-center-right!important}
+@keyframes alchemy051-center-left{0%,12%{transform:translate(-135%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+@keyframes alchemy051-center-right{0%,12%{transform:translate(35%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+
+/* test.052: result dialog fits the visible screen, with no horizontal/vertical scrollbars. */
+.alchemy-dialog:has(.alchemy-result){
+  box-sizing:border-box!important;
+  width:min(420px,calc(100vw - 24px))!important;
+  max-width:calc(100vw - 24px)!important;
+  max-height:calc(100dvh - 24px)!important;
+  margin:auto!important;
+  overflow:hidden!important;
+}
+.alchemy-dialog .alchemy-result{
+  box-sizing:border-box!important;
+  width:100%!important;max-width:100%!important;
+  height:min(520px,calc(100dvh - 32px))!important;
+  max-height:calc(100dvh - 32px)!important;
+  min-height:0!important;overflow:hidden!important;
+  padding:12px 14px 14px!important;gap:4px!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-stage{
+  box-sizing:border-box!important;min-width:0!important;
+  width:100%!important;max-width:100%!important;
+  height:auto!important;min-height:0!important;
+  flex:1 1 0!important;overflow:hidden!important;
+  margin:0!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-animation{
+  box-sizing:border-box!important;max-width:100%!important;
+  overflow:hidden!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-reveal{
+  box-sizing:border-box!important;max-width:100%!important;overflow:hidden!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-reveal .alchemy-result-image{
+  max-width:100%!important;max-height:72%!important;min-height:0!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-reveal h3{font-size:clamp(13px,4vw,18px)!important;line-height:1.25!important}
+.alchemy-dialog .alchemy-result .alchemy-reveal p{font-size:13px!important}
+.alchemy-dialog .alchemy-result .myroom-equipment-done{max-width:100%!important}
+@media(max-height:500px){
+ .alchemy-dialog .alchemy-result{padding:6px 12px!important}
+ .alchemy-dialog .alchemy-result h2{font-size:15px!important}
+ .alchemy-dialog .alchemy-result .alchemy-reveal .alchemy-result-image{max-height:62%!important}
+}
+
+/* test.053: lower the weed hold timer slightly, while keeping it above the weed. */
+#ui .wild-weed-pick .wild-weed-hold-text{bottom:calc(100% - 3px)!important}
+/* Keep battle charm and forge/equipment charm aligned to the same weapon anchor. */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring,
+#ui .forge-current .accessory-weapon>img.weapon-keyring{
+ right:2%!important;bottom:0%!important;width:25%!important;height:32%!important;
+ object-fit:contain!important;transform:none!important;max-width:none!important;
+}
+/* The alchemy navigation icon uses the face portion of the Shisa keyring artwork. */
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon{overflow:hidden!important;position:relative!important}
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon img{position:absolute!important;width:175%!important;height:175%!important;max-width:none!important;object-fit:contain!important;left:-37.5%!important;top:-50%!important}
+/* Four inventory tabs fit on narrow screens without horizontal scrolling. */
+#ui .storage-screen .auth-tabs.user-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:3px!important}
+#ui .storage-screen .auth-tabs.user-tabs .auth-tab{min-width:0!important;padding:7px 2px!important;font-size:clamp(9px,2.3vw,12px)!important;white-space:nowrap!important}
+#ui .storage-screen .auth-tabs.user-tabs .storage-tab-face{width:17px!important;height:17px!important;margin-right:1px!important}
+#ui .storage-pic.is-accessory{background:#fff8ef;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#ui .storage-pic.is-accessory img{width:100%;height:100%;object-fit:contain}
+
+/* test.054: center incoming charms without clipping their silhouettes. */
+.alchemy-dialog .alchemy-result .alchemy-stage,.alchemy-dialog .alchemy-result .alchemy-animation{overflow:visible!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img{width:38%!important;max-width:155px!important;height:80%!important;object-fit:contain!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:first-child{animation-name:alchemy054-left!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:nth-child(2){animation-name:alchemy054-right!important}
+@keyframes alchemy054-left{0%,12%{transform:translate(-125%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+@keyframes alchemy054-right{0%,12%{transform:translate(25%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+/* Lower remaining-time bubble closer to the weed. */
+#ui .wild-weed-pick .wild-weed-hold-text{bottom:calc(100% - 12px)!important}
+/* Raise the keyring slightly on the battle weapon only. */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{bottom:7%!important}
+/* Static icons for encyclopedia, roulette and Geongi lottery only. */
+#ui .gacha-screen .catalog-lobby-tab .reward-icon,
+#ui .gacha-screen .roulette-chip .reward-icon,
+#ui .gacha-screen .rps-lobby-tab .reward-icon,
+#ui .gacha-screen .catalog-lobby-tab .reward-icon img,
+#ui .gacha-screen .roulette-chip .reward-icon img,
+#ui .gacha-screen .rps-lobby-tab .reward-icon img{animation:none!important;transform:none!important;transition:none!important}
+
+/* test.055: in-game alchemy confirmation and battle keyring alignment */
+.alchemy-confirm-dialog{z-index:100020!important}
+.alchemy-confirm-dialog::backdrop{background:rgba(25,20,30,.55)}
+.alchemy-confirm-panel{width:min(90vw,350px)!important;max-height:85dvh!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;text-align:center!important;padding:22px!important}
+.alchemy-confirm-panel h2{margin:0!important;font-size:20px!important}
+.alchemy-confirm-image{width:105px!important;height:125px!important;object-fit:contain!important}
+.alchemy-confirm-panel p{margin:0!important;line-height:1.6!important}
+.alchemy-confirm-actions{display:flex!important;justify-content:center!important;gap:12px!important;width:100%!important}
+.alchemy-confirm-actions button{flex:1!important;max-width:135px!important}
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{bottom:12%!important}
+
+/* test.056: compact, centered weapon accessory reward popup */
+#ui dialog .accessory-win-panel,dialog .accessory-win-panel{width:min(92vw,390px)!important;max-width:100%!important;box-sizing:border-box!important;padding:20px 16px!important;text-align:center!important}
+#ui dialog .accessory-win-panel .accessory-item,dialog .accessory-win-panel .accessory-item{display:grid!important;grid-template-columns:120px minmax(0,1fr)!important;gap:10px!important;align-items:center!important;justify-content:center!important;padding:12px 10px!important;margin:14px 0 12px!important;box-sizing:border-box!important;width:100%!important}
+#ui dialog .accessory-win-panel .accessory-item>img,dialog .accessory-win-panel .accessory-item>img{width:120px!important;height:152px!important;max-width:100%!important;object-fit:contain!important;object-position:center!important}
+#ui dialog .accessory-win-panel .accessory-item>div,dialog .accessory-win-panel .accessory-item>div{min-width:0!important;align-items:flex-start!important;text-align:left!important;gap:8px!important;font-size:14px!important}
+#ui dialog .accessory-win-panel .accessory-item b,dialog .accessory-win-panel .accessory-item b{font-size:16px!important}
+#ui dialog .accessory-win-panel .myroom-equipment-done,dialog .accessory-win-panel .myroom-equipment-done{margin:0 auto!important}
+@media(max-width:360px){dialog .accessory-win-panel .accessory-item{grid-template-columns:95px minmax(0,1fr)!important}dialog .accessory-win-panel .accessory-item>img{width:95px!important;height:130px!important}}
+/* test.056: battle charm a little higher and farther right */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:5%!important;bottom:16%!important}
+
+/* test.057: move the battle keyring slightly right, keep height unchanged. */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:8%!important;bottom:16%!important}
+/* Show Shisa's face directly in the alchemy navigation icon. */
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon img{position:static!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;left:auto!important;top:auto!important}
+
+/* test.058: battle charm offset and user profile tabs */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:12%!important;bottom:16%!important}
+#ui .user-profile-tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+#ui .user-profile-tabs .auth-tab{min-width:0!important;white-space:normal!important;font-size:12px!important;padding:8px 4px!important}
+#ui .user-grid.accessory-card-grid .accessory-card-image img{object-fit:contain!important;max-height:100%!important}
+
+/* test.059: moving right means reducing right, not increasing it. */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:-13%!important;bottom:16%!important}
+/* Same card and full-height keyring art as the owner's accessory encyclopedia. */
+#ui .user-grid.profile-accessory-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;align-content:start!important;overflow-x:hidden!important}
+#ui .user-grid.profile-accessory-grid .friend-card.accessory-card{min-width:0!important;box-sizing:border-box!important;overflow:visible!important;text-align:center!important}
+#ui .user-grid.profile-accessory-grid .friend-avatar{width:100%!important;height:clamp(100px,18vw,145px)!important;min-height:100px!important;max-height:none!important;aspect-ratio:auto!important;overflow:visible!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:4px!important;box-sizing:border-box!important}
+#ui .user-grid.profile-accessory-grid .friend-avatar img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;position:static!important;transform:none!important;clip-path:none!important}
+@media(max-width:380px){#ui .user-grid.profile-accessory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon{overflow:hidden!important}
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon img{position:static!important;display:block!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;left:auto!important;top:auto!important}
+
+/* test.066: Halloween limited-edition encyclopedia labels */
+.collection-grid .friend-card .halloween-limited-label{box-sizing:border-box;max-width:100%;margin:5px 0 2px;padding:5px 7px;border:1px solid #e2a258;border-radius:9px;background:#fff0d8;color:#87441e;font-size:clamp(9px,2.5vw,11px);font-weight:800;line-height:1.35;white-space:normal;overflow-wrap:break-word;text-align:center;box-shadow:0 2px 6px #8b4b2420}
+.collection-grid .friend-card.is-locked .halloween-limited-label{opacity:1;filter:none}
+
+/* test.067: compact 4-column Geongi lottery on small mobile screens, without page scroll. */
+#ui .lottery-screen .lottery-scene{gap:clamp(2px,.45dvh,5px)!important;padding:3px 5px max(4px,env(safe-area-inset-bottom))!important;overflow:hidden!important;}
+#ui .lottery-screen .lottery-heading{padding:clamp(3px,.6dvh,7px) 6px!important;}
+#ui .lottery-screen .lottery-heading h2{font-size:clamp(15px,2.4dvh,19px)!important;line-height:1.15!important;}
+#ui .lottery-screen .lottery-status,#ui .lottery-screen .lottery-balance{font-size:clamp(10px,1.7dvh,13px)!important;line-height:1.2!important;}
+#ui .lottery-screen .lottery-prizes{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:clamp(2px,.5dvh,5px)!important;max-width:420px!important;width:100%!important;}
+#ui .lottery-screen .lottery-prize{min-width:0!important;min-height:0!important;box-sizing:border-box!important;padding:clamp(2px,.4dvh,5px) 2px!important;gap:1px!important;justify-content:center!important;line-height:1.15!important;font-size:clamp(9px,1.55dvh,11px)!important;}
+#ui .lottery-screen .lottery-prize>b{font-size:clamp(11px,1.7dvh,14px)!important;line-height:1.1!important;}
+#ui .lottery-screen .lottery-prize>img:not(.lottery-sold-stamp){width:clamp(24px,4.4dvh,45px)!important;height:clamp(24px,4.4dvh,45px)!important;flex:none!important;object-fit:contain!important;}
+#ui .lottery-screen .lottery-prize>span{font-size:clamp(9px,1.45dvh,11px)!important;line-height:1.15!important;overflow-wrap:anywhere!important;word-break:keep-all!important;text-align:center!important;}
+#ui .lottery-screen .lottery-prize>small{font-size:clamp(9px,1.4dvh,10px)!important;line-height:1.15!important;margin-top:auto!important;}
+#ui .lottery-screen .lottery-reset{font-size:clamp(11px,1.7dvh,14px)!important;padding:clamp(3px,.6dvh,8px) 8px!important;line-height:1.2!important;}
+#ui .lottery-screen .lottery-winners{min-height:0!important;padding:clamp(3px,.5dvh,7px) 6px!important;}
+#ui .lottery-screen .lottery-purchase{padding:clamp(3px,.5dvh,8px)!important;gap:3px!important;}
+#ui .lottery-screen .lottery-purchase button{padding:clamp(3px,.6dvh,8px) 6px!important;}
+#ui .lottery-screen .lottery-price{margin:0!important;font-size:clamp(12px,1.8dvh,16px)!important;line-height:1.2!important;}
+@media (max-height:740px){#ui .lottery-screen .lottery-prize>img:not(.lottery-sold-stamp){height:clamp(20px,3.5dvh,30px)!important;width:clamp(20px,3.5dvh,30px)!important;}#ui .lottery-screen .lottery-prize{padding:2px 1px!important;}#ui .lottery-screen .lottery-winners{font-size:10px!important;}}
+
+/* test.070: lottery summary heading: prevent global prize-image styling from enlarging the icon */
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card h2{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:8px;width:100%;max-width:100%;font-size:clamp(19px,5vw,26px);line-height:1.3;word-break:keep-all;white-space:nowrap;box-sizing:border-box}
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card h2 .lottery-title-icon{display:block;position:static;flex:0 0 auto;width:clamp(34px,12vw,66px)!important;height:clamp(27px,9vw,52px)!important;max-width:66px!important;max-height:52px!important;object-fit:contain!important;filter:none!important;margin:0!important}
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card{width:min(92vw,420px);max-width:100%;box-sizing:border-box;padding:20px 14px;overflow:hidden}
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card > div{box-sizing:border-box;max-width:100%}
+
+/* test.071: supplied autumn lobby artwork and legible lottery prize names */
+.gacha-screen,.gacha-screen.is-active{background-image:url('/lobby_autumn_071.png')!important;background-color:#ffce76!important;background-position:center center!important;background-size:cover!important;background-repeat:no-repeat!important}
+#ui .lottery-screen .lottery-prize>span{display:block!important;width:100%!important;min-width:0!important;overflow-wrap:break-word!important;word-break:keep-all!important;text-align:center!important;font-size:clamp(9px,1.35dvh,11px)!important;line-height:1.15!important}
+
+/* test.072: place the lobby avatar over the picnic blanket and machine over the stump.
+   Hide only the decorative oval floor; retain the avatar's name badge. */
+#ui .gacha-screen .toon-stage .toon-floor{display:none!important;}
+#ui .gacha-screen .toon-stage .toon-hero{left:calc(50% - 26px)!important;bottom:calc(8% + 24px)!important;}
+#ui .gacha-screen .toon-stage .toon-hero-name{left:calc(50% - 26px)!important;bottom:calc(8% + 18px)!important;}
+#ui .gacha-screen .toon-stage .toon-machine{right:calc(max(8%, 50% - 250px) + 20px)!important;bottom:calc(30% + 20px)!important;}
+@media(max-width:480px){
+ #ui .gacha-screen .toon-stage .toon-hero{left:calc(50% - 20px)!important;bottom:calc(8% + 16px)!important;}
+ #ui .gacha-screen .toon-stage .toon-hero-name{left:calc(50% - 20px)!important;bottom:calc(8% + 10px)!important;}
+ #ui .gacha-screen .toon-stage .toon-machine{right:calc(8% + 15px)!important;bottom:calc(30% + 16px)!important;}
+}
+
+/* test.073: hide the lobby representative character's name badge only. */
+#ui .gacha-screen .toon-stage .toon-hero-name{display:none!important;}
+
+/* test.074: roulette artwork and first-login update notice */
+#ui .gacha-screen .roulette-chip .reward-icon img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important;animation:none!important;transform:none!important}
+#ui .update-notice-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;background:rgba(28,22,29,.7)!important;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important}
+#ui .update-notice-panel{width:min(100%,440px)!important;max-height:100%!important;background:#fff9ed!important;border:3px solid #b78c69!important;border-radius:22px!important;box-shadow:0 14px 40px #0005!important;overflow:hidden!important;box-sizing:border-box!important}
+#ui .update-notice-scroll{max-height:calc(100dvh - 65px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:24px 22px 22px!important;box-sizing:border-box!important;color:#513c32!important;font-size:13px!important;line-height:1.7!important;text-align:left!important}
+#ui .update-notice-scroll h2{font-size:23px!important;text-align:center!important;margin:0 0 4px!important;color:#573b31!important}
+#ui .update-notice-scroll .update-notice-date{text-align:center!important;font-weight:700!important;margin:0 0 18px!important}
+#ui .update-notice-scroll h3{font-size:15px!important;line-height:1.45!important;margin:20px 0 8px!important;color:#684331!important}
+#ui .update-notice-scroll p{margin:10px 0!important}
+#ui .update-notice-scroll ul{padding-left:20px!important;margin:6px 0!important;list-style:disc!important}
+#ui .update-notice-scroll li{margin:5px 0!important;display:list-item!important}
+#ui .update-notice-close{display:block!important;margin:26px auto 2px!important;width:160px!important;max-width:100%!important;min-height:44px!important;border:2px solid #b88c69!important;border-radius:14px!important;background:#f9dfa8!important;color:#513a2c!important;font-size:16px!important;font-weight:800!important;cursor:pointer!important}
+
+/* test.075: iOS update notice: independently scrollable dialog */
+#ui .update-notice-overlay {
+  height:100dvh!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+  touch-action:pan-y!important;
+}
+#ui .update-notice-panel {
+  display:flex!important;
+  flex-direction:column!important;
+  height:auto!important;
+  max-height:calc(100dvh - 28px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  touch-action:pan-y!important;
+}
+#ui .update-notice-scroll {
+  display:block!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:scroll!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain!important;
+  touch-action:pan-y!important;
+  pointer-events:auto!important;
+  position:relative!important;
+}
+#ui .update-notice-scroll * {touch-action:pan-y!important;}

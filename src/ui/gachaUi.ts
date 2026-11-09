@@ -1,3 +1,15 @@
+const WEAPON_ACCESSORIES = [
+  {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
+  {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},
+  {id:'usagi_keyring',name:'우사기 키링',image:'/assets/accessories/usagi_keyring.png?v=040'},
+  {id:'momonga_keyring',name:'모몽가 키링',image:'/assets/accessories/momonga_keyring.png?v=040'},
+  {id:'kurimanju_keyring',name:'쿠리만쥬 키링',image:'/assets/accessories/kurimanju_keyring.png?v=040'},
+  {id:'shisa_keyring',name:'시사 키링',image:'/assets/accessories/shisa_keyring.png?v=040'},
+  {id:'kani_keyring',name:'카니 키링',image:'/assets/accessories/kani_keyring.png?v=040'},
+  {id:'rakko_keyring',name:'랏코 키링',image:'/assets/accessories/rakko_keyring.png?v=040'},
+ ] as const
+const ALCHEMY_GRADES=[{id:'normal',name:'노말',power:1,color:'#aaa'},{id:'rare',name:'레어',power:3,cost:2,fragments:20,color:'#4ba7ff'},{id:'epic',name:'에픽',power:5,cost:5,fragments:50,color:'#ff5050'},{id:'unique',name:'유니크',power:10,cost:10,fragments:100,color:'#ad59ff'},{id:'legendary',name:'레전더리',power:20,cost:20,fragments:200,color:'#ffd337'},{id:'transcendent',name:'초월',power:30,cost:40,fragments:400,color:'#ff8500'}] as const
+const accessoryInfo=(id:string|null)=>WEAPON_ACCESSORIES.find(item=>item.id===id)
 // Enhancement aura tiers are visual-only and never affect weapon stats.
 function weaponAuraClass(level: number): string {
   return level >= 20 ? 'aura-20' : level >= 17 ? 'aura-17' : level >= 15 ? 'aura-15' : level >= 13 ? 'aura-13' : level >= 10 ? 'aura-10' : ''
@@ -18,7 +30,7 @@ const MACHINE_SPIN_SECONDS = 1.35
 const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -42,14 +54,16 @@ export class GachaUi {
   private resultKind: 'char' | 'deco' = 'char'
   private house!: HouseView
   private houseBadgeBusy = false
-  private userTab: 'char' | 'deco' | 'house' = 'char'
+  private userTab: 'char' | 'deco' | 'accessory' | 'house' = 'char'
   private mailTab: 'in' | 'sent' = 'in'
   private wildWeedHold = 0
+  private wildWeedCountdown = 0
   private wildWeedTargetId = 0
   private wildWeedBusy = false
   private wildWeedLastSlot = -1
   private shopTab: 'buy' | 'sell' = 'buy'
-  private storageTab: 'char' | 'deco' | 'inventory' = 'char'
+  private storageTab: 'char' | 'deco' | 'accessory' | 'inventory' = 'char'
+  private shopSellTab: 'char' | 'deco' | 'inventory' = 'char'
   private noticeTimer = 0
   private chatTimer = 0
   private chatBadgeTimer = 0
@@ -70,6 +84,13 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
+  private lotteryState: {remaining:number[];total:number;price:number;winners?:{nickname:string;grade:string}[]}|null=null
+  private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
+  private lotteryRevealed=0
+  private lotteryTimer=0
+  private lotteryBusy=false
+  private lotteryPointerStart=0
+  private lotteryRefreshing=0
   private rpsState: RpsState | null = null
   private rpsTimer = 0
   private rpsResolving = false
@@ -102,9 +123,15 @@ export class GachaUi {
       target.classList.add('is-holding')
       this.wildWeedTargetId=Number(target.dataset.weedId)
       window.clearTimeout(this.wildWeedHold)
-      this.wildWeedHold=window.setTimeout(()=>{target.classList.remove('is-holding');void this.pickWildWeed(Number(target.dataset.weedId))},target.dataset.weedType==='golden'?3600:2400)
+      const duration=target.dataset.weedType==='golden'?2520:1680
+      const started=performance.now()
+      const label=target.querySelector<HTMLElement>('.wild-weed-hold-text')
+      if(label)label.textContent=`남은 시간 ${(duration/1000).toFixed(1)}초`
+      const update=()=>{if(!target.classList.contains('is-holding'))return;const remain=Math.max(0,(duration-(performance.now()-started))/1000);if(label)label.textContent=`남은 시간 ${remain.toFixed(1)}초`;this.wildWeedCountdown=window.setTimeout(update,50)}
+      window.clearTimeout(this.wildWeedCountdown);update()
+      this.wildWeedHold=window.setTimeout(()=>{window.clearTimeout(this.wildWeedCountdown);target.classList.remove('is-holding');void this.pickWildWeed(Number(target.dataset.weedId))},duration)
     })
-    const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedHold);this.root.querySelectorAll('.wild-weed-pick').forEach(el=>el.classList.remove('is-holding'))}
+    const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedCountdown);window.clearTimeout(this.wildWeedHold);this.root.querySelectorAll('.wild-weed-pick').forEach(el=>el.classList.remove('is-holding'))}
     window.addEventListener('pointerup',cancelWeedHold)
     window.addEventListener('pointercancel',cancelWeedHold)
     window.addEventListener('blur',cancelWeedHold)
@@ -151,6 +178,8 @@ export class GachaUi {
   }
 
   show(screen: Screen): void {
+    // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
+    if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.skipLottery()
     this.screen = screen
     if (screen !== 'users') {
       const usersCard = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card')
@@ -167,17 +196,8 @@ export class GachaUi {
     window.clearInterval(this.expeditionTimer)
     if (screen === 'expedition') {this.expeditionPendingDamage.clear();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
     window.clearInterval(this.rpsTimer)
-    if (screen === 'rps') {
-      this.rpsState=null
-      const start=this.root.querySelector<HTMLButtonElement>('[data-action="rps-start"]')
-      if(start)start.hidden=true
-      this.root.querySelector<HTMLElement>('.rps-screen')?.classList.remove('rps-resting')
-      this.root.querySelector<HTMLElement>('.rps-screen')?.classList.add('rps-loading')
-      const message=this.root.querySelector<HTMLElement>('.rps-message')
-      if(message)message.textContent='' // Avoid a transient loading message
-      void this.openRps()
-      this.rpsTimer=window.setInterval(()=>void this.tickRps(),120)
-    }
+    window.clearInterval(this.lotteryTimer)
+    if(screen==='rps'){void this.openLottery();window.clearInterval(this.lotteryRefreshing);this.lotteryRefreshing=window.setInterval(()=>{if(this.screen==='rps'&&!this.lotteryResults.length)void this.refreshLotteryLive()},5000)}else{window.clearInterval(this.lotteryRefreshing)}
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
     if (screen === 'claw') { this.restoreClawToys(); this.resetClawToExit(); this.renderClaw() }
@@ -190,6 +210,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
+    if (screen === 'title' && this.store.user) window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
     if (screen === 'title') { void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
@@ -203,6 +224,41 @@ export class GachaUi {
     const bounded = Math.max(0.05, Math.min(1, progress))
     if (bar) bar.style.transform = `scaleX(${bounded})`
     this.root.querySelector('.boot-track')?.setAttribute('aria-valuenow', String(Math.round(bounded * 100)))
+  }
+
+  private openAttendancePopup(): void {
+    document.getElementById('attendance-popup')?.remove()
+    const now = new Date()
+    const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now)
+    const dayOfWeek = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[weekday]
+    const monday = new Date(`${today}T12:00:00Z`)
+    monday.setUTCDate(monday.getUTCDate() - dayOfWeek + 1)
+    const week = monday.toISOString().slice(0, 10)
+    const count = this.store.data.attendanceWeek === week ? (this.store.data.attendanceCount ?? 0) : 0
+    const claimed = this.store.data.lastDaily === today
+    const next = Math.min(7, count + 1)
+    const popup = document.createElement('dialog')
+    popup.id = 'attendance-popup'
+    popup.setAttribute('aria-label', '출석체크 보상')
+    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?'<img class="attendance-coin-image" src="/assets/coin.png" alt="코인"/>':'🎁'}</span><b>${i<5?`${(i+1)*10}코인`:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
+    document.body.appendChild(popup)
+    popup.querySelector('.attendance-close')?.addEventListener('click', () => popup.close())
+    popup.addEventListener('click', event => { if (event.target === popup) popup.close() })
+    popup.addEventListener('close', () => popup.remove())
+    popup.querySelector('.attendance-claim')?.addEventListener('click', async () => {
+      if (this.busy) return
+      this.busy = true
+      try {
+        const reward = await this.store.claimDaily()
+        if (reward.claimed) {
+          this.audio.play('pickup')
+          popup.close()
+          this.toast(reward.boxes ? '출석 완료! 랜덤박스 1개를 받았어요.' : `출석 완료! ${reward.coins}코인을 받았어요.`)
+        } else { popup.close(); this.toast('오늘은 이미 출석했어요.') }
+      } catch (error) { this.handleError(error) } finally { this.busy = false; this.renderWallet() }
+    })
+    popup.showModal()
   }
 
   private template(): string {
@@ -312,26 +368,17 @@ export class GachaUi {
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
         <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong><img class="shop-header-face" src="/shop_armor_face.png" alt="갑옷씨 얼굴"/> 장터</strong><span aria-hidden="true"></span></header>
-        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button data-action="shop-tab" data-tab="buy" class="is-active">구매</button><button data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
+        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button type="button" data-action="shop-tab" data-tab="buy">구매</button><button type="button" data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="deco">데코</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-bulk-fixed" hidden></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
       </section>
-      <section class="rps-screen" data-screen="rps" aria-hidden="true">
-        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><span>3시간마다 1회</span></header>
-        <div class="rps-scene">
-          <h2>나랑 가위바위보 하자!</h2>
-          <div class="rps-stage-label">1단계 · <img class="rps-coin" src="/assets/coin.png" alt="코인"/> <b class="rps-coin-count">×10</b></div>
-          <img class="rps-chiikawa" src="/rps_momonga.png" alt="모몽가"/>
-          <p class="rps-message">가위바위보를 시작해 보세요!</p><div class="rps-opponent-choice" hidden><span>모몽가가 낸 것</span><img src="/rps_rock.png" alt="모몽가의 선택"/><strong></strong></div>
-          <strong class="rps-countdown"></strong>
-          <div class="rps-choice-row">
-            <button data-action="rps-move" data-move="rock"><img src="/rps_rock.png" alt=""/>바위</button>
-            <button data-action="rps-move" data-move="scissors"><img src="/rps_scissors.png" alt=""/>가위</button>
-            <button data-action="rps-move" data-move="paper"><img src="/rps_paper.png" alt=""/>보</button>
-          </div>
-          <div class="rps-decision">
-            <button data-action="rps-start">도전 시작!</button>
-            <button data-action="rps-claim" hidden>코인 받고 그만하기</button>
-            <button data-action="rps-next" hidden>다음 단계 도전!</button>
-          </div>
+      <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
+        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>겅이복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
+        <div class="rps-scene lottery-scene">
+          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
+          <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 겅이복권 초기화 (운영자 전용)</button>
+          <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
+          <div class="lottery-winners" aria-live="polite"></div>
+          <div class="lottery-results"></div>
+          <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price" style="font-size:1.2rem;line-height:1.5">가격 100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -339,10 +386,10 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon">🎁</span><span><b>출석 체크</b><small class="daily-copy">+${DAILY_GIFT} 코인</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>가위바위보</b><small class="rps-lobby-status">3시간마다 1회</small></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon"><img src="/assets/roulette_icon_074.png" alt="" /></span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/lottery_ticket_custom.png" alt="복권"/></span><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></div></div><button class="nav-button nav-house" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button></div></div></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기</button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비</button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -350,7 +397,7 @@ export class GachaUi {
           <span class="toon-hero-name"></span>
           <i class="toon-capsule"></i>
         </section>
-        <aside class="collection-peek"><span class="peek-flowers">✿　✿　✿</span><b class="collection-count">0 / ${CHARACTERS.length}</b><small>도감 수집</small><button class="soft-button" data-action="collection">캐릭터 도감</button><b class="deco-count">0 / ${DECOS.length}</b><button class="soft-button" data-action="decos">데코 도감</button></aside>
+        <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span class="reward-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" /></span><span><b>도감</b></span></button></aside>
         <footer class="gacha-actions">
           <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
           ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
@@ -367,6 +414,18 @@ export class GachaUi {
           <button type="button" data-action="insufficient-close" class="insufficient-close">확인</button>
         </div>
       </div>
+      <section class="gacha-modal" data-screen="catalog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="catalog-title">
+        <div class="modal-card catalog-choice-card">
+          <button class="modal-close" data-action="close" aria-label="닫기">×</button>
+          <div class="modal-kicker">MY COLLECTION</div><h2 id="catalog-title">도감</h2>
+          <p class="collection-summary">확인할 도감을 선택해 주세요.</p>
+          <div class="catalog-choice-list">
+            <button type="button" class="catalog-choice-button" data-action="collection"><img src="/assets/chars/chiikawa_tab_icon.png" alt=""/><span><b>캐릭터 도감</b><small><span class="collection-count">0 / ${CHARACTERS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="decos"><img src="/assets/chars/hachiware_face.png" alt=""/><span><b>데코 도감</b><small><span class="deco-count">0 / ${DECOS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 48</span> 수집</small></span><span aria-hidden="true">›</span></button>
+          </div>
+        </div>
+      </section>
       <section class="gacha-modal" data-screen="collection" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="collection-title">
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
@@ -374,7 +433,7 @@ export class GachaUi {
           <p class="collection-summary">총 ${CHARACTERS.length}종 · 노멀 ${CHARACTERS.filter(c => c.tier === 'normal').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 레어 ${CHARACTERS.filter(c => c.tier === 'mermaid').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 에픽 ${CHARACTERS.filter(c => c.tier === 'rare').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 유니크 ${CHARACTERS.filter(c => c.tier === 'super').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 레전더리 ${CHARACTERS.filter(c => c.tier === 'legendary').reduce((n,c) => n+c.probability,0).toFixed(2)}%</p></div>
           <div class="collection-grid"></div>
           <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
-          <button class="modal-primary" data-action="close">가챠로 돌아가기</button>
+          <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
         </div>
       </section>
       <section class="gacha-modal" data-screen="roulette" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roulette-title">
@@ -394,7 +453,7 @@ export class GachaUi {
           <p class="collection-summary">데코 ${DECOS.length}종 · 모두 같은 확률(각 ${DECO_PROBABILITY}%)</p></div>
           <div class="collection-grid deco-grid"></div>
           <div class="duplicate-note">새 데코 등록 +${DECO_NEW_BONUS}코인 · 중복 데코는 하우스에 하나 더 놓을 수 있어요</div>
-          <button class="modal-primary" data-action="house">🏠 하우스 꾸미러 가기</button>
+          <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
         </div>
       </section>
       <section class="gacha-modal" data-screen="announcements" aria-hidden="true" role="dialog" aria-modal="true">
@@ -437,8 +496,8 @@ export class GachaUi {
         <div class="modal-card claw-card">
           <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 인형뽑기</h2>
-          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
+          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/chiikawa_face_claw.png" alt="치이카와" /> 키링뽑기</h2>
+          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 무기 액세서리 랜덤 1개가 지급!</p>
           <div class="claw-balance" aria-label="보유 다이아"><span class="claw-balance-title">보유 다이아</span><span class="claw-balance-count"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><span class="claw-balance-times">×</span><strong class="diamond-value">0</strong><span class="claw-balance-unit">개</span></span></div><p class="claw-balance-help">집게를 인형 위로 이동해 잡아보세요!</p>
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
@@ -459,9 +518,8 @@ export class GachaUi {
       <section class="gacha-modal" data-screen="storage" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="storage-title">
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">보관함</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
-          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 인벤토리</button></div>
-          <button class="modal-primary storage-bulk-sell" data-action="storage-bulk-sell" disabled>중복 일괄 판매</button>
+          <div class="modal-kicker">STORAGE</div><h2 id="storage-title">인벤토리</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
+          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="accessory" role="tab"><img class="storage-tab-face" src="/assets/accessories/shisa_keyring.png" alt=""/> 무기 액세서리</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 기타</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -483,7 +541,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">MY PROFILE</div><h2 id="featured-title">내 프로필</h2>
           <div class="profile-card"><span class="profile-big"><img alt="" /></span><b class="profile-big-name"></b><small class="profile-stats"></small></div>
-          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">📮 우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">✉ 우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="storage">🎒 보관함</button><button class="modal-secondary" data-action="suggest">💌 건의함</button><button class="modal-secondary" data-action="privacy">🔒 공개 설정</button></div>
+          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">📮 우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">✉ 우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">💌 건의함</button><button class="modal-secondary" data-action="privacy">🔒 공개 설정</button></div>
           <h3 class="profile-sub">대표 사진 바꾸기</h3>
           <p class="collection-summary">내가 뽑은 친구 중에서 골라요. 대표 사진은 가챠 무대와 유저 목록에 보여요.</p>
           <div class="collection-grid featured-grid" role="list"></div>
@@ -502,6 +560,112 @@ export class GachaUi {
       </section>`
   }
 
+  private closeMyroomMenu(): void {
+    const menu = this.root.querySelector<HTMLElement>('.myroom-options')
+    if (menu) menu.hidden = true
+    this.root.querySelector<HTMLButtonElement>('.nav-myroom')?.setAttribute('aria-expanded','false')
+  }
+
+  private showAlchemy():void {
+    const dialog=document.createElement('dialog');dialog.className='myroom-equipment-dialog alchemy-dialog'
+    let selected=WEAPON_ACCESSORIES[0].id
+    const render=()=>{
+      const counts=this.store.accessory.counts||{}
+      const item=accessoryInfo(selected) || WEAPON_ACCESSORIES[0]
+      const normal=counts[selected]||0
+      const fragments=this.store.data.fragments||0
+      const owned=this.store.accessory.grades?.[selected]||{}
+      dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><p class="alchemy-description">같은 캐릭터의 노말 키링으로 합성 · 성공률 100%</p><div class="alchemy-picker">${WEAPON_ACCESSORIES.map(x=>`<button type="button" class="alchemy-pick ${x.id===selected?'selected':''}" data-pick="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===selected}"><img src="${x.image}" alt=""/><span>${x.name.replace(' 키링','')}</span></button>`).join('')}</div><div class="alchemy-inventory"><div><img src="${item.image}" alt=""/><span>보유 노말 키링<strong>${normal.toLocaleString()}개</strong></span></div><div><img src="/assets/enhancement_fragment.png" alt=""/><span>보유 강화파편<strong>${fragments.toLocaleString()}개</strong></span></div></div><div class="alchemy-recipes">${ALCHEMY_GRADES.slice(1).map((g,gi)=>{const has=(owned[g.id]||0)>0;const locked=gi>0&&!(owned[ALCHEMY_GRADES[gi].id]>0);const shortage=normal<g.cost||fragments<g.fragments;return `<button type="button" class="alchemy-recipe ${has?'is-owned':''}" data-id="${selected}" data-grade="${g.id}" ${has||locked||shortage?'disabled':''}><b style="color:${g.color}">${g.name}</b><small>노말 ${g.cost}개 · 파편 ${g.fragments}개</small><strong>${has?'보유함':locked?'이전 등급 필요':shortage?'재료 부족':`합성 · 전투력 +${g.power}`}</strong></button>`}).join('')}</div><button type="button" class="myroom-equipment-done">닫기</button></div>`
+      dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
+      dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
+      dialog.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.pick!;render()}))
+      dialog.querySelectorAll<HTMLButtonElement>('.alchemy-recipe').forEach(btn=>btn.addEventListener('click',async()=>{
+        if(btn.disabled)return
+        const chosenCharm=accessoryInfo(btn.dataset.id!)!
+        const chosenGrade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
+        const confirmed=await new Promise<boolean>(resolve=>{
+          const confirmDialog=document.createElement('dialog')
+          confirmDialog.className='myroom-equipment-dialog alchemy-confirm-dialog'
+          confirmDialog.innerHTML=`<div class="myroom-equipment-panel alchemy-confirm-panel"><h2>연금술 합성 확인</h2><img class="alchemy-confirm-image" src="${chosenCharm.image}" alt="${chosenCharm.name}"/><p><strong>${chosenGrade.name} ${chosenCharm.name}</strong>을 합성하시겠습니까?</p><div class="alchemy-confirm-actions"><button type="button" class="modal-secondary" data-confirm="no">취소</button><button type="button" class="modal-primary" data-confirm="yes">합성하기</button></div></div>`
+          let decided=false
+          const finish=(value:boolean)=>{if(decided)return;decided=true;confirmDialog.close();resolve(value)}
+          confirmDialog.querySelector('[data-confirm="no"]')?.addEventListener('click',()=>finish(false))
+          confirmDialog.querySelector('[data-confirm="yes"]')?.addEventListener('click',()=>finish(true))
+          confirmDialog.addEventListener('cancel',e=>{e.preventDefault();finish(false)})
+          confirmDialog.addEventListener('close',()=>{confirmDialog.remove();if(!decided){decided=true;resolve(false)}},{once:true})
+          document.body.appendChild(confirmDialog);confirmDialog.showModal()
+        })
+        if(!confirmed)return
+        btn.disabled=true
+        try{
+          await this.store.synthesizeAccessory(btn.dataset.id!,btn.dataset.grade!)
+          const charm=accessoryInfo(btn.dataset.id!)!
+          const grade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
+          dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2 class="alchemy-result-status" aria-live="polite">합성 중...</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${charm.image}" alt="왼쪽 키링"/><img src="${charm.image}" alt="오른쪽 키링"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" style="--alchemy-grade-glow:${grade.color}" src="${charm.image}" alt="합성된 키링"/><h3>${grade.name} ${charm.name}</h3><p>전투력 +${grade.power}</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+          const resultStatus=dialog.querySelector<HTMLElement>('.alchemy-result-status')
+          window.setTimeout(()=>{if(resultStatus?.isConnected)resultStatus.textContent='합성 성공!'},2250)
+          dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
+          this.renderWallet()
+        }catch(e){this.handleError(e);render()}
+      }))
+    }
+    document.body.appendChild(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});render();dialog.showModal()
+  }
+
+  private showAccessoryCatalog(): void {
+    const counts=this.store.accessory.counts||{}
+    const cards=WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(g=>{const count=g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0);const has=count>0;return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'}" style="--friend:#fbe3ea;--accent:${g.color}"><div class="friend-avatar">${has?`<img style="filter:drop-shadow(0 0 8px ${g.color})" src="${item.image}" alt="${item.name}"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${g.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${g.power}</small><span class="friend-lock">${has?`${count}개 보유`:'미획득'}</span></article>`})).join('')
+    const dialog=document.createElement('dialog')
+    dialog.className='myroom-equipment-dialog accessory-catalog-dialog'
+    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><p class="collection-summary">${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>(g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0).length,0)} / 48 수집</p><div class="accessory-scroll collection-grid accessory-card-grid">${cards}</div><button class="myroom-equipment-done">← 뒤로가기</button></div>`
+    document.body.appendChild(dialog)
+    dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
+    dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true})
+    dialog.showModal()
+  }
+
+  private async showEquipmentStatus(): Promise<void> {
+    try { await this.store.loadForge() } catch (error) { this.handleError(error); return }
+    const forge = this.store.forge
+    const names: Record<string,string> = {pink:'치이카와 토벌봉',blue:'하치와레 토벌봉',yellow:'우사기 토벌봉'}
+    const dialog = document.createElement('dialog')
+    dialog.className = 'myroom-equipment-dialog'
+    dialog.setAttribute('aria-label','내 장비 상태')
+    const equipped=accessoryInfo(this.store.accessory.equipped)
+    const counts=this.store.accessory.counts||{}
+    const accessories=WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(g=>{const count=g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0);const has=count>0;const selected=this.store.accessory.equipped===item.id&&(this.store.accessory.equippedGrade||'normal')===g.id;return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'} ${selected?'is-equipped':''}" style="--friend:#fbe3ea;--accent:${g.color}"><div class="friend-avatar">${has?`<img src="${item.image}" style="filter:drop-shadow(0 0 8px ${g.color})" alt="${item.name}"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${g.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${g.power} · ${count}개</small><button type="button" class="accessory-equip-button" data-accessory="${item.id}" data-grade="${g.id}" ${!forge||!has?'disabled':''}>${selected?'장착 해제':has?'장착하기':'미획득'}</button></article>`})).join('')
+    dialog.innerHTML = `<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close" aria-label="닫기">×</button><h2><img src="/assets/forge/rakko_face.png" alt="" /> 내 장비</h2>${forge ? `<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(forge.level)}"><img src="/assets/forge/${forge.weapon}.png" alt="장착 무기" />${equipped?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${equipped.image}" alt="장착된 ${equipped.name}"/>`:``}</span><div><b>${names[forge.weapon] ?? '내 무기'}</b><strong>+${forge.level}강 / 최대 +20강</strong><span>무기 전투력 +${forge.bonus}</span></div></div><p class="myroom-equipment-note">강화는 상점 → 대장간에서 할 수 있어요.</p>` : '<p class="myroom-equipment-note">아직 선택한 무기가 없어요.<br>상점 → 대장간에서 무기를 선택할 수 있어요.</p>'}<div class="accessory-equip-section"><b>무기 액세서리</b><div class="accessory-scroll collection-grid accessory-card-grid">${accessories}</div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+    document.body.appendChild(dialog)
+    dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(button=>button.addEventListener('click',async()=>{
+      const id=button.dataset.accessory||null
+      try {
+        if(button.disabled)return
+        dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(b=>b.disabled=true)
+        await this.store.equipAccessory(this.store.accessory.equipped===id&&(this.store.accessory.equippedGrade||'normal')===(button.dataset.grade||'normal')?null:id,button.dataset.grade||'normal')
+        const current=this.store.accessory.equipped
+        dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(b=>{
+          const owned=b.dataset.grade==='normal'?((this.store.accessory.counts||{})[b.dataset.accessory||'']||0):(this.store.accessory.grades?.[b.dataset.accessory||'']?.[b.dataset.grade||'']||0)
+          b.disabled=!this.store.forge||owned<1
+          b.textContent=owned<1?'미획득':current===b.dataset.accessory&&(this.store.accessory.equippedGrade||'normal')===(b.dataset.grade||'normal')?'장착 해제':'장착하기'
+          b.closest('.accessory-card')?.classList.toggle('is-equipped',current===b.dataset.accessory&&(this.store.accessory.equippedGrade||'normal')===(b.dataset.grade||'normal'))
+        })
+        const currentCharm=accessoryInfo(current)
+        const weaponSlot=dialog.querySelector<HTMLElement>('.forge-current .accessory-weapon')
+        if(weaponSlot){weaponSlot.querySelector('.weapon-keyring')?.remove();if(currentCharm){const img=document.createElement('img');img.className='weapon-keyring';img.style.setProperty('--keyring-glow',ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa');img.style.setProperty('filter',`drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})`,'important');img.src=currentCharm.image;img.alt=`장착된 ${currentCharm.name}`;weaponSlot.appendChild(img)}}
+        const powerLabel=dialog.querySelector<HTMLElement>('.forge-current div span')
+        if(powerLabel&&this.store.forge)powerLabel.textContent=`무기 전투력 +${this.store.forge.bonus}`
+        this.renderWallet();this.renderHero()
+      }
+      catch(error){this.handleError(error)}
+    }))
+    dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
+    dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
+    dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()})
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true})
+    dialog.showModal()
+  }
+
   private async openForge(): Promise<void> {
     try {await this.store.loadForge();if(this.screen==='forge')this.renderForge()}
     catch(e){this.handleError(e)}
@@ -517,7 +681,7 @@ export class GachaUi {
     }
     const level=forge.level
     const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5][level]
-    body.innerHTML=`<div class="forge-current"><span class="forge-aura ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}"></span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+    body.innerHTML=`<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}">${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}</span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
   }
 
   private playForgeSound(kind: 'working' | 'success' | 'failure'): void {
@@ -548,15 +712,52 @@ export class GachaUi {
   }
 
   private renderShop(): void {
-    const screen=this.root.querySelector('.shop-screen')
-    if(!screen)return
-    screen.querySelectorAll<HTMLButtonElement>('.shop-tabs button').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===this.shopTab))
-    const items=screen.querySelector<HTMLElement>('.shop-items')
-    if(!items)return
-    if(this.shopTab==='sell'){
-      items.innerHTML=`<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')}</div>` + (([['normal',this.store.wildWeed?.count??0,'잡초',5,'/field_wild_weed.png'],['golden',this.store.wildWeed?.goldenCount??0,'황금잡초',50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([type,count,name,price,img])=>`<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">인벤토리에 판매할 아이템이 없어요.</div>')
-    }else{
-      items.innerHTML=`<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')} · 강화파편 ${(this.store.data.fragments??0).toLocaleString('ko-KR')}개</div>${[1,10].map(n=>`<div class="shop-product"><img src="/assets/enhancement_fragment.png" alt="강화파편"/><div><strong>강화파편 ${n}개</strong><small><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> ${n*5}코인</small></div><button data-action="shop-buy" data-quantity="${n}" ${Number(this.store.data.gems??0)<n*5?'disabled':''}>구매</button></div>`).join('')}`
+    const screen = this.root.querySelector<HTMLElement>('.shop-screen')
+    if (!screen) return
+    screen.querySelectorAll<HTMLButtonElement>('.shop-tabs button').forEach(b => b.classList.toggle('is-active', b.dataset.tab === this.shopTab))
+    const categories = screen.querySelector<HTMLElement>('.shop-sell-categories')
+    if (categories) {
+      categories.hidden = this.shopTab !== 'sell'
+      categories.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.classList.toggle('is-active', b.dataset.tab === this.shopSellTab))
+    }
+    const items = screen.querySelector<HTMLElement>('.shop-items')
+    const bulkFixed = screen.querySelector<HTMLElement>('.shop-bulk-fixed')
+    if (!items) return
+    if (bulkFixed) { bulkFixed.hidden = true; bulkFixed.innerHTML = '' }
+    const balance = `<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems ?? 0).toLocaleString('ko-KR')}</div>`
+    if (this.shopTab !== 'sell') {
+      items.innerHTML = balance + '<div class="shop-empty-note">현재 구매 가능한 상품이 없어요.</div>'
+      return
+    }
+    if (this.shopSellTab === 'inventory') {
+      const weeds = ([['normal', this.store.wildWeed?.count ?? 0, '잡초', 5, '/field_wild_weed.png'], ['golden', this.store.wildWeed?.goldenCount ?? 0, '황금잡초', 50, '/field_golden_weed.png']] as const)
+      items.innerHTML = balance + (weeds.filter(x => x[1] > 0).map(([type,count,name,price,img]) => `<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">판매할 기타 아이템이 없어요.</div>')
+      return
+    }
+    const bulk = this.getBulkSellItems(this.shopSellTab === 'char' ? 'char' : 'deco')
+    const bulkCount = bulk.reduce((sum, item) => sum + item.count, 0)
+    const bulkCoins = bulk.reduce((sum, item) => sum + item.count * item.price, 0)
+    const bulkButton = `<button class="shop-bulk-sell" data-action="storage-bulk-sell" data-kind="${this.shopSellTab === 'char' ? 'char' : 'deco'}" ${bulkCount ? '' : 'disabled'}>중복 일괄 판매 · ${bulkCount}개 (+${bulkCoins}코인)</button>`
+    if (bulkFixed) { bulkFixed.innerHTML = bulkButton; bulkFixed.hidden = false }
+    const sellButtons = (kind: 'char' | 'deco', id: string, count: number, price: number) => count > 0
+      ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 판매 +${price}</button>${count > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${count}">중복 모두 판매 +${count * price}</button>` : ''}</div>`
+      : '<small class="storage-keep">판매 가능한 중복 없음</small>'
+    if (this.shopSellTab === 'char') {
+      const owned = CHARACTERS.filter(c => this.store.data.owned.includes(c.id))
+      items.innerHTML = balance + '<div class="shop-sell-grid">' + (owned.map(c => {
+        const count = this.store.dupes[c.id] ?? 0
+        const price = CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' || c.tier === 'legendary' ? 'unique' : 'normal']
+        return `<article class="storage-item"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy"/></span><b>${escapeHtml(fullName(c))}</b><small>보유 ${count + 1}개 · 판매 가능 ${count}개</small>${sellButtons('char', c.id, count, price)}</article>`
+      }).join('') || '<div class="shop-empty-note">보유한 캐릭터가 없어요.</div>') + '</div>'
+    } else {
+      const placed: Record<string, number> = {}
+      for (const piece of this.store.house.pieces) placed[piece.id] = (placed[piece.id] ?? 0) + 1
+      const owned = DECOS.filter(d => (this.store.decos[d.id] ?? 0) > 0)
+      items.innerHTML = balance + '<div class="shop-sell-grid">' + (owned.map(d => {
+        const have = this.store.decos[d.id] ?? 0
+        const count = Math.max(0, have - Math.max(1, placed[d.id] ?? 0))
+        return `<article class="storage-item"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/></span><b>${escapeHtml(d.name)}</b><small>보유 ${have}개 · 판매 가능 ${count}개</small>${sellButtons('deco', d.id, count, DECO_SELL_PRICE)}</article>`
+      }).join('') || '<div class="shop-empty-note">보유한 데코가 없어요.</div>') + '</div>'
     }
   }
 
@@ -589,7 +790,25 @@ export class GachaUi {
     if (!action) return
     this.audio.unlock()
     this.audio.play('ui')
+    if (action === 'myroom-toggle') {
+      const menu = this.root.querySelector<HTMLElement>('.myroom-options')
+      const toggle = this.root.querySelector<HTMLButtonElement>('.nav-myroom')
+      if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
+      for (const [selector, trigger] of [['.activity-options','.nav-activity'],['.market-options','.nav-market']] as const) {
+        const other = this.root.querySelector<HTMLElement>(selector)
+        if (other) other.hidden = true
+        this.root.querySelector<HTMLButtonElement>(trigger)?.setAttribute('aria-expanded','false')
+      }
+      return
+    }
+    if (['equipment','storage','house'].includes(action)) {
+      const menu = this.root.querySelector<HTMLElement>('.myroom-options')
+      if (menu) menu.hidden = true
+      this.root.querySelector<HTMLButtonElement>('.nav-myroom')?.setAttribute('aria-expanded','false')
+    }
+    if (action === 'equipment') { await this.showEquipmentStatus(); return }
     if (action === 'market-toggle') {
+      this.closeMyroomMenu()
       const menu = this.root.querySelector<HTMLElement>('.market-options')
       const toggle = this.root.querySelector<HTMLButtonElement>('.nav-market')
       if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
@@ -606,6 +825,7 @@ export class GachaUi {
       toggle?.setAttribute('aria-expanded','false')
     }
     if (action === 'activity-toggle') {
+      this.closeMyroomMenu()
       const menu = this.root.querySelector<HTMLElement>('.activity-options')
       const toggle = this.root.querySelector<HTMLButtonElement>('.nav-activity')
       if (menu && toggle) { menu.hidden = !menu.hidden; toggle.setAttribute('aria-expanded', String(!menu.hidden)) }
@@ -623,8 +843,14 @@ export class GachaUi {
     }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
+    if (action === 'lottery-reset') {await this.resetLottery();return}
+    if (action === 'lottery-all') {await this.chooseLotteryCount();return}
+    if (action === 'lottery-buy') {await this.buyLottery();return}
+    if (action === 'lottery-skip') {this.skipLottery();return}
     if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');void this.loadWildWeed();this.renderShop();return}
-    if (action === 'shop-tab' && button?.dataset.tab) {this.shopTab=button.dataset.tab==='sell'?'sell':'buy';this.renderShop();return}
+    if (action === 'shop-tab' && button?.dataset.tab) { this.shopTab = button.dataset.tab === 'buy' ? 'buy' : 'sell'; this.hideShopDialog(); this.renderShop(); return }
+    if (action === 'shop-sell-category' && button?.dataset.tab) { const list = this.root.querySelector<HTMLElement>('.shop-screen .shop-items'); if (list) list.scrollTop = 0; this.shopSellTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'inventory' ? 'inventory' : 'char'; this.renderShop(); return }
+    
     if (action === 'wild-weed-sell') {
       const type=button?.dataset.weedType==='golden'?'golden':'normal'
       const count=type==='golden'?(this.store.wildWeed?.goldenCount??0):(this.store.wildWeed?.count??0)
@@ -649,30 +875,13 @@ export class GachaUi {
         } catch(e) { this.handleError(e) } finally { this.busy = false }
         return
       }
-      if (!quantity) return
-      if (this.busy) return
-      if (Number(this.store.data.gems??0) < quantity*5) { this.showShopDialog('코인이 부족해요!'); return }
-      this.busy = true
-      try {
-        await this.store.buyShopFragments(quantity)
-        this.renderShop()
-        this.renderWallet()
-        this.showShopDialog('구매완료!')
-      } catch(e) { this.handleError(e) } finally { this.busy = false }
-      return
-    }
-    if (action === 'shop-buy' && button?.dataset.quantity) {
-      if (this.busy) return
-      const quantity = Number(button.dataset.quantity)
-      if (quantity !== 1 && quantity !== 10) return
-      if (Number(this.store.data.gems??0) < quantity*5) { this.showShopDialog('코인이 부족해요!'); return }
-      this.showShopDialog(`강화파편 ${quantity}개를 ${quantity*5}코인으로 구매할까요?`, quantity)
       return
     }
     if (action === 'rps-start') {await this.rpsAction('start');return}
     if (action === 'rps-next') {await this.rpsAction('next');return}
     if (action === 'rps-claim') {await this.rpsAction('claim');return}
     if (action === 'rps-move' && button?.dataset.move) {await this.rpsAction('choose',button.dataset.move);return}
+    if (action === 'alchemy') {this.showAlchemy();return}
     if (action === 'forge') {this.show('forge');return}
     if (action === 'forge-select' && button?.dataset.weapon) {
       if(this.busy || this.store.forge)return
@@ -707,6 +916,9 @@ export class GachaUi {
       if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
       await this.handleClaw(action); return
     }
+    if (action === 'accessory-catalog') { this.showAccessoryCatalog(); return }
+    if (action === 'catalog-back') { this.show('catalog'); return }
+    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>(g.id==='normal'?(this.store.accessory.counts?.[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0).length,0)} / 48`;this.show('catalog'); return }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
@@ -715,7 +927,7 @@ export class GachaUi {
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
-    if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
+    if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
     if (action === 'weed') { this.show('weed'); return }
     if (action === 'battle') { this.show('battle'); void this.syncBattle(); return }
     if (action === 'announcements') { this.show('announcements'); return }
@@ -737,7 +949,7 @@ export class GachaUi {
     if (action === 'mail-claim-all') { await this.claimMail(); return }
     if (action === 'mail-tab' && button.dataset.tab) { this.mailTab = button.dataset.tab === 'sent' ? 'sent' : 'in'; if (this.lastBox) this.renderMail(this.lastBox); return }
     if (action === 'mail-delete' && button.dataset.id) { await this.deleteMail(Number(button.dataset.id), button.dataset.box === 'sent' ? 'sent' : 'in'); return }
-    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'deco' ? 'deco' : 'char'; this.renderStorage(); return }
+    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderStorage(); return }
     if (action === 'storage-bulk-sell') { await this.sellBulk(button); return }
     if (action === 'sell' && button.dataset.id && button.dataset.kind) { await this.sell(button.dataset.kind === 'deco' ? 'deco' : 'char', button.dataset.id, Number(button.dataset.count) || 1, button); return }
     if (action === 'suggest-reply' && button.dataset.id) { await this.replySuggestion(Number(button.dataset.id)); return }
@@ -762,14 +974,7 @@ export class GachaUi {
     if (action === 'roulette') { this.show('roulette'); this.renderWallet(); return }
     if (action === 'roulette-spin') { await this.spinRoulette(); return }
     if (action === 'daily') {
-      this.busy = true
-      try {
-        if (await this.store.claimDaily()) {
-          this.audio.play('pickup')
-          this.toast(`출석 완료! ${DAILY_GIFT}코인을 받았어요.`)
-        } else this.toast('오늘은 이미 출석했어요.')
-      } catch (error) { this.handleError(error) } finally { this.busy = false }
-      this.renderWallet()
+      this.openAttendancePopup()
       return
     }
     if (action === 'pull') {
@@ -932,8 +1137,8 @@ export class GachaUi {
       const raw = window.localStorage.getItem(key)
       if (raw) {
         const saved: unknown = JSON.parse(raw)
-        if (Array.isArray(saved) && saved.length === 3 && saved.every((t: any) =>
-          ['chiikawa','hachiware','usagi'].includes(t?.id) &&
+        if (Array.isArray(saved) && saved.length === 5 && saved.every((t: any) =>
+          ['chiikawa_1','chiikawa_2','chiikawa_3','chiikawa_4','chiikawa_5'].includes(t?.id) &&
           typeof t.x === 'number' && Number.isFinite(t.x) && t.x >= 0 && t.x <= 100 &&
           typeof t.y === 'number' && Number.isFinite(t.y) && t.y >= 0 && t.y <= 100)) {
           this.clawToys = saved as typeof this.clawToys
@@ -957,9 +1162,11 @@ export class GachaUi {
 
   private randomizeClawToy(id?: string): void {
     const types = [
-      { id: 'chiikawa', name: '치이카와' },
-      { id: 'hachiware', name: '하치와레' },
-      { id: 'usagi', name: '우사기' },
+      { id: 'chiikawa_1', name: '치이카와' },
+      { id: 'chiikawa_2', name: '치이카와' },
+      { id: 'chiikawa_3', name: '치이카와' },
+      { id: 'chiikawa_4', name: '치이카와' },
+      { id: 'chiikawa_5', name: '치이카와' },
     ]
     if (!this.clawToys.length) this.clawToys = types.map(type => ({ ...type, x: 0, y: 0 }))
     for (const toy of this.clawToys) {
@@ -1033,12 +1240,12 @@ export class GachaUi {
     if (!this.clawToys.length) this.randomizeClawToy()
     const toys = this.root.querySelector<HTMLElement>('.claw-toys')
     if (toys) toys.innerHTML = this.clawToys.map(toy =>
-      `<img class="claw-single-toy" data-toy-id="${toy.id}" src="/assets/chars/${toy.id}_face_claw.png" alt="${toy.name} 얼굴 인형" style="left:${toy.x}%;top:${toy.y}%"/>`
+      `<img class="claw-single-toy" data-toy-id="${toy.id}" src="/assets/chars/chiikawa_face_claw.png" alt="${toy.name} 얼굴 인형" style="left:${toy.x}%;top:${toy.y}%"/>`
     ).join('')
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
-    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 세 인형 모두 같은 확률과 보상이 적용돼요.'
+    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 네 개의 치이카와 모두 같은 확률과 보상이 적용돼요.'
     this.updateClawPosition()
   }
 
@@ -1116,7 +1323,6 @@ export class GachaUi {
       const aligned = this.clawTouchesToy()
       const toy = this.clawTargetId ? this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${this.clawTargetId}"]`) : null
       const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
-      const previousDecos = { ...this.store.decos }
       const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50)
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
@@ -1258,26 +1464,18 @@ export class GachaUi {
         // after the reward appears.
         this.setClawClosed(false)
         await new Promise(resolve => window.setTimeout(resolve, 520))
-        const deco = DECOS.find(item => item.id === result.prize)
-        if (deco && prizeEl) {
-          prizeEl.innerHTML = `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="${deco.name}"/>`
-          prizeEl.classList.remove('is-delivered'); void prizeEl.offsetWidth
-          prizeEl.classList.add('is-delivered')
-        }
-        const earnedText = `🎉 ${deco?.name ?? '데코 아이템'} 획득! 보관함에 저장됐어요!${result.bonus > 0 ? ` 신규 도감 등록 +${result.bonus}코인!` : ''}`
-        if (msg) msg.textContent = earnedText
+        const item=accessoryInfo(result.prize)!
+        const earnedText = `${item.name} 획득! 무기 액세서리 도감에 등록됐어요!`
+        if(prizeEl){prizeEl.innerHTML=`<img src="${item.image}" alt="${item.name}"/>`;prizeEl.classList.remove('is-delivered');void prizeEl.offsetWidth;prizeEl.classList.add('is-delivered')}
+        if(msg)msg.textContent=earnedText
         this.toast(earnedText)
-        // Show the same capsule-style reveal as normal deco pulls, without
-        // switching screens or leaving a permanent result panel behind.
-        if (deco) {
-          const duplicate = (previousDecos[deco.id] ?? 0) > 0
-          const reveal = this.decoReveal({ id: deco.id, duplicate, bonus: Number(result.bonus) || 0 })
-          this.popReveal(reveal, 0, 1)
-          const revealNode = this.root.querySelector<HTMLElement>('.pop-reveal')
-          const dismiss = () => { window.clearTimeout(hideTimer); this.hidePop(); revealNode?.removeEventListener('pointerdown', dismiss) }
-          const hideTimer = window.setTimeout(dismiss, 2200)
-          revealNode?.addEventListener('pointerdown', dismiss, { once: true })
-        }
+        const popup=document.createElement('dialog')
+        popup.className='myroom-equipment-dialog'
+        popup.innerHTML=`<div class="myroom-equipment-panel accessory-win-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
+        document.body.appendChild(popup)
+        popup.querySelector('button')?.addEventListener('click',()=>popup.close())
+        popup.addEventListener('close',()=>popup.remove(),{once:true})
+        popup.showModal()
         window.setTimeout(() => {
           if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
           if (msg && msg.textContent === earnedText) msg.textContent = '집게를 인형 위치로 움직여 뽑아보세요.'
@@ -1325,17 +1523,211 @@ export class GachaUi {
     this.setHouseCoinDot(false)
   }
 
-  private async refreshRpsBadge():Promise<void> {
-    if(!this.store.user)return
-    try {
-      const state=await this.store.rps()
-      const tab=this.root.querySelector<HTMLButtonElement>('.rps-lobby-tab')
-      const status=tab?.querySelector<HTMLElement>('.rps-lobby-status')
-      tab?.classList.toggle('is-used',state.used)
-      if(status)status.textContent=state.admin?'무제한 도전':state.used?'✓ 참여 완료':'3시간마다 1회'
-    }catch { /* transient connection failure */ }
+  private async refreshLotteryLive():Promise<void>{
+    try{const state=await this.store.lottery();if(this.screen==='rps'&&!this.lotteryResults.length){this.lotteryState=state;this.renderLottery()}}catch{}
   }
-
+  private async openLottery():Promise<void>{
+    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing');this.renderLottery()}
+    catch{const el=this.root.querySelector<HTMLElement>('.lottery-status');if(el)el.textContent='복권 정보를 불러오지 못했습니다.'}
+  }
+  private updateLotteryPrice():void{
+    const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1)
+    const price=this.root.querySelector<HTMLElement>('.lottery-price')
+    if(price)price.textContent=`가격 ${(Math.max(0,count)*100).toLocaleString('ko-KR')}코인`
+  }
+  private lotteryAccessoryName(accessoryId:string):string{
+    const names:Record<string,string>={chiikawa:'치이카와',hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'}
+    const key=accessoryId.replace(/_keyring$/,'')
+    return `레어 ${names[key]??key} 키링`
+  }
+  private renderLottery():void{
+    const state=this.lotteryState;if(!state)return
+    const status=this.root.querySelector<HTMLElement>('.lottery-status')
+    if(status)status.textContent=`전체 100장 · 남은 복권 ${state.total}장`
+    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=this.store.data.gems.toLocaleString('ko-KR')
+    const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=!['test','tjdrjs885'].includes(this.store.user?.username?.toLowerCase()||'')
+    const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
+    const ids=['halloween_chiikawa','halloween_hachiware','halloween_usagi'] as const
+    const accessoryIds=['chiikawa','hachiware','usagi','momonga','kurimanju','shisa','kani','rakko']
+    if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFGHIJKL'[i]}상</b>${i<3?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/><span>${['치이카와(할로윈)','하치와레(할로윈)','우사기(할로윈)'][i]}</span>`:i<11?`<img src="/assets/accessories/${accessoryIds[i-3]}_keyring.png" alt=""/><span>${accessoryIds[i-3]==='chiikawa'?'치이카와':({hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'} as Record<string,string>)[accessoryIds[i-3]]} 레어 키링</span>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
+    const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${w.grade}상`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 당첨자가 없습니다.';winners.append(empty)}}
+    const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0;if(Number(input.value)>state.total)input.value=String(Math.max(1,state.total))}
+    const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
+    this.updateLotteryPrice()
+  }
+  private lotteryTopPopup(message:string):void{
+    document.getElementById('lottery-alert')?.remove()
+    const dialog=document.createElement('dialog');dialog.id='lottery-alert';dialog.className='lottery-alert'
+    const panel=document.createElement('div');panel.className='lottery-alert-inner'
+    const title=document.createElement('h3');title.textContent='겅이복권'
+    const body=document.createElement('p');body.textContent=message
+    const button=document.createElement('button');button.textContent='확인';button.addEventListener('click',()=>dialog.close())
+    panel.append(title,body,button);dialog.append(panel);document.body.append(dialog)
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal()
+  }
+  private lotteryConfirm(message:string):Promise<boolean>{
+    return new Promise(resolve=>{
+      document.getElementById('lottery-confirm')?.remove()
+      const dialog=document.createElement('dialog');dialog.id='lottery-confirm';dialog.className='lottery-alert'
+      const panel=document.createElement('div');panel.className='lottery-alert-inner'
+      const title=document.createElement('h3');title.textContent='겅이복권 구매 확인'
+      const body=document.createElement('p');body.textContent=message;body.style.whiteSpace='pre-line'
+      const actions=document.createElement('div');actions.className='lottery-confirm-actions'
+      const cancel=document.createElement('button');cancel.textContent='취소'
+      const ok=document.createElement('button');ok.textContent='구매하기'
+      cancel.addEventListener('click',()=>dialog.close('cancel'))
+      ok.addEventListener('click',()=>dialog.close('ok'))
+      actions.append(cancel,ok);panel.append(title,body,actions);dialog.append(panel);document.body.append(dialog)
+      dialog.addEventListener('close',()=>{const accepted=dialog.returnValue==='ok';dialog.remove();resolve(accepted)},{once:true})
+      dialog.showModal()
+    })
+  }
+  private chooseLotteryCount():Promise<void>{
+    return new Promise(resolve=>{
+      const remaining=this.lotteryState?.total||0
+      if(!remaining){this.lotteryTopPopup('남은 복권이 없습니다.');resolve();return}
+      document.getElementById('lottery-count-dialog')?.remove()
+      const dialog=document.createElement('dialog');dialog.id='lottery-count-dialog';dialog.className='lottery-alert'
+      const panel=document.createElement('div');panel.className='lottery-alert-inner'
+      const title=document.createElement('h3');title.textContent='여러장 구매'
+      const hint=document.createElement('p');hint.textContent=`1장부터 남은 ${remaining}장까지 선택할 수 있습니다.`
+      const field=document.createElement('input');field.type='number';field.min='1';field.max=String(remaining);field.step='1';field.value=String(Math.min(remaining,Math.max(1,Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1))))
+      field.className='lottery-multi-count'
+      const actions=document.createElement('div');actions.className='lottery-confirm-actions'
+      const cancel=document.createElement('button');cancel.textContent='취소';cancel.onclick=()=>dialog.close('cancel')
+      const ok=document.createElement('button');ok.textContent='수량 적용';ok.onclick=()=>{
+        const count=Number(field.value)
+        if(!Number.isInteger(count)||count<1||count>remaining){field.setCustomValidity(`1~${remaining}장을 입력해주세요.`);field.reportValidity();return}
+        const target=this.root.querySelector<HTMLInputElement>('.lottery-count');if(target)target.value=String(count)
+        this.updateLotteryPrice();dialog.close('ok')
+      }
+      field.oninput=()=>field.setCustomValidity('')
+      actions.append(cancel,ok);panel.append(title,hint,field,actions);dialog.append(panel);document.body.append(dialog)
+      dialog.addEventListener('close',()=>{dialog.remove();resolve()},{once:true});dialog.showModal()
+    })
+  }
+  private async resetLottery():Promise<void>{
+    if(!['test','tjdrjs885'].includes(this.store.user?.username?.toLowerCase()||''))return
+    if(!window.confirm('공용 복권 100장과 당첨자 기록을 초기화할까요? 모든 유저에게 적용됩니다.'))return
+    try{
+      const state=await this.store.lotteryReset()
+      this.lotteryState=state;this.lotteryResults=[];this.lotteryRevealed=0
+      this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
+      this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
+      const results=this.root.querySelector<HTMLElement>('.lottery-results');if(results)results.innerHTML=''
+      this.renderLottery();this.lotteryTopPopup('공용 겅이복권 100장이 초기화되었습니다.')
+    }catch(e){this.handleError(e)}
+  }
+  private async buyLottery():Promise<void>{
+    if(this.lotteryBusy||!this.lotteryState||this.lotteryResults.length)return
+    const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
+    if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.toast('구매 수량을 확인해주세요.');return}
+    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n총 금액: ${(count*100).toLocaleString('ko-KR')}코인\n\n구매하시겠습니까?`)
+    if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
+    this.lotteryBusy=true
+    try{
+      const result=await this.store.lotteryBuy(count)
+      this.lotteryState=result;this.lotteryResults=result.results;this.lotteryRevealed=0
+      this.renderWallet();this.renderLottery()
+      this.root.querySelector('.lottery-screen')?.classList.add('lottery-playing')
+      this.root.querySelector<HTMLElement>('.lottery-ticket')?.removeAttribute('hidden')
+      this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.removeAttribute('hidden')
+      const list=this.root.querySelector<HTMLElement>('.lottery-results');if(list)list.innerHTML=''
+      this.showLotteryTicket()
+    }catch(e){if(e instanceof RequestError&&e.code==='not_enough_coins')this.lotteryTopPopup('코인이 부족합니다. 복권 1장당 100코인이 필요합니다.');else this.handleError(e)}
+    finally{this.lotteryBusy=false;this.renderLottery()}
+  }
+  private showLotteryTicket():void{
+    const ticket=this.root.querySelector<HTMLElement>('.lottery-ticket')
+    const cover=this.root.querySelector<HTMLElement>('.lottery-ticket-cover')
+    const under=this.root.querySelector<HTMLElement>('.lottery-ticket-under')
+    if(!ticket||!cover||!under)return
+    if(this.lotteryRevealed>=this.lotteryResults.length){this.skipLottery();return}
+    const r=this.lotteryResults[this.lotteryRevealed]
+    const idx='ABCDEFGHIJKL'.indexOf(r.grade)
+    under.replaceChildren()
+    // Hide the prize layer until the user actually finishes tearing.
+    under.style.visibility='hidden'
+    const title=document.createElement('strong');title.textContent=`${r.grade}상 당첨!`
+    under.append(title)
+    if(r.id||r.accessoryId){const img=document.createElement('img');img.src=r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품';under.append(img)}
+    const desc=document.createElement('span');desc.textContent=r.accessoryId?`레어 ${({chiikawa_keyring:'치이카와',hachiware_keyring:'하치와레',usagi_keyring:'우사기',momonga_keyring:'모몽가',kurimanju_keyring:'쿠리만쥬',shisa_keyring:'시사',kani_keyring:'카니',rakko_keyring:'랏코'} as Record<string,string>)[r.accessoryId]} 키링`:r.id?fullName(characterById(r.id as CharacterId)):'꽝! 다음 기회에';under.append(desc)
+    const topReset=cover.querySelector<HTMLElement>('.lottery-ticket-top');if(topReset){topReset.style.opacity='1';topReset.style.transition='none'}
+    const peelReset=cover.querySelector<HTMLElement>('.lottery-ticket-peel');if(peelReset){peelReset.style.transform='translateX(0)';peelReset.style.transition='none'}
+    const peel=cover.querySelector<HTMLElement>('.lottery-ticket-peel')!
+    peel.onpointerdown=(event:PointerEvent)=>{this.lotteryPointerStart=event.clientX;peel.setPointerCapture(event.pointerId)}
+    peel.onpointerup=(event:PointerEvent)=>{if(event.clientX-this.lotteryPointerStart>=65)this.revealLottery();else{peel.style.transition='transform .2s';peel.style.transform='translateX(0)'}}
+    peel.onpointermove=(event:PointerEvent)=>{if(peel.hasPointerCapture(event.pointerId)){const dx=Math.max(0,event.clientX-this.lotteryPointerStart);peel.style.transform=`translateX(${Math.min(dx,240)}px)`}}
+  }
+  private revealLottery():void{
+    if(this.lotteryRevealed>=this.lotteryResults.length)return
+    const r=this.lotteryResults[this.lotteryRevealed]
+    // Keep the upper artwork stationary while the perforated lower piece slides away.
+    const peel=this.root.querySelector<HTMLElement>('.lottery-ticket-peel')
+    const prizeLayer=this.root.querySelector<HTMLElement>('.lottery-ticket-under')
+    if(prizeLayer)prizeLayer.style.visibility='visible'
+    if(peel){peel.style.transition='transform .38s ease';peel.style.transform='translateX(115%)';peel.onpointerdown=null;peel.onpointerup=null;peel.onpointermove=null}
+    this.lotteryRevealed++
+    this.renderLotteryResults()
+    window.clearTimeout(this.lotteryTimer)
+    this.lotteryTimer=window.setTimeout(()=>{
+      if(r.id||r.accessoryId)this.showLotteryWinPopup(r,()=>this.showLotteryTicket())
+      else this.showLotteryTicket()
+    },460)
+  }
+  private showLotteryWinPopup(r:{grade:string;id:string|null;accessoryId?:string|null;duplicate:boolean;bonus?:number},next:()=>void):void{
+    if(!r.id&&!r.accessoryId){next();return}
+    document.getElementById('lottery-win-dialog')?.remove()
+    const dialog=document.createElement('dialog');dialog.id='lottery-win-dialog';dialog.className='lottery-win-dialog'
+    const card=document.createElement('div');card.className='lottery-win-card'
+    const heading=document.createElement('h2');heading.textContent=`🎉 ${r.grade}상 당첨!`
+    const img=document.createElement('img');img.src=r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품'
+    const name=document.createElement('strong');name.textContent=r.accessoryId?`레어 ${({'chiikawa_keyring':'치이카와','hachiware_keyring':'하치와레','usagi_keyring':'우사기','momonga_keyring':'모몽가','kurimanju_keyring':'쿠리만쥬','shisa_keyring':'시사','kani_keyring':'카니','rakko_keyring':'랏코'} as Record<string,string>)[r.accessoryId]} 키링`:fullName(characterById(r.id as CharacterId))
+    const message=document.createElement('p');message.textContent=r.accessoryId?'레어 무기 액세서리 1개 획득!':r.duplicate?'중복 캐릭터! 보관함에 추가되었어요.':`새 친구 도감 등록! +${r.bonus??0}코인 획득!`
+    const button=document.createElement('button');button.textContent='다음 복권 확인';button.onclick=()=>dialog.close()
+    card.append(heading,img,name,message,button);dialog.append(card);document.body.append(dialog)
+    dialog.addEventListener('close',()=>{dialog.remove();next()},{once:true})
+    dialog.showModal()
+  }
+  private showLotterySummary(results:typeof this.lotteryResults):void{
+    if(!results.length)return
+    document.getElementById('lottery-summary-dialog')?.remove()
+    const dialog=document.createElement('dialog')
+    dialog.id='lottery-summary-dialog';dialog.className='lottery-win-dialog'
+    const card=document.createElement('div');card.className='lottery-win-card'
+    const heading=document.createElement('h2');const ticketIcon=document.createElement('img');ticketIcon.className='lottery-title-icon';ticketIcon.src='/assets/lottery_ticket_custom.png';ticketIcon.alt='';heading.append(ticketIcon,document.createTextNode(' 겅이복권 뽑기 결과'))
+    const description=document.createElement('p');description.textContent=`총 ${results.length}장 · 당첨 ${results.filter(r=>r.id||r.accessoryId).length}장 · 꽝 ${results.filter(r=>!r.id&&!r.accessoryId).length}장`
+    const list=document.createElement('div');list.style.cssText='max-height:min(45vh,340px);overflow-y:auto;width:100%;display:grid;gap:8px;text-align:left'
+    results.forEach((r,i)=>{
+      const line=document.createElement('div');line.style.cssText='display:flex;align-items:center;gap:10px;padding:8px;background:#fff5e8;border-radius:10px;color:#352b29'
+      if(r.id||r.accessoryId){const img=document.createElement('img');img.src=r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품';img.style.cssText='width:42px;height:42px;object-fit:contain;flex-shrink:0';line.append(img)}
+      const label=document.createElement('span');label.textContent=`${i+1}번째 · ${r.grade}상 · ${r.accessoryId?this.lotteryAccessoryName(r.accessoryId):r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}`;line.append(label);list.append(line)
+    })
+    const close=document.createElement('button');close.textContent='확인';close.onclick=()=>dialog.close()
+    card.append(heading,description,list,close);dialog.append(card);document.body.append(dialog)
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal()
+  }
+  private skipLottery():void{
+    const completedResults=[...this.lotteryResults]
+    window.clearTimeout(this.lotteryTimer);document.getElementById('lottery-win-dialog')?.remove();this.lotteryRevealed=this.lotteryResults.length
+    this.renderLotteryResults()
+    this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
+    this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
+    this.renderCollection()
+    this.lotteryResults=[]
+    this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing')
+    void this.refreshLotteryLive()
+    this.showLotterySummary(completedResults)
+  }
+  private renderLotteryResults():void{
+    const el=this.root.querySelector<HTMLElement>('.lottery-results');if(!el)return
+    el.innerHTML=this.lotteryResults.slice(0,this.lotteryRevealed).map((r,i)=>`<div class="lottery-result"><span>${i+1}번째</span><b>${r.grade}상</b><span>${r.accessoryId?this.lotteryAccessoryName(r.accessoryId):r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}</span></div>`).reverse().join('')
+    el.scrollTop=0
+  }
+  private async refreshRpsBadge():Promise<void>{
+    const status=this.root.querySelector<HTMLElement>('.rps-lobby-status')
+    if(status)status.textContent=''
+  }
   private async openRps():Promise<void> {
     try {const state=await this.store.rps();if(this.screen!=='rps')return;this.rpsState=state;this.renderRps()}
     catch(e){
@@ -1483,16 +1875,26 @@ export class GachaUi {
     if (collectionCount) collectionCount.textContent = `${count} / ${CHARACTERS.length}`
     const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
     const alreadyClaimed = this.store.data.lastDaily === today
+    const currentWeek = (() => {
+      const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(new Date())
+      const day = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[weekday]
+      const monday = new Date(`${today}T12:00:00Z`)
+      monday.setUTCDate(monday.getUTCDate() - day + 1)
+      return monday.toISOString().slice(0, 10)
+    })()
+    const attendanceCount = this.store.data.attendanceWeek === currentWeek ? (this.store.data.attendanceCount ?? 0) : 0
+    const nextDay = Math.min(7, attendanceCount + (alreadyClaimed ? 0 : 1))
+    const attendanceReward = nextDay >= 6 ? '랜덤박스 1개' : `${nextDay * 10} 코인`
     const name = this.root.querySelector<HTMLElement>('.account-name')
     if (name) name.textContent = this.store.user ? `${this.isAdmin ? '👑 운영자 · ' : ''}${this.store.user.nickname ?? this.store.user.username} 님` : ''
     const daily = this.root.querySelector<HTMLButtonElement>('[data-action="daily"]')
     if (daily) {
-      daily.disabled = alreadyClaimed
+      daily.disabled = false
       daily.classList.toggle('is-used', alreadyClaimed)
       const dailyLabel = daily.querySelector<HTMLElement>('b')
       if (dailyLabel) dailyLabel.textContent = alreadyClaimed ? '출석 완료 ✓' : '출석 체크'
       const copy = daily.querySelector<HTMLElement>('.daily-copy')
-      if (copy) copy.textContent = alreadyClaimed ? '수령 완료 · 내일 다시' : `+${DAILY_GIFT} 코인 받기`
+      if (copy) copy.textContent = alreadyClaimed ? '수령 완료 · 내일 다시' : `${attendanceReward} 받기`
     }
     const rouletteSlot = `${today}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}`
     const spun = this.store.data.lastRoulette === rouletteSlot
@@ -1527,12 +1929,13 @@ export class GachaUi {
     return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4}[b.tier])).map(character => {
       const has = owned.includes(character.id)
       const isFeatured = has && character.id === this.heroId()
+      const isHalloweenLimited = String(character.id).startsWith('halloween_')
       const footer = has && interactive
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''} tier-${character.tier === 'mermaid' ? 'rare' : character.tier === 'rare' ? 'epic' : character.tier === 'super' ? 'unique' : character.tier}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
-        <div class="friend-chance">${tierTag(character)}</div>
+        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited ? '<div class="halloween-limited-label">🎃 한정판 · 뽑기 획득 불가</div>' : ''}
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}
@@ -1602,12 +2005,13 @@ export class GachaUi {
       <div class="privacy-settings">
       <label><input type="checkbox" data-privacy="char" ${this.privacy.char ? 'checked' : ''}/> 보유 캐릭터 공개</label>
       <label><input type="checkbox" data-privacy="deco" ${this.privacy.deco ? 'checked' : ''}/> 보유 데코 공개</label>
+      <label><input type="checkbox" data-privacy="accessory" ${this.privacy.accessory ? 'checked' : ''}/> 보유 무기 액세서리 공개</label>
       <label><input type="checkbox" data-privacy="house" ${this.privacy.house ? 'checked' : ''}/> 마이홈 공개</label></div>
       <div class="privacy-save-actions"><button class="modal-primary" data-action="privacy-save">설정 저장</button><button class="modal-secondary" data-action="featured">취소하고 내 프로필로</button></div>`
   }
 
   private async savePrivacy(): Promise<void> {
-    const privacy = Object.fromEntries(['char','deco','house'].map(k => [k, Boolean(this.root.querySelector<HTMLInputElement>(`[data-privacy="${k}"]`)?.checked)])) as ProfilePrivacy
+    const privacy = Object.fromEntries(['char','deco','accessory','house'].map(k => [k, Boolean(this.root.querySelector<HTMLInputElement>(`[data-privacy="${k}"]`)?.checked)])) as ProfilePrivacy
     try { this.privacy = await this.store.setProfilePrivacy(privacy); this.root.querySelector('.users-card')?.classList.remove('privacy-mode'); this.show('featured'); this.toast('공개 설정을 저장했어요.') }
     catch (error) { this.handleError(error) }
   }
@@ -1625,7 +2029,7 @@ export class GachaUi {
         const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
-          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><span class="forge-aura ${weaponAuraClass(user.weaponLevel??0)}"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/></span><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
+          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><span class="forge-aura accessory-weapon ${weaponAuraClass(user.weaponLevel??0)}"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/></span><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
           <span class="user-count">${(user.privacy?.char ?? true) || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${(user.privacy?.deco ?? true) || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
         </button>`
       }).join('')}</div>`
@@ -1641,14 +2045,23 @@ export class GachaUi {
     const decoCounts = Object.fromEntries((user.decos ?? []).map(id => [id, 1])) as Partial<Record<DecoId, number>>
     const tab = this.userTab
     const deco = tab === 'deco'
-    const title = tab === 'house' ? '하우스' : deco ? '데코 도감' : '도감'
-    const isPrivate = !user.me && !(user.privacy?.[tab === 'house' ? 'house' : deco ? 'deco' : 'char'] ?? true)
-    const count = isPrivate ? '🔒 비공개' : tab === 'house' ? '' : deco ? `${user.decos?.length ?? 0} / ${DECOS.length}` : `${user.owned.length} / ${CHARACTERS.length}`
+    const accessory = tab === 'accessory'
+    const title = tab === 'house' ? '하우스' : accessory ? '무기 액세서리 도감' : deco ? '데코 도감' : '캐릭터 도감'
+    const isPrivate = !user.me && !(user.privacy?.[tab] ?? true)
+    const accessories = user.me ? { counts: this.store.accessory.counts || {}, grades: this.store.accessory.grades || {} } : user.accessories
+    const ownedAccessoryCount = WEAPON_ACCESSORIES.reduce((total,item)=>total+ALCHEMY_GRADES.filter(grade=>((grade.id==='normal'?accessories?.counts?.[item.id]:accessories?.grades?.[item.id]?.[grade.id])||0)>0).length,0)
+    const count = isPrivate ? '🔒 비공개' : tab === 'house' ? '' : accessory ? `${ownedAccessoryCount} / 48` : deco ? `${user.decos?.length ?? 0} / ${DECOS.length}` : `${user.owned.length} / ${CHARACTERS.length}`
     const tabButton = (id: string, label: string) => `<button type="button" class="auth-tab${tab === id ? ' is-active' : ''}" data-action="user-tab" data-tab="${id}" data-nickname="${nick}" role="tab" aria-selected="${tab === id}">${label}</button>`
+    // Match the personal accessory encyclopedia's card markup and image sizing.
+    const accessoryCards = WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(grade=>{
+      const quantity=grade.id==='normal'?(accessories?.counts?.[item.id]||0):(accessories?.grades?.[item.id]?.[grade.id]||0)
+      const has=quantity>0
+      return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'}" style="--friend:#fbe3ea;--accent:${grade.color}"><div class="friend-avatar">${has?`<img src="${item.image}" alt="${item.name}" style="filter:drop-shadow(0 0 8px ${grade.color})"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${grade.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${grade.power}</small><span class="friend-lock">${has?`${quantity.toLocaleString()}개 보유`:'미획득'}</span></article>`
+    })).join('')
     body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="user-list">← 유저 목록</button>${avatar}<b>${nick} 님의 ${title}</b><span>${count}</span></div>
       ${user.me ? '' : `<button class="modal-primary mail-compose-button" data-action="mail-compose" data-nickname="${nick}">✉ ${nick} 님에게 편지 보내기</button>`}
-      <div class="auth-tabs user-tabs user-tabs-3" role="tablist">${tabButton('char', '캐릭터 도감')}${tabButton('deco', '데코 도감')}${tabButton('house', '🏠 하우스')}</div>
-      ${isPrivate ? '<p class="users-empty privacy-hidden-notice">🔒 이 정보는 비공개로 설정되어 있어요.<br>프로필 사진과 닉네임은 계속 볼 수 있어요.</p>' : tab === 'house' ? '<div class="user-house"><p class="user-house-loading">하우스를 불러오는 중…</p></div>' : `<div class="collection-grid user-grid">${deco ? this.decoCards(decoCounts, false) : this.collectionCards(user.owned, false)}</div>`}`
+      <div class="auth-tabs user-tabs user-tabs-3 user-profile-tabs" role="tablist">${tabButton('char', '캐릭터 도감')}${tabButton('deco', '데코 도감')}${tabButton('accessory', '무기 액세서리 도감')}${tabButton('house', '하우스')}</div>
+      ${isPrivate ? '<p class="users-empty privacy-hidden-notice">🔒 이 정보는 비공개로 설정되어 있어요.<br>프로필 사진과 닉네임은 계속 볼 수 있어요.</p>' : tab === 'house' ? '<div class="user-house"><p class="user-house-loading">하우스를 불러오는 중…</p></div>' : `<div class="collection-grid user-grid ${accessory?'accessory-card-grid profile-accessory-grid':''}">${accessory?accessoryCards:deco?this.decoCards(decoCounts, false):this.collectionCards(user.owned, false)}</div>`}`
     if (tab === 'house' && !isPrivate) void this.loadUserHouse(user.nickname)
   }
   private async loadUserHouse(nickname: string): Promise<void> {
@@ -2016,11 +2429,11 @@ export class GachaUi {
     })
     if (!grid) return
     const bulkButton = this.root.querySelector<HTMLButtonElement>('.storage-bulk-sell')
-    const bulkItems = this.storageTab === 'inventory' ? [] : this.getBulkSellItems()
+    const bulkItems = this.storageTab === 'inventory' || this.storageTab === 'accessory' ? [] : this.getBulkSellItems()
     if (bulkButton) {
       const count = bulkItems.reduce((sum, item) => sum + item.count, 0)
       const coins = bulkItems.reduce((sum, item) => sum + item.count * item.price, 0)
-      bulkButton.hidden = this.storageTab === 'inventory'
+      bulkButton.hidden = true
       bulkButton.disabled = count === 0
       bulkButton.textContent = count ? `중복 일괄 판매 · ${count.toLocaleString('ko-KR')}개 (+${coins.toLocaleString('ko-KR')}코인)` : '중복 일괄 판매 · 판매할 중복 없음'
     }
@@ -2028,32 +2441,42 @@ export class GachaUi {
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 팔기 +${price}</button>${extra > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${extra}">모두 팔기 +${extra * price}</button>` : ''}</div>`
       : '<small class="storage-keep">중복 없음</small>'
     if (this.storageTab === 'inventory') {
-      if (summary) summary.textContent = '아이템은 추후 업데이트에서 추가될 예정이에요.'
+      if (summary) summary.textContent = '보유한 기타 아이템입니다. 판매는 장터에서 이용해 주세요.'
       grid.innerHTML = ([['잡초',this.store.wildWeed?.count??0,5,'/field_wild_weed.png'],['황금잡초',this.store.wildWeed?.goldenCount??0,50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([name,count,price,img])=>`<article class="storage-item"><img src="${img}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count}개 · 개당 ${price}코인</small></article>`).join('') || '<div class="inventory-empty"><strong>아직 보관된 아이템이 없어요.</strong><small>새로운 아이템이 추가되면 이곳에서 확인할 수 있어요!</small></div>'
+    } else if (this.storageTab === 'accessory') {
+      const counts = this.store.accessory.counts || {}
+      const cards = WEAPON_ACCESSORIES.flatMap(item => ALCHEMY_GRADES.map(grade => {
+        const count = grade.id === 'normal' ? (counts[item.id] || 0) : (this.store.accessory.grades?.[item.id]?.[grade.id] || 0)
+        if (count <= 0) return ''
+        const equipped = this.store.accessory.equipped === item.id && (this.store.accessory.equippedGrade || 'normal') === grade.id
+        return `<article class="storage-item accessory-storage-item" role="listitem"><span class="storage-pic is-accessory"><img src="${item.image}" alt="${item.name}" loading="lazy" style="filter:drop-shadow(0 0 7px ${grade.color})"/></span><b>${item.name}</b><small style="color:${grade.color}">${grade.name} · 전투력 +${grade.power}</small><small class="storage-count">보유 ${count.toLocaleString('ko-KR')}개${equipped ? ' · 장착 중' : ''}</small></article>`
+      })).filter(Boolean)
+      if (summary) summary.textContent = `보유 무기 액세서리 ${cards.length} / 48종 · 장착은 마이룸 → 장비에서 할 수 있어요.`
+      grid.innerHTML = cards.join('') || '<p class="users-empty">아직 획득한 무기 액세서리가 없어요.</p>'
     } else if (this.storageTab === 'char') {
       const owned = CHARACTERS.filter(c => this.store.data.owned.includes(c.id))
       const extras = owned.reduce((sum, c) => sum + (this.store.dupes[c.id] ?? 0), 0)
-      if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 중복 판매: 노말 3 · 레어 5 · 에픽 10 · 유니크 30코인 (원본 1개는 남아요).`
+      if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 판매는 장터에서 이용해 주세요.`
       grid.innerHTML = owned.length ? owned.map(c => {
         const extra = this.store.dupes[c.id] ?? 0
-        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small>${sellButtons('char', c.id, extra, CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' || c.tier === 'legendary' ? 'unique' : 'normal'])}</article>`
+        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small></article>`
       }).join('') : '<p class="users-empty">아직 뽑은 캐릭터가 없어요.</p>'
     } else {
       const placed: Record<string, number> = {}
       for (const piece of this.store.house.pieces) placed[piece.id] = (placed[piece.id] ?? 0) + 1
       const owned = DECOS.filter(d => (this.store.decos[d.id] ?? 0) > 0)
       const extras = owned.reduce((sum, d) => sum + Math.max(0, (this.store.decos[d.id] ?? 0) - Math.max(1, placed[d.id] ?? 0)), 0)
-      if (summary) summary.textContent = `보유 데코 ${owned.length}종 · 팔 수 있는 중복 ${extras}개 · 중복 데코는 1개당 ${DECO_SELL_PRICE}코인 (원본 1개와 하우스에 놓인 데코는 남아요).`
+      if (summary) summary.textContent = `보유 데코 ${owned.length}종 · 중복 ${extras}개 · 판매는 장터에서 이용해 주세요.`
       grid.innerHTML = owned.length ? owned.map(d => {
         const have = this.store.decos[d.id] ?? 0
         const onHouse = placed[d.id] ?? 0
         const extra = Math.max(0, have - Math.max(1, onHouse))
-        return `<article class="storage-item" role="listitem"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(d.name)}</b><small class="storage-count">보유 ${have}개${onHouse ? ` · 하우스 ${onHouse}` : ''}</small>${sellButtons('deco', d.id, extra, DECO_SELL_PRICE)}</article>`
+        return `<article class="storage-item" role="listitem"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(d.name)}</b><small class="storage-count">보유 ${have}개${onHouse ? ` · 하우스 ${onHouse}` : ''}</small></article>`
       }).join('') : '<p class="users-empty">아직 뽑은 데코가 없어요.</p>'
     }
   }
-  private getBulkSellItems(): { kind: 'char' | 'deco'; id: string; count: number; price: number }[] {
-    if (this.storageTab === 'char') return CHARACTERS.filter(c => this.store.data.owned.includes(c.id)).map(c => ({
+  private getBulkSellItems(category: 'char' | 'deco' = this.storageTab === 'char' ? 'char' : 'deco'): { kind: 'char' | 'deco'; id: string; count: number; price: number }[] {
+    if (category === 'char') return CHARACTERS.filter(c => this.store.data.owned.includes(c.id)).map(c => ({
       kind: 'char' as const, id: c.id, count: Math.max(0, this.store.dupes[c.id] ?? 0),
       price: CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' || c.tier === 'legendary' ? 'unique' : 'normal']
     })).filter(item => item.count > 0)
@@ -2089,12 +2512,12 @@ export class GachaUi {
     })
   }
 
-  private confirmBulkSell(): Promise<boolean> {
+  private confirmBulkSell(label: string, count: number, expected: number): Promise<boolean> {
     return new Promise(resolve => {
       const dialog = document.createElement('dialog')
       dialog.className = 'storage-confirm-dialog'
       dialog.setAttribute('aria-label', '중복 일괄 판매 확인')
-      dialog.innerHTML = `<div class="storage-confirm-content"><div class="storage-confirm-heading">중복 일괄 판매</div><p>중복을 모두 판매할까요?</p><div class="storage-confirm-actions"><button type="button" data-choice="cancel">취소</button><button type="button" data-choice="ok">판매하기</button></div></div>`
+      dialog.innerHTML = `<div class="storage-confirm-content"><div class="storage-confirm-heading">중복 일괄 판매</div><p>${label} 중복 ${count.toLocaleString('ko-KR')}개를 ${expected.toLocaleString('ko-KR')}코인에 판매할까요?</p><div class="storage-confirm-actions"><button type="button" data-choice="cancel">취소</button><button type="button" data-choice="ok">판매하기</button></div></div>`
       document.body.appendChild(dialog)
       let settled = false
       const finish = (ok: boolean) => {
@@ -2115,13 +2538,21 @@ export class GachaUi {
   }
 
   private async sellBulk(button: HTMLButtonElement): Promise<void> {
-    const items = this.getBulkSellItems()
-    if (!items.length) { this.toast('판매할 중복 아이템이 없어요.'); return }
+    // Bind each bulk-sale action to its rendered category, not another tab's state.
+    const category = button.dataset.kind
+    if (this.shopTab !== 'sell' || (category !== 'char' && category !== 'deco') || this.shopSellTab !== category || button.disabled) {
+      this.toast('판매 종류를 다시 선택해 주세요.')
+      return
+    }
+    button.disabled = true
+    const items = this.getBulkSellItems(category).filter(item => item.kind === category)
+    if (!items.length) { button.disabled = false; this.toast('판매할 중복 아이템이 없어요.'); return }
     const count = items.reduce((sum, item) => sum + item.count, 0)
     const expected = items.reduce((sum, item) => sum + item.count * item.price, 0)
-    const label = this.storageTab === 'char' ? '캐릭터' : '데코'
-    if (!await this.confirmBulkSell()) return
-    button.disabled = true
+    const label = category === 'char' ? '캐릭터' : '데코'
+    if (!await this.confirmBulkSell(label, count, expected)) { button.disabled = false; return }
+    // Refuse to sell if the user switched categories while the confirmation was open.
+    if (this.shopSellTab !== category || this.shopTab !== 'sell') { button.disabled = false; return }
     let sold = 0
     let earned = 0
     try {
@@ -2137,6 +2568,7 @@ export class GachaUi {
     } finally {
       this.renderWallet()
       this.renderStorage()
+      this.renderShop()
     }
   }
 
@@ -2146,6 +2578,7 @@ export class GachaUi {
       const coins = await this.store.sell(kind, id, count)
       this.renderWallet()
       this.renderStorage()
+      this.renderShop()
       this.audio.play('win')
       const name = kind === 'char' ? fullName(characterById(id as CharacterId)) : decoById(id as DecoId).name
       this.toast(`${name} 중복 ${count}개를 팔아 ${coins}코인을 받았어요!`)
@@ -2304,7 +2737,7 @@ export class GachaUi {
     const field=this.root.querySelector<HTMLElement>('.wild-weed-spawns')
     if(!field)return
     const weeds=this.store.wildWeed?.weeds??[]
-    field.innerHTML=weeds.map(weed=>`<button type="button" class="wild-weed-pick${weed.type==='golden'?' is-golden':''}" data-weed-id="${weed.id}" data-weed-type="${weed.type}" aria-label="잡초 길게 누르기" style="left:${weed.x}%;top:${weed.y}%"><img src="${weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png'}" alt="잡초"/><span class="wild-weed-hold-text">잡초를 뽑는 중입니다.</span></button>`).join('')
+    field.innerHTML=weeds.map(weed=>`<button type="button" class="wild-weed-pick${weed.type==='golden'?' is-golden':''}" data-weed-id="${weed.id}" data-weed-type="${weed.type}" aria-label="잡초 길게 누르기" style="left:${weed.x}%;top:${weed.y}%"><img src="${weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png'}" alt="잡초"/><span class="wild-weed-hold-text">남은 시간 1.7초</span></button>`).join('')
   }
   private async pickWildWeed(id:number): Promise<void> {
     if(this.wildWeedBusy||!this.store.wildWeed?.weeds.some(w=>w.id===id))return
@@ -2369,9 +2802,9 @@ export class GachaUi {
       // Restore the existing weapon attack animation at its original arena position.
       if (fighter && this.store.forge && ['pink','blue','yellow'].includes(this.store.forge.weapon)) {
         const weapon = document.createElement('div')
-        weapon.className = `battle-weapon-strike forge-aura ${weaponAuraClass(this.store.forge.level)}`
+        weapon.className = `battle-weapon-strike forge-aura accessory-weapon ${weaponAuraClass(this.store.forge.level)}`
         weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
-        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b>`
+        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/>${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}`
         battleField.appendChild(weapon)
       }
     }
@@ -2472,6 +2905,35 @@ export class GachaUi {
       const seconds = Math.ceil(this.store.nextWeedCoinIn() / 1000)
       next.textContent = weeding ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : '--:--'
     }
+  }
+
+  private showUpdateNoticeOnce(): void {
+    const username = this.store.user?.username
+    if (!username || this.screen !== 'title') return
+    const key = `geongi-update-20261109-${username.toLowerCase()}`
+    try { if (window.localStorage.getItem(key) === 'seen') return } catch { /* private mode */ }
+    if (this.root.querySelector('.update-notice-overlay')) return
+    const overlay = document.createElement('div')
+    overlay.className = 'update-notice-overlay'
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-label', '업데이트 안내')
+    overlay.innerHTML = `<div class="update-notice-panel"><div class="update-notice-scroll">
+      <h2>업데이트 안내</h2><p class="update-notice-date">2026년 11월 9일 업데이트 내역</p>
+      <p>이번 업데이트에서는 신규 콘텐츠인 겅이복권, 무기 액세서리, 연금술 시스템이 추가되었으며, 신규 레전더리 캐릭터 4종과 다양한 밸런스 조정이 진행되었습니다.</p>
+      <h3>1. 신규 콘텐츠 – 겅이복권 출시</h3><ul><li>겅이복권이 새롭게 추가되었습니다.</li><li>복권은 1회당 100코인으로 이용할 수 있습니다.</li><li>모든 유저가 복권의 남은 수량을 공유합니다.</li><li>복권을 통해 레전더리 등급의 한정판 캐릭터를 획득할 수 있습니다.</li><li>상위 등급 상품이 모두 소진되면 복권이 초기화됩니다.</li></ul>
+      <h3>2. 무기 액세서리 시스템 추가</h3><ul><li>무기에 장착할 수 있는 액세서리가 추가되었습니다.</li><li>무기 액세서리를 장착하면 전투력이 증가합니다.</li><li>무기 액세서리는 '활동 → 키링뽑기'에서 획득할 수 있습니다.</li><li>기존 데코뽑기는 삭제되고 키링뽑기로 변경됩니다.</li><li>동일 캐릭터의 노말 등급 액세서리와 강화파편을 사용하여 합성할 수 있습니다.</li><li>무기 액세서리는 '마이룸 → 장비창'에서 장착할 수 있습니다.</li><li>무기 액세서리 도감이 새롭게 추가되었습니다.</li></ul>
+      <h3>3. 신규 시스템 – 연금술 추가</h3><ul><li>연금술을 통해 무기 액세서리를 합성할 수 있습니다.</li><li>합성에는 동일 캐릭터의 노말 등급 액세서리와 강화파편이 필요합니다.</li><li>필요한 재료가 모두 준비되면 100% 확률로 합성에 성공합니다.</li></ul>
+      <h3>4. 신규 레전더리 캐릭터 4종 추가</h3><ul><li>우사기(귤) – 레전더리</li><li>치이카와(할로윈) – 레전더리 / 한정판</li><li>하치와레(할로윈) – 레전더리 / 한정판</li><li>우사기(할로윈) – 레전더리 / 한정판</li></ul>
+      <h3>5. 기타 변경 및 밸런스 조정</h3><ul><li>토벌장 몬스터 체력 20,000 → 30,000 상향</li><li>몬스터 체력 증가에 따른 강화파편 수급량 하향</li><li>장터 내 강화파편 구매 기능 삭제</li><li>모몽가와 가위바위보 콘텐츠 삭제</li><li>출석체크 보상 상향</li><li>기존 데코뽑기 삭제</li><li>무기 액세서리 도감 추가</li></ul>
+      <h3>6. 기타 안내사항</h3><p>이번 업데이트에서는 신규 콘텐츠와 시스템이 다수 추가되어 일부 버그 및 UI 오류가 발생할 수 있습니다.</p><p>게임 이용 중 오류나 개선이 필요한 사항을 발견하시면 제보 부탁드립니다.</p>
+      <button type="button" class="update-notice-close">닫기</button>
+    </div></div>`
+    overlay.querySelector<HTMLButtonElement>('.update-notice-close')?.addEventListener('click', () => {
+      try { window.localStorage.setItem(key, 'seen') } catch { /* private mode */ }
+      overlay.remove()
+    })
+    this.root.appendChild(overlay)
   }
 
   private async submitNickname(): Promise<void> {
