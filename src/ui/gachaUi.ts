@@ -1142,7 +1142,7 @@ export class GachaUi {
         const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id
         const members = [this.store.battle?.id,this.store.battle?.secondId,this.store.battle?.thirdId].filter(Boolean)
         if (wasDeployed && members.length === 1) {
-          if (!window.confirm('도전중인 스테이지가 초기화됩니다.\n\n확인: 마지막 캐릭터 해제\n취소: 배치 유지')) return
+          if (!await this.confirmBattleUndeploy()) return
         }
         const earned = await this.store.startBattle(id)
         const name = fullName(characterById(id))
@@ -3015,6 +3015,41 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(this.battleRewardPopupTimer)clearTimeout(this.battleRewardPopupTimer)
     this.battleRewardPopupTimer=setTimeout(()=>{popup.classList.remove('is-visible');popup.hidden=true},3000)
   }
+  private confirmBattleUndeploy(): Promise<boolean> {
+    return new Promise(resolve => {
+      document.getElementById('battle-undeploy-dialog')?.remove()
+      const dialog = document.createElement('dialog')
+      dialog.id = 'battle-undeploy-dialog'
+      dialog.setAttribute('aria-labelledby', 'battle-undeploy-title')
+      dialog.setAttribute('aria-describedby', 'battle-undeploy-description')
+      dialog.style.cssText = 'border:0;border-radius:22px;padding:0;background:transparent;max-width:min(340px,calc(100vw - 32px));width:100%;box-shadow:0 12px 35px #392a2a66;'
+      dialog.innerHTML = `<div style="background:#fff9eb;border:3px solid #a77851;border-radius:22px;padding:24px 20px;text-align:center;color:#674630;font-family:inherit">
+        <div style="font-size:28px;margin-bottom:7px" aria-hidden="true">⚠️</div>
+        <h3 id="battle-undeploy-title" style="font-size:19px;font-weight:900;margin:0 0 12px">배치 해제 확인</h3>
+        <p id="battle-undeploy-description" style="font-size:15px;line-height:1.6;margin:0 0 20px">도전중인 스테이지가 초기화됩니다.</p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button type="button" data-choice="cancel" style="flex:1;border:2px solid #d6b99d;background:#fff;color:#76553c;border-radius:13px;padding:11px 8px;font-weight:800;font-size:15px;cursor:pointer">취소</button>
+          <button type="button" data-choice="confirm" style="flex:1;border:2px solid #a77851;background:#ffe3a6;color:#664124;border-radius:13px;padding:11px 8px;font-weight:900;font-size:15px;cursor:pointer">확인</button>
+        </div>
+      </div>`
+      document.body.appendChild(dialog)
+      let settled = false
+      const finish = (accepted:boolean) => {
+        if (settled) return
+        settled = true
+        dialog.close()
+        dialog.remove()
+        resolve(accepted)
+      }
+      dialog.querySelector<HTMLButtonElement>('[data-choice="cancel"]')?.addEventListener('click', () => finish(false))
+      dialog.querySelector<HTMLButtonElement>('[data-choice="confirm"]')?.addEventListener('click', () => finish(true))
+      dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false) })
+      dialog.addEventListener('click', event => { if (event.target === dialog) finish(false) })
+      dialog.showModal()
+      dialog.style.setProperty('z-index','99999')
+    })
+  }
+
   private renderBattleStatus(): void {
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
     const view = this.store.battleView()
