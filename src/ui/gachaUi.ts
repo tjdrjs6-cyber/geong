@@ -1248,7 +1248,7 @@ export class GachaUi {
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
-    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 모든 키링에 같은 확률과 보상이 적용돼요.'
+if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 모든 키링에 같은 확률과 보상이 적용돼요.'
     this.updateClawPosition()
   }
 
