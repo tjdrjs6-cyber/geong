@@ -2381,7 +2381,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(status)status.textContent=hp===0?'':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
 
 
-    const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===19?45:level===20?50:level>=21?Math.min(100,50+(level-20)*10):20+(level-15)*5
+    const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===19?40:level===20?50:level>=21?Math.min(100,50+(level-20)*10):20+(level-15)*5
     const rankedMembers=[...room.members].sort((a,b)=>(b.power??(battlePower(b.characterId)+weaponPower(b.weaponLevel)))-(a.power??(battlePower(a.characterId)+weaponPower(a.weaponLevel))) )
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
