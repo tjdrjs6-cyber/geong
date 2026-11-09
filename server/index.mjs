@@ -581,7 +581,7 @@ async function getWeed(accountId) {
 const STAGE_LIMIT_MS = 30 * 60 * 1000
 const STAGE_HP = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000]
 function stageHp(stage) { return STAGE_HP[stage - 1] ?? (180000 + Math.max(0,stage - 40) * 4000) }
-const STAGE_REWARDS = [[1,0],[1,0],[2,0],[2,0],[3,0],[3,1],[4,1],[4,1],[5,1],[5,1],[6,2],[6,2],[7,2],[7,2],[8,2],[8,3],[9,3],[9,3],[10,3],[10,3],[11,4],[11,4],[12,4],[12,4],[13,4],[13,5],[14,5],[14,5],[15,5],[15,5],[16,6],[16,6],[17,6],[17,6],[18,6],[18,7],[19,7],[19,7],[20,7],[20,7]]
+const STAGE_REWARDS = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 3], [17, 3], [18, 3], [19, 3], [20, 3], [16, 4], [16, 4], [17, 4], [17, 4], [18, 4], [18, 5], [19, 5], [19, 5], [20, 5], [21, 5], [22, 6], [23, 6], [24, 6], [25, 6], [26, 6], [27, 7], [28, 7], [29, 7], [30, 7], [31, 7]]
 function stageReward(stage) { const [coins, fragments] = STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0, stage - 40), 7]; return {coins, fragments} }
 function battleRow(row) {
   if (!row) return null
@@ -821,7 +821,7 @@ async function expeditionSettle(conn, day, serverId, now) {
     for(const player of players) {
       const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
       if(paid.affectedRows) {
-        const coins=stage===1?300:stage===2?500:800, fragments=stage===1?30:stage===2?50:80
+        const coins=stage===1?150:stage===2?300:500, fragments=stage===1?15:stage===2?20:30
         await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
         await trimInbox(conn,player.account_id)
       }
