@@ -210,6 +210,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
+    if (screen === 'title' && this.store.user) window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
     if (screen === 'title') { void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
@@ -385,7 +386,7 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/lottery_ticket_custom.png" alt="복권"/></span><span><b>겅이복권</b></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon"><img src="/assets/roulette_icon_074.png" alt="" /></span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/lottery_ticket_custom.png" alt="복권"/></span><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기</button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비</button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
@@ -2904,6 +2905,35 @@ export class GachaUi {
       const seconds = Math.ceil(this.store.nextWeedCoinIn() / 1000)
       next.textContent = weeding ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : '--:--'
     }
+  }
+
+  private showUpdateNoticeOnce(): void {
+    const username = this.store.user?.username
+    if (!username || this.screen !== 'title') return
+    const key = `geongi-update-20261109-${username.toLowerCase()}`
+    try { if (window.localStorage.getItem(key) === 'seen') return } catch { /* private mode */ }
+    if (this.root.querySelector('.update-notice-overlay')) return
+    const overlay = document.createElement('div')
+    overlay.className = 'update-notice-overlay'
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-label', '업데이트 안내')
+    overlay.innerHTML = `<div class="update-notice-panel"><div class="update-notice-scroll">
+      <h2>업데이트 안내</h2><p class="update-notice-date">2026년 11월 9일 업데이트 내역</p>
+      <p>이번 업데이트에서는 신규 콘텐츠인 겅이복권, 무기 액세서리, 연금술 시스템이 추가되었으며, 신규 레전더리 캐릭터 4종과 다양한 밸런스 조정이 진행되었습니다.</p>
+      <h3>1. 신규 콘텐츠 – 겅이복권 출시</h3><ul><li>겅이복권이 새롭게 추가되었습니다.</li><li>복권은 1회당 100코인으로 이용할 수 있습니다.</li><li>모든 유저가 복권의 남은 수량을 공유합니다.</li><li>복권을 통해 레전더리 등급의 한정판 캐릭터를 획득할 수 있습니다.</li><li>상위 등급 상품이 모두 소진되면 복권이 초기화됩니다.</li></ul>
+      <h3>2. 무기 액세서리 시스템 추가</h3><ul><li>무기에 장착할 수 있는 액세서리가 추가되었습니다.</li><li>무기 액세서리를 장착하면 전투력이 증가합니다.</li><li>무기 액세서리는 '활동 → 키링뽑기'에서 획득할 수 있습니다.</li><li>기존 데코뽑기는 삭제되고 키링뽑기로 변경됩니다.</li><li>동일 캐릭터의 노말 등급 액세서리와 강화파편을 사용하여 합성할 수 있습니다.</li><li>무기 액세서리는 '마이룸 → 장비창'에서 장착할 수 있습니다.</li><li>무기 액세서리 도감이 새롭게 추가되었습니다.</li></ul>
+      <h3>3. 신규 시스템 – 연금술 추가</h3><ul><li>연금술을 통해 무기 액세서리를 합성할 수 있습니다.</li><li>합성에는 동일 캐릭터의 노말 등급 액세서리와 강화파편이 필요합니다.</li><li>필요한 재료가 모두 준비되면 100% 확률로 합성에 성공합니다.</li></ul>
+      <h3>4. 신규 레전더리 캐릭터 4종 추가</h3><ul><li>우사기(귤) – 레전더리</li><li>치이카와(할로윈) – 레전더리 / 한정판</li><li>하치와레(할로윈) – 레전더리 / 한정판</li><li>우사기(할로윈) – 레전더리 / 한정판</li></ul>
+      <h3>5. 기타 변경 및 밸런스 조정</h3><ul><li>토벌장 몬스터 체력 20,000 → 30,000 상향</li><li>몬스터 체력 증가에 따른 강화파편 수급량 하향</li><li>장터 내 강화파편 구매 기능 삭제</li><li>모몽가와 가위바위보 콘텐츠 삭제</li><li>출석체크 보상 상향</li><li>기존 데코뽑기 삭제</li><li>무기 액세서리 도감 추가</li></ul>
+      <h3>6. 기타 안내사항</h3><p>이번 업데이트에서는 신규 콘텐츠와 시스템이 다수 추가되어 일부 버그 및 UI 오류가 발생할 수 있습니다.</p><p>게임 이용 중 오류나 개선이 필요한 사항을 발견하시면 제보 부탁드립니다.</p>
+      <button type="button" class="update-notice-close">닫기</button>
+    </div></div>`
+    overlay.querySelector<HTMLButtonElement>('.update-notice-close')?.addEventListener('click', () => {
+      try { window.localStorage.setItem(key, 'seen') } catch { /* private mode */ }
+      overlay.remove()
+    })
+    this.root.appendChild(overlay)
   }
 
   private async submitNickname(): Promise<void> {

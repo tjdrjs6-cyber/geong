@@ -4518,3 +4518,16 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* test.073: hide the lobby representative character's name badge only. */
 #ui .gacha-screen .toon-stage .toon-hero-name{display:none!important;}
+
+/* test.074: roulette artwork and first-login update notice */
+#ui .gacha-screen .roulette-chip .reward-icon img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important;animation:none!important;transform:none!important}
+#ui .update-notice-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;background:rgba(28,22,29,.7)!important;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important}
+#ui .update-notice-panel{width:min(100%,440px)!important;max-height:100%!important;background:#fff9ed!important;border:3px solid #b78c69!important;border-radius:22px!important;box-shadow:0 14px 40px #0005!important;overflow:hidden!important;box-sizing:border-box!important}
+#ui .update-notice-scroll{max-height:calc(100dvh - 65px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:24px 22px 22px!important;box-sizing:border-box!important;color:#513c32!important;font-size:13px!important;line-height:1.7!important;text-align:left!important}
+#ui .update-notice-scroll h2{font-size:23px!important;text-align:center!important;margin:0 0 4px!important;color:#573b31!important}
+#ui .update-notice-scroll .update-notice-date{text-align:center!important;font-weight:700!important;margin:0 0 18px!important}
+#ui .update-notice-scroll h3{font-size:15px!important;line-height:1.45!important;margin:20px 0 8px!important;color:#684331!important}
+#ui .update-notice-scroll p{margin:10px 0!important}
+#ui .update-notice-scroll ul{padding-left:20px!important;margin:6px 0!important;list-style:disc!important}
+#ui .update-notice-scroll li{margin:5px 0!important;display:list-item!important}
+#ui .update-notice-close{display:block!important;margin:26px auto 2px!important;width:160px!important;max-width:100%!important;min-height:44px!important;border:2px solid #b88c69!important;border-radius:14px!important;background:#f9dfa8!important;color:#513a2c!important;font-size:16px!important;font-weight:800!important;cursor:pointer!important}
