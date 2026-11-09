@@ -4863,3 +4863,16 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
  #ui .battle-screen .battle-stage-rewards .battle-reward-caption{font-size:10px!important;}
  #ui .battle-screen .battle-stage-rewards .battle-reward-piece{font-size:10px!important;}
 }
+
+/* Nov 9: white upper HUD, slightly lower stage and rewards, shorter clear reward popup */
+#ui .battle-screen .weed-header {background:#fff!important;border-radius:0!important;box-shadow:none!important;}
+#ui .battle-screen .battle-stage-center {top:17px!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards {top:17px!important;right:6px!important;background:rgba(255,249,236,.96)!important;}
+#ui .battle-screen .battle-reward-popup:not([hidden]) {padding:6px 12px!important;line-height:1.2!important;border-radius:12px!important;}
+#ui .battle-screen .battle-reward-popup-title {font-size:13px!important;margin-bottom:2px!important;}
+#ui .battle-screen .battle-reward-popup-items {font-size:12px!important;gap:1px!important;}
+#ui .battle-screen .battle-reward-popup-items img {width:15px!important;height:15px!important;}
+/* Extend stage-clear/failure overlay upward over the full HUD while active */
+#ui .battle-screen .battle-field:has(.battle-stage-transition.is-visible) {overflow:visible!important;z-index:60!important;}
+#ui .battle-screen .battle-stage-transition {top:-112px!important;bottom:0!important;left:0!important;right:0!important;z-index:80!important;}
+@media(max-width:420px){#ui .battle-screen .battle-stage-center{top:16px!important;}#ui .battle-screen .weed-header .battle-stage-rewards{top:16px!important;}}
