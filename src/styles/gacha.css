@@ -4690,3 +4690,16 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-stage-rewards .battle-reward-icon{width:18px!important;height:18px!important;flex-shrink:0!important}
 #ui .battle-field .battle-weapon-strike{position:absolute!important;left:auto!important;right:22%!important;top:50%!important;bottom:auto!important;z-index:15!important}
 #ui .battle-field .bf-friend-body .battle-weapon-strike{left:50%!important;right:auto!important;transform:translateX(-50%)!important}
+
+/* Compact clean battle header: independent layout, no collision with STAGE heading */
+#ui .battle-screen .weed-header{position:relative!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:9px 12px!important;min-height:68px!important;height:auto!important;background:#b4dcfa!important;z-index:25!important;box-sizing:border-box!important}
+#ui .battle-screen .weed-header .weed-back{position:static!important;transform:none!important;flex:0 0 auto!important;font-size:12px!important;padding:8px 10px!important;white-space:nowrap!important}
+#ui .battle-screen .battle-stage-rewards{position:static!important;transform:none!important;flex:0 1 210px!important;min-width:0!important;max-width:210px!important;width:auto!important;box-sizing:border-box!important;padding:6px 9px!important;gap:3px!important;border-radius:14px!important;line-height:1.1!important;box-shadow:0 2px 5px #70522b25!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-caption{background:none!important;border:0!important;padding:0!important;font-size:11px!important;color:#805332!important;font-weight:900!important;text-align:center!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-combined{display:flex!important;flex-wrap:nowrap!important;gap:7px!important;justify-content:space-evenly!important;width:100%!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece{background:none!important;border:0!important;padding:0!important;display:flex!important;align-items:center!important;gap:3px!important;white-space:nowrap!important;font-size:12px!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece small{font-size:10px!important;font-weight:800!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-icon{width:16px!important;height:16px!important}
+#ui .battle-screen .battle-stage-heading{top:7%!important;font-size:clamp(22px,6cqw,35px)!important;z-index:12!important}
+#ui .battle-screen .battle-field .battle-weapon-strike{display:none!important;visibility:hidden!important;animation:none!important}
+.battle-retry-challenge:not([hidden]){display:block;margin:7px auto;padding:10px 16px;border:2px solid #b78c50;border-radius:14px;background:#fff1cf;color:#67411c;font-weight:900;cursor:pointer}

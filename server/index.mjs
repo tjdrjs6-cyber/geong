@@ -95,7 +95,7 @@ async function prepareDatabase() {
     damage INT NOT NULL DEFAULT 0
   )`)
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
-  for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0", "stage_limit_ms BIGINT NOT NULL DEFAULT 1800000", "boss_ready TINYINT NOT NULL DEFAULT 0"]) {
+  for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0", "stage_limit_ms BIGINT NOT NULL DEFAULT 1800000", "boss_ready TINYINT NOT NULL DEFAULT 0", "retry_stage INT NOT NULL DEFAULT 0"]) {
     try { await pool.query(`ALTER TABLE gm_battle ADD COLUMN ${column}`) } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
@@ -587,9 +587,9 @@ function battleRow(row) {
   if (!row) return null
   return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
     since: Number(row.since_ms), damage: Number(row.damage), stage: Math.max(1, Number(row.stage) || 1),
-    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0, stageLimitMs: Number(row.stage_limit_ms) || STAGE_LIMIT_MS, bossReady: Boolean(row.boss_ready) }
+    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0, stageLimitMs: Number(row.stage_limit_ms) || STAGE_LIMIT_MS, bossReady: Boolean(row.boss_ready), retryStage: Number(row.retry_stage) || 0 }
 }
-const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready FROM gm_battle WHERE account_id = ?'
+const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage FROM gm_battle WHERE account_id = ?'
 async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
   return battleRow(rows[0])
@@ -621,11 +621,12 @@ async function updateBattle(accountId, nextCharacter) {
         tickAt += 3000
         if (tickAt - battle.stageSince >= battle.stageLimitMs) {
           failedStage = battle.stage
+          battle.retryStage = failedStage > 1 ? failedStage : 0
           battle.stage = Math.max(1, battle.stage - 1)
           battle.bossReady = false
-          battle.stageSince = tickAt; battle.stageDamage = 0
+          battle.stageSince = now; battle.stageDamage = 0
           battle.stageLimitMs = STAGE_LIMIT_MS
-          battle.since = tickAt
+          battle.since = now
           break
         }
         battle.stageDamage += power
@@ -635,13 +636,14 @@ async function updateBattle(accountId, nextCharacter) {
           coinsEarned += reward.coins; earned += reward.fragments
           cleared.push({stage:battle.stage,coins:reward.coins,fragments:reward.fragments})
           if (repeatBeforeBoss) battle.bossReady = true
-          if (!repeatBeforeBoss) { battle.stage++; battle.bossReady = false }
+          if (!repeatBeforeBoss) { battle.stage++; battle.bossReady = false; battle.retryStage = 0 }
           battle.stageSince = tickAt; battle.stageDamage = 0
         }
       }
-      battle.since = tickAt
+      if (!failedStage) battle.since = tickAt
       if (!failedStage && now - battle.stageSince >= battle.stageLimitMs) {
         failedStage = battle.stage
+        battle.retryStage = failedStage > 1 ? failedStage : 0
         battle.stage = Math.max(1, battle.stage - 1)
         battle.bossReady = false
         battle.stageSince = now; battle.stageDamage = 0; battle.since = now
@@ -650,7 +652,7 @@ async function updateBattle(accountId, nextCharacter) {
       battle.damage = battle.stageDamage
     }
     if (nextCharacter) {
-      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0, stageLimitMs: STAGE_LIMIT_MS, bossReady: false }
+      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0, stageLimitMs: STAGE_LIMIT_MS, bossReady: false, retryStage: 0 }
       else {
         const members = [battle.id, battle.secondId, battle.thirdId].filter(Boolean)
         if (members.includes(nextCharacter)) members.splice(members.indexOf(nextCharacter), 1)
@@ -664,9 +666,9 @@ async function updateBattle(accountId, nextCharacter) {
     state.fragments = (state.fragments ?? 0) + earned
     state.gems = (state.gems ?? 0) + coinsEarned
     if (!battle) await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
-    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready)`,
-      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0])
+    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage)`,
+      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0])
     await conn.commit()
     return { save: state, battle, earned, coinsEarned, cleared, failedStage, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
@@ -1568,6 +1570,22 @@ const routes = {
     const earned = await autoSettle(account.id)
     send(res, 200, { earned, save: await getSave(account.id), weed: await getWeed(account.id), battle: await getBattle(account.id), now: Date.now() })
   },
+  'POST /api/battle/retry-stage': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows]=await conn.query(BATTLE_SELECT+' FOR UPDATE',[account.id])
+      const battle=battleRow(rows[0])
+      if(!battle||battle.retryStage!==battle.stage+1){await conn.rollback();return send(res,409,{error:'retry_not_ready'})}
+      const now=Date.now()
+      await conn.query('UPDATE gm_battle SET stage=?,retry_stage=0,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=? WHERE account_id=?',[battle.retryStage,now,now,STAGE_LIMIT_MS,account.id])
+      await conn.commit()
+      send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
+    }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+  },
   'POST /api/battle/challenge-boss': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -1639,7 +1657,7 @@ const routes = {
     await readJson(req)
     if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
     const now = Date.now()
-    await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ?, stage_limit_ms = 1800000, boss_ready=0 WHERE account_id = ?', [now, now, account.id])
+    await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ?, stage_limit_ms = 1800000, boss_ready=0, retry_stage=0 WHERE account_id = ?', [now, now, account.id])
     send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
   },
   'POST /api/battle/claim': async (req, res) => {
