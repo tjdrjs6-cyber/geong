@@ -4531,3 +4531,35 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .update-notice-scroll ul{padding-left:20px!important;margin:6px 0!important;list-style:disc!important}
 #ui .update-notice-scroll li{margin:5px 0!important;display:list-item!important}
 #ui .update-notice-close{display:block!important;margin:26px auto 2px!important;width:160px!important;max-width:100%!important;min-height:44px!important;border:2px solid #b88c69!important;border-radius:14px!important;background:#f9dfa8!important;color:#513a2c!important;font-size:16px!important;font-weight:800!important;cursor:pointer!important}
+
+/* test.075: iOS update notice: independently scrollable dialog */
+#ui .update-notice-overlay {
+  height:100dvh!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+  touch-action:pan-y!important;
+}
+#ui .update-notice-panel {
+  display:flex!important;
+  flex-direction:column!important;
+  height:auto!important;
+  max-height:calc(100dvh - 28px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  touch-action:pan-y!important;
+}
+#ui .update-notice-scroll {
+  display:block!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:scroll!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain!important;
+  touch-action:pan-y!important;
+  pointer-events:auto!important;
+  position:relative!important;
+}
+#ui .update-notice-scroll * {touch-action:pan-y!important;}
