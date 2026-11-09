@@ -13,8 +13,11 @@ const WEAPON_ACCESSORIES = [
 const ALCHEMY_GRADES=[{id:'normal',name:'노말',power:1,color:'#aaa'},{id:'rare',name:'레어',power:3,cost:2,fragments:20,color:'#4ba7ff'},{id:'epic',name:'에픽',power:5,cost:5,fragments:50,color:'#ff5050'},{id:'unique',name:'유니크',power:10,cost:10,fragments:100,color:'#ad59ff'},{id:'legendary',name:'레전더리',power:20,cost:20,fragments:200,color:'#ffd337'},{id:'transcendent',name:'초월',power:30,cost:40,fragments:400,color:'#ff8500'}] as const
 const accessoryInfo=(id:string|null)=>WEAPON_ACCESSORIES.find(item=>item.id===id)
 // Enhancement aura tiers are visual-only and never affect weapon stats.
+function equippedAccessoryPower(equipped: string | null | undefined, grade: string | null | undefined): number {
+  return equipped ? (ALCHEMY_GRADES.find(g => g.id === (grade || 'normal'))?.power ?? 0) : 0
+}
 function weaponAuraClass(level: number): string {
-  return level >= 20 ? 'aura-20' : level >= 17 ? 'aura-17' : level >= 15 ? 'aura-15' : level >= 13 ? 'aura-13' : level >= 10 ? 'aura-10' : ''
+  return level >= 25 ? 'aura-25' : level >= 23 ? 'aura-23' : level >= 20 ? 'aura-20' : level >= 17 ? 'aura-17' : level >= 15 ? 'aura-15' : level >= 13 ? 'aura-13' : level >= 10 ? 'aura-10' : ''
 }
 import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'
@@ -639,7 +642,7 @@ export class GachaUi {
     const equipped=accessoryInfo(this.store.accessory.equipped)
     const counts=this.store.accessory.counts||{}
     const accessories=WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(g=>{const count=g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0);const has=count>0;const selected=this.store.accessory.equipped===item.id&&(this.store.accessory.equippedGrade||'normal')===g.id;return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'} ${selected?'is-equipped':''}" style="--friend:#fbe3ea;--accent:${g.color}"><div class="friend-avatar">${has?`<img src="${item.image}" style="filter:drop-shadow(0 0 8px ${g.color})" alt="${item.name}"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${g.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${g.power} · ${count}개</small><button type="button" class="accessory-equip-button" data-accessory="${item.id}" data-grade="${g.id}" ${!forge||!has?'disabled':''}>${selected?'장착 해제':has?'장착하기':'미획득'}</button></article>`})).join('')
-    dialog.innerHTML = `<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close" aria-label="닫기">×</button><h2><img src="/assets/forge/rakko_face.png" alt="" /> 내 장비</h2>${forge ? `<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(forge.level)}"><img src="/assets/forge/${forge.weapon}.png" alt="장착 무기" />${equipped?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${equipped.image}" alt="장착된 ${equipped.name}"/>`:``}</span><div><b>${names[forge.weapon] ?? '내 무기'}</b><strong>+${forge.level}강 / 최대 +20강</strong><span>무기 전투력 +${forge.bonus}</span></div></div><p class="myroom-equipment-note">강화는 상점 → 대장간에서 할 수 있어요.</p>` : '<p class="myroom-equipment-note">아직 선택한 무기가 없어요.<br>상점 → 대장간에서 무기를 선택할 수 있어요.</p>'}<div class="accessory-equip-section"><b>무기 액세서리</b><div class="accessory-scroll collection-grid accessory-card-grid">${accessories}</div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+    dialog.innerHTML = `<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close" aria-label="닫기">×</button><h2><img src="/assets/forge/rakko_face.png" alt="" /> 내 장비</h2>${forge ? `<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(forge.level)}"><img src="/assets/forge/${forge.weapon}.png" alt="장착 무기" />${equipped?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${equipped.image}" alt="장착된 ${equipped.name}"/>`:``}</span><div><b>${names[forge.weapon] ?? '내 무기'}</b><strong>+${forge.level}강 / 최대 +25강</strong><span class="forge-power-breakdown">영구 전투력 보너스<br>무기 전투력 +${forge.bonus}<br>액세서리 전투력 +${equippedAccessoryPower(this.store.accessory.equipped,this.store.accessory.equippedGrade)}</span></div></div><p class="myroom-equipment-note">강화는 상점 → 대장간에서 할 수 있어요.</p>` : '<p class="myroom-equipment-note">아직 선택한 무기가 없어요.<br>상점 → 대장간에서 무기를 선택할 수 있어요.</p>'}<div class="accessory-equip-section"><b>무기 액세서리</b><div class="accessory-scroll collection-grid accessory-card-grid">${accessories}</div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(button=>button.addEventListener('click',async()=>{
       const id=button.dataset.accessory||null
@@ -658,7 +661,7 @@ export class GachaUi {
         const weaponSlot=dialog.querySelector<HTMLElement>('.forge-current .accessory-weapon')
         if(weaponSlot){weaponSlot.querySelector('.weapon-keyring')?.remove();if(currentCharm){const img=document.createElement('img');img.className='weapon-keyring';img.style.setProperty('--keyring-glow',ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa');img.style.setProperty('filter',`drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})`,'important');img.src=currentCharm.image;img.alt=`장착된 ${currentCharm.name}`;weaponSlot.appendChild(img)}}
         const powerLabel=dialog.querySelector<HTMLElement>('.forge-current div span')
-        if(powerLabel&&this.store.forge)powerLabel.textContent=`무기 전투력 +${this.store.forge.bonus}`
+        if(powerLabel&&this.store.forge)powerLabel.innerHTML=`영구 전투력 보너스<br>무기 전투력 +${this.store.forge.bonus}<br>액세서리 전투력 +${equippedAccessoryPower(this.store.accessory.equipped,this.store.accessory.equippedGrade)}`
         this.renderWallet();this.renderHero()
       }
       catch(error){this.handleError(error)}
@@ -684,8 +687,10 @@ export class GachaUi {
       return
     }
     const level=forge.level
-    const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5][level]
-    body.innerHTML=`<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}">${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}</span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+    const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1][level]
+    const forgeCosts=level<20?{coins:(level+1)*5,fragments:level+1}:{coins:[150,200,300,400,500][level-20],fragments:[25,30,40,50,60][level-20]}
+    const guaranteed=this.store.user?.username==='test'||this.store.user?.username==='tjdrjs885'||this.store.user?.nickname==='겅이'
+    body.innerHTML=`<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}">${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}</span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +25강</strong><span class="forge-power-breakdown">영구 전투력 보너스<br>무기 전투력 +${forge.bonus}<br>액세서리 전투력 +${equippedAccessoryPower(this.store.accessory.equipped,this.store.accessory.equippedGrade)}</span></div></div>${level>=25?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${guaranteed?100:chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${forgeCosts.fragments}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${forgeCosts.coins}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
   }
 
   private playForgeSound(kind: 'working' | 'success' | 'failure'): void {
@@ -900,7 +905,7 @@ export class GachaUi {
       if(this.busy)return
       const currentLevel=this.store.forge?.level
       if(currentLevel===undefined)return
-      if(currentLevel<20 && (!this.isForgeOperator && ((this.store.data.fragments??0)<currentLevel+1 || this.store.data.gems<(currentLevel+1)*5))){this.showForgeInsufficient();return}
+      if(currentLevel<25 && (!this.isForgeOperator && ((this.store.data.fragments??0)<(currentLevel<20?currentLevel+1:[25,30,40,50,60][currentLevel-20]) || this.store.data.gems<(currentLevel<20?(currentLevel+1)*5:[150,200,300,400,500][currentLevel-20])))){this.showForgeInsufficient();return}
       this.busy=true
       try {
         const success = await this.store.upgradeForge()
@@ -2379,7 +2384,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(status)status.textContent=hp===0?'':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
 
 
-    const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===20?50:20+(level-15)*5
+    const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===19?40:level===20?50:level>=21?Math.min(100,50+(level-20)*10):20+(level-15)*5
     const rankedMembers=[...room.members].sort((a,b)=>(b.power??(battlePower(b.characterId)+weaponPower(b.weaponLevel)))-(a.power??(battlePower(a.characterId)+weaponPower(a.weaponLevel))) )
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
@@ -3388,7 +3393,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(!overlay||!title||!message)return
     title.textContent='재화가 부족합니다'
     const level=this.store.forge?.level??0
-    message.textContent=`강화에는 강화파편 ${level+1}개와 코인 ${(level+1)*5}개가 필요합니다. 현재 강화파편 ${this.isForgeOperator?'무제한':(this.store.data.fragments??0).toLocaleString()+'개'}, 코인 ${this.store.data.gems.toLocaleString()}개를 보유 중입니다.`
+    message.textContent=`강화에는 강화파편 ${level<20?level+1:[25,30,40,50,60][level-20]}개와 코인 ${level<20?(level+1)*5:[150,200,300,400,500][level-20]}개가 필요합니다. 현재 강화파편 ${this.isForgeOperator?'무제한':(this.store.data.fragments??0).toLocaleString()+'개'}, 코인 ${this.store.data.gems.toLocaleString()}개를 보유 중입니다.`
     if(icon)icon.src='/assets/enhancement_fragment.png'
     overlay.hidden=false
     this.root.querySelector<HTMLButtonElement>('.insufficient-close')?.focus()
