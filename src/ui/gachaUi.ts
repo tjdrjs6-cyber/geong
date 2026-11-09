@@ -2368,9 +2368,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
 
     const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===20?50:20+(level-15)*5
-    const rankedMembers=[...room.members].sort((a,b)=>(battlePower(b.characterId)+weaponPower(b.weaponLevel))-(battlePower(a.characterId)+weaponPower(a.weaponLevel)))
+    const rankedMembers=[...room.members].sort((a,b)=>(b.power??(battlePower(b.characterId)+weaponPower(b.weaponLevel)))-(a.power??(battlePower(a.characterId)+weaponPower(a.weaponLevel))) )
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
-    if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${battlePower(m.characterId)+(m.weaponLevel===null||m.weaponLevel===undefined?0:(m.weaponLevel<=14?m.weaponLevel+1:m.weaponLevel===20?50:20+(m.weaponLevel-15)*5))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
+    if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
     if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     // Position the first shots only after the expedition panel is laid out.
