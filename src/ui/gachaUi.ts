@@ -580,12 +580,17 @@ export class GachaUi {
       dialog.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.pick!;render()}))
       dialog.querySelectorAll<HTMLButtonElement>('.alchemy-recipe').forEach(btn=>btn.addEventListener('click',async()=>{
         if(btn.disabled)return
+        const chosenCharm=accessoryInfo(btn.dataset.id!)!
+        const chosenGrade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
+        if(!window.confirm(`${chosenGrade.name} ${chosenCharm.name}을 합성하시겠습니까?`))return
         btn.disabled=true
         try{
           await this.store.synthesizeAccessory(btn.dataset.id!,btn.dataset.grade!)
           const charm=accessoryInfo(btn.dataset.id!)!
           const grade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
-          dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2>합성 성공!</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${charm.image}" alt="왼쪽 키링"/><img src="${charm.image}" alt="오른쪽 키링"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" style="--alchemy-grade-glow:${grade.color}" src="${charm.image}" alt="합성된 키링"/><h3>${grade.name} ${charm.name}</h3><p>전투력 +${grade.power}</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+          dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2 class="alchemy-result-status" aria-live="polite">합성 중...</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${charm.image}" alt="왼쪽 키링"/><img src="${charm.image}" alt="오른쪽 키링"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" style="--alchemy-grade-glow:${grade.color}" src="${charm.image}" alt="합성된 키링"/><h3>${grade.name} ${charm.name}</h3><p>전투력 +${grade.power}</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+          const resultStatus=dialog.querySelector<HTMLElement>('.alchemy-result-status')
+          window.setTimeout(()=>{if(resultStatus?.isConnected)resultStatus.textContent='합성 성공!'},2250)
           dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
           this.renderWallet()
         }catch(e){this.handleError(e);render()}
