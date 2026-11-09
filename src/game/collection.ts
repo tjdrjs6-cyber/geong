@@ -41,6 +41,9 @@ export const CHARACTERS = [
   { id: 'ode', name: '오데', variant: '', probability: 0.85, tier: 'rare', weedBonus: 25, power: 25, color: '#fff6b2', accent: '#e2bb53' },
   { id: 'ode_prison', name: '오데', variant: '죄수복', probability: 0.22, tier: 'super', weedBonus: 30, power: 40, color: '#fff6b2', accent: '#5e4033' },
   { id: 'usagi_orange', name: '우사기', variant: '귤', probability: 0.04, tier: 'legendary', weedBonus: 0, power: 15, color: '#fff6d8', accent: '#ff963e' },
+  { id: 'halloween_chiikawa', name: '치이카와', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
+  { id: 'halloween_hachiware', name: '하치와레', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
+  { id: 'halloween_usagi', name: '우사기', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
@@ -126,7 +129,7 @@ export function drawCharacter(random: () => number = Math.random): CharacterId {
     threshold -= character.probability
     if (threshold < 0) return character.id
   }
-  return CHARACTERS[CHARACTERS.length - 1].id
+  return [...CHARACTERS].reverse().find(character => character.probability > 0)!.id
 }
 
 export function localDay(date = new Date()): string {
