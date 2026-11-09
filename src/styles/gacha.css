@@ -4727,3 +4727,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   font-weight:900!important;box-shadow:0 4px 10px #45332155!important;white-space:nowrap!important
 }
 #ui .battle-screen .battle-stage-rewards{max-width:min(210px,60%)!important}
+
+/* Battle sky should extend behind the entire top navigation, with no blank strip. */
+#ui .battle-screen{background:#b8dfff!important;overflow:hidden!important}
+#ui .battle-screen::before{content:"";position:absolute;inset:0 0 0 0;background:url('/assets/battle_meadow_20261109.png') center top / cover no-repeat;pointer-events:none;z-index:0}
+#ui .battle-screen .weed-header{position:relative!important;top:auto!important;left:auto!important;right:auto!important;z-index:30!important;background:transparent!important;min-height:78px!important;padding:12px 14px!important;border:0!important;box-shadow:none!important}
+#ui .battle-screen .battle-field{background:transparent!important;position:relative!important;z-index:1!important}
+#ui .battle-screen .battle-panel{position:relative!important;z-index:2!important}
+#ui .battle-screen .battle-stage-heading{top:14px!important}
+#ui .battle-screen .battle-stage-actions{top:68px!important}
+/* High-priority reward notification, outside the clipping battle field. */
+#ui .battle-screen .battle-reward-popup:not([hidden]){display:block!important;position:absolute!important;top:calc(12px + var(--safe-t,0px))!important;left:50%!important;transform:translate(-50%,-12px)!important;z-index:999!important;width:max-content!important;max-width:calc(100% - 24px)!important;box-sizing:border-box!important;padding:13px 18px!important;background:#fff8dc!important;color:#664222!important;border:2px solid #d49a52!important;border-radius:17px!important;box-shadow:0 5px 18px #4c392d55!important;font-weight:900!important;font-size:clamp(12px,3.2vw,17px)!important;text-align:center!important;opacity:0!important;transition:opacity .2s ease,transform .2s ease!important;pointer-events:none!important}
+#ui .battle-screen .battle-reward-popup.is-visible:not([hidden]){opacity:1!important;transform:translate(-50%,0)!important}

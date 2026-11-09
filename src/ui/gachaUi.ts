@@ -342,6 +342,7 @@ export class GachaUi {
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
+        <div class="battle-reward-popup" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         <div class="toast battle-toast" aria-live="polite"></div>
       </section>
       <section class="weed-screen house-screen" data-screen="house" aria-hidden="true" aria-labelledby="house-title">
@@ -2936,6 +2937,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (this.screen === 'battle') this.renderBattleStatus()
   }
 
+  private battleRewardPopupTimer: ReturnType<typeof setTimeout> | undefined
   private battleStageChanging = false
   private lastDisplayedBattleStage = 0
   private battleStageTransitionTimer: ReturnType<typeof setTimeout> | undefined
@@ -2944,7 +2946,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (stage === this.lastDisplayedBattleStage) return
     const previous = this.lastDisplayedBattleStage
     this.lastDisplayedBattleStage = stage
-    if (stage < previous) { this.showBattleFailure(previous); return }
+    // Stage reductions can result from a previously failed challenge, a manual reset,
+    // or stale client prediction. Only the server's failedStage event may show failure.
+    if (stage < previous) { this.battleStageChanging = false; return }
     const layer = this.root.querySelector<HTMLElement>('.battle-stage-transition')
     const next = this.root.querySelector<HTMLElement>('.battle-stage-next')
     if (!layer || !next) return
@@ -2988,7 +2992,15 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(!items.length)return
     const item=items[items.length-1]
     const label=`${Math.floor((item.stage-1)/10)+1}-${(item.stage-1)%10+1}`
-    this.toast(`${label} 스테이지 클리어! ${item.coins}코인과 강화파편 ${item.fragments}개를 획득했어요!`)
+    const popup=this.root.querySelector<HTMLElement>('.battle-reward-popup')
+    if(!popup)return
+    popup.textContent=`${label} 스테이지 클리어!  🪙 ${item.coins}코인 · ✨ 강화파편 ${item.fragments}개 획득!`
+    popup.hidden=false
+    popup.classList.remove('is-visible')
+    // Restart the visible reward animation without reflow-heavy measurements.
+    requestAnimationFrame(()=>popup.classList.add('is-visible'))
+    if(this.battleRewardPopupTimer)clearTimeout(this.battleRewardPopupTimer)
+    this.battleRewardPopupTimer=setTimeout(()=>{popup.classList.remove('is-visible');popup.hidden=true},3000)
   }
   private renderBattleStatus(): void {
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
@@ -3004,7 +3016,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const remaining = Math.max(0, Math.ceil(view.remaining / 1000))
     const timeLabel = this.root.querySelector<HTMLElement>('.battle-time-remaining')
     if (timeLabel) timeLabel.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
-    if (this.screen === 'battle') this.showBattleStageTransition(view.stage)
+    if (this.screen === 'battle' && !this.battleSyncing) this.showBattleStageTransition(view.stage)
     const enemyUnit = this.root.querySelector<HTMLElement>('.bf-enemy')
     if (enemyUnit) {
       const isBoss = view.stage % 10 === 0
