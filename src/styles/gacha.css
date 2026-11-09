@@ -4925,3 +4925,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 @media(max-width:420px){
  #ui .battle-screen .weed-header{height:82px!important;min-height:82px!important;}
 }
+
+/* Navigation notification dots */
+#ui .gacha-nav .nav-button{position:relative}
+#ui .gacha-nav .geongi-keyring-dot:not([hidden]),#ui .gacha-nav .geongi-equipment-dot:not([hidden]){display:block;position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%;background:#f04448;border:2px solid #fff;box-shadow:0 1px 3px #0004;z-index:5;pointer-events:none}
