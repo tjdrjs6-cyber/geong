@@ -4427,3 +4427,14 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .gacha-screen .catalog-lobby-tab .reward-icon img,
 #ui .gacha-screen .roulette-chip .reward-icon img,
 #ui .gacha-screen .rps-lobby-tab .reward-icon img{animation:none!important;transform:none!important;transition:none!important}
+
+/* test.055: in-game alchemy confirmation and battle keyring alignment */
+.alchemy-confirm-dialog{z-index:100020!important}
+.alchemy-confirm-dialog::backdrop{background:rgba(25,20,30,.55)}
+.alchemy-confirm-panel{width:min(90vw,350px)!important;max-height:85dvh!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;text-align:center!important;padding:22px!important}
+.alchemy-confirm-panel h2{margin:0!important;font-size:20px!important}
+.alchemy-confirm-image{width:105px!important;height:125px!important;object-fit:contain!important}
+.alchemy-confirm-panel p{margin:0!important;line-height:1.6!important}
+.alchemy-confirm-actions{display:flex!important;justify-content:center!important;gap:12px!important;width:100%!important}
+.alchemy-confirm-actions button{flex:1!important;max-width:135px!important}
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{bottom:12%!important}

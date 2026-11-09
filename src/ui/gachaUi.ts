@@ -388,7 +388,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/lottery_ticket_custom.png" alt="복권"/></span><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비</button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/shisa_keyring.png" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'" alt="" /></span>연금술</button></div></div></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기</button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비</button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/shisa_keyring.png" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'" alt="" /></span>연금술</button></div></div></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -495,8 +495,8 @@ export class GachaUi {
         <div class="modal-card claw-card">
           <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 인형뽑기</h2>
-          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 무기 액세서리 1개가 자동 지급!</p>
+          <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/chiikawa_face_claw.png" alt="치이카와" /> 키링뽑기</h2>
+          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 무기 액세서리 랜덤 1개가 지급!</p>
           <div class="claw-balance" aria-label="보유 다이아"><span class="claw-balance-title">보유 다이아</span><span class="claw-balance-count"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><span class="claw-balance-times">×</span><strong class="diamond-value">0</strong><span class="claw-balance-unit">개</span></span></div><p class="claw-balance-help">집게를 인형 위로 이동해 잡아보세요!</p>
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
@@ -582,7 +582,19 @@ export class GachaUi {
         if(btn.disabled)return
         const chosenCharm=accessoryInfo(btn.dataset.id!)!
         const chosenGrade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
-        if(!window.confirm(`${chosenGrade.name} ${chosenCharm.name}을 합성하시겠습니까?`))return
+        const confirmed=await new Promise<boolean>(resolve=>{
+          const confirmDialog=document.createElement('dialog')
+          confirmDialog.className='myroom-equipment-dialog alchemy-confirm-dialog'
+          confirmDialog.innerHTML=`<div class="myroom-equipment-panel alchemy-confirm-panel"><h2>연금술 합성 확인</h2><img class="alchemy-confirm-image" src="${chosenCharm.image}" alt="${chosenCharm.name}"/><p><strong>${chosenGrade.name} ${chosenCharm.name}</strong>을 합성하시겠습니까?</p><div class="alchemy-confirm-actions"><button type="button" class="modal-secondary" data-confirm="no">취소</button><button type="button" class="modal-primary" data-confirm="yes">합성하기</button></div></div>`
+          let decided=false
+          const finish=(value:boolean)=>{if(decided)return;decided=true;confirmDialog.close();resolve(value)}
+          confirmDialog.querySelector('[data-confirm="no"]')?.addEventListener('click',()=>finish(false))
+          confirmDialog.querySelector('[data-confirm="yes"]')?.addEventListener('click',()=>finish(true))
+          confirmDialog.addEventListener('cancel',e=>{e.preventDefault();finish(false)})
+          confirmDialog.addEventListener('close',()=>{confirmDialog.remove();if(!decided){decided=true;resolve(false)}},{once:true})
+          document.body.appendChild(confirmDialog);confirmDialog.showModal()
+        })
+        if(!confirmed)return
         btn.disabled=true
         try{
           await this.store.synthesizeAccessory(btn.dataset.id!,btn.dataset.grade!)
@@ -1124,8 +1136,8 @@ export class GachaUi {
       const raw = window.localStorage.getItem(key)
       if (raw) {
         const saved: unknown = JSON.parse(raw)
-        if (Array.isArray(saved) && saved.length === 3 && saved.every((t: any) =>
-          ['chiikawa','hachiware','usagi'].includes(t?.id) &&
+        if (Array.isArray(saved) && saved.length === 4 && saved.every((t: any) =>
+          ['chiikawa_1','chiikawa_2','chiikawa_3','chiikawa_4'].includes(t?.id) &&
           typeof t.x === 'number' && Number.isFinite(t.x) && t.x >= 0 && t.x <= 100 &&
           typeof t.y === 'number' && Number.isFinite(t.y) && t.y >= 0 && t.y <= 100)) {
           this.clawToys = saved as typeof this.clawToys
@@ -1149,9 +1161,10 @@ export class GachaUi {
 
   private randomizeClawToy(id?: string): void {
     const types = [
-      { id: 'chiikawa', name: '치이카와' },
-      { id: 'hachiware', name: '하치와레' },
-      { id: 'usagi', name: '우사기' },
+      { id: 'chiikawa_1', name: '치이카와' },
+      { id: 'chiikawa_2', name: '치이카와' },
+      { id: 'chiikawa_3', name: '치이카와' },
+      { id: 'chiikawa_4', name: '치이카와' },
     ]
     if (!this.clawToys.length) this.clawToys = types.map(type => ({ ...type, x: 0, y: 0 }))
     for (const toy of this.clawToys) {
@@ -1225,12 +1238,12 @@ export class GachaUi {
     if (!this.clawToys.length) this.randomizeClawToy()
     const toys = this.root.querySelector<HTMLElement>('.claw-toys')
     if (toys) toys.innerHTML = this.clawToys.map(toy =>
-      `<img class="claw-single-toy" data-toy-id="${toy.id}" src="/assets/chars/${toy.id}_face_claw.png" alt="${toy.name} 얼굴 인형" style="left:${toy.x}%;top:${toy.y}%"/>`
+      `<img class="claw-single-toy" data-toy-id="${toy.id}" src="/assets/chars/chiikawa_face_claw.png" alt="${toy.name} 얼굴 인형" style="left:${toy.x}%;top:${toy.y}%"/>`
     ).join('')
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
-    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 세 인형 모두 같은 확률과 보상이 적용돼요.'
+    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 네 개의 치이카와 모두 같은 확률과 보상이 적용돼요.'
     this.updateClawPosition()
   }
 
