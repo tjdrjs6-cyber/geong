@@ -98,6 +98,13 @@ async function prepareDatabase() {
   for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0", "stage_limit_ms BIGINT NOT NULL DEFAULT 1800000", "boss_ready TINYINT NOT NULL DEFAULT 0", "retry_stage INT NOT NULL DEFAULT 0"]) {
     try { await pool.query(`ALTER TABLE gm_battle ADD COLUMN ${column}`) } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   }
+  // Keep stage progression when the last battle character is removed.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_saved_progress (
+    account_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+    stage INT NOT NULL DEFAULT 1,
+    boss_ready TINYINT NOT NULL DEFAULT 0,
+    retry_stage INT NOT NULL DEFAULT 0
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
     raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
     hp BIGINT NOT NULL DEFAULT 4000000, last_tick BIGINT NOT NULL,
@@ -682,14 +689,27 @@ async function updateBattle(accountId, nextCharacter) {
       battle.damage = battle.stageDamage
     }
     if (nextCharacter) {
-      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0, stageLimitMs: STAGE_LIMIT_MS, bossReady: false, retryStage: 0 }
+      if (!battle) {
+        const [saved] = await conn.query('SELECT stage, boss_ready, retry_stage FROM gm_battle_saved_progress WHERE account_id = ? FOR UPDATE', [accountId])
+        battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0,
+          stage: Math.max(1, Number(saved[0]?.stage) || 1), stageSince: now, stageDamage: 0,
+          stageLimitMs: STAGE_LIMIT_MS, bossReady: Boolean(saved[0]?.boss_ready),
+          retryStage: Number(saved[0]?.retry_stage) || 0 }
+      }
       else {
         const members = [battle.id, battle.secondId, battle.thirdId].filter(Boolean)
         if (members.includes(nextCharacter)) members.splice(members.indexOf(nextCharacter), 1)
         else if (members.length < 3) members.push(nextCharacter)
         else { await conn.rollback(); return { error: 'battle_full' } }
         if (members.length) [battle.id, battle.secondId, battle.thirdId] = [members[0], members[1] || null, members[2] || null]
-        else battle = null
+        else {
+          // Save the current stage before removing the last assigned character.
+          await conn.query(`INSERT INTO gm_battle_saved_progress (account_id, stage, boss_ready, retry_stage)
+            VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE stage=VALUES(stage),
+            boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage)`,
+            [accountId, battle.stage, battle.bossReady ? 1 : 0, battle.retryStage || 0])
+          battle = null
+        }
       }
     }
     if (earned || coinsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, gems = gems + ? WHERE account_id = ?', [earned, coinsEarned, accountId])
@@ -1688,6 +1708,7 @@ const routes = {
     if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
     const now = Date.now()
     await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ?, stage_limit_ms = 1800000, boss_ready=0, retry_stage=0 WHERE account_id = ?', [now, now, account.id])
+    await pool.query('DELETE FROM gm_battle_saved_progress WHERE account_id = ?', [account.id])
     send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
   },
   'POST /api/battle/claim': async (req, res) => {
