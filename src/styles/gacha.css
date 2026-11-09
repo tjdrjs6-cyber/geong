@@ -4639,3 +4639,20 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important}
 #ui .battle-field .battle-weapon-strike{left:22%!important;right:auto!important}
 .battle-test-reset:not([hidden]){display:block;margin:8px auto;padding:10px 18px;border:2px solid #a86b60;border-radius:16px;background:#ffe5d8;color:#783b32;font-weight:800;cursor:pointer}
+
+/* Stage boss, side swap, lightweight transitions */
+#ui .battle-field .bf-enemy{left:5%!important;right:auto!important}
+#ui .battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:auto!important;right:9%!important}
+#ui .battle-field .bf-friend.bf-friend-second{left:auto!important;right:31%!important}
+#ui .battle-field .bf-friend.bf-friend-third{left:auto!important;right:20%!important}
+#ui .battle-field .battle-weapon-strike{left:auto!important;right:22%!important}
+.battle-screen .bf-boss-monster{display:none;width:100%;height:100%;object-fit:contain}
+.battle-screen .bf-enemy.is-stage-boss .bf-monster{display:none!important}
+.battle-screen .bf-enemy.is-stage-boss .bf-boss-monster{display:block!important}
+.battle-screen .bf-enemy.is-stage-changing .bf-enemy-body{opacity:0!important;animation:none!important}
+.battle-screen .bf-enemy-body{transition:opacity .25s ease}
+.battle-screen .battle-stage-transition{transition:opacity .22s ease,visibility .22s ease!important}
+.battle-screen .battle-stage-transition-card{transition:transform .3s ease!important}
+.battle-screen .battle-stage-transition-card small{display:none!important}
+.battle-screen .battle-visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.battle-screen .battle-status-help,.battle-screen .weed-rule,.battle-screen .bf-title{display:none!important}

@@ -328,18 +328,15 @@ export class GachaUi {
       <section class="weed-screen battle-screen" data-screen="battle" aria-hidden="true" aria-labelledby="battle-title">
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
-          <b id="battle-title">토벌장</b>
+          <b id="battle-title" class="battle-visually-hidden">토벌장</b>
           <div class="battle-stage-rewards" aria-live="polite"><span>🪙 <b class="battle-stage-coins">1</b> 골드</span><span>✦ <b class="battle-stage-fragments">0</b> 강화파편</span></div>
         </header>
-        <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong><small>다음 스테이지로 이동합니다</small></div></div></div>
+        <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
-          <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong> · 보상은 인벤토리에 자동 지급</p>
+          <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
           <p class="battle-status"></p>
           <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
-          
-          
-          <p class="weed-rule">1-1단계 체력 4,000부터 시작하며 단계별 체력과 보상이 달라져요. 30분 안에 처치하면 다음 단계로 자동 진행하고 보상은 자동 지급돼요.</p>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -2879,6 +2876,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (this.screen === 'battle') this.renderBattleStatus()
   }
 
+  private battleStageChanging = false
   private lastDisplayedBattleStage = 0
   private battleStageTransitionTimer: ReturnType<typeof setTimeout> | undefined
   private showBattleStageTransition(stage: number): void {
@@ -2886,20 +2884,23 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (stage === this.lastDisplayedBattleStage) return
     const previous = this.lastDisplayedBattleStage
     this.lastDisplayedBattleStage = stage
-    if (stage < previous) return
+    if (stage < previous) { this.battleStageChanging = false; return }
     const layer = this.root.querySelector<HTMLElement>('.battle-stage-transition')
     const next = this.root.querySelector<HTMLElement>('.battle-stage-next')
     if (!layer || !next) return
     next.textContent = `${Math.floor((stage - 1) / 10) + 1}-${((stage - 1) % 10) + 1} STAGE`
     if (this.battleStageTransitionTimer) clearTimeout(this.battleStageTransitionTimer)
+    this.battleStageChanging = true
+    this.root.querySelector('.bf-enemy')?.classList.add('is-stage-changing')
     layer.classList.remove('is-visible')
-    void layer.offsetWidth
     layer.classList.add('is-visible')
     layer.setAttribute('aria-hidden', 'false')
     this.battleStageTransitionTimer = setTimeout(() => {
       layer.classList.remove('is-visible')
       layer.setAttribute('aria-hidden', 'true')
-    }, 1900)
+      this.battleStageChanging = false
+      this.root.querySelector('.bf-enemy')?.classList.remove('is-stage-changing')
+    }, 900)
   }
 
   private renderBattleStatus(): void {
@@ -2917,6 +2918,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const timeLabel = this.root.querySelector<HTMLElement>('.battle-time-remaining')
     if (timeLabel) timeLabel.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
     if (this.screen === 'battle') this.showBattleStageTransition(view.stage)
+    const enemyUnit = this.root.querySelector<HTMLElement>('.bf-enemy')
+    if (enemyUnit) {
+      const isBoss = view.stage % 10 === 0
+      enemyUnit.classList.toggle('is-stage-boss', isBoss)
+      enemyUnit.classList.toggle('is-stage-changing', this.battleStageChanging || view.hp <= 0)
+    }
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
       if (fighter) {
@@ -2945,7 +2952,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       field.style.setProperty('--battle-cycle-offset', `${-(BATTLE_TICK_MS - view.nextIn) / 1000}s`)
     }
     // A real attack landed since the last frame: show the damage number and a hit shake.
-    if (fighter && this.lastEnemyHp >= 0 && view.hp !== this.lastEnemyHp) {
+    if (fighter && !this.battleStageChanging && this.lastEnemyHp >= 0 && view.hp !== this.lastEnemyHp) {
       const hit = this.root.querySelector<HTMLElement>('.bf-hit')
       const enemy = this.root.querySelector<HTMLElement>('.bf-enemy')
       if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
