@@ -281,6 +281,32 @@ async function prepareDatabase() {
     const [admins] = await pool.query('SELECT id FROM gm_accounts WHERE username = ? AND is_admin = 1', [adminUsername])
     for (const admin of admins) await grantAdminCollection(admin.id)
   }
+  // One-time global battle progression reset; keep assigned characters and balances.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_reset_migrations (
+    migration_key VARCHAR(100) NOT NULL PRIMARY KEY,
+    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`)
+  const resetConn = await pool.getConnection()
+  try {
+    await resetConn.beginTransaction()
+    const [marker] = await resetConn.query(
+      'INSERT IGNORE INTO gm_battle_reset_migrations (migration_key) VALUES (?)',
+      ['all_users_stage_1_1_20261109']
+    )
+    if (marker.affectedRows === 1) {
+      const now = Date.now()
+      await resetConn.query(`UPDATE gm_battle SET
+        stage=1, stage_since=?, since_ms=?, stage_damage=0, damage=0,
+        stage_limit_ms=1800000, boss_ready=0, retry_stage=0`, [now, now])
+      console.log('[api] one-time battle stage reset applied to all existing users')
+    }
+    await resetConn.commit()
+  } catch (error) {
+    await resetConn.rollback()
+    throw error
+  } finally {
+    resetConn.release()
+  }
   ready = true
 }
 
