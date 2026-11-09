@@ -165,6 +165,14 @@ async function prepareDatabase() {
   for (const key of ['hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring']) {
     try { await pool.query(`ALTER TABLE gm_weapon_accessories ADD COLUMN ${key} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_accessory_grades (
+    account_id BIGINT UNSIGNED NOT NULL,
+    accessory_id VARCHAR(40) NOT NULL,
+    grade VARCHAR(20) NOT NULL,
+    quantity INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY(account_id,accessory_id,grade)
+  )`)
+  try { await pool.query("ALTER TABLE gm_weapon_accessories ADD COLUMN equipped_grade VARCHAR(20) NOT NULL DEFAULT 'normal'") } catch(error) { if(error?.code !== 'ER_DUP_FIELDNAME') throw error }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_forge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     weapon VARCHAR(12) NOT NULL,
@@ -519,17 +527,24 @@ const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5]
 const forgeBonus = level => level <= 14 ? level + 1 : level === 20 ? 50 : 20 + (level - 15) * 5
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
+const ACCESSORY_GRADES = {rare:{cost:2,fragments:20,power:3},epic:{cost:5,fragments:50,power:5},unique:{cost:10,fragments:100,power:10},legendary:{cost:20,fragments:200,power:20},transcendent:{cost:40,fragments:400,power:30}}
+const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.power || 1) : 0
 async function getAccessory(accountId, conn=pool) {
   const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=?',[accountId])
   const row=rows[0]||{}
   const counts=Object.fromEntries(ACCESSORY_IDS.map(id=>[id,Number(row[id]||0)]))
-  const equipped=ACCESSORY_IDS.includes(row.equipped)&&counts[row.equipped]>0?row.equipped:null
-  return {count:counts.chiikawa_keyring,counts,equipped}
+  const [gradeRows]=await conn.query('SELECT accessory_id,grade,quantity FROM gm_accessory_grades WHERE account_id=?',[accountId])
+  const grades={}
+  for(const r of gradeRows){if(!grades[r.accessory_id])grades[r.accessory_id]={};grades[r.accessory_id][r.grade]=Number(r.quantity)}
+  const equippedGrade=ACCESSORY_GRADES[row.equipped_grade]?row.equipped_grade:'normal'
+  const owned=equippedGrade==='normal'?counts[row.equipped]:Number(grades[row.equipped]?.[equippedGrade]||0)
+  const equipped=ACCESSORY_IDS.includes(row.equipped)&&owned>0?row.equipped:null
+  return {count:counts.chiikawa_keyring,counts,grades,equipped,equippedGrade:equipped?equippedGrade:'normal'}
 }
 async function getForge(accountId) {
   const [rows] = await pool.query('SELECT weapon, level FROM gm_forge WHERE account_id = ?', [accountId])
   const accessory=await getAccessory(accountId)
-  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), bonus: forgeBonus(Number(rows[0].level))+(accessory.equipped?1:0), accessoryBonus:accessory.equipped?1:0 } : null
+  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), bonus: forgeBonus(Number(rows[0].level))+accessoryPower(accessory), accessoryBonus:accessoryPower(accessory) } : null
 }
 async function accountState(accountId) {
   const box = await mailbox(accountId)
@@ -562,7 +577,7 @@ async function updateBattle(accountId, nextCharacter) {
     }
     const [forgeRows] = await conn.query('SELECT level FROM gm_forge WHERE account_id = ?', [accountId])
     const accessory=await getAccessory(accountId,conn)
-    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0)+(accessory.equipped?1:0)
+    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0)+accessoryPower(accessory)
     let earned = 0
     if (battle) {
       const settled = settleBattle(battle.since, battle.damage, now, (POWER[battle.id] ?? 10) + (battle.secondId ? (POWER[battle.secondId] ?? 10) : 0) + weaponBonus)
@@ -988,29 +1003,51 @@ const routes = {
   'POST /api/accessory/equip': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const {id}=await readJson(req)
+    const {id,grade='normal'}=await readJson(req)
+    if(grade!=='normal' && !ACCESSORY_GRADES[grade])return send(res,400,{error:'invalid_grade'})
     if(id!==null && !ACCESSORY_IDS.includes(id))return send(res,400,{error:'invalid_accessory'})
     const conn=await pool.getConnection()
     try {
       await conn.beginTransaction()
       await conn.query('INSERT IGNORE INTO gm_weapon_accessories(account_id) VALUES(?)',[account.id])
       const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
-      if(id && !Number(rows[0]?.[id])){await conn.rollback();return send(res,409,{error:'accessory_not_owned'})}
+      if(id){const current=await getAccessory(account.id,conn);if(grade==='normal'?!Number(rows[0]?.[id]):!Number(current.grades[id]?.[grade])){await conn.rollback();return send(res,409,{error:'accessory_not_owned'})}}
       // Settle existing battle with old power before changing the bonus.
       const [battles]=await conn.query('SELECT character_id,second_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
       if(battles.length){
         const [forgeRows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[account.id])
         const b=battles[0]
         const oldBonus=forgeRows.length?forgeBonus(Number(forgeRows[0].level)):0
-        const power=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+oldBonus+(ACCESSORY_IDS.includes(rows[0].equipped)?1:0)
+        const power=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+oldBonus+accessoryPower(await getAccessory(account.id,conn))
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),power)
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
         if(settled.kills)await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[settled.kills,account.id])
       }
-      await conn.query('UPDATE gm_weapon_accessories SET equipped=? WHERE account_id=?',[id||'',account.id])
+      await conn.query('UPDATE gm_weapon_accessories SET equipped=?,equipped_grade=? WHERE account_id=?',[id||'',grade,account.id])
       await conn.commit()
       send(res,200,{accessory:await getAccessory(account.id),forge:await getForge(account.id),save:await getSave(account.id)})
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+  },
+  'POST /api/accessory/alchemy': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {id,grade}=await readJson(req)
+    const recipe=ACCESSORY_GRADES[grade]
+    if(!ACCESSORY_IDS.includes(id)||!recipe)return send(res,400,{error:'invalid_recipe'})
+    const result=await inTransaction(async conn=>{
+      await conn.query('INSERT IGNORE INTO gm_weapon_accessories(account_id) VALUES(?)',[account.id])
+      const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
+      const [saves]=await conn.query('SELECT fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(Number(rows[0][id])<recipe.cost)return {error:'not_enough_keyrings'}
+      if(Number(saves[0]?.fragments||0)<recipe.fragments)return {error:'not_enough_fragments'}
+      await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[recipe.cost,account.id])
+      await conn.query('UPDATE gm_saves SET fragments=fragments-? WHERE account_id=?',[recipe.fragments,account.id])
+      await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,id,grade])
+      if(rows[0].equipped===id && (rows[0].equipped_grade||'normal')==='normal' && Number(rows[0][id])===recipe.cost)await conn.query("UPDATE gm_weapon_accessories SET equipped='',equipped_grade='normal' WHERE account_id=?",[account.id])
+      return {success:true}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,{...result,accessory:await getAccessory(account.id),forge:await getForge(account.id),save:await getSave(account.id)})
   },
   'GET /api/forge': async (req, res) => {
     const account = await currentAccount(req)
@@ -1054,7 +1091,7 @@ const routes = {
       if(battles.length){
         const b=battles[0]
         const accessory=await getAccessory(account.id,conn)
-        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+forgeBonus(level)+(accessory.equipped?1:0)
+        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+forgeBonus(level)+accessoryPower(accessory)
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),oldPower)
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
