@@ -4487,3 +4487,39 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   object-position:center!important; padding:2px!important; box-sizing:border-box!important;
   position:static!important; transform:none!important; clip-path:none!important;
 }
+
+/* test.061 — user profile encyclopedia header: keep the collection count intact */
+#ui .user-detail-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) max-content;
+  column-gap: 9px;
+  row-gap: 8px;
+  align-items: center;
+  justify-content: stretch;
+  width: 100%;
+  min-width: 0;
+}
+#ui .user-detail-head > .soft-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+#ui .user-detail-head > .user-detail-avatar {
+  grid-column: 1;
+  min-width: 0;
+}
+#ui .user-detail-head > b {
+  grid-column: 2;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  line-height: 1.35;
+  font-size: clamp(12px, 3.5vw, 16px);
+}
+#ui .user-detail-head > span:last-child {
+  grid-column: 3;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
