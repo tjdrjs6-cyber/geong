@@ -1,17 +1,19 @@
+const BATTLE_STAGE_HPS = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000];
+const battleStageHp = (stage: number): number => BATTLE_STAGE_HPS[stage - 1] ?? (180000 + Math.max(0, stage - 40) * 4000);
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
-export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; secondId?: CharacterId | null; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number }
 export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
@@ -137,12 +139,23 @@ export class RemoteGachaStore {
   }
 
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
-  battleView(): { kills: number; hp: number; nextIn: number; power: number } {
-    if (!this.battle) return { kills: 0, hp: ENEMY_HP, nextIn: BATTLE_TICK_MS, power: 0 }
-    const power = battlePower(this.battle.id) + (this.battle.secondId ? battlePower(this.battle.secondId) : 0) + (this.forge?.bonus ?? 0)
-    const elapsed = Math.max(0, this.serverNow() - this.battle.since)
-    const total = this.battle.damage + Math.floor(elapsed / BATTLE_TICK_MS) * power
-    return { kills: Math.floor(total / ENEMY_HP), hp: ENEMY_HP - (total % ENEMY_HP), nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power }
+  battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
+    const battle = this.battle
+    if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
+    // forge.bonus already includes the equipped accessory. Never add it twice.
+    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0)
+    const elapsed = Math.max(0, this.serverNow() - battle.since)
+    let stage = battle.stage ?? 1, damage = battle.stageDamage ?? battle.damage
+    const ticks = Math.min(500000, Math.floor(elapsed / BATTLE_TICK_MS))
+    let tickAt = battle.since, stageSince = battle.stageSince ?? battle.since, kills = 0
+    for (let i = 0; i < ticks; i++) {
+      tickAt += BATTLE_TICK_MS
+      if (tickAt - stageSince >= (battle.stageLimitMs ?? 1800000)) { stage = Math.max(1,stage-1); stageSince = tickAt; damage = 0; break }
+      damage += power
+      if (damage >= battleStageHp(stage)) { kills++; if (stage % 10 !== 9) stage++; stageSince = tickAt; damage = 0 }
+    }
+    const maxHp = battleStageHp(stage)
+    return { kills, hp: Math.max(0, maxHp - damage), maxHp, nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power, stage, remaining: Math.max(0, (battle.stageLimitMs ?? 1800000) - (this.serverNow() - stageSince)) }
   }
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
@@ -168,8 +181,22 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/start', { id }))
   }
 
-  async claimBattle(): Promise<number> {
-    return this.applyBattle(await request<BattleResult>('battle/claim', {}))
+  async retryBattleStage(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/retry-stage', {})) }
+  async challengeBattleBoss(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/challenge-boss', {})) }
+  async testBattleTime5(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-time5', {})) }
+  async testBattleHp500(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-hp500', {})) }
+  async testResetBattle(): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/test-reset', {}))
+  }
+
+  async testClearBattle(): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/test-clear', {}))
+  }
+
+  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;fragments:number}[];failedStage:number}> {
+    const result=await request<BattleResult>('battle/claim', {})
+    const earned=this.applyBattle(result)
+    return {earned,cleared:result.cleared??[],failedStage:result.failedStage??0}
   }
 
   private applyBattle(result: BattleResult): number {
@@ -329,6 +356,7 @@ export class RemoteGachaStore {
     return result
   }
   async expeditionBadge():Promise<{day:string;deployed:boolean}> {return request('expedition/badge')}
+  async expeditionTestControl(serverId:number,action:'hp100'|'respawn'):Promise<void> {await request('expedition/test-control',{serverId,action})}
   async expedition():Promise<ExpeditionState> {return request<ExpeditionState>('expedition')}
   async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
@@ -443,4 +471,4 @@ export class RemoteGachaStore {
 }
 
 type WeedResult = { save: GachaSave; weed: WeedState | null; earned: number; now: number }
-type BattleResult = { save: GachaSave; battle: BattleState; earned: number; now: number }
+type BattleResult = { cleared?: {stage:number;coins:number;fragments:number}[]; failedStage?:number; save: GachaSave; battle: BattleState; earned: number; now: number }

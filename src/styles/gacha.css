@@ -4599,3 +4599,329 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .gacha-screen .toon-stage .toon-hero {z-index:8!important;visibility:visible!important;opacity:1!important;display:block!important;width:min(45cqw,220px,65cqh)!important;bottom:4%!important;left:50%!important;transform:translateX(-50%)!important;}
 #ui .gacha-screen .toon-stage .toon-hero-img {display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;height:100%!important;object-fit:contain!important;}
 @media(max-width:768px){#ui .gacha-screen .toon-stage .toon-hero{width:min(46cqw,185px,62cqh)!important;bottom:3%!important;}}
+
+/* Three-member left-side triangular formation; weapon attacks from rear position. */
+.battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:9%!important;right:auto!important;bottom:9%!important;z-index:5!important}
+.battle-field .bf-friend.bf-friend-second{left:31%!important;right:auto!important;bottom:9%!important;z-index:4!important}
+.battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important;bottom:29%!important;z-index:3!important;width:20cqw!important;max-width:112px!important}
+.battle-field .battle-weapon-strike{left:22%!important;right:auto!important;bottom:33%!important}
+
+/* Test-server stage skip control */
+.battle-test-clear:not([hidden]) { display:block; margin:8px auto; padding:10px 18px; border:2px solid #b78352; border-radius:16px; background:#fff1cf; color:#65401f; font-weight:800; cursor:pointer; }
+
+/* 2026-11-09 stage HUD and cinematic progression */
+.battle-screen .battle-wallet-stack{display:none!important}
+.battle-screen .battle-stage-rewards{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:clamp(10px,2.6cqw,13px);font-weight:800;color:#674024;text-shadow:0 1px white;white-space:nowrap}
+.battle-screen .battle-stage-rewards span{background:#fff5dbe8;border:1px solid #d8a76d;border-radius:12px;padding:3px 8px}
+.battle-screen .battle-stage-heading{position:absolute;top:4%;left:50%;transform:translateX(-50%);z-index:12;pointer-events:none;font-size:clamp(24px,7cqw,42px);font-weight:1000;white-space:nowrap;color:#fff3cf;-webkit-text-stroke:1px #6c402a;text-shadow:0 3px 0 #663c28,0 5px 0 #39251d,0 8px 13px #24160d99;letter-spacing:1px}
+.battle-screen .battle-time-remaining{font-size:1.35em;color:#a54121;font-variant-numeric:tabular-nums}
+.battle-screen .battle-reward-hint{text-align:center}
+.battle-screen .battle-stage-transition{position:absolute;inset:0;z-index:30;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;background:rgba(37,22,18,.0);transition:opacity .45s ease,background .45s ease,visibility .45s}
+.battle-screen .battle-stage-transition.is-visible{opacity:1;visibility:visible;background:rgba(37,22,18,.53)}
+.battle-screen .battle-stage-transition-card{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;transform:translateY(22px) scale(.92);transition:transform .65s cubic-bezier(.2,.8,.2,1);color:#fff4d8;text-shadow:0 3px 6px #26160e}
+.battle-screen .battle-stage-transition.is-visible .battle-stage-transition-card{transform:translateY(0) scale(1)}
+.battle-screen .battle-stage-transition-card span{font-size:clamp(23px,6cqw,37px);font-weight:1000;color:#ffe78a}
+.battle-screen .battle-stage-transition-card strong{font-size:clamp(28px,8cqw,52px);font-weight:1000}
+.battle-screen .battle-stage-transition-card small{font-size:13px}
+.battle-field .bf-enemy{right:3%!important;left:auto!important}
+.battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:9%!important;right:auto!important}
+.battle-field .bf-friend.bf-friend-second{left:31%!important;right:auto!important}
+.battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important}
+.battle-field .battle-weapon-strike{left:22%!important;right:auto!important}
+@media(prefers-reduced-motion:reduce){.battle-screen .battle-stage-transition,.battle-screen .battle-stage-transition-card{transition:none!important}}
+
+/* 2026-11-09 updated battle layout/background */
+#ui .battle-field{background:#b9e0fb url('/assets/battle_meadow_20261109.png') center center / cover no-repeat!important}
+#ui .battle-field .bf-scene{opacity:0!important;pointer-events:none!important}
+#ui .battle-field .bf-enemy{left: auto!important;right:5%!important}
+#ui .battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:9%!important;right:auto!important}
+#ui .battle-field .bf-friend.bf-friend-second{left:31%!important;right:auto!important}
+#ui .battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important}
+#ui .battle-field .battle-weapon-strike{left:22%!important;right:auto!important}
+.battle-test-reset:not([hidden]){display:block;margin:8px auto;padding:10px 18px;border:2px solid #a86b60;border-radius:16px;background:#ffe5d8;color:#783b32;font-weight:800;cursor:pointer}
+
+/* Stage boss, side swap, lightweight transitions */
+#ui .battle-field .bf-enemy{left:5%!important;right:auto!important}
+#ui .battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:auto!important;right:9%!important}
+#ui .battle-field .bf-friend.bf-friend-second{left:auto!important;right:31%!important}
+#ui .battle-field .bf-friend.bf-friend-third{left:auto!important;right:20%!important}
+#ui .battle-field .battle-weapon-strike{left:auto!important;right:22%!important}
+.battle-screen .bf-boss-monster{display:none;width:100%;height:100%;object-fit:contain}
+.battle-screen .bf-enemy.is-stage-boss .bf-monster{display:none!important}
+.battle-screen .bf-enemy.is-stage-boss .bf-boss-monster{display:block!important}
+.battle-screen .bf-enemy.is-stage-changing .bf-enemy-body{opacity:0!important;animation:none!important}
+.battle-screen .bf-enemy-body{transition:opacity .25s ease}
+.battle-screen .battle-stage-transition{transition:opacity .22s ease,visibility .22s ease!important}
+.battle-screen .battle-stage-transition-card{transition:transform .3s ease!important}
+.battle-screen .battle-stage-transition-card small{display:none!important}
+.battle-screen .battle-visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.battle-screen .battle-status-help,.battle-screen .weed-rule,.battle-screen .bf-title{display:none!important}
+
+.expedition-stage-label{position:absolute;top:17%;left:50%;transform:translateX(-50%);z-index:5;font-weight:900;font-size:clamp(20px,5vw,30px);color:#fff;text-shadow:0 2px 5px #142d56,0 0 12px #102c53;pointer-events:none}
+.expedition-test-tools:not([hidden]){display:flex;justify-content:center;gap:8px;margin:8px}
+.expedition-test-tools button{padding:8px 12px;border-radius:12px;background:#fff2d8;border:2px solid #bd8b5b;font-weight:800}
+
+.battle-clear-reward-label{display:block;font-weight:900;font-size:12px;opacity:.9;margin-bottom:3px}
+
+/* 3-character formation: weapon centered, synchronized on the same 3s animation clock */
+#ui .battle-field .battle-weapon-strike{left:auto!important;right:22%!important;bottom:36%!important;animation-duration:3s!important;animation-delay:var(--battle-cycle-offset,0s)!important}
+#ui .battle-field .bf-friend{animation-duration:3s!important;animation-delay:var(--battle-cycle-offset,0s)!important}
+.battle-test-hp500:not([hidden]){display:block;margin:8px auto;padding:10px 18px;border:2px solid #a86b60;border-radius:16px;background:#fff0d7;color:#783b32;font-weight:800;cursor:pointer}
+
+/* Expedition stage transition and in-game reward artwork */
+.expedition-stage-transition{position:absolute;inset:0;z-index:18;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(7,23,58,.75);opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s ease;pointer-events:none;color:white;text-align:center}
+.expedition-stage-transition.is-visible{opacity:1;visibility:visible}
+.expedition-stage-transition strong{font-size:clamp(24px,7vw,46px);font-weight:1000;color:#fff5b7;text-shadow:0 4px 8px #0b153a}
+.expedition-stage-transition span{font-size:clamp(17px,4vw,27px);font-weight:900}
+.battle-screen .battle-stage-rewards .battle-reward-icon{width:17px!important;height:17px!important;object-fit:contain;vertical-align:middle}
+#ui .battle-field>.battle-weapon-strike{position:absolute!important;left:auto!important;right:16%!important;top:40%!important;bottom:auto!important;z-index:14!important}
+#ui .battle-field .bf-friend-body .battle-weapon-strike{left:auto!important;right:2%!important}
+#ui .battle-field.is-stage-changing .battle-weapon-strike,#ui .battle-field.is-stage-changing .bf-friend{animation-play-state:paused!important}
+.battle-screen .battle-stage-transition{transition:opacity .3s ease,visibility .3s ease!important}
+
+/* Compact combined reward line and boss gate controls */
+.battle-stage-rewards .battle-reward-combined{display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;font-size:11px}
+.battle-stage-rewards .battle-reward-plus{padding:0 2px;font-weight:900}
+.battle-boss-challenge:not([hidden]),.battle-test-time5:not([hidden]){display:block;margin:7px auto;padding:9px 16px;border-radius:15px;border:2px solid #b98d4d;background:#fff0c8;color:#69421c;font-weight:900;cursor:pointer}
+
+/* 2026-11-09 readable reward capsule and centered weapon */
+#ui .battle-stage-rewards{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-width:210px!important;max-width:calc(100% - 20px)!important;width:max-content!important;padding:9px 12px!important;background:rgba(255,247,225,.96)!important;border:2px solid #b47e4b!important;border-radius:16px!important;box-shadow:0 3px 9px #4a321c40!important;overflow:visible!important;white-space:normal!important}
+#ui .battle-stage-rewards .battle-reward-combined{display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;flex-wrap:wrap!important;white-space:normal!important;font-size:13px!important;line-height:1.4!important}
+#ui .battle-stage-rewards .battle-reward-icon{width:18px!important;height:18px!important;flex-shrink:0!important}
+#ui .battle-field .battle-weapon-strike{position:absolute!important;left:auto!important;right:22%!important;top:50%!important;bottom:auto!important;z-index:15!important}
+#ui .battle-field .bf-friend-body .battle-weapon-strike{left:50%!important;right:auto!important;transform:translateX(-50%)!important}
+
+/* Compact clean battle header: independent layout, no collision with STAGE heading */
+#ui .battle-screen .weed-header{position:relative!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:9px 12px!important;min-height:68px!important;height:auto!important;background:#b4dcfa!important;z-index:25!important;box-sizing:border-box!important}
+#ui .battle-screen .weed-header .weed-back{position:static!important;transform:none!important;flex:0 0 auto!important;font-size:12px!important;padding:8px 10px!important;white-space:nowrap!important}
+#ui .battle-screen .battle-stage-rewards{position:static!important;transform:none!important;flex:0 1 210px!important;min-width:0!important;max-width:210px!important;width:auto!important;box-sizing:border-box!important;padding:6px 9px!important;gap:3px!important;border-radius:14px!important;line-height:1.1!important;box-shadow:0 2px 5px #70522b25!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-caption{background:none!important;border:0!important;padding:0!important;font-size:11px!important;color:#805332!important;font-weight:900!important;text-align:center!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-combined{display:flex!important;flex-wrap:nowrap!important;gap:7px!important;justify-content:space-evenly!important;width:100%!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece{background:none!important;border:0!important;padding:0!important;display:flex!important;align-items:center!important;gap:3px!important;white-space:nowrap!important;font-size:12px!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece small{font-size:10px!important;font-weight:800!important}
+#ui .battle-screen .battle-stage-rewards .battle-reward-icon{width:16px!important;height:16px!important}
+#ui .battle-screen .battle-stage-heading{top:7%!important;font-size:clamp(22px,6cqw,35px)!important;z-index:12!important}
+#ui .battle-screen .battle-field .battle-weapon-strike{display:none!important;visibility:hidden!important;animation:none!important}
+.battle-retry-challenge:not([hidden]){display:block;margin:7px auto;padding:10px 16px;border:2px solid #b78c50;border-radius:14px;background:#fff1cf;color:#67411c;font-weight:900;cursor:pointer}
+
+/* Clean battle top area: preserve full sky and separate stage/controls */
+#ui .battle-screen .weed-header{background:#b9def9!important;min-height:62px!important;padding:8px 12px!important;border:0!important;box-shadow:none!important}
+#ui .battle-screen .battle-field{background-position:center top!important;background-size:100% 100%!important;overflow:hidden!important}
+#ui .battle-screen .battle-stage-heading{
+  position:absolute!important;top:14px!important;left:50%!important;transform:translateX(-50%)!important;
+  width:max-content!important;max-width:90%!important;z-index:20!important;
+  font-size:clamp(19px,5.2cqw,29px)!important;letter-spacing:.5px!important;
+  line-height:1.2!important;color:#fff9e8!important;-webkit-text-stroke:0!important;
+  background:rgba(105,71,44,.82)!important;border:2px solid #f5dcac!important;
+  border-radius:16px!important;padding:6px 18px!important;
+  text-shadow:0 2px 3px #513523!important;box-shadow:0 3px 8px #382b2755!important
+}
+#ui .battle-screen .battle-stage-actions{
+  position:absolute!important;top:69px!important;left:50%!important;transform:translateX(-50%)!important;
+  z-index:22!important;width:90%!important;display:flex!important;justify-content:center!important;pointer-events:none!important
+}
+#ui .battle-screen .battle-stage-actions button:not([hidden]){
+  display:block!important;pointer-events:auto!important;margin:0!important;
+  padding:10px 20px!important;border:2px solid #87583b!important;border-radius:20px!important;
+  background:#fff0c9!important;color:#674025!important;font-size:clamp(13px,3.8cqw,17px)!important;
+  font-weight:900!important;box-shadow:0 4px 10px #45332155!important;white-space:nowrap!important
+}
+#ui .battle-screen .battle-stage-rewards{max-width:min(210px,60%)!important}
+
+/* Battle sky should extend behind the entire top navigation, with no blank strip. */
+#ui .battle-screen{background:#b8dfff!important;overflow:hidden!important}
+#ui .battle-screen::before{content:"";position:absolute;inset:0 0 0 0;background:url('/assets/battle_meadow_20261109.png') center top / cover no-repeat;pointer-events:none;z-index:0}
+#ui .battle-screen .weed-header{position:relative!important;top:auto!important;left:auto!important;right:auto!important;z-index:30!important;background:transparent!important;min-height:78px!important;padding:12px 14px!important;border:0!important;box-shadow:none!important}
+#ui .battle-screen .battle-field{background:transparent!important;position:relative!important;z-index:1!important}
+#ui .battle-screen .battle-panel{position:relative!important;z-index:2!important}
+#ui .battle-screen .battle-stage-heading{top:14px!important}
+#ui .battle-screen .battle-stage-actions{top:68px!important}
+/* High-priority reward notification, outside the clipping battle field. */
+#ui .battle-screen .battle-reward-popup:not([hidden]){display:block!important;position:absolute!important;top:calc(12px + var(--safe-t,0px))!important;left:50%!important;transform:translate(-50%,-12px)!important;z-index:999!important;width:max-content!important;max-width:calc(100% - 24px)!important;box-sizing:border-box!important;padding:13px 18px!important;background:#fff8dc!important;color:#664222!important;border:2px solid #d49a52!important;border-radius:17px!important;box-shadow:0 5px 18px #4c392d55!important;font-weight:900!important;font-size:clamp(12px,3.2vw,17px)!important;text-align:center!important;opacity:0!important;transition:opacity .2s ease,transform .2s ease!important;pointer-events:none!important}
+#ui .battle-screen .battle-reward-popup.is-visible:not([hidden]){opacity:1!important;transform:translate(-50%,0)!important}
+
+/* 2026-11-09 supplied meadow image and readable two-line clear rewards */
+#ui .battle-screen::before{background-image:url('/assets/battle_meadow_20261109.png')!important;background-size:cover!important;background-position:center top!important}
+#ui .battle-screen .battle-reward-popup:not([hidden]){width:min(340px,calc(100% - 24px))!important;max-width:calc(100% - 24px)!important;padding:12px 14px!important;white-space:normal!important;line-height:1.5!important}
+#ui .battle-screen .battle-reward-popup-title{font-size:16px;font-weight:900;margin-bottom:5px}
+#ui .battle-screen .battle-reward-popup-items{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:14px}
+#ui .battle-screen .battle-reward-popup-items span{display:flex;align-items:center;justify-content:center;gap:5px}
+#ui .battle-screen .battle-reward-popup-items img{width:19px;height:19px;object-fit:contain}
+
+/* Stage title and challenge button raised into the sky header area. */
+#ui .battle-screen .battle-field { overflow: visible !important; z-index: 31 !important; }
+#ui .battle-screen .battle-stage-heading { top: -60px !important; }
+#ui .battle-screen .battle-stage-actions { top: -11px !important; }
+
+/* 2026-11-09: non-overlapping battle header, full unzoomed supplied landscape */
+#ui .battle-screen {position:relative!important; isolation:isolate!important; background:#a9d6fb!important;}
+#ui .battle-screen::before {
+  content:""!important;position:absolute!important;inset:0!important;
+  background-image:url('/assets/battle_meadow_20261109.png')!important;
+  background-repeat:no-repeat!important;background-position:center center!important;
+  background-size:100% 100%!important;pointer-events:none!important;z-index:0!important;
+}
+#ui .battle-screen .weed-header {
+  position:relative!important;z-index:35!important;display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(145px,220px)!important;
+  grid-template-rows:auto auto!important;align-items:start!important;
+  column-gap:10px!important;row-gap:8px!important;
+  width:100%!important;min-height:0!important;height:auto!important;
+  padding:10px 12px 4px!important;box-sizing:border-box!important;
+  background:transparent!important;overflow:visible!important;
+}
+#ui .battle-screen .weed-header .weed-back {grid-column:1!important;grid-row:1!important;justify-self:start!important;align-self:start!important;position:static!important;transform:none!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards {
+  grid-column:2!important;grid-row:1!important;justify-self:end!important;
+  position:static!important;transform:none!important;display:flex!important;
+  flex-direction:column!important;gap:5px!important;align-items:center!important;
+  width:100%!important;max-width:220px!important;min-width:0!important;
+  padding:9px 12px!important;box-sizing:border-box!important;
+  border-radius:16px!important;z-index:auto!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-caption {
+  display:block!important;line-height:1.3!important;font-size:12px!important;
+  font-weight:900!important;text-align:center!important;white-space:normal!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-combined {
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  gap:5px!important;width:100%!important;flex-wrap:nowrap!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  gap:5px!important;width:100%!important;white-space:nowrap!important;
+  font-size:14px!important;line-height:1.3!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece small {font-size:12px!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-icon {width:19px!important;height:19px!important;}
+#ui .battle-screen .battle-stage-center {
+  grid-column:1 / -1!important;grid-row:2!important;position:relative!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:7px!important;min-height:0!important;
+  z-index:2!important;pointer-events:none!important;
+}
+#ui .battle-screen .battle-stage-center .battle-stage-heading {
+  position:static!important;top:auto!important;left:auto!important;
+  transform:none!important;margin:0!important;padding:7px 16px!important;
+  width:max-content!important;max-width:95%!important;box-sizing:border-box!important;
+  font-size:clamp(20px,5vw,30px)!important;line-height:1.2!important;
+  border-radius:14px!important;pointer-events:none!important;
+}
+#ui .battle-screen .battle-stage-center .battle-stage-actions {
+  position:static!important;top:auto!important;left:auto!important;
+  transform:none!important;display:flex!important;justify-content:center!important;
+  width:100%!important;max-width:100%!important;pointer-events:none!important;
+}
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]) {
+  display:block!important;position:static!important;margin:0!important;
+  padding:9px 16px!important;max-width:100%!important;
+  white-space:normal!important;text-align:center!important;
+  font-size:clamp(13px,3.5vw,17px)!important;pointer-events:auto!important;
+}
+#ui .battle-screen .battle-field {
+  background:transparent!important;background-image:none!important;
+  position:relative!important;z-index:1!important;overflow:hidden!important;
+}
+@media(max-width:390px){
+ #ui .battle-screen .weed-header{grid-template-columns:minmax(0,1fr) minmax(140px,190px)!important;padding:8px!important;}
+ #ui .battle-screen .weed-header .battle-stage-rewards{padding:7px 8px!important;}
+}
+
+/* 2026-11-09: compact pinned stage controls, right-aligned rewards, more meadow */
+#ui .battle-screen {position:relative!important;isolation:isolate!important;}
+#ui .battle-screen::before{background-size:100% 115%!important;background-position:center bottom!important;}
+#ui .battle-screen .weed-header{display:block!important;position:relative!important;height:112px!important;min-height:112px!important;padding:0!important;overflow:visible!important;background:transparent!important;z-index:40!important;}
+#ui .battle-screen .weed-header .weed-back{position:absolute!important;left:10px!important;top:10px!important;z-index:45!important;max-width:100px!important;padding:8px 10px!important;font-size:12px!important;}
+#ui .battle-screen .battle-stage-center{display:block!important;position:absolute!important;left:50%!important;top:5px!important;transform:translateX(-50%)!important;width:max-content!important;max-width:55%!important;height:auto!important;min-height:0!important;z-index:46!important;pointer-events:none!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-heading{position:relative!important;inset:auto!important;transform:none!important;margin:0 auto!important;width:max-content!important;max-width:100%!important;padding:5px 12px!important;font-size:clamp(17px,4.3vw,24px)!important;line-height:1.15!important;border-radius:12px!important;background:rgba(100,72,48,.78)!important;box-shadow:0 2px 5px #382b2740!important;white-space:nowrap!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-actions{position:relative!important;inset:auto!important;transform:none!important;width:max-content!important;max-width:100%!important;margin:5px auto 0!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]){padding:6px 11px!important;font-size:clamp(11px,3vw,14px)!important;border-width:1.5px!important;box-shadow:0 2px 5px #382b2730!important;white-space:nowrap!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards{position:absolute!important;right:8px!important;top:82px!important;left:auto!important;transform:none!important;display:flex!important;align-items:flex-end!important;width:max-content!important;min-width:0!important;max-width:45%!important;padding:5px 8px!important;gap:1px!important;background:rgba(255,248,228,.80)!important;border:1.5px solid rgba(153,108,64,.8)!important;border-radius:10px!important;box-shadow:0 2px 5px #382b2725!important;z-index:42!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-caption{font-size:11px!important;line-height:1.2!important;white-space:nowrap!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-combined{align-items:flex-end!important;gap:1px!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece{font-size:11px!important;line-height:1.15!important;gap:3px!important;justify-content:flex-end!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece small{font-size:10px!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-icon{width:13px!important;height:13px!important;}
+#ui .battle-screen .battle-field{position:relative!important;z-index:1!important;background:transparent!important;background-image:none!important;}
+@media(max-width:420px){#ui .battle-screen .battle-stage-center{max-width:62%!important;}#ui .battle-screen .weed-header .battle-stage-rewards{max-width:48%!important;top:82px!important;} }
+
+/* 2026-11-09: move reward card to the upper-right, raise meadow horizon */
+#ui .battle-screen .weed-header .battle-stage-rewards {
+  top:5px!important;right:5px!important;left:auto!important;bottom:auto!important;
+  max-width:31%!important;min-width:0!important;width:max-content!important;
+  padding:5px 7px!important;align-items:flex-end!important;
+  background:rgba(255,248,228,.74)!important;
+  border-radius:10px!important;z-index:48!important;
+}
+#ui .battle-screen .battle-stage-center {top:5px!important;max-width:42%!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-heading {font-size:clamp(15px,3.8vw,22px)!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]) {font-size:clamp(10px,2.6vw,13px)!important;padding:6px 9px!important;}
+#ui .battle-screen::before {background-size:100% 140%!important;background-position:center bottom!important;}
+@media(max-width:420px){
+ #ui .battle-screen .weed-header .battle-stage-rewards{top:4px!important;right:4px!important;max-width:32%!important;padding:4px 5px!important;}
+ #ui .battle-screen .battle-stage-center{max-width:43%!important;}
+ #ui .battle-screen .battle-stage-rewards .battle-reward-caption{font-size:10px!important;}
+ #ui .battle-screen .battle-stage-rewards .battle-reward-piece{font-size:10px!important;}
+}
+
+/* Nov 9: white upper HUD, slightly lower stage and rewards, shorter clear reward popup */
+#ui .battle-screen .weed-header {background:#fff!important;border-radius:0!important;box-shadow:none!important;}
+#ui .battle-screen .battle-stage-center {top:17px!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards {top:17px!important;right:6px!important;background:rgba(255,249,236,.96)!important;}
+#ui .battle-screen .battle-reward-popup:not([hidden]) {padding:6px 12px!important;line-height:1.2!important;border-radius:12px!important;}
+#ui .battle-screen .battle-reward-popup-title {font-size:13px!important;margin-bottom:2px!important;}
+#ui .battle-screen .battle-reward-popup-items {font-size:12px!important;gap:1px!important;}
+#ui .battle-screen .battle-reward-popup-items img {width:15px!important;height:15px!important;}
+/* Extend stage-clear/failure overlay upward over the full HUD while active */
+#ui .battle-screen .battle-field:has(.battle-stage-transition.is-visible) {overflow:visible!important;z-index:60!important;}
+#ui .battle-screen .battle-stage-transition {top:-112px!important;bottom:0!important;left:0!important;right:0!important;z-index:80!important;}
+@media(max-width:420px){#ui .battle-screen .battle-stage-center{top:16px!important;}#ui .battle-screen .weed-header .battle-stage-rewards{top:16px!important;}}
+
+/* Fix: meadow starts directly beneath the stage challenge control. */
+#ui .battle-screen .weed-header {
+  height:82px!important;
+  min-height:82px!important;
+  padding:0!important;
+  background:#fff!important;
+}
+#ui .battle-screen .battle-stage-center {top:9px!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards {top:9px!important;}
+#ui .battle-screen .battle-field {
+  position:relative!important;
+  overflow:visible!important;
+  z-index:2!important;
+}
+/* The transition lives inside battle-field, but must paint over the header too. */
+#ui .battle-screen .battle-field .battle-stage-transition {
+  position:absolute!important;
+  top:-82px!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:999!important;
+  display:grid!important;
+  place-items:center!important;
+  pointer-events:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  background:rgba(29,24,30,.05)!important;
+  transition:opacity .28s ease,background .28s ease,visibility .28s ease!important;
+}
+#ui .battle-screen .battle-field .battle-stage-transition.is-visible {
+  opacity:1!important;
+  visibility:visible!important;
+  background:rgba(29,24,30,.55)!important;
+}
+#ui .battle-screen .battle-field .battle-stage-transition.is-visible .battle-stage-transition-card {
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:translateY(0) scale(1)!important;
+}
+#ui .battle-screen .battle-field:has(.battle-stage-transition.is-visible) {
+  z-index:100!important;
+  overflow:visible!important;
+}
+@media(max-width:420px){
+ #ui .battle-screen .weed-header{height:82px!important;min-height:82px!important;}
+}

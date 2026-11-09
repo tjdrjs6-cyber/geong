@@ -28,12 +28,13 @@ const rock = (x: number, y: number, s = 1): string =>
 export function battleFieldMarkup(): string {
   return `
     <img class="bf-scene bf-scene-background" src="/assets/battle_background_v163.png" alt="" aria-hidden="true" draggable="false" />
-    <div class="bf-title"><span>⚔</span> 토벌장 <span>⚔</span></div>
+    
     <div class="bf-unit bf-enemy">
       <div class="bf-bar"><span class="bf-bar-track"><b class="bf-enemy-fill"></b></span><em class="bf-enemy-hp">20,000 / 20,000 · 100%</em></div>
-      <div class="bf-body bf-enemy-body">${monsterSvg()}</div>
+      <div class="bf-body bf-enemy-body">${monsterSvg()}<img class="bf-boss-monster" src="/assets/battle_stage_boss_20261109.png" alt="스테이지 보스" draggable="false" /></div>
       <span class="bf-hit">-10</span>
     </div>
+    <div class="bf-unit bf-friend bf-friend-third is-empty"><div class="bf-body bf-friend-body"></div></div>
     <div class="bf-unit bf-friend bf-friend-second is-empty"><div class="bf-body bf-friend-body"></div></div>
     <div class="bf-unit bf-friend is-empty">
       

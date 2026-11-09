@@ -95,10 +95,21 @@ async function prepareDatabase() {
     damage INT NOT NULL DEFAULT 0
   )`)
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0", "stage_limit_ms BIGINT NOT NULL DEFAULT 1800000", "boss_ready TINYINT NOT NULL DEFAULT 0", "retry_stage INT NOT NULL DEFAULT 0"]) {
+    try { await pool.query(`ALTER TABLE gm_battle ADD COLUMN ${column}`) } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
     raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
     hp BIGINT NOT NULL DEFAULT 4000000, last_tick BIGINT NOT NULL,
     PRIMARY KEY (raid_day, server_id)
+  )`)
+  for (const column of ['stage INT NOT NULL DEFAULT 1']) {
+    try { await pool.query(`ALTER TABLE gm_expedition_boss ADD COLUMN ${column}`) } catch(error) { if(error?.code!=='ER_DUP_FIELDNAME') throw error }
+  }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_stage_paid (
+    raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
+    stage INT NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY(raid_day,server_id,stage,account_id)
   )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_hp_migration (
     raid_day VARCHAR(10) NOT NULL,
@@ -566,54 +577,105 @@ async function getWeed(accountId) {
   return readWeed(pool, accountId)
 }
 
-async function getBattle(accountId) {
-  const [rows] = await pool.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ?', [accountId])
-  return rows[0] ? { id: rows[0].character_id, secondId: rows[0].second_id || null, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+// Each tenth encounter is a boss. Stage numbers 1..9 represent 1-1..1-9, 10 = 1-10 boss.
+const STAGE_LIMIT_MS = 30 * 60 * 1000
+const STAGE_HP = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000]
+function stageHp(stage) { return STAGE_HP[stage - 1] ?? (180000 + Math.max(0,stage - 40) * 4000) }
+const STAGE_REWARDS = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 3], [17, 3], [18, 3], [19, 3], [20, 3], [16, 4], [16, 4], [17, 4], [17, 4], [18, 4], [18, 5], [19, 5], [19, 5], [20, 5], [21, 5], [22, 6], [23, 6], [24, 6], [25, 6], [26, 6], [27, 7], [28, 7], [29, 7], [30, 7], [31, 7]]
+function stageReward(stage) { const [coins, fragments] = STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0, stage - 40), 7]; return {coins, fragments} }
+function battleRow(row) {
+  if (!row) return null
+  return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
+    since: Number(row.since_ms), damage: Number(row.damage), stage: Math.max(1, Number(row.stage) || 1),
+    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0, stageLimitMs: Number(row.stage_limit_ms) || STAGE_LIMIT_MS, bossReady: Boolean(row.boss_ready), retryStage: Number(row.retry_stage) || 0 }
 }
-
-/** Settles defeated enemies into coins and optionally switches the fighting friend, atomically with the save. */
+const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage FROM gm_battle WHERE account_id = ?'
+async function getBattle(accountId) {
+  const [rows] = await pool.query(BATTLE_SELECT, [accountId])
+  return battleRow(rows[0])
+}
 async function updateBattle(accountId, nextCharacter) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
     const [saves] = await conn.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
-    const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
-    const [rows] = await conn.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
+    const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], fragments: 0 }
+    const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [accountId])
     const now = Date.now()
-    let battle = rows[0] ? { id: rows[0].character_id, secondId: rows[0].second_id || null, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+    let battle = battleRow(rows[0])
     if (nextCharacter && !state.owned.includes(nextCharacter)) { await conn.rollback(); return { error: 'not_owned' } }
     if (nextCharacter) {
       const [busy] = await conn.query('SELECT 1 FROM gm_weed_slots WHERE account_id = ? AND character_id = ? UNION ALL SELECT 1 FROM gm_weeding WHERE account_id = ? AND beetle = 1 AND ? = ?', [accountId, nextCharacter, accountId, nextCharacter, BEETLE_ID])
       if (busy.length) { await conn.rollback(); return { error: 'busy_weed' } }
     }
     const [forgeRows] = await conn.query('SELECT level FROM gm_forge WHERE account_id = ?', [accountId])
-    const accessory=await getAccessory(accountId,conn)
-    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0)+accessoryPower(accessory)
-    let earned = 0
+    const accessory = await getAccessory(accountId, conn)
+    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory)
+    let earned = 0, coinsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
-      const settled = settleBattle(battle.since, battle.damage, now, (POWER[battle.id] ?? 10) + (battle.secondId ? (POWER[battle.secondId] ?? 10) : 0) + weaponBonus)
-      earned = settled.kills
-      battle = { ...battle, since: settled.since, damage: settled.damage }
+      const power = Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
+      // Process individual attack ticks, respecting the 30-minute deadline for each stage.
+      const ticks = Math.min(500000, Math.max(0, Math.floor((now - battle.since) / 3000)))
+      let tickAt = battle.since
+      for (let i = 0; i < ticks; i++) {
+        tickAt += 3000
+        if (tickAt - battle.stageSince >= battle.stageLimitMs) {
+          failedStage = battle.stage
+          battle.retryStage = failedStage > 1 ? failedStage : 0
+          battle.stage = Math.max(1, battle.stage - 1)
+          battle.bossReady = false
+          battle.stageSince = now; battle.stageDamage = 0
+          battle.stageLimitMs = STAGE_LIMIT_MS
+          battle.since = now
+          break
+        }
+        battle.stageDamage += power
+        if (battle.stageDamage >= stageHp(battle.stage)) {
+          const repeatBeforeBoss = battle.stage % 10 === 9
+          const reward = stageReward(battle.stage)
+          coinsEarned += reward.coins; earned += reward.fragments
+          cleared.push({stage:battle.stage,coins:reward.coins,fragments:reward.fragments})
+          if (repeatBeforeBoss) battle.bossReady = true
+          if (!repeatBeforeBoss && !battle.retryStage) {
+            battle.stage++; battle.bossReady = false
+          }
+          // A failed stage must be explicitly re-entered using the challenge button.
+          // Clearing the previous stage never clears retryStage or advances automatically.
+          battle.stageSince = tickAt; battle.stageDamage = 0
+        }
+      }
+      if (!failedStage) battle.since = tickAt
+      if (!failedStage && now - battle.stageSince >= battle.stageLimitMs) {
+        failedStage = battle.stage
+        battle.retryStage = failedStage > 1 ? failedStage : 0
+        battle.stage = Math.max(1, battle.stage - 1)
+        battle.bossReady = false
+        battle.stageSince = now; battle.stageDamage = 0; battle.since = now
+        battle.stageLimitMs = STAGE_LIMIT_MS
+      }
+      battle.damage = battle.stageDamage
     }
-    if (nextCharacter) battle = battle ? (battle.id === nextCharacter || battle.secondId === nextCharacter ? (battle.secondId === nextCharacter ? { ...battle, secondId: null } : battle.secondId ? { ...battle, id: battle.secondId, secondId: null } : null) : battle.secondId ? { ...battle, secondId: nextCharacter } : { ...battle, secondId: nextCharacter }) : { id: nextCharacter, secondId: null, since: now, damage: 0 }
-    if (!battle) {
-      if (earned > 0) await conn.query('UPDATE gm_saves SET fragments = fragments + ? WHERE account_id = ?', [earned, accountId])
-      state.fragments = (state.fragments ?? 0) + earned
-      await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
-      await conn.commit()
-      return { save: state, battle: null, earned, now }
+    if (nextCharacter) {
+      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0, stageLimitMs: STAGE_LIMIT_MS, bossReady: false, retryStage: 0 }
+      else {
+        const members = [battle.id, battle.secondId, battle.thirdId].filter(Boolean)
+        if (members.includes(nextCharacter)) members.splice(members.indexOf(nextCharacter), 1)
+        else if (members.length < 3) members.push(nextCharacter)
+        else { await conn.rollback(); return { error: 'battle_full' } }
+        if (members.length) [battle.id, battle.secondId, battle.thirdId] = [members[0], members[1] || null, members[2] || null]
+        else battle = null
+      }
     }
+    if (earned || coinsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, gems = gems + ? WHERE account_id = ?', [earned, coinsEarned, accountId])
     state.fragments = (state.fragments ?? 0) + earned
-    if (earned > 0) await conn.query('UPDATE gm_saves SET fragments = fragments + ? WHERE account_id = ?', [earned, accountId])
-    await conn.query('INSERT INTO gm_battle (account_id, character_id, second_id, since_ms, damage) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), second_id = VALUES(second_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.secondId || '', battle.since, battle.damage])
+    state.gems = (state.gems ?? 0) + coinsEarned
+    if (!battle) await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
+    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage)`,
+      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0])
     await conn.commit()
-    return { save: state, battle, earned, now }
-  } catch (error) {
-    await conn.rollback().catch(() => {})
-    throw error
-  } finally {
-    conn.release()
-  }
+    return { save: state, battle, earned, coinsEarned, cleared, failedStage, now }
+  } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
 }
 
 /** Weeding view: up to 3 members (each with its own timer) plus the 풍뎅이 helper flag. */
@@ -650,7 +712,7 @@ async function updateWeed(accountId, op = {}) {
       if (!state.owned.includes(op.add)) return fail('not_owned')
       if (members.some(m => m.id === op.add)) return fail('already_weeding')
       if (members.length >= WEED_MAX) return fail('weed_full')
-      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND (character_id = ? OR second_id = ?)', [accountId, op.add, op.add])
+      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND (character_id = ? OR second_id = ? OR third_id = ?)', [accountId, op.add, op.add, op.add])
       if (busy.length) return fail('busy_battle')
     }
     if (op.remove && !members.some(m => m.id === op.remove)) return fail('not_weeding')
@@ -719,6 +781,7 @@ async function ensureGlobalChatTables() {
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
 const EXP_HP = 4000000
 const EXP_TICK = 3000
+const expeditionMaxHp = stage => stage === 1 ? 4000000 : stage === 2 ? 10000000 : 20000000
 function expeditionWindow(now = Date.now()) {
   const kst = new Date(now + 9 * 3600000)
   const midnight = Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate()) - 9*3600000
@@ -741,35 +804,34 @@ async function expeditionMigrateHp(conn,day,serverId) {
   }
 }
 async function expeditionSettle(conn, day, serverId, now) {
-  const [bossRows] = await conn.query('SELECT hp,last_tick FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
-  if (!bossRows.length) return null
-  const boss=bossRows[0]
-  let hp=Number(boss.hp),last=Number(boss.last_tick)
-  const ticks=hp>0 ? Math.max(0,Math.floor((now-last)/EXP_TICK)) : 0
+  const [bossRows]=await conn.query('SELECT hp,last_tick,stage FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+  if(!bossRows.length)return null
+  let {hp,last_tick:last,stage}=bossRows[0]
+  hp=Number(hp);last=Number(last);stage=Number(stage)
+  const ticks=hp>0?Math.max(0,Math.floor((now-last)/EXP_TICK)):0
   if(ticks) {
     const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
-    // One permanent weapon bonus per participating account, regardless of party size.
     const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?1:0),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
-    if(hp===0) {
-      const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
-      for(const player of players) {
-        const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_paid (raid_day,server_id,account_id) VALUES (?,?,?)',[day,serverId,player.account_id])
-        if(paid.affectedRows) {
-          // System mail: reward is credited only when the recipient claims it.
-          // The mail `coins` column is the game's coin balance (`gm_saves.gems`).
-          await conn.query(
-            'INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',
-            [0,player.account_id,'원정대 보스를 토벌하였습니다!',300,30,day,now]
-          )
-          await trimInbox(conn,player.account_id)
-        }
+  }
+  if(hp===0) {
+    const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+    for(const player of players) {
+      const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
+      if(paid.affectedRows) {
+        const coins=stage===1?150:stage===2?300:500, fragments=stage===1?15:stage===2?20:30
+        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
+        await trimInbox(conn,player.account_id)
       }
     }
+    if(stage<3) {
+      stage+=1;hp=expeditionMaxHp(stage);last=now
+      await conn.query('UPDATE gm_expedition_boss SET stage=?,hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[stage,hp,last,day,serverId])
+    }
   }
-  return hp
+  return {hp,stage}
 }
 // Retrying a deadlocked transaction is safe: InnoDB rolls back the victim.
 const isDbContention = error => ['ER_LOCK_DEADLOCK','ER_LOCK_WAIT_TIMEOUT'].includes(error?.code)
@@ -799,9 +861,9 @@ async function expeditionSnapshot(accountId) {
       const [insertedBoss]=await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,id,EXP_HP,start])
       if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,id])
       await expeditionMigrateHp(conn,day,id)
-      const hp=await expeditionSettle(conn,day,id,now)
+      const bossState=await expeditionSettle(conn,day,id,now)
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
-      servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,me:String(m.account_id)===String(accountId)}))})
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -815,10 +877,10 @@ async function expeditionJoin(accountId,serverId,characterId) {
     const [insertedBoss]=await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
       if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,serverId])
       await expeditionMigrateHp(conn,day,serverId)
-    const hp=await expeditionSettle(conn,day,serverId,now)
+    const bossState=await expeditionSettle(conn,day,serverId,now)
     const [old]=await conn.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
     if(old.length && Number(old[0].server_id)!==serverId) {await conn.rollback();return 'exp_already_joined'}
-    if(hp<=0) {await conn.rollback();return 'exp_boss_dead'}
+    if(bossState.hp<=0) {await conn.rollback();return 'exp_boss_dead'}
     const [count]=await conn.query('SELECT COUNT(*) AS n FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
     if(!old.length && Number(count[0].n)>=10){await conn.rollback();return 'exp_full'}
     const [owned]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[accountId])
@@ -1211,6 +1273,25 @@ const routes = {
     if(!account)return send(res,401,{error:'login_required'})
     send(res,200,await expeditionBadge(account.id))
   },
+  'POST /api/expedition/test-control': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    if(process.env.TEST_SERVER!=='true'||String(account.username).toLowerCase()!=='test')return send(res,403,{error:'forbidden'})
+    const {serverId,action}=await readJson(req)
+    if(![1,2,3].includes(Number(serverId))||!['hp100','respawn'].includes(action))return send(res,400,{error:'invalid_action'})
+    const {day,start}=expeditionWindow()
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick,stage) VALUES (?,?,?,?,1)',[day,serverId,EXP_HP,start])
+      const [rows]=await conn.query('SELECT stage FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+      const stage=Number(rows[0].stage)
+      const hp=action==='hp100'?100:expeditionMaxHp(stage)
+      await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,Date.now(),day,serverId])
+      await conn.commit()
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+    send(res,200,{ok:true})
+  },
   'GET /api/expedition': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -1492,6 +1573,96 @@ const routes = {
     await readJson(req)
     const earned = await autoSettle(account.id)
     send(res, 200, { earned, save: await getSave(account.id), weed: await getWeed(account.id), battle: await getBattle(account.id), now: Date.now() })
+  },
+  'POST /api/battle/retry-stage': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows]=await conn.query(BATTLE_SELECT+' FOR UPDATE',[account.id])
+      const battle=battleRow(rows[0])
+      if(!battle||battle.retryStage!==battle.stage+1){await conn.rollback();return send(res,409,{error:'retry_not_ready'})}
+      const now=Date.now()
+      await conn.query('UPDATE gm_battle SET stage=?,retry_stage=0,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=? WHERE account_id=?',[battle.retryStage,now,now,STAGE_LIMIT_MS,account.id])
+      await conn.commit()
+      send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
+    }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+  },
+  'POST /api/battle/challenge-boss': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    // Settle before the stage change so rewards remain consistent.
+    await updateBattle(account.id,null)
+    const conn=await pool.getConnection()
+    try{
+      await conn.beginTransaction()
+      const [rows]=await conn.query(BATTLE_SELECT+' FOR UPDATE',[account.id])
+      const battle=battleRow(rows[0])
+      if(!battle||battle.stage%10!==9||!battle.bossReady){await conn.rollback();return send(res,409,{error:'boss_not_ready'})}
+      const now=Date.now()
+      await conn.query('UPDATE gm_battle SET stage=?,stage_since=?,since_ms=?,stage_damage=0,damage=0,boss_ready=0 WHERE account_id=?',[battle.stage+1,now,now,account.id])
+      await conn.commit()
+      send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
+    }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+  },
+  'POST /api/battle/test-time5': async(req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    if(process.env.TEST_SERVER!=='true'||String(account.username).toLowerCase()!=='test')return send(res,403,{error:'forbidden'})
+    const now=Date.now()
+    await pool.query('UPDATE gm_battle SET stage_limit_ms=5000,stage_since=?,since_ms=? WHERE account_id=?',[now,now,account.id])
+    send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
+  },
+  'POST /api/battle/test-clear': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
+    // Settle existing attack ticks before advancing the stage, without granting a manual-clear reward.
+    await updateBattle(account.id, null)
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [account.id])
+      const battle = battleRow(rows[0])
+      if (!battle) { await conn.rollback(); return send(res, 400, { error: 'battle_not_started' }) }
+      const now = Date.now()
+      await conn.query('UPDATE gm_battle SET stage = ?, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ? WHERE account_id = ?', [battle.stage + 1, now, now, account.id])
+      await conn.commit()
+      send(res, 200, { save: await getSave(account.id), battle: await getBattle(account.id), earned: 0, now })
+    } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
+  },
+  'POST /api/battle/test-hp500': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [account.id])
+      const battle = battleRow(rows[0])
+      if (!battle) { await conn.rollback(); return send(res, 400, { error: 'battle_not_started' }) }
+      const now = Date.now()
+      const damage = Math.max(0, stageHp(battle.stage) - 500)
+      await conn.query('UPDATE gm_battle SET stage_damage=?, damage=?, since_ms=?, stage_since=? WHERE account_id=?',
+        [damage, damage, now, now, account.id])
+      await conn.commit()
+      send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
+    } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
+  },
+  'POST /api/battle/test-reset': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
+    const now = Date.now()
+    await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ?, stage_limit_ms = 1800000, boss_ready=0, retry_stage=0 WHERE account_id = ?', [now, now, account.id])
+    send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
   },
   'POST /api/battle/claim': async (req, res) => {
     const account = await currentAccount(req)
