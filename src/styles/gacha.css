@@ -4605,3 +4605,6 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-field .bf-friend.bf-friend-second{left:31%!important;right:auto!important;bottom:9%!important;z-index:4!important}
 .battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important;bottom:29%!important;z-index:3!important;width:20cqw!important;max-width:112px!important}
 .battle-field .battle-weapon-strike{left:22%!important;right:auto!important;bottom:33%!important}
+
+/* Test-server stage skip control */
+.battle-test-clear:not([hidden]) { display:block; margin:8px auto; padding:10px 18px; border:2px solid #b78352; border-radius:16px; background:#fff1cf; color:#65401f; font-weight:800; cursor:pointer; }

@@ -334,6 +334,7 @@ export class GachaUi {
           <div class="field-info-sticky">
           <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 스테이지 처치 보상은 코인과 강화파편으로 자동 지급돼요.</p>
           <p class="battle-status"></p>
+          <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button>
           
           
           <p class="weed-rule">1-1단계 체력 1,000부터 시작해 단계마다 1,000씩 증가해요. 30분 안에 처치하면 다음 단계로 자동 진행하고 보상은 자동 지급돼요.</p>
@@ -1061,6 +1062,18 @@ export class GachaUi {
         }
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.renderWeed()
+      this.renderWallet()
+      return
+    }
+    if (action === 'battle-test-clear') {
+      if (this.busy || this.store.user?.username?.toLowerCase() !== 'test') return
+      this.busy = true
+      try {
+        await this.store.testClearBattle()
+        this.lastEnemyHp = -1
+        this.toast('테스트 단계 클리어! 다음 단계로 이동했어요.')
+      } catch (error) { this.handleError(error) } finally { this.busy = false }
+      this.renderBattle()
       this.renderWallet()
       return
     }
@@ -2868,6 +2881,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }
     }
+    const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
+    if (testClear) testClear.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
     if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}% · 남은 시간 ${Math.ceil(view.remaining / 60000)}분`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')

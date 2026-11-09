@@ -1521,6 +1521,25 @@ const routes = {
     const earned = await autoSettle(account.id)
     send(res, 200, { earned, save: await getSave(account.id), weed: await getWeed(account.id), battle: await getBattle(account.id), now: Date.now() })
   },
+  'POST /api/battle/test-clear': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
+    // Settle existing attack ticks before advancing the stage, without granting a manual-clear reward.
+    await updateBattle(account.id, null)
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [account.id])
+      const battle = battleRow(rows[0])
+      if (!battle) { await conn.rollback(); return send(res, 400, { error: 'battle_not_started' }) }
+      const now = Date.now()
+      await conn.query('UPDATE gm_battle SET stage = ?, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ? WHERE account_id = ?', [battle.stage + 1, now, now, account.id])
+      await conn.commit()
+      send(res, 200, { save: await getSave(account.id), battle: await getBattle(account.id), earned: 0, now })
+    } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
+  },
   'POST /api/battle/claim': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })

@@ -178,6 +178,10 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/start', { id }))
   }
 
+  async testClearBattle(): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/test-clear', {}))
+  }
+
   async claimBattle(): Promise<number> {
     return this.applyBattle(await request<BattleResult>('battle/claim', {}))
   }
