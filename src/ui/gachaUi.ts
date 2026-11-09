@@ -62,7 +62,7 @@ export class GachaUi {
   private wildWeedBusy = false
   private wildWeedLastSlot = -1
   private shopTab: 'buy' | 'sell' = 'buy'
-  private storageTab: 'char' | 'deco' | 'inventory' = 'char'
+  private storageTab: 'char' | 'deco' | 'accessory' | 'inventory' = 'char'
   private shopSellTab: 'char' | 'deco' | 'inventory' = 'char'
   private noticeTimer = 0
   private chatTimer = 0
@@ -518,7 +518,7 @@ export class GachaUi {
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">인벤토리</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
-          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 기타</button></div>
+          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="accessory" role="tab"><img class="storage-tab-face" src="/assets/accessories/shisa_keyring.png" alt=""/> 무기 액세서리</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 기타</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -931,7 +931,7 @@ export class GachaUi {
     if (action === 'mail-claim-all') { await this.claimMail(); return }
     if (action === 'mail-tab' && button.dataset.tab) { this.mailTab = button.dataset.tab === 'sent' ? 'sent' : 'in'; if (this.lastBox) this.renderMail(this.lastBox); return }
     if (action === 'mail-delete' && button.dataset.id) { await this.deleteMail(Number(button.dataset.id), button.dataset.box === 'sent' ? 'sent' : 'in'); return }
-    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'deco' ? 'deco' : 'char'; this.renderStorage(); return }
+    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderStorage(); return }
     if (action === 'storage-bulk-sell') { await this.sellBulk(button); return }
     if (action === 'sell' && button.dataset.id && button.dataset.kind) { await this.sell(button.dataset.kind === 'deco' ? 'deco' : 'char', button.dataset.id, Number(button.dataset.count) || 1, button); return }
     if (action === 'suggest-reply' && button.dataset.id) { await this.replySuggestion(Number(button.dataset.id)); return }
@@ -2393,7 +2393,7 @@ export class GachaUi {
     })
     if (!grid) return
     const bulkButton = this.root.querySelector<HTMLButtonElement>('.storage-bulk-sell')
-    const bulkItems = this.storageTab === 'inventory' ? [] : this.getBulkSellItems()
+    const bulkItems = this.storageTab === 'inventory' || this.storageTab === 'accessory' ? [] : this.getBulkSellItems()
     if (bulkButton) {
       const count = bulkItems.reduce((sum, item) => sum + item.count, 0)
       const coins = bulkItems.reduce((sum, item) => sum + item.count * item.price, 0)
@@ -2407,6 +2407,16 @@ export class GachaUi {
     if (this.storageTab === 'inventory') {
       if (summary) summary.textContent = '보유한 기타 아이템입니다. 판매는 장터에서 이용해 주세요.'
       grid.innerHTML = ([['잡초',this.store.wildWeed?.count??0,5,'/field_wild_weed.png'],['황금잡초',this.store.wildWeed?.goldenCount??0,50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([name,count,price,img])=>`<article class="storage-item"><img src="${img}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count}개 · 개당 ${price}코인</small></article>`).join('') || '<div class="inventory-empty"><strong>아직 보관된 아이템이 없어요.</strong><small>새로운 아이템이 추가되면 이곳에서 확인할 수 있어요!</small></div>'
+    } else if (this.storageTab === 'accessory') {
+      const counts = this.store.accessory.counts || {}
+      const cards = WEAPON_ACCESSORIES.flatMap(item => ALCHEMY_GRADES.map(grade => {
+        const count = grade.id === 'normal' ? (counts[item.id] || 0) : (this.store.accessory.grades?.[item.id]?.[grade.id] || 0)
+        if (count <= 0) return ''
+        const equipped = this.store.accessory.equipped === item.id && (this.store.accessory.equippedGrade || 'normal') === grade.id
+        return `<article class="storage-item accessory-storage-item" role="listitem"><span class="storage-pic is-accessory"><img src="${item.image}" alt="${item.name}" loading="lazy" style="filter:drop-shadow(0 0 7px ${grade.color})"/></span><b>${item.name}</b><small style="color:${grade.color}">${grade.name} · 전투력 +${grade.power}</small><small class="storage-count">보유 ${count.toLocaleString('ko-KR')}개${equipped ? ' · 장착 중' : ''}</small></article>`
+      })).filter(Boolean)
+      if (summary) summary.textContent = `보유 무기 액세서리 ${cards.length} / 48종 · 장착은 마이룸 → 장비에서 할 수 있어요.`
+      grid.innerHTML = cards.join('') || '<p class="users-empty">아직 획득한 무기 액세서리가 없어요.</p>'
     } else if (this.storageTab === 'char') {
       const owned = CHARACTERS.filter(c => this.store.data.owned.includes(c.id))
       const extras = owned.reduce((sum, c) => sum + (this.store.dupes[c.id] ?? 0), 0)
