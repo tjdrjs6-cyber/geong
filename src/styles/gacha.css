@@ -4703,3 +4703,27 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-screen .battle-stage-heading{top:7%!important;font-size:clamp(22px,6cqw,35px)!important;z-index:12!important}
 #ui .battle-screen .battle-field .battle-weapon-strike{display:none!important;visibility:hidden!important;animation:none!important}
 .battle-retry-challenge:not([hidden]){display:block;margin:7px auto;padding:10px 16px;border:2px solid #b78c50;border-radius:14px;background:#fff1cf;color:#67411c;font-weight:900;cursor:pointer}
+
+/* Clean battle top area: preserve full sky and separate stage/controls */
+#ui .battle-screen .weed-header{background:#b9def9!important;min-height:62px!important;padding:8px 12px!important;border:0!important;box-shadow:none!important}
+#ui .battle-screen .battle-field{background-position:center top!important;background-size:100% 100%!important;overflow:hidden!important}
+#ui .battle-screen .battle-stage-heading{
+  position:absolute!important;top:14px!important;left:50%!important;transform:translateX(-50%)!important;
+  width:max-content!important;max-width:90%!important;z-index:20!important;
+  font-size:clamp(19px,5.2cqw,29px)!important;letter-spacing:.5px!important;
+  line-height:1.2!important;color:#fff9e8!important;-webkit-text-stroke:0!important;
+  background:rgba(105,71,44,.82)!important;border:2px solid #f5dcac!important;
+  border-radius:16px!important;padding:6px 18px!important;
+  text-shadow:0 2px 3px #513523!important;box-shadow:0 3px 8px #382b2755!important
+}
+#ui .battle-screen .battle-stage-actions{
+  position:absolute!important;top:69px!important;left:50%!important;transform:translateX(-50%)!important;
+  z-index:22!important;width:90%!important;display:flex!important;justify-content:center!important;pointer-events:none!important
+}
+#ui .battle-screen .battle-stage-actions button:not([hidden]){
+  display:block!important;pointer-events:auto!important;margin:0!important;
+  padding:10px 20px!important;border:2px solid #87583b!important;border-radius:20px!important;
+  background:#fff0c9!important;color:#674025!important;font-size:clamp(13px,3.8cqw,17px)!important;
+  font-weight:900!important;box-shadow:0 4px 10px #45332155!important;white-space:nowrap!important
+}
+#ui .battle-screen .battle-stage-rewards{max-width:min(210px,60%)!important}

@@ -636,7 +636,11 @@ async function updateBattle(accountId, nextCharacter) {
           coinsEarned += reward.coins; earned += reward.fragments
           cleared.push({stage:battle.stage,coins:reward.coins,fragments:reward.fragments})
           if (repeatBeforeBoss) battle.bossReady = true
-          if (!repeatBeforeBoss) { battle.stage++; battle.bossReady = false; battle.retryStage = 0 }
+          if (!repeatBeforeBoss && !battle.retryStage) {
+            battle.stage++; battle.bossReady = false
+          }
+          // A failed stage must be explicitly re-entered using the challenge button.
+          // Clearing the previous stage never clears retryStage or advances automatically.
           battle.stageSince = tickAt; battle.stageDamage = 0
         }
       }
