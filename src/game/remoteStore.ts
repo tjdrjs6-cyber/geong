@@ -29,7 +29,7 @@ export const MAIL_MAX_CHARS = 30
 export const MAIL_DAILY_COINS = 100
 export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
-export type AccessoryState = { count: number; equipped: string | null }
+export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null }
 export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
 type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
@@ -113,7 +113,7 @@ export class RemoteGachaStore {
   decos: DecoCounts = {}
   house: HouseLayout = { pieces: [], friends: [] }
   forge: ForgeState | null = null
-  accessory: AccessoryState = {count:0,equipped:null}
+  accessory: AccessoryState = {count:0,counts:{},equipped:null}
   featured: CharacterId | null = null
   mailUnread = 0
   dupes: CharDupes = {}
@@ -190,7 +190,7 @@ export class RemoteGachaStore {
     const result=await request<{save:GachaSave}>('shop/buy',{quantity})
     this.data=result.save
   }
-  async loadForge(): Promise<void> { const r=await request<{forge:ForgeState|null;accessory:AccessoryState}>('forge');this.forge=r.forge;this.accessory=r.accessory }
+  async loadForge(): Promise<void> { const r=await request<{forge:ForgeState|null;accessory:AccessoryState}>('forge');this.forge=r.forge;this.accessory=r.accessory ?? this.accessory ?? {count:0,counts:{},equipped:null} }
   async equipAccessory(id: string|null): Promise<void> {
     const r=await request<{forge:ForgeState|null;accessory:AccessoryState;save:GachaSave}>('accessory/equip',{id})
     this.forge=r.forge;this.accessory=r.accessory;this.data=r.save
@@ -420,7 +420,7 @@ export class RemoteGachaStore {
 
   private apply(payload: AccountPayload): void {
     this.forge = payload.forge ?? null
-    this.accessory = payload.accessory ?? {count:0,equipped:null}
+    this.accessory = payload.accessory ?? {count:0,counts:{},equipped:null}
     this.user = payload.user
     this.weed = payload.weed ?? null
     this.battle = payload.battle ?? null

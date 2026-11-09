@@ -1,3 +1,14 @@
+const WEAPON_ACCESSORIES = [
+  {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
+  {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},
+  {id:'usagi_keyring',name:'우사기 키링',image:'/assets/accessories/usagi_keyring.png?v=040'},
+  {id:'momonga_keyring',name:'모몽가 키링',image:'/assets/accessories/momonga_keyring.png?v=040'},
+  {id:'kurimanju_keyring',name:'쿠리만쥬 키링',image:'/assets/accessories/kurimanju_keyring.png?v=040'},
+  {id:'shisa_keyring',name:'시사 키링',image:'/assets/accessories/shisa_keyring.png?v=040'},
+  {id:'kani_keyring',name:'카니 키링',image:'/assets/accessories/kani_keyring.png?v=040'},
+  {id:'rakko_keyring',name:'랏코 키링',image:'/assets/accessories/rakko_keyring.png?v=040'},
+ ] as const
+const accessoryInfo=(id:string|null)=>WEAPON_ACCESSORIES.find(item=>item.id===id)
 // Enhancement aura tiers are visual-only and never affect weapon stats.
 function weaponAuraClass(level: number): string {
   return level >= 20 ? 'aura-20' : level >= 17 ? 'aura-17' : level >= 15 ? 'aura-15' : level >= 13 ? 'aura-13' : level >= 10 ? 'aura-10' : ''
@@ -402,7 +413,7 @@ export class GachaUi {
           <div class="catalog-choice-list">
             <button type="button" class="catalog-choice-button" data-action="collection"><img src="/assets/chars/chiikawa_tab_icon.png" alt=""/><span><b>캐릭터 도감</b><small><span class="collection-count">0 / ${CHARACTERS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="decos"><img src="/assets/chars/hachiware_face.png" alt=""/><span><b>데코 도감</b><small><span class="deco-count">0 / ${DECOS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
-            <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 1</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 8</span> 수집</small></span><span aria-hidden="true">›</span></button>
           </div>
         </div>
       </section>
@@ -477,7 +488,7 @@ export class GachaUi {
           <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/usagi_face_claw.png" alt="우사기" /> 인형뽑기</h2>
-          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 데코 1개가 보관함에 자동 지급!</p>
+          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 무기 액세서리 1개가 자동 지급!</p>
           <div class="claw-balance" aria-label="보유 다이아"><span class="claw-balance-title">보유 다이아</span><span class="claw-balance-count"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><span class="claw-balance-times">×</span><strong class="diamond-value">0</strong><span class="claw-balance-unit">개</span></span></div><p class="claw-balance-help">집게를 인형 위로 이동해 잡아보세요!</p>
           <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 2개</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
@@ -547,10 +558,11 @@ export class GachaUi {
   }
 
   private showAccessoryCatalog(): void {
-    const count=this.store.accessory.count
+    const counts=this.store.accessory.counts||{}
+    const cards=WEAPON_ACCESSORIES.map(item=>`<div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong><small>${counts[item.id]>0?`${counts[item.id]}개 보유`:'미획득 · 인형뽑기에서 획득'}</small></div></div>`).join('')
     const dialog=document.createElement('dialog')
     dialog.className='myroom-equipment-dialog'
-    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><div class="accessory-item"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt="치이카와 키링"/><div><b>치이카와 키링</b><small>노말 등급</small><strong>장착 시 무기 전투력 +1</strong><small>${count>0?`${count}개 보유`:'미획득 · 인형뽑기에서 획득'}</small></div></div><button class="myroom-equipment-done">확인</button></div>`
+    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><div class="accessory-scroll">${cards}</div><button class="myroom-equipment-done">확인</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
     dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
@@ -565,12 +577,16 @@ export class GachaUi {
     const dialog = document.createElement('dialog')
     dialog.className = 'myroom-equipment-dialog'
     dialog.setAttribute('aria-label','내 장비 상태')
-    dialog.innerHTML = `<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close" aria-label="닫기">×</button><h2><img src="/assets/forge/rakko_face.png" alt="" /> 내 장비</h2>${forge ? `<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(forge.level)}"><img src="/assets/forge/${forge.weapon}.png" alt="장착 무기" />${this.store.accessory.equipped?`<img class="weapon-keyring" src="/assets/accessories/chiikawa_keyring.png?v=039" alt="장착된 치이카와 키링"/>`:``}</span><div><b>${names[forge.weapon] ?? '내 무기'}</b><strong>+${forge.level}강 / 최대 +20강</strong><span>무기 전투력 +${forge.bonus}</span></div></div><p class="myroom-equipment-note">강화는 상점 → 대장간에서 할 수 있어요.</p>` : '<p class="myroom-equipment-note">아직 선택한 무기가 없어요.<br>상점 → 대장간에서 무기를 선택할 수 있어요.</p>'}<div class="accessory-equip-section"><b>무기 액세서리</b><div class="accessory-item"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt="치이카와 키링"/><div><strong>치이카와 키링 · 노말</strong><small>전투력 +1 · ${this.store.accessory.count}개 보유</small></div></div><button type="button" class="accessory-equip-button" ${!forge||!this.store.accessory.count?'disabled':''}>${this.store.accessory.equipped?'장착 해제':'장착하기'}</button></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+    const equipped=accessoryInfo(this.store.accessory.equipped)
+    const counts=this.store.accessory.counts||{}
+    const accessories=WEAPON_ACCESSORIES.map(item=>`<div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><strong>${item.name} · 노말</strong><small>전투력 +1 · ${counts[item.id]||0}개 보유</small></div><button type="button" class="accessory-equip-button" data-accessory="${item.id}" ${!forge||!counts[item.id]?'disabled':''}>${this.store.accessory.equipped===item.id?'장착 해제':'장착하기'}</button></div>`).join('')
+    dialog.innerHTML = `<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close" aria-label="닫기">×</button><h2><img src="/assets/forge/rakko_face.png" alt="" /> 내 장비</h2>${forge ? `<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(forge.level)}"><img src="/assets/forge/${forge.weapon}.png" alt="장착 무기" />${equipped?`<img class="weapon-keyring" src="${equipped.image}" alt="장착된 ${equipped.name}"/>`:``}</span><div><b>${names[forge.weapon] ?? '내 무기'}</b><strong>+${forge.level}강 / 최대 +20강</strong><span>무기 전투력 +${forge.bonus}</span></div></div><p class="myroom-equipment-note">강화는 상점 → 대장간에서 할 수 있어요.</p>` : '<p class="myroom-equipment-note">아직 선택한 무기가 없어요.<br>상점 → 대장간에서 무기를 선택할 수 있어요.</p>'}<div class="accessory-equip-section"><b>무기 액세서리</b><div class="accessory-scroll">${accessories}</div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
     document.body.appendChild(dialog)
-    dialog.querySelector('.accessory-equip-button')?.addEventListener('click',async()=>{
-      try { await this.store.equipAccessory(this.store.accessory.equipped?null:'chiikawa_keyring');dialog.close();await this.showEquipmentStatus();this.renderWallet() }
+    dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(button=>button.addEventListener('click',async()=>{
+      const id=button.dataset.accessory||null
+      try { await this.store.equipAccessory(this.store.accessory.equipped===id?null:id);dialog.close();await this.showEquipmentStatus();this.renderWallet() }
       catch(error){this.handleError(error)}
-    })
+    }))
     dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
     dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
     dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()})
@@ -593,7 +609,7 @@ export class GachaUi {
     }
     const level=forge.level
     const chance=[100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5][level]
-    body.innerHTML=`<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}">${this.store.accessory.equipped?`<img class="weapon-keyring" src="/assets/accessories/chiikawa_keyring.png?v=039" alt="치이카와 키링"/>`:``}</span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
+    body.innerHTML=`<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(level)}"><img src="/assets/forge/${forge.weapon}.png" alt="${names[forge.weapon]}">${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}</span><div><b>${names[forge.weapon]}</b><strong>+${level}강 / 최대 +20강</strong><span>영구 전투력 보너스 +${forge.bonus}</span></div></div>${level>=20?'<p class="forge-max">✨ 최고 강화 단계에 도달했어요!</p>':`<div class="forge-cost"><p>다음 강화 성공 확률 <b>${chance}%</b></p><p><span class="forge-required-label">필요:</span> <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b>${level+1}개</b> + <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> <b>${(level+1)*5}개</b></p><p>보유: <img class="forge-resource-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> ${this.isForgeOperator?'∞':(this.store.data.fragments??0).toLocaleString()+'개'} · <img class="forge-resource-icon" src="/assets/coin.png" alt="코인"/> ${this.isForgeOperator?'∞':this.store.data.gems.toLocaleString()+'개'}</p></div><button class="forge-upgrade" data-action="forge-upgrade"><img src="/assets/forge/button.png" alt="강화하기"/></button><p class="forge-note">실패해도 단계는 내려가지 않지만 재료와 코인은 소모돼요.</p>`}`
   }
 
   private playForgeSound(kind: 'working' | 'success' | 'failure'): void {
@@ -828,7 +844,7 @@ export class GachaUi {
       await this.handleClaw(action); return
     }
     if (action === 'accessory-catalog') { this.showAccessoryCatalog(); return }
-    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${this.store.accessory.count>0?1:0} / 1`;this.show('catalog'); return }
+    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${Object.values(this.store.accessory.counts||{}).filter(n=>n>0).length} / 8`;this.show('catalog'); return }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
@@ -1372,13 +1388,14 @@ export class GachaUi {
         // after the reward appears.
         this.setClawClosed(false)
         await new Promise(resolve => window.setTimeout(resolve, 520))
-        const earnedText = '🎉 치이카와 키링 획득! 무기 액세서리 도감에 등록됐어요!'
-        if(prizeEl){prizeEl.innerHTML='<img src="/assets/accessories/chiikawa_keyring.png?v=039" alt="치이카와 키링"/>';prizeEl.classList.remove('is-delivered');void prizeEl.offsetWidth;prizeEl.classList.add('is-delivered')}
+        const item=accessoryInfo(result.prize)!
+        const earnedText = `${item.name} 획득! 무기 액세서리 도감에 등록됐어요!`
+        if(prizeEl){prizeEl.innerHTML=`<img src="${item.image}" alt="${item.name}"/>`;prizeEl.classList.remove('is-delivered');void prizeEl.offsetWidth;prizeEl.classList.add('is-delivered')}
         if(msg)msg.textContent=earnedText
         this.toast(earnedText)
         const popup=document.createElement('dialog')
         popup.className='myroom-equipment-dialog'
-        popup.innerHTML='<div class="myroom-equipment-panel"><h2>🎉 무기 액세서리 획득!</h2><div class="accessory-item"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt="치이카와 키링"/><div><b>치이카와 키링</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>'
+        popup.innerHTML=`<div class="myroom-equipment-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
         document.body.appendChild(popup)
         popup.querySelector('button')?.addEventListener('click',()=>popup.close())
         popup.addEventListener('close',()=>popup.remove(),{once:true})

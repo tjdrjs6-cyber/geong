@@ -119,7 +119,7 @@ export function settleWeed(since, now, interval = WEED_HOUR_MS) {
 }
 
 /** Hunting ground: the enemy has 100 HP and takes the friend's power as damage every 5 minutes. */
-export const ENEMY_HP = 20_000
+export const ENEMY_HP = 30_000
 export const BATTLE_TICK_MS = 3_000
 export const BATTLE_DIAMOND_CHANCE = 1
 /** Battle power per friend. */

@@ -4233,3 +4233,10 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .accessory-equip-button:disabled{opacity:.5}
 .accessory-weapon{position:relative;overflow:visible!important}
 .accessory-weapon .weapon-keyring{position:absolute!important;width:25%!important;height:32%!important;object-fit:contain!important;right:-7%!important;bottom:-10%!important;transform:none!important;animation:none!important;pointer-events:none}
+
+/* test.040 accessory collection: keep charm anchored at the weapon handle */
+.accessory-scroll{max-height:min(50vh,440px);overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+.accessory-equip-section .accessory-item{flex-wrap:wrap}
+.accessory-equip-section .accessory-item>div{flex:1;min-width:110px}
+.accessory-equip-section .accessory-equip-button{width:auto;flex:none;margin-left:auto}
+.accessory-weapon .weapon-keyring{position:absolute!important;right:-7%!important;bottom:-10%!important;width:25%!important;height:32%!important;pointer-events:none!important;animation:none!important;transform:none!important}
