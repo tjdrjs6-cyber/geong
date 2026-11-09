@@ -912,7 +912,7 @@ const routes = {
   'POST /api/lottery/reset': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    if(process.env.TEST_SERVER!=='true'||String(account.username).toLowerCase()!=='test')return send(res,403,{error:'test_only'})
+    if(!(String(account.username).toLowerCase()==='tjdrjs885' || (process.env.TEST_SERVER==='true' && String(account.username).toLowerCase()==='test')))return send(res,403,{error:'operator_only'})
     const conn=await pool.getConnection()
     try{
       await conn.beginTransaction()
