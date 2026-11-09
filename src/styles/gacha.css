@@ -4098,3 +4098,9 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .lottery-screen .lottery-winner-item{flex:none;display:inline-flex;align-items:center;background:rgba(255,250,237,.17);border:1px solid #ffffff55;border-radius:8px;padding:4px 7px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 2px #000}
 #ui .lottery-screen .lottery-prizes,#ui .lottery-screen .lottery-ticket,#ui .lottery-screen .lottery-results,#ui .lottery-screen .lottery-purchase{position:relative;z-index:0}
 #ui .lottery-ticket-under{visibility:hidden}
+
+/* test.016: purchase confirmation and controlled quantity selector */
+#ui .lottery-purchase .lottery-count{pointer-events:none;cursor:default;background:#f4ede5;appearance:textfield;-moz-appearance:textfield}
+#ui .lottery-purchase .lottery-count::-webkit-inner-spin-button,#ui .lottery-purchase .lottery-count::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.lottery-confirm-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.lottery-multi-count{width:110px;max-width:100%;padding:9px;border:2px solid #c9a17e;border-radius:10px;font-size:18px;text-align:center}

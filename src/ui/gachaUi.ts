@@ -357,7 +357,7 @@ export class GachaUi {
           <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
-          <div class="lottery-purchase"><label>구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1"/></label><button data-action="lottery-all">남은 장수 선택</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
+          <div class="lottery-purchase"><label>구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly aria-label="선택된 구매 수량"/></label><button data-action="lottery-all">여러장 구매</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -650,7 +650,7 @@ export class GachaUi {
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
     if (action === 'lottery-reset') {await this.resetLottery();return}
-    if (action === 'lottery-all') {const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input)input.value=String(this.lotteryState?.total||1);this.updateLotteryPrice();return}
+    if (action === 'lottery-all') {await this.chooseLotteryCount();return}
     if (action === 'lottery-buy') {await this.buyLottery();return}
     if (action === 'lottery-skip') {this.skipLottery();return}
     if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');void this.loadWildWeed();this.renderShop();return}
@@ -1370,7 +1370,7 @@ export class GachaUi {
     const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
     if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFG'[i]}상</b>${i<6?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
     const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${w.grade}상`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 A~F상 당첨자가 없습니다.';winners.append(empty)}}
-    const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0}
+    const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0;if(Number(input.value)>state.total)input.value=String(Math.max(1,state.total))}
     const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
     this.updateLotteryPrice()
   }
@@ -1383,6 +1383,47 @@ export class GachaUi {
     const button=document.createElement('button');button.textContent='확인';button.addEventListener('click',()=>dialog.close())
     panel.append(title,body,button);dialog.append(panel);document.body.append(dialog)
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal()
+  }
+  private lotteryConfirm(message:string):Promise<boolean>{
+    return new Promise(resolve=>{
+      document.getElementById('lottery-confirm')?.remove()
+      const dialog=document.createElement('dialog');dialog.id='lottery-confirm';dialog.className='lottery-alert'
+      const panel=document.createElement('div');panel.className='lottery-alert-inner'
+      const title=document.createElement('h3');title.textContent='제일복권 구매 확인'
+      const body=document.createElement('p');body.textContent=message;body.style.whiteSpace='pre-line'
+      const actions=document.createElement('div');actions.className='lottery-confirm-actions'
+      const cancel=document.createElement('button');cancel.textContent='취소'
+      const ok=document.createElement('button');ok.textContent='구매하기'
+      cancel.addEventListener('click',()=>dialog.close('cancel'))
+      ok.addEventListener('click',()=>dialog.close('ok'))
+      actions.append(cancel,ok);panel.append(title,body,actions);dialog.append(panel);document.body.append(dialog)
+      dialog.addEventListener('close',()=>{const accepted=dialog.returnValue==='ok';dialog.remove();resolve(accepted)},{once:true})
+      dialog.showModal()
+    })
+  }
+  private chooseLotteryCount():Promise<void>{
+    return new Promise(resolve=>{
+      const remaining=this.lotteryState?.total||0
+      if(!remaining){this.lotteryTopPopup('남은 복권이 없습니다.');resolve();return}
+      document.getElementById('lottery-count-dialog')?.remove()
+      const dialog=document.createElement('dialog');dialog.id='lottery-count-dialog';dialog.className='lottery-alert'
+      const panel=document.createElement('div');panel.className='lottery-alert-inner'
+      const title=document.createElement('h3');title.textContent='여러장 구매'
+      const hint=document.createElement('p');hint.textContent=`1장부터 남은 ${remaining}장까지 선택할 수 있습니다.`
+      const field=document.createElement('input');field.type='number';field.min='1';field.max=String(remaining);field.step='1';field.value=String(Math.min(remaining,Math.max(1,Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1))))
+      field.className='lottery-multi-count'
+      const actions=document.createElement('div');actions.className='lottery-confirm-actions'
+      const cancel=document.createElement('button');cancel.textContent='취소';cancel.onclick=()=>dialog.close('cancel')
+      const ok=document.createElement('button');ok.textContent='수량 적용';ok.onclick=()=>{
+        const count=Number(field.value)
+        if(!Number.isInteger(count)||count<1||count>remaining){field.setCustomValidity(`1~${remaining}장을 입력해주세요.`);field.reportValidity();return}
+        const target=this.root.querySelector<HTMLInputElement>('.lottery-count');if(target)target.value=String(count)
+        this.updateLotteryPrice();dialog.close('ok')
+      }
+      field.oninput=()=>field.setCustomValidity('')
+      actions.append(cancel,ok);panel.append(title,hint,field,actions);dialog.append(panel);document.body.append(dialog)
+      dialog.addEventListener('close',()=>{dialog.remove();resolve()},{once:true});dialog.showModal()
+    })
   }
   private async resetLottery():Promise<void>{
     if(this.store.user?.username?.toLowerCase()!=='test')return
@@ -1400,6 +1441,8 @@ export class GachaUi {
     if(this.lotteryBusy||!this.lotteryState||this.lotteryResults.length)return
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
     if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.toast('구매 수량을 확인해주세요.');return}
+    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n총 금액: ${(count*100).toLocaleString('ko-KR')}코인\n\n구매하시겠습니까?`)
+    if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
     this.lotteryBusy=true
     try{
       const result=await this.store.lotteryBuy(count)
