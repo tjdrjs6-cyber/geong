@@ -757,7 +757,7 @@ async function ensureGlobalChatTables() {
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
 const EXP_HP = 4000000
 const EXP_TICK = 3000
-const expeditionMaxHp = stage => stage === 1 ? 4000000 : 10000000
+const expeditionMaxHp = stage => stage === 1 ? 4000000 : stage === 2 ? 10000000 : 20000000
 function expeditionWindow(now = Date.now()) {
   const kst = new Date(now + 9 * 3600000)
   const midnight = Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate()) - 9*3600000
@@ -797,13 +797,13 @@ async function expeditionSettle(conn, day, serverId, now) {
     for(const player of players) {
       const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
       if(paid.affectedRows) {
-        const coins=stage===1?300:500, fragments=stage===1?30:50
+        const coins=stage===1?300:stage===2?500:800, fragments=stage===1?30:stage===2?50:80
         await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
         await trimInbox(conn,player.account_id)
       }
     }
-    if(stage===1) {
-      stage=2;hp=expeditionMaxHp(stage);last=now
+    if(stage<3) {
+      stage+=1;hp=expeditionMaxHp(stage);last=now
       await conn.query('UPDATE gm_expedition_boss SET stage=?,hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[stage,hp,last,day,serverId])
     }
   }

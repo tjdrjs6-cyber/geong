@@ -102,6 +102,8 @@ export class GachaUi {
   private expeditionImpactTimer = 0
   private expeditionImpactServer = 0
   private expeditionPreviousHp = new Map<number, number>()
+  private expeditionPreviousStage = new Map<number, number>()
+  private expeditionTransitionTimer: ReturnType<typeof setTimeout> | undefined
   private expeditionTimer = 0
   private expeditionLoading = false
   private expeditionBadgeCheckedAt = 0
@@ -329,7 +331,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
-          <div class="battle-stage-rewards" aria-live="polite"><span class="battle-clear-reward-label">스테이지 클리어 시</span><span>🪙 <b class="battle-stage-coins">1</b> 골드</span><span>✦ <b class="battle-stage-fragments">0</b> 강화파편</span></div>
+          <div class="battle-stage-rewards" aria-live="polite"><span class="battle-clear-reward-label">스테이지 클리어 시</span><span><img class="battle-reward-icon" src="/assets/coin.png" alt=""/> <b class="battle-stage-coins">1</b> 코인 획득</span><span><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/> <b class="battle-stage-fragments">0</b> 강화파편 획득</span></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
         <div class="weed-panel battle-panel">
@@ -362,7 +364,7 @@ export class GachaUi {
       <section class="weed-screen expedition-screen" data-screen="expedition" aria-hidden="true">
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
-        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
+        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-stage-transition" aria-hidden="true"><strong>STAGE CLEAR!</strong><span class="expedition-stage-next">다음 단계</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
         <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 300코인·강화파편 30개 / 2단계 500코인·강화파편 50개 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
@@ -2302,6 +2304,22 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(!state)return
     const room=state.servers.find(r=>r.id===this.expeditionServer)!
     this.root.querySelectorAll<HTMLButtonElement>('.expedition-server-tabs button').forEach(b=>b.classList.toggle('selected',Number(b.dataset.id)===room.id))
+    const priorStage=this.expeditionPreviousStage.get(room.id)
+    const nextStage=room.stage||1
+    this.expeditionPreviousStage.set(room.id,nextStage)
+    if(priorStage!==undefined && nextStage>priorStage){
+      const overlay=this.root.querySelector<HTMLElement>('.expedition-stage-transition')
+      const next=this.root.querySelector<HTMLElement>('.expedition-stage-next')
+      if(next)next.textContent=`${nextStage}단계 보스 등장`
+      if(overlay){
+        if(this.expeditionTransitionTimer)clearTimeout(this.expeditionTransitionTimer)
+        overlay.classList.add('is-visible')
+        overlay.setAttribute('aria-hidden','false')
+        this.expeditionTransitionTimer=setTimeout(()=>{overlay.classList.remove('is-visible');overlay.setAttribute('aria-hidden','true')},1700)
+      }
+      this.expeditionPendingDamage.delete(room.id)
+      this.expeditionPreviousHp.delete(room.id)
+    }
     const hp=Math.max(0,room.hp)
     const maxHp=room.maxHp||4000000
     const stageLabel=this.root.querySelector<HTMLElement>('.expedition-stage-label')
@@ -2883,7 +2901,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         battleField.appendChild(weapon)
       }
     }
-    this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter))
+    this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter) && !this.battleStageChanging)
     this.battleAnimationKey = ''
     this.renderBattleStatus()
   }
@@ -2919,6 +2937,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (this.battleStageTransitionTimer) clearTimeout(this.battleStageTransitionTimer)
     this.battleStageChanging = true
     this.root.querySelector('.bf-enemy')?.classList.add('is-stage-changing')
+    this.root.querySelector('.battle-field')?.classList.add('is-stage-changing')
     layer.classList.remove('is-visible')
     layer.classList.add('is-visible')
     layer.setAttribute('aria-hidden', 'false')
@@ -2927,7 +2946,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       layer.setAttribute('aria-hidden', 'true')
       this.battleStageChanging = false
       this.root.querySelector('.bf-enemy')?.classList.remove('is-stage-changing')
-    }, 900)
+      this.root.querySelector('.battle-field')?.classList.remove('is-stage-changing')
+    }, 2000)
   }
 
   private renderBattleStatus(): void {
