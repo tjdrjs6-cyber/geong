@@ -4454,3 +4454,9 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:8%!important;bottom:16%!important}
 /* Show Shisa's face directly in the alchemy navigation icon. */
 #ui .market-options [data-action="alchemy"] .chiikawa-tab-icon img{position:static!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;left:auto!important;top:auto!important}
+
+/* test.058: battle charm offset and user profile tabs */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:12%!important;bottom:16%!important}
+#ui .user-profile-tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+#ui .user-profile-tabs .auth-tab{min-width:0!important;white-space:normal!important;font-size:12px!important;padding:8px 4px!important}
+#ui .user-grid.accessory-card-grid .accessory-card-image img{object-fit:contain!important;max-height:100%!important}

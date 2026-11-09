@@ -61,6 +61,7 @@ async function prepareDatabase() {
     show_deco TINYINT(1) NOT NULL DEFAULT 1,
     show_house TINYINT(1) NOT NULL DEFAULT 1
   )`)
+  try { await pool.query("ALTER TABLE gm_profile_privacy ADD COLUMN show_accessory TINYINT(1) NOT NULL DEFAULT 1") } catch(error) { if(error?.code !== 'ER_DUP_FIELDNAME') throw error }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(20) NOT NULL,
@@ -1365,30 +1366,44 @@ const routes = {
   'GET /api/profile/privacy': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const [rows] = await pool.query('SELECT show_char, show_deco, show_house FROM gm_profile_privacy WHERE account_id = ?', [account.id])
+    const [rows] = await pool.query('SELECT show_char, show_deco, show_house, show_accessory FROM gm_profile_privacy WHERE account_id = ?', [account.id])
     const row = rows[0]
-    send(res, 200, { privacy: { char: row ? Boolean(row.show_char) : true, deco: row ? Boolean(row.show_deco) : true, house: row ? Boolean(row.show_house) : true } })
+    send(res, 200, { privacy: { char: row ? Boolean(row.show_char) : true, deco: row ? Boolean(row.show_deco) : true, house: row ? Boolean(row.show_house) : true, accessory: row ? Boolean(row.show_accessory) : true } })
   },
   'POST /api/profile/privacy': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const { char, deco, house } = await readJson(req)
-    if ([char, deco, house].some(v => typeof v !== 'boolean')) return send(res, 400, { error: 'invalid_privacy' })
-    await pool.query('INSERT INTO gm_profile_privacy (account_id, show_char, show_deco, show_house) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE show_char=VALUES(show_char), show_deco=VALUES(show_deco), show_house=VALUES(show_house)', [account.id, Number(char), Number(deco), Number(house)])
-    send(res, 200, { privacy: { char, deco, house } })
+    const { char, deco, house, accessory } = await readJson(req)
+    if ([char, deco, house, accessory].some(v => typeof v !== 'boolean')) return send(res, 400, { error: 'invalid_privacy' })
+    await pool.query('INSERT INTO gm_profile_privacy (account_id, show_char, show_deco, show_house, show_accessory) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE show_char=VALUES(show_char), show_deco=VALUES(show_deco), show_house=VALUES(show_house), show_accessory=VALUES(show_accessory)', [account.id, Number(char), Number(deco), Number(house), Number(accessory)])
+    send(res, 200, { privacy: { char, deco, house, accessory } })
   },
   'GET /api/users': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, f.weapon AS forge_weapon, f.level AS forge_level, d.items, p.show_char, p.show_deco, p.show_house FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_forge f ON f.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
+    const [rows] = await pool.query('SELECT a.nickname, a.id, s.owned, s.featured, f.weapon AS forge_weapon, f.level AS forge_level, d.items, p.show_char, p.show_deco, p.show_house, p.show_accessory FROM gm_accounts a LEFT JOIN gm_saves s ON s.account_id = a.id LEFT JOIN gm_decos d ON d.account_id = a.id LEFT JOIN gm_forge f ON f.account_id = a.id LEFT JOIN gm_profile_privacy p ON p.account_id = a.id WHERE a.nickname IS NOT NULL AND a.is_admin = 0 LIMIT 300')
+    const [accessoryRows] = await pool.query('SELECT account_id, chiikawa_keyring, hachiware_keyring, usagi_keyring, momonga_keyring, kurimanju_keyring, shisa_keyring, kani_keyring, rakko_keyring FROM gm_weapon_accessories WHERE account_id IN (SELECT id FROM gm_accounts WHERE nickname IS NOT NULL AND is_admin = 0)')
+    const [gradeRows] = await pool.query('SELECT account_id, accessory_id, grade, quantity FROM gm_accessory_grades WHERE account_id IN (SELECT id FROM gm_accounts WHERE nickname IS NOT NULL AND is_admin = 0)')
+    const accessoryByAccount = new Map(accessoryRows.map(row => [Number(row.account_id), row]))
+    const gradesByAccount = new Map()
+    for (const grade of gradeRows) {
+      const key=Number(grade.account_id)
+      if(!gradesByAccount.has(key)) gradesByAccount.set(key,{})
+      const target=gradesByAccount.get(key)
+      if(!target[grade.accessory_id]) target[grade.accessory_id]={}
+      target[grade.accessory_id][grade.grade]=Number(grade.quantity)
+    }
     const users = rows.map(row => {
       const me = Number(row.id) === Number(account.id)
-      const privacy = { char: row.show_char === null || row.show_char === undefined ? true : Boolean(row.show_char), deco: row.show_deco === null || row.show_deco === undefined ? true : Boolean(row.show_deco), house: row.show_house === null || row.show_house === undefined ? true : Boolean(row.show_house) }
+      const privacy = { char: row.show_char === null || row.show_char === undefined ? true : Boolean(row.show_char), deco: row.show_deco === null || row.show_deco === undefined ? true : Boolean(row.show_deco), house: row.show_house === null || row.show_house === undefined ? true : Boolean(row.show_house), accessory: row.show_accessory === null || row.show_accessory === undefined ? true : Boolean(row.show_accessory) }
       const rawOwned = normalizeOwned(parseJson(row.owned || '[]'))
       const owned = me || privacy.char ? rawOwned : []
       const decos = me || privacy.deco ? Object.keys(normalizeDecos(row.items ? parseJson(row.items) : {})) : []
       const featured = row.featured && rawOwned.includes(row.featured) ? row.featured : (rawOwned[0] || null)
-      return { nickname: row.nickname, owned, decos, featured, me, privacy, weapon: row.forge_weapon || null, weaponLevel: row.forge_weapon ? Number(row.forge_level) : null }
+      const accessoryRow = accessoryByAccount.get(Number(row.id))
+      const accessoryIds = ['chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring']
+      const accessories = me || privacy.accessory ? { counts: Object.fromEntries(accessoryIds.map(id=>[id,Number(accessoryRow?.[id]||0)])), grades: gradesByAccount.get(Number(row.id))||{} } : undefined
+      return { nickname: row.nickname, owned, decos, featured, me, privacy, accessories, weapon: row.forge_weapon || null, weaponLevel: row.forge_weapon ? Number(row.forge_level) : null }
     })
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
