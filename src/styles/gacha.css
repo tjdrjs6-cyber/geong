@@ -3805,7 +3805,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .shop-empty-note{text-align:center;color:#795947;font-size:12px;line-height:1.7;padding:18px 4px}
 
 /* v195: lobby character and expandable activity navigation */
-.gacha-screen .toon-hero { width:min(41.184cqw,229.68px) !important; }
+.gacha-screen .toon-hero { width:min(49.4208cqw,275.616px) !important; }
 .gacha-screen .activity-menu { position:relative; width:100%; flex-shrink:0; }
 .gacha-screen .activity-menu > .nav-button { width:100%; }
 .gacha-screen .activity-options:not([hidden]) { display:flex; flex-direction:column; gap:5px; position:absolute; left:calc(100% + 6px); top:0; width:clamp(82px,24cqw,106px); z-index:80; }
@@ -4192,3 +4192,44 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .shop-panel .shop-bulk-fixed .shop-bulk-sell {margin:0; width:100%; max-width:360px; padding:8px 10px;}
 #ui .shop-panel .shop-items {flex:1 1 0 !important; min-height:0 !important; overflow-y:auto !important;}
 @media(max-height:650px) {#ui .shop-screen.is-active .shop-panel {top:20% !important;}}
+
+/* test.035: vertically center and enlarge the marketplace sales panel.
+   Equal breathing room above/below, with product list as the only scroll area. */
+#ui .shop-screen.is-active .shop-panel {
+  top:11% !important;
+  bottom:11% !important;
+  box-sizing:border-box;
+}
+@media (max-height:650px) {
+  #ui .shop-screen.is-active .shop-panel {
+    top:8% !important;
+    bottom:8% !important;
+  }
+}
+
+/* test.036: consistent typography across catalog selection labels and owned counts */
+#ui .catalog-choice-card .catalog-choice-button,
+#ui .catalog-choice-card .catalog-choice-button b,
+#ui .catalog-choice-card .catalog-choice-button small,
+#ui .catalog-choice-card .catalog-choice-button .collection-count,
+#ui .catalog-choice-card .catalog-choice-button .deco-count {
+  font-family: inherit !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+  letter-spacing: normal !important;
+  line-height: 1.4 !important;
+}
+#ui .catalog-choice-card .catalog-choice-button small { color: #987a8b; }
+#ui .catalog-choice-card .catalog-choice-button>span:last-child { font-size: 28px !important; }
+
+/* test.038: fixed weapon charm and accessory selection */
+.accessory-item{display:flex;align-items:center;gap:12px;padding:12px;background:#fff7fc;border:1px solid #efd9e8;border-radius:14px;margin:10px 0}
+.accessory-item>img{width:65px;height:75px;object-fit:contain;flex:none}
+.accessory-item>div{display:flex;flex-direction:column;gap:5px;font-size:13px}
+.accessory-item small{font-size:12px;color:#856a7a}
+.accessory-equip-section{margin:14px 0;text-align:left}
+.accessory-equip-button{display:block;width:100%;padding:10px;border:1px solid #dba6c5;border-radius:12px;background:#ffdeed;font-weight:700;color:#634057}
+.accessory-equip-button:disabled{opacity:.5}
+.accessory-weapon{position:relative;overflow:visible!important}
+.accessory-weapon .weapon-keyring{position:absolute!important;width:25%!important;height:32%!important;object-fit:contain!important;right:-7%!important;bottom:-10%!important;transform:none!important;animation:none!important;pointer-events:none}
