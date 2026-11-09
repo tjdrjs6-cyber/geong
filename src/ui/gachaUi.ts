@@ -357,7 +357,7 @@ export class GachaUi {
           <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
-          <div class="lottery-purchase"><label>구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly aria-label="선택된 구매 수량"/></label><button data-action="lottery-all">여러장 구매</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
+          <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -1509,7 +1509,26 @@ export class GachaUi {
     dialog.addEventListener('close',()=>{dialog.remove();next()},{once:true})
     dialog.showModal()
   }
+  private showLotterySummary(results:typeof this.lotteryResults):void{
+    if(!results.length)return
+    document.getElementById('lottery-summary-dialog')?.remove()
+    const dialog=document.createElement('dialog')
+    dialog.id='lottery-summary-dialog';dialog.className='lottery-win-dialog'
+    const card=document.createElement('div');card.className='lottery-win-card'
+    const heading=document.createElement('h2');heading.textContent='🎟️ 제일복권 뽑기 결과'
+    const description=document.createElement('p');description.textContent=`총 ${results.length}장 · 당첨 ${results.filter(r=>r.id).length}장 · 꽝 ${results.filter(r=>!r.id).length}장`
+    const list=document.createElement('div');list.style.cssText='max-height:min(45vh,340px);overflow-y:auto;width:100%;display:grid;gap:8px;text-align:left'
+    results.forEach((r,i)=>{
+      const line=document.createElement('div');line.style.cssText='display:flex;align-items:center;gap:10px;padding:8px;background:#fff5e8;border-radius:10px;color:#352b29'
+      if(r.id){const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터';img.style.cssText='width:42px;height:42px;object-fit:contain;flex-shrink:0';line.append(img)}
+      const label=document.createElement('span');label.textContent=`${i+1}번째 · ${r.grade}상 · ${r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}`;line.append(label);list.append(line)
+    })
+    const close=document.createElement('button');close.textContent='확인';close.onclick=()=>dialog.close()
+    card.append(heading,description,list,close);dialog.append(card);document.body.append(dialog)
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal()
+  }
   private skipLottery():void{
+    const completedResults=[...this.lotteryResults]
     window.clearTimeout(this.lotteryTimer);document.getElementById('lottery-win-dialog')?.remove();this.lotteryRevealed=this.lotteryResults.length
     this.renderLotteryResults()
     this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
@@ -1518,6 +1537,7 @@ export class GachaUi {
     this.lotteryResults=[]
     this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing')
     void this.refreshLotteryLive()
+    this.showLotterySummary(completedResults)
   }
   private renderLotteryResults():void{
     const el=this.root.querySelector<HTMLElement>('.lottery-results');if(!el)return
