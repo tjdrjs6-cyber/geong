@@ -4306,3 +4306,23 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 @keyframes alchemy-white-impact{0%,15%{transform:translate(-50%,-50%) scale(0);opacity:0}40%{transform:translate(-50%,-50%) scale(22);opacity:1}100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
 @keyframes alchemy-reveal-in{to{opacity:1}}
 .battle-field>.battle-weapon-strike>b{display:none!important}
+
+/* test.050: centered, larger, slower alchemy sequence; no vertical jump */
+.alchemy-result{width:min(94vw,520px)!important;max-width:520px!important;box-sizing:border-box}
+.alchemy-result .alchemy-stage{position:relative;width:100%;height:clamp(270px,58vw,370px);margin:12px auto 16px;overflow:hidden;isolation:isolate}
+.alchemy-result .alchemy-animation{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;overflow:visible!important}
+.alchemy-result .alchemy-animation img{position:absolute!important;top:50%!important;width:clamp(125px,34%,180px)!important;height:clamp(180px,85%,310px)!important;object-fit:contain!important;animation-duration:2.2s!important;animation-timing-function:cubic-bezier(.45,0,.35,1)!important;animation-fill-mode:forwards!important;transform-origin:center center}
+.alchemy-result .alchemy-animation img:first-child{left:0!important;animation-name:alchemy050-left!important}
+.alchemy-result .alchemy-animation img:nth-child(2){right:0!important;animation-name:alchemy050-right!important}
+.alchemy-result .alchemy-impact{top:50%!important;left:50%!important;animation:alchemy050-impact .85s 1.78s ease-out both!important;z-index:3}
+.alchemy-result .alchemy-reveal{position:absolute!important;inset:0!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;animation:alchemy050-reveal .9s 2.25s ease-out forwards!important;z-index:4;pointer-events:none}
+.alchemy-result .alchemy-reveal .alchemy-result-image{width:clamp(170px,53%,245px)!important;height:clamp(195px,78%,285px)!important;object-fit:contain!important;flex:0 1 auto;min-height:0}
+.alchemy-result .alchemy-reveal h3{margin:0;font-size:18px}.alchemy-result .alchemy-reveal p{margin:0;font-size:14px}
+@keyframes alchemy050-left{0%,12%{transform:translateY(-50%) translateX(0) scale(1);opacity:1}78%{transform:translateY(-50%) translateX(100%) scale(1);opacity:1}88%,100%{transform:translateY(-50%) translateX(100%) scale(.7);opacity:0}}
+@keyframes alchemy050-right{0%,12%{transform:translateY(-50%) translateX(0) scale(1);opacity:1}78%{transform:translateY(-50%) translateX(-100%) scale(1);opacity:1}88%,100%{transform:translateY(-50%) translateX(-100%) scale(.7);opacity:0}}
+@keyframes alchemy050-impact{0%,15%{transform:translate(-50%,-50%) scale(0);opacity:0}42%{transform:translate(-50%,-50%) scale(26);opacity:1}100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
+@keyframes alchemy050-reveal{0%{opacity:0;transform:scale(.75)}100%{opacity:1;transform:scale(1)}}
+/* Unified weapon/keyring anchor across forge, equipment, and battle. */
+.forge-current .accessory-weapon,.battle-field .battle-weapon-strike.accessory-weapon{position:relative!important;overflow:visible!important}
+.forge-current .accessory-weapon>img:first-child,.battle-field .battle-weapon-strike.accessory-weapon>img:first-child{object-fit:contain!important}
+.forge-current .accessory-weapon>img.weapon-keyring,.battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{position:absolute!important;right:2%!important;bottom:0%!important;width:25%!important;height:32%!important;object-fit:contain!important;transform:none!important;max-width:none!important;z-index:7!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
