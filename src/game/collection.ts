@@ -1,10 +1,10 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
-  { id: 'chiikawa', name: '치이카와', variant: '', probability: 5.98, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
-  { id: 'hachiware', name: '하치와레', variant: '', probability: 5.98, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
-  { id: 'usagi', name: '우사기', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
-  { id: 'momonga', name: '모몽가', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 3, color: '#f1efff', accent: '#a99ae1' },
+  { id: 'chiikawa', name: '치이카와', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'hachiware', name: '하치와레', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
+  { id: 'usagi', name: '우사기', variant: '', probability: 5.96, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
+  { id: 'momonga', name: '모몽가', variant: '', probability: 5.96, tier: 'normal', weedBonus: 0, power: 3, color: '#f1efff', accent: '#a99ae1' },
   { id: 'kurimanju', name: '쿠리만쥬', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 2, color: '#f8e9d4', accent: '#b08a62' },
   { id: 'shisa', name: '시사', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 2, color: '#fff0dc', accent: '#eba65a' },
   { id: 'kani', name: '카니', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 2, color: '#ffeef2', accent: '#ec8fa8' },
@@ -40,6 +40,7 @@ export const CHARACTERS = [
   { id: 'honey', name: '꿀맛맨', variant: '', probability: 2, tier: 'mermaid', weedBonus: 10, power: 13, color: '#e8faff', accent: '#87cde3' },
   { id: 'ode', name: '오데', variant: '', probability: 0.85, tier: 'rare', weedBonus: 25, power: 25, color: '#fff6b2', accent: '#e2bb53' },
   { id: 'ode_prison', name: '오데', variant: '죄수복', probability: 0.22, tier: 'super', weedBonus: 30, power: 40, color: '#fff6b2', accent: '#5e4033' },
+  { id: 'usagi_orange', name: '우사기', variant: '귤', probability: 0.04, tier: 'legendary', weedBonus: 0, power: 15, color: '#fff6d8', accent: '#ff963e' },
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
