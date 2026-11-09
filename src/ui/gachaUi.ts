@@ -333,7 +333,7 @@ export class GachaUi {
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
           <div class="battle-stage-rewards" aria-live="polite"><span class="battle-clear-reward-label">스테이지 클리어 시</span><div class="battle-reward-combined"><img class="battle-reward-icon" src="/assets/coin.png" alt="코인"/> <b class="battle-stage-coins">1</b> 코인 <span class="battle-reward-plus">+</span> <img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b class="battle-stage-fragments">0</b> 강화파편 획득</div></div>
         </header>
-        <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
+        <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span class="battle-transition-title">STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
@@ -2926,11 +2926,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (!this.store.battle || this.battleSyncing) return
     this.battleSyncing = true
     try {
-      const earned = await this.store.claimBattle()
-      if (earned > 0) {
+      const result = await this.store.claimBattle()
+      if (result.cleared.length) {
         this.audio.play('pickup')
-        if (this.screen === 'battle') this.toast(`몬스터를 ${earned}마리 물리쳤어요! 강화파편 +${earned}개`)
+        if (this.screen === 'battle') this.showBattleClearRewards(result.cleared)
       }
+      if(result.failedStage && this.screen==='battle')this.showBattleFailure(result.failedStage)
     } catch { /* Retried on the next tick. */ } finally { this.battleSyncing = false }
     this.renderWallet()
     if (this.screen === 'battle') this.renderBattleStatus()
@@ -2944,7 +2945,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (stage === this.lastDisplayedBattleStage) return
     const previous = this.lastDisplayedBattleStage
     this.lastDisplayedBattleStage = stage
-    if (stage < previous) { this.battleStageChanging = false; return }
+    if (stage < previous) { this.showBattleFailure(previous); return }
     const layer = this.root.querySelector<HTMLElement>('.battle-stage-transition')
     const next = this.root.querySelector<HTMLElement>('.battle-stage-next')
     if (!layer || !next) return
@@ -2953,6 +2954,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.battleStageChanging = true
     this.root.querySelector('.bf-enemy')?.classList.add('is-stage-changing')
     this.root.querySelector('.battle-field')?.classList.add('is-stage-changing')
+    const title=this.root.querySelector<HTMLElement>('.battle-transition-title')
+    if(title)title.textContent='STAGE CLEAR!'
     layer.classList.remove('is-visible')
     layer.classList.add('is-visible')
     layer.setAttribute('aria-hidden', 'false')
@@ -2965,6 +2968,29 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }, 2000)
   }
 
+  private showBattleFailure(stage:number):void {
+    const layer=this.root.querySelector<HTMLElement>('.battle-stage-transition')
+    const title=this.root.querySelector<HTMLElement>('.battle-transition-title')
+    const next=this.root.querySelector<HTMLElement>('.battle-stage-next')
+    if(!layer||!title||!next)return
+    if(this.battleStageTransitionTimer)clearTimeout(this.battleStageTransitionTimer)
+    title.textContent='STAGE FAILED!'
+    next.textContent=`${Math.floor((stage-1)/10)+1}-${(stage-1)%10+1} 스테이지 도전 실패!`
+    this.battleStageChanging=true
+    layer.classList.add('is-visible');layer.setAttribute('aria-hidden','false')
+    this.root.querySelector('.battle-field')?.classList.add('is-stage-changing')
+    this.battleStageTransitionTimer=setTimeout(()=>{
+      layer.classList.remove('is-visible');layer.setAttribute('aria-hidden','true')
+      this.battleStageChanging=false
+      this.root.querySelector('.battle-field')?.classList.remove('is-stage-changing')
+    },2000)
+  }
+  private showBattleClearRewards(items:{stage:number;coins:number;fragments:number}[]):void {
+    if(!items.length)return
+    const item=items[items.length-1]
+    const label=`${Math.floor((item.stage-1)/10)+1}-${(item.stage-1)%10+1}`
+    this.toast(`${label} 스테이지 클리어! ${item.coins}코인과 강화파편 ${item.fragments}개를 획득했어요!`)
+  }
   private renderBattleStatus(): void {
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
     const view = this.store.battleView()
@@ -2997,7 +3023,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       }
     }
     const challenge = this.root.querySelector<HTMLButtonElement>('.battle-boss-challenge')
-    if (challenge) challenge.hidden = !fighter || view.stage % 10 !== 9
+    if (challenge) challenge.hidden = !fighter || view.stage % 10 !== 9 || !this.store.battle?.bossReady
     const time5 = this.root.querySelector<HTMLButtonElement>('.battle-test-time5')
     if (time5) time5.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !fighter
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')

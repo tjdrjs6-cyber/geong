@@ -4683,3 +4683,10 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-stage-rewards .battle-reward-combined{display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;font-size:11px}
 .battle-stage-rewards .battle-reward-plus{padding:0 2px;font-weight:900}
 .battle-boss-challenge:not([hidden]),.battle-test-time5:not([hidden]){display:block;margin:7px auto;padding:9px 16px;border-radius:15px;border:2px solid #b98d4d;background:#fff0c8;color:#69421c;font-weight:900;cursor:pointer}
+
+/* 2026-11-09 readable reward capsule and centered weapon */
+#ui .battle-stage-rewards{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-width:210px!important;max-width:calc(100% - 20px)!important;width:max-content!important;padding:9px 12px!important;background:rgba(255,247,225,.96)!important;border:2px solid #b47e4b!important;border-radius:16px!important;box-shadow:0 3px 9px #4a321c40!important;overflow:visible!important;white-space:normal!important}
+#ui .battle-stage-rewards .battle-reward-combined{display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;flex-wrap:wrap!important;white-space:normal!important;font-size:13px!important;line-height:1.4!important}
+#ui .battle-stage-rewards .battle-reward-icon{width:18px!important;height:18px!important;flex-shrink:0!important}
+#ui .battle-field .battle-weapon-strike{position:absolute!important;left:auto!important;right:22%!important;top:50%!important;bottom:auto!important;z-index:15!important}
+#ui .battle-field .bf-friend-body .battle-weapon-strike{left:50%!important;right:auto!important;transform:translateX(-50%)!important}

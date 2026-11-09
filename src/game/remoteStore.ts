@@ -13,7 +13,7 @@ export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; stageLimitMs?: number; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; since: number; damage: number }
 export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
@@ -150,7 +150,7 @@ export class RemoteGachaStore {
     let tickAt = battle.since, stageSince = battle.stageSince ?? battle.since, kills = 0
     for (let i = 0; i < ticks; i++) {
       tickAt += BATTLE_TICK_MS
-      if (tickAt - stageSince > (battle.stageLimitMs ?? 1800000)) { stageSince = tickAt; damage = 0 }
+      if (tickAt - stageSince >= (battle.stageLimitMs ?? 1800000)) { stage = Math.max(1,stage-1); stageSince = tickAt; damage = 0; break }
       damage += power
       if (damage >= battleStageHp(stage)) { kills++; if (stage % 10 !== 9) stage++; stageSince = tickAt; damage = 0 }
     }
@@ -192,8 +192,10 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/test-clear', {}))
   }
 
-  async claimBattle(): Promise<number> {
-    return this.applyBattle(await request<BattleResult>('battle/claim', {}))
+  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;fragments:number}[];failedStage:number}> {
+    const result=await request<BattleResult>('battle/claim', {})
+    const earned=this.applyBattle(result)
+    return {earned,cleared:result.cleared??[],failedStage:result.failedStage??0}
   }
 
   private applyBattle(result: BattleResult): number {
@@ -468,4 +470,4 @@ export class RemoteGachaStore {
 }
 
 type WeedResult = { save: GachaSave; weed: WeedState | null; earned: number; now: number }
-type BattleResult = { save: GachaSave; battle: BattleState; earned: number; now: number }
+type BattleResult = { cleared?: {stage:number;coins:number;fragments:number}[]; failedStage?:number; save: GachaSave; battle: BattleState; earned: number; now: number }
