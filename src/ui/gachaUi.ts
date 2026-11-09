@@ -1689,7 +1689,7 @@ export class GachaUi {
     const dialog=document.createElement('dialog')
     dialog.id='lottery-summary-dialog';dialog.className='lottery-win-dialog'
     const card=document.createElement('div');card.className='lottery-win-card'
-    const heading=document.createElement('h2');heading.textContent='<img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권 뽑기 결과'
+    const heading=document.createElement('h2');const ticketIcon=document.createElement('img');ticketIcon.className='lottery-title-icon';ticketIcon.src='/assets/lottery_ticket_custom.png';ticketIcon.alt='';heading.append(ticketIcon,document.createTextNode(' 겅이복권 뽑기 결과'))
     const description=document.createElement('p');description.textContent=`총 ${results.length}장 · 당첨 ${results.filter(r=>r.id||r.accessoryId).length}장 · 꽝 ${results.filter(r=>!r.id&&!r.accessoryId).length}장`
     const list=document.createElement('div');list.style.cssText='max-height:min(45vh,340px);overflow-y:auto;width:100%;display:grid;gap:8px;text-align:left'
     results.forEach((r,i)=>{
