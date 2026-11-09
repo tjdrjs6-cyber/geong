@@ -4577,3 +4577,19 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
     max-height: 100%;
   }
 }
+
+/* Ver.2: keep the selected lobby character fully visible on short PC windows. */
+@media (min-width: 769px) {
+  #ui .gacha-screen .toon-stage .toon-hero {
+    width: min(49.4208cqw, 275px, 72cqh) !important;
+    max-height: 72cqh !important;
+    aspect-ratio: 1 / 1 !important;
+    bottom: max(5px, 5%) !important;
+  }
+  #ui .gacha-screen .toon-stage .toon-hero-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center bottom !important;
+  }
+}
