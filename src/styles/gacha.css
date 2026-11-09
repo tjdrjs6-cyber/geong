@@ -4608,3 +4608,24 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* Test-server stage skip control */
 .battle-test-clear:not([hidden]) { display:block; margin:8px auto; padding:10px 18px; border:2px solid #b78352; border-radius:16px; background:#fff1cf; color:#65401f; font-weight:800; cursor:pointer; }
+
+/* 2026-11-09 stage HUD and cinematic progression */
+.battle-screen .battle-wallet-stack{display:none!important}
+.battle-screen .battle-stage-rewards{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:clamp(10px,2.6cqw,13px);font-weight:800;color:#674024;text-shadow:0 1px white;white-space:nowrap}
+.battle-screen .battle-stage-rewards span{background:#fff5dbe8;border:1px solid #d8a76d;border-radius:12px;padding:3px 8px}
+.battle-screen .battle-stage-heading{position:absolute;top:4%;left:50%;transform:translateX(-50%);z-index:12;pointer-events:none;font-size:clamp(24px,7cqw,42px);font-weight:1000;white-space:nowrap;color:#fff3cf;-webkit-text-stroke:1px #6c402a;text-shadow:0 3px 0 #663c28,0 5px 0 #39251d,0 8px 13px #24160d99;letter-spacing:1px}
+.battle-screen .battle-time-remaining{font-size:1.35em;color:#a54121;font-variant-numeric:tabular-nums}
+.battle-screen .battle-reward-hint{text-align:center}
+.battle-screen .battle-stage-transition{position:absolute;inset:0;z-index:30;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;background:rgba(37,22,18,.0);transition:opacity .45s ease,background .45s ease,visibility .45s}
+.battle-screen .battle-stage-transition.is-visible{opacity:1;visibility:visible;background:rgba(37,22,18,.53)}
+.battle-screen .battle-stage-transition-card{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;transform:translateY(22px) scale(.92);transition:transform .65s cubic-bezier(.2,.8,.2,1);color:#fff4d8;text-shadow:0 3px 6px #26160e}
+.battle-screen .battle-stage-transition.is-visible .battle-stage-transition-card{transform:translateY(0) scale(1)}
+.battle-screen .battle-stage-transition-card span{font-size:clamp(23px,6cqw,37px);font-weight:1000;color:#ffe78a}
+.battle-screen .battle-stage-transition-card strong{font-size:clamp(28px,8cqw,52px);font-weight:1000}
+.battle-screen .battle-stage-transition-card small{font-size:13px}
+.battle-field .bf-enemy{right:3%!important;left:auto!important}
+.battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:9%!important;right:auto!important}
+.battle-field .bf-friend.bf-friend-second{left:31%!important;right:auto!important}
+.battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important}
+.battle-field .battle-weapon-strike{left:22%!important;right:auto!important}
+@media(prefers-reduced-motion:reduce){.battle-screen .battle-stage-transition,.battle-screen .battle-stage-transition-card{transition:none!important}}

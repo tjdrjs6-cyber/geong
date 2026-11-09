@@ -327,12 +327,12 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title">토벌장</b>
-          <div class="battle-wallet-stack"><div class="diamond-wallet battle-diamond-wallet" aria-label="보유 강화파편"><span><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/></span><strong class="fragment-value">0</strong><span>강화파편</span></div><small class="battle-hourly-rate" aria-live="polite">0.00개/시간</small></div>
+          <div class="battle-stage-rewards" aria-live="polite"><span>🪙 <b class="battle-stage-coins">1</b> 골드</span><span>✦ <b class="battle-stage-fragments">0</b> 강화파편</span></div>
         </header>
-        <div class="battle-field">${battleFieldMarkup()}</div>
+        <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong><small>다음 스테이지로 이동합니다</small></div></div></div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
-          <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 스테이지 처치 보상은 코인과 강화파편으로 자동 지급돼요.</p>
+          <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong> · 보상은 인벤토리에 자동 지급</p>
           <p class="battle-status"></p>
           <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button>
           
@@ -2865,12 +2865,44 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (this.screen === 'battle') this.renderBattleStatus()
   }
 
+  private lastDisplayedBattleStage = 0
+  private battleStageTransitionTimer: ReturnType<typeof setTimeout> | undefined
+  private showBattleStageTransition(stage: number): void {
+    if (this.lastDisplayedBattleStage === 0) { this.lastDisplayedBattleStage = stage; return }
+    if (stage === this.lastDisplayedBattleStage) return
+    const previous = this.lastDisplayedBattleStage
+    this.lastDisplayedBattleStage = stage
+    if (stage < previous) return
+    const layer = this.root.querySelector<HTMLElement>('.battle-stage-transition')
+    const next = this.root.querySelector<HTMLElement>('.battle-stage-next')
+    if (!layer || !next) return
+    next.textContent = `${Math.floor((stage - 1) / 10) + 1}-${((stage - 1) % 10) + 1} STAGE`
+    if (this.battleStageTransitionTimer) clearTimeout(this.battleStageTransitionTimer)
+    layer.classList.remove('is-visible')
+    void layer.offsetWidth
+    layer.classList.add('is-visible')
+    layer.setAttribute('aria-hidden', 'false')
+    this.battleStageTransitionTimer = setTimeout(() => {
+      layer.classList.remove('is-visible')
+      layer.setAttribute('aria-hidden', 'true')
+    }, 1900)
+  }
+
   private renderBattleStatus(): void {
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
-    const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
-    if (hourlyRate) hourlyRate.textContent = `단계 ${Math.floor((view.stage - 1) / 10) + 1}-${((view.stage - 1) % 10) + 1}`
+    const stageLabel = `${Math.floor((view.stage - 1) / 10) + 1}-${((view.stage - 1) % 10) + 1}`
+    const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
+    if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`
+    const coins = this.root.querySelector<HTMLElement>('.battle-stage-coins')
+    if (coins) coins.textContent = String(view.stage)
+    const fragments = this.root.querySelector<HTMLElement>('.battle-stage-fragments')
+    if (fragments) fragments.textContent = String(view.stage >= 6 ? 1 : 0)
+    const remaining = Math.max(0, Math.ceil(view.remaining / 1000))
+    const timeLabel = this.root.querySelector<HTMLElement>('.battle-time-remaining')
+    if (timeLabel) timeLabel.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
+    if (this.screen === 'battle') this.showBattleStageTransition(view.stage)
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
       if (fighter) {
@@ -2884,7 +2916,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
     if (testClear) testClear.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
-    if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}% · 남은 시간 ${Math.ceil(view.remaining / 60000)}분`
+    if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}%`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')
     if (fill) fill.style.transform = `scaleX(${view.hp / view.maxHp})`
     // Match the weapon and character attack cycles to the same 3-second server tick.
