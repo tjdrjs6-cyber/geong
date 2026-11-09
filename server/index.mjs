@@ -532,7 +532,8 @@ const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.po
 async function getAccessory(accountId, conn=pool) {
   const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=?',[accountId])
   const row=rows[0]||{}
-  const counts=Object.fromEntries(ACCESSORY_IDS.map(id=>[id,Number(row[id]||0)]))
+  const isTest=process.env.TEST_SERVER==='true' && (await conn.query('SELECT username FROM gm_accounts WHERE id=?',[accountId]))[0][0]?.username?.toLowerCase()==='test'
+  const counts=Object.fromEntries(ACCESSORY_IDS.map(id=>[id,isTest?1000000000:Number(row[id]||0)]))
   const [gradeRows]=await conn.query('SELECT accessory_id,grade,quantity FROM gm_accessory_grades WHERE account_id=?',[accountId])
   const grades={}
   for(const r of gradeRows){if(!grades[r.accessory_id])grades[r.accessory_id]={};grades[r.accessory_id][r.grade]=Number(r.quantity)}
@@ -1011,7 +1012,7 @@ const routes = {
       await conn.beginTransaction()
       await conn.query('INSERT IGNORE INTO gm_weapon_accessories(account_id) VALUES(?)',[account.id])
       const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
-      if(id){const current=await getAccessory(account.id,conn);if(grade==='normal'?!Number(rows[0]?.[id]):!Number(current.grades[id]?.[grade])){await conn.rollback();return send(res,409,{error:'accessory_not_owned'})}}
+      if(id){const current=await getAccessory(account.id,conn);if(grade==='normal'?!Number(current.counts[id]):!Number(current.grades[id]?.[grade])){await conn.rollback();return send(res,409,{error:'accessory_not_owned'})}}
       // Settle existing battle with old power before changing the bonus.
       const [battles]=await conn.query('SELECT character_id,second_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
       if(battles.length){
@@ -1038,12 +1039,16 @@ const routes = {
       await conn.query('INSERT IGNORE INTO gm_weapon_accessories(account_id) VALUES(?)',[account.id])
       const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
       const [saves]=await conn.query('SELECT fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
-      if(Number(rows[0][id])<recipe.cost)return {error:'not_enough_keyrings'}
+      const isTest=process.env.TEST_SERVER==='true' && account.username.toLowerCase()==='test'
+      const [gradeRows]=await conn.query('SELECT grade,quantity FROM gm_accessory_grades WHERE account_id=? AND accessory_id=?',[account.id,id])
+      const previous={rare:null,epic:'rare',unique:'epic',legendary:'unique',transcendent:'legendary'}[grade]
+      if(previous && !gradeRows.some(r=>r.grade===previous&&Number(r.quantity)>0))return {error:'previous_grade_required'}
+      if(!isTest && Number(rows[0][id])<recipe.cost)return {error:'not_enough_keyrings'}
       if(Number(saves[0]?.fragments||0)<recipe.fragments)return {error:'not_enough_fragments'}
-      await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[recipe.cost,account.id])
+      if(!isTest)await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[recipe.cost,account.id])
       await conn.query('UPDATE gm_saves SET fragments=fragments-? WHERE account_id=?',[recipe.fragments,account.id])
       await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,id,grade])
-      if(rows[0].equipped===id && (rows[0].equipped_grade||'normal')==='normal' && Number(rows[0][id])===recipe.cost)await conn.query("UPDATE gm_weapon_accessories SET equipped='',equipped_grade='normal' WHERE account_id=?",[account.id])
+      if(!isTest && rows[0].equipped===id && (rows[0].equipped_grade||'normal')==='normal' && Number(rows[0][id])===recipe.cost)await conn.query("UPDATE gm_weapon_accessories SET equipped='',equipped_grade='normal' WHERE account_id=?",[account.id])
       return {success:true}
     })
     if(result.error)return send(res,409,result)
