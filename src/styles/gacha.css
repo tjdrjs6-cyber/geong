@@ -4934,3 +4934,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .forge-aura:is(.aura-23,.aura-25){--aura-color:#ff8a22!important}
 .forge-aura:is(.aura-23,.aura-25)>img{filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 10px var(--aura-color));animation:forge-aura-breathe 2.7s ease-in-out infinite}
 .forge-aura.aura-25::after{content:'✦';position:absolute;z-index:3;top:-13px;right:-8px;font-size:16px;color:#fff0ba;text-shadow:-19px 13px 0 #ff9d34,0 0 7px #ff8a22,0 0 13px #fff;animation:forge-aura-sparkle 1.45s ease-in-out infinite;pointer-events:none}
+
+/* +25 weapon: retain orange aura; sparkle anchored over the weapon artwork, not the keyring */
+#ui .forge-aura.aura-25{isolation:isolate}
+#ui .forge-aura.aura-25::after{
+  content:'✦';position:absolute;z-index:5;top:27%;left:44%;right:auto;
+  font-size:17px;line-height:1;color:#fff4c8;
+  text-shadow:-19px 14px 0 #ffad45,16px -11px 0 #fff0a8,0 0 8px #ff8a22,0 0 12px #fff;
+  animation:forge-aura-sparkle 1.45s ease-in-out infinite;
+  pointer-events:none
+}
+#ui .forge-aura.aura-25>img.weapon-keyring{animation:none!important}
+#ui .forge-power-breakdown{display:block!important;line-height:1.55!important;white-space:normal!important}
