@@ -4143,3 +4143,30 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .shop-sell-grid .storage-item{min-width:0}
 .shop-bulk-sell{display:block;margin:8px auto;padding:9px 12px;border-radius:14px;background:#ffe4ee;border:2px solid #d998b1;color:#704458;font-weight:800}
 .shop-bulk-sell:disabled{opacity:.5}
+
+/* test.023: compact right-side catalog entry matching daily/lottery chips. */
+.gacha-screen > .collection-peek,
+.gacha-screen > .collection-peek.collection-peek {
+  height:auto!important;min-height:0!important;max-height:none!important;
+  padding:0!important;gap:0!important;border:0!important;background:transparent!important;
+  box-shadow:none!important;overflow:visible!important;display:block!important;
+  top:calc(75px + var(--safe-t,0px))!important;
+}
+.gacha-screen > .collection-peek .catalog-lobby-tab {
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  gap:4px!important;width:100%!important;min-width:0!important;min-height:34px!important;
+  padding:4px 6px!important;box-sizing:border-box!important;border-radius:12px!important;
+  border:1px solid #e8b9cd!important;background:#fff0f6!important;color:#75536b!important;
+  font-size:10px!important;cursor:pointer;box-shadow:none!important;
+}
+.gacha-screen > .collection-peek .catalog-lobby-tab .reward-icon{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;height:20px!important;}
+.gacha-screen > .collection-peek .catalog-lobby-tab .reward-icon img{display:block!important;width:20px!important;height:20px!important;object-fit:contain!important;}
+.gacha-screen > .collection-peek .catalog-lobby-tab b{font-size:10px!important;white-space:nowrap!important;}
+.gacha-screen > .top-rewards {top:calc(115px + var(--safe-t,0px))!important;}
+.catalog-choice-card{max-width:380px!important;}
+.catalog-choice-list{display:grid;gap:12px;margin:20px 0 8px;}
+.catalog-choice-button{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:14px 16px;border:2px solid #f0c7d8;border-radius:18px;background:#fff6fa;color:#654c61;cursor:pointer;}
+.catalog-choice-button>img{width:40px;height:40px;object-fit:contain;flex:none;}
+.catalog-choice-button>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:4px;}
+.catalog-choice-button b{font-size:15px;}.catalog-choice-button small{font-size:12px;color:#987a8b;}
+.catalog-choice-button>span:last-child{font-size:28px;line-height:1;}
