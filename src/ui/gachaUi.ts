@@ -331,14 +331,14 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
-          <div class="battle-stage-rewards" aria-live="polite"><span class="battle-clear-reward-label">스테이지 클리어 시</span><span><img class="battle-reward-icon" src="/assets/coin.png" alt=""/> <b class="battle-stage-coins">1</b> 코인 획득</span><span><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/> <b class="battle-stage-fragments">0</b> 강화파편 획득</span></div>
+          <div class="battle-stage-rewards" aria-live="polite"><span class="battle-clear-reward-label">스테이지 클리어 시</span><div class="battle-reward-combined"><img class="battle-reward-icon" src="/assets/coin.png" alt="코인"/> <b class="battle-stage-coins">1</b> 코인 <span class="battle-reward-plus">+</span> <img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> <b class="battle-stage-fragments">0</b> 강화파편 획득</div></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
           <p class="battle-status"></p>
-          <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
+          <button type="button" class="battle-boss-challenge" data-action="battle-boss-challenge" hidden>⚔ 보스 도전하기</button><button type="button" class="battle-test-time5" data-action="battle-test-time5" hidden>남은 시간 5초</button><button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -1075,6 +1075,21 @@ export class GachaUi {
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.renderWeed()
       this.renderWallet()
+      return
+    }
+    if (action === 'battle-boss-challenge' || action === 'battle-test-time5') {
+      if (this.busy || !this.store.battle) return
+      this.busy = true
+      try {
+        if (action === 'battle-boss-challenge') await this.store.challengeBattleBoss()
+        else {
+          if (this.store.user?.username?.toLowerCase() !== 'test') return
+          await this.store.testBattleTime5()
+        }
+        this.lastEnemyHp = -1
+        this.renderBattleStatus()
+      } catch (error) { this.handleError(error) }
+      finally { this.busy = false }
       return
     }
     if (action === 'battle-test-hp500') {
@@ -2981,6 +2996,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }
     }
+    const challenge = this.root.querySelector<HTMLButtonElement>('.battle-boss-challenge')
+    if (challenge) challenge.hidden = !fighter || view.stage % 10 !== 9
+    const time5 = this.root.querySelector<HTMLButtonElement>('.battle-test-time5')
+    if (time5) time5.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !fighter
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
     if (testClear) testClear.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const testHp500 = this.root.querySelector<HTMLButtonElement>('.battle-test-hp500')

@@ -13,7 +13,7 @@ export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; stageLimitMs?: number; since: number; damage: number }
 export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
@@ -150,12 +150,12 @@ export class RemoteGachaStore {
     let tickAt = battle.since, stageSince = battle.stageSince ?? battle.since, kills = 0
     for (let i = 0; i < ticks; i++) {
       tickAt += BATTLE_TICK_MS
-      if (tickAt - stageSince > 1800000) { stageSince = tickAt; damage = 0 }
+      if (tickAt - stageSince > (battle.stageLimitMs ?? 1800000)) { stageSince = tickAt; damage = 0 }
       damage += power
-      if (damage >= battleStageHp(stage)) { kills++; stage++; stageSince = tickAt; damage = 0 }
+      if (damage >= battleStageHp(stage)) { kills++; if (stage % 10 !== 9) stage++; stageSince = tickAt; damage = 0 }
     }
     const maxHp = battleStageHp(stage)
-    return { kills, hp: Math.max(0, maxHp - damage), maxHp, nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power, stage, remaining: Math.max(0, 1800000 - (this.serverNow() - stageSince)) }
+    return { kills, hp: Math.max(0, maxHp - damage), maxHp, nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power, stage, remaining: Math.max(0, (battle.stageLimitMs ?? 1800000) - (this.serverNow() - stageSince)) }
   }
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
@@ -181,6 +181,8 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/start', { id }))
   }
 
+  async challengeBattleBoss(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/challenge-boss', {})) }
+  async testBattleTime5(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-time5', {})) }
   async testBattleHp500(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-hp500', {})) }
   async testResetBattle(): Promise<number> {
     return this.applyBattle(await request<BattleResult>('battle/test-reset', {}))

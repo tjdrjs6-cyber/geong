@@ -95,7 +95,7 @@ async function prepareDatabase() {
     damage INT NOT NULL DEFAULT 0
   )`)
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
-  for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0"]) {
+  for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0", "stage_limit_ms BIGINT NOT NULL DEFAULT 1800000"]) {
     try { await pool.query(`ALTER TABLE gm_battle ADD COLUMN ${column}`) } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
@@ -587,9 +587,9 @@ function battleRow(row) {
   if (!row) return null
   return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
     since: Number(row.since_ms), damage: Number(row.damage), stage: Math.max(1, Number(row.stage) || 1),
-    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0 }
+    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0, stageLimitMs: Number(row.stage_limit_ms) || STAGE_LIMIT_MS }
 }
-const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage FROM gm_battle WHERE account_id = ?'
+const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms FROM gm_battle WHERE account_id = ?'
 async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
   return battleRow(rows[0])
@@ -619,20 +619,22 @@ async function updateBattle(accountId, nextCharacter) {
       let tickAt = battle.since
       for (let i = 0; i < ticks; i++) {
         tickAt += 3000
-        if (tickAt - battle.stageSince > STAGE_LIMIT_MS) { battle.stageSince = tickAt; battle.stageDamage = 0 }
+        if (tickAt - battle.stageSince > battle.stageLimitMs) { battle.stageSince = tickAt; battle.stageDamage = 0 }
         battle.stageDamage += power
         if (battle.stageDamage >= stageHp(battle.stage)) {
+          const repeatBeforeBoss = battle.stage % 10 === 9
           const reward = stageReward(battle.stage)
           coinsEarned += reward.coins; earned += reward.fragments
-          battle.stage++; battle.stageSince = tickAt; battle.stageDamage = 0
+          if (!repeatBeforeBoss) battle.stage++;
+          battle.stageSince = tickAt; battle.stageDamage = 0
         }
       }
       battle.since = tickAt
-      if (now - battle.stageSince >= STAGE_LIMIT_MS) { battle.stageSince = now; battle.stageDamage = 0; battle.since = now }
+      if (now - battle.stageSince >= battle.stageLimitMs) { battle.stageSince = now; battle.stageDamage = 0; battle.since = now }
       battle.damage = battle.stageDamage
     }
     if (nextCharacter) {
-      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0 }
+      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0, stageLimitMs: STAGE_LIMIT_MS }
       else {
         const members = [battle.id, battle.secondId, battle.thirdId].filter(Boolean)
         if (members.includes(nextCharacter)) members.splice(members.indexOf(nextCharacter), 1)
@@ -646,9 +648,9 @@ async function updateBattle(accountId, nextCharacter) {
     state.fragments = (state.fragments ?? 0) + earned
     state.gems = (state.gems ?? 0) + coinsEarned
     if (!battle) await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
-    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage)`,
-      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage])
+    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms)`,
+      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs])
     await conn.commit()
     return { save: state, battle, earned, coinsEarned, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
@@ -1550,6 +1552,33 @@ const routes = {
     const earned = await autoSettle(account.id)
     send(res, 200, { earned, save: await getSave(account.id), weed: await getWeed(account.id), battle: await getBattle(account.id), now: Date.now() })
   },
+  'POST /api/battle/challenge-boss': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    // Settle before the stage change so rewards remain consistent.
+    await updateBattle(account.id,null)
+    const conn=await pool.getConnection()
+    try{
+      await conn.beginTransaction()
+      const [rows]=await conn.query(BATTLE_SELECT+' FOR UPDATE',[account.id])
+      const battle=battleRow(rows[0])
+      if(!battle||battle.stage%10!==9){await conn.rollback();return send(res,409,{error:'boss_not_ready'})}
+      const now=Date.now()
+      await conn.query('UPDATE gm_battle SET stage=?,stage_since=?,since_ms=?,stage_damage=0,damage=0 WHERE account_id=?',[battle.stage+1,now,now,account.id])
+      await conn.commit()
+      send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
+    }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+  },
+  'POST /api/battle/test-time5': async(req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    if(process.env.TEST_SERVER!=='true'||String(account.username).toLowerCase()!=='test')return send(res,403,{error:'forbidden'})
+    const now=Date.now()
+    await pool.query('UPDATE gm_battle SET stage_limit_ms=5000,stage_since=?,since_ms=? WHERE account_id=?',[now,now,account.id])
+    send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
+  },
   'POST /api/battle/test-clear': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
@@ -1594,7 +1623,7 @@ const routes = {
     await readJson(req)
     if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
     const now = Date.now()
-    await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ? WHERE account_id = ?', [now, now, account.id])
+    await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ?, stage_limit_ms = 1800000 WHERE account_id = ?', [now, now, account.id])
     send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
   },
   'POST /api/battle/claim': async (req, res) => {
