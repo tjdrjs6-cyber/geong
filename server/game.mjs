@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto'
 // Server-authoritative gacha rules. Keep these values in sync with src/game/collection.ts (tests verify).
-export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison']
+export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison', 'usagi_orange', 'halloween_chiikawa', 'halloween_hachiware', 'halloween_usagi']
 /** Draw weights out of 100000 (operator table): 노말 6.07%/6.06%, 레어 2.20%, 에픽 1.00%, 유니크 0.30%. */
 export const WEIGHTS = {chiikawa: 5980, hachiware: 5980, usagi: 5970, momonga: 5970, kurimanju: 5970, shisa: 5970, kani: 6000, goblin: 6000, rakko: 6000, armor1: 6000, armor2: 6000, armor3: 6000, m_chiikawa: 2000, m_hachiware: 2000, m_usagi: 2000, m_momonga: 2000, m_kurimanju: 2000, m_shisa: 2000, m_kani: 2000, m_rakko: 2000, hanip: 2000, duip: 2000, siren: 850, shimajiro: 850, anoko: 850, dekatsuyo: 850, c_curry: 220, h_curry: 220, u_curry: 220, ginger_chiikawa: 220, beetle: 220, ginger_hachiware: 220, ginger_usagi: 220, beetle_berserk: 50, kurimanju_bean: 50, rakko_limited: 50, honey: 2000, ode: 850, ode_prison: 220}
 /** Weeding speed bonus in percent. */
-export const WEED_BONUS = {chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30}
+export const WEED_BONUS = {chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30, usagi_orange: 60, halloween_chiikawa: 0, halloween_hachiware: 0, halloween_usagi: 0}
 export const RARE_IDS = ['siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
 export const TOTAL_WEIGHT = 100000
 export const STARTING_COINS = 100
@@ -58,10 +58,31 @@ export function pull(state, count, randomInt) {
   return { ok: true, state: { ...state, gems, owned: [...owned] }, results }
 }
 
+/** ISO week start (Monday) in Korea, and cumulative attendance within that week. */
+export function attendanceWeek(now = new Date()) {
+  const today = checkInDay(now)
+  const weekday = attendanceDay(now)
+  const monday = new Date(`${today}T12:00:00Z`)
+  monday.setUTCDate(monday.getUTCDate() - weekday + 1)
+  return monday.toISOString().slice(0, 10)
+}
+export function attendanceDay(now = new Date()) {
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now)
+  return ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 })[weekday]
+}
 export function claimDaily(state, now = new Date()) {
   const today = checkInDay(now)
   if (state.lastDaily === today) return { ok: false, error: 'already_checked_in', state }
-  return { ok: true, state: { ...state, gems: state.gems + DAILY_GIFT, lastDaily: today } }
+  const week = attendanceWeek(now)
+  const count = state.attendanceWeek === week ? Math.min(7, Number(state.attendanceCount) || 0) : 0
+  const day = count + 1
+  const coins = day <= 5 ? day * 10 : 0
+  const boxes = day >= 6 ? 1 : 0
+  return { ok: true, coins, boxes, day, state: {
+    ...state, gems: state.gems + coins, lastDaily: today,
+    attendanceWeek: week, attendanceCount: day,
+    pendingRandomBoxes: (state.pendingRandomBoxes || 0) + boxes,
+  } }
 }
 
 export const USERNAME_RULE = /^[A-Za-z0-9_가-힣]{3,20}$/
@@ -98,11 +119,11 @@ export function settleWeed(since, now, interval = WEED_HOUR_MS) {
 }
 
 /** Hunting ground: the enemy has 100 HP and takes the friend's power as damage every 5 minutes. */
-export const ENEMY_HP = 20_000
+export const ENEMY_HP = 30_000
 export const BATTLE_TICK_MS = 3_000
 export const BATTLE_DIAMOND_CHANCE = 1
 /** Battle power per friend. */
-export const POWER = {chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 10, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50, kurimanju_bean: 10, rakko_limited: 50, honey: 13, ode: 25, ode_prison: 40}
+export const POWER = {chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 10, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50, kurimanju_bean: 10, rakko_limited: 50, honey: 13, ode: 25, ode_prison: 40, usagi_orange: 15, halloween_chiikawa: 50, halloween_hachiware: 50, halloween_usagi: 50}
 /** Settles elapsed attacks: returns defeated enemies (1 coin each), the leftover damage and the new tick anchor. */
 export function settleBattle(since, damage, now, power) {
   const ticks = Math.max(0, Math.floor((now - since) / BATTLE_TICK_MS))

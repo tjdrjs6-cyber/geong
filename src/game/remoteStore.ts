@@ -12,8 +12,8 @@ export type WeedMember = { id: CharacterId; since: number }
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
 export type BattleState = { id: CharacterId; secondId?: CharacterId | null; since: number; damage: number }
-export type ProfilePrivacy = { char: boolean; deco: boolean; house: boolean }
-export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; weapon?: string | null; weaponLevel?: number | null }
+export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
+export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
 export type SentItem = { id: number; to: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
@@ -29,8 +29,9 @@ export const MAIL_MAX_CHARS = 30
 export const MAIL_DAILY_COINS = 100
 export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
+export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>> }
 export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
-type AccountPayload = { forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
+type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
 type ApiError = { error?: string }
 
@@ -112,6 +113,7 @@ export class RemoteGachaStore {
   decos: DecoCounts = {}
   house: HouseLayout = { pieces: [], friends: [] }
   forge: ForgeState | null = null
+  accessory: AccessoryState = {count:0,counts:{},equipped:null}
   featured: CharacterId | null = null
   mailUnread = 0
   dupes: CharDupes = {}
@@ -188,7 +190,15 @@ export class RemoteGachaStore {
     const result=await request<{save:GachaSave}>('shop/buy',{quantity})
     this.data=result.save
   }
-  async loadForge(): Promise<void> { this.forge = (await request<{forge:ForgeState|null}>('forge')).forge }
+  async loadForge(): Promise<void> { const r=await request<{forge:ForgeState|null;accessory:AccessoryState}>('forge');this.forge=r.forge;this.accessory=r.accessory ?? this.accessory ?? {count:0,counts:{},equipped:null} }
+  async equipAccessory(id: string|null,grade='normal'): Promise<void> {
+    const r=await request<{forge:ForgeState|null;accessory:AccessoryState;save:GachaSave}>('accessory/equip',{id,grade})
+    this.forge=r.forge;this.accessory=r.accessory;this.data=r.save
+  }
+  async synthesizeAccessory(id:string,grade:string):Promise<void>{
+    const r=await request<{accessory:AccessoryState;forge:ForgeState|null;save:GachaSave}>('accessory/alchemy',{id,grade})
+    this.accessory=r.accessory;this.forge=r.forge;this.data=r.save
+  }
   async selectForge(weapon: ForgeState['weapon']): Promise<void> {
     this.forge=(await request<{forge:ForgeState}>('forge/select',{weapon})).forge
   }
@@ -196,6 +206,7 @@ export class RemoteGachaStore {
     const result=await request<{forge:ForgeState;save:GachaSave;success:boolean}>('forge/upgrade',{})
     this.forge=result.forge
     this.data=result.save
+    this.accessory=result.accessory
     return result.success
   }
   async diamondRecharge(): Promise<{ diamonds: number; nextAt: number | null; now: number; max: number }> {
@@ -276,6 +287,14 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
+  async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
+  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
+    const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
+    this.data=result.save
+    this.accessory=result.accessory
+    return result
+  }
   private async rpsRequest(path:string,body:object):Promise<RpsState> {
     const controller=new AbortController()
     const timeout=setTimeout(()=>controller.abort(),10000)
@@ -305,6 +324,7 @@ export class RemoteGachaStore {
   async rpsClaim():Promise<RpsState> {
     const result=await request<RpsState>('rps/claim',{})
     if(result.save)this.data=result.save
+    this.accessory=result.accessory
     return result
   }
   async expeditionBadge():Promise<{day:string;deployed:boolean}> {return request('expedition/badge')}
@@ -367,9 +387,10 @@ export class RemoteGachaStore {
   }
 
   async playClaw(aligned: boolean, x: number, y: number): Promise<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number }> {
-    const result = await request<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number; save: GachaSave; decos: DecoCounts }>('claw/play', { aligned, x, y })
+    const result = await request<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number; save: GachaSave; decos: DecoCounts; accessory: AccessoryState }>('claw/play', { aligned, x, y })
     this.data = result.save
     this.decos = result.decos
+    if(result.accessory)this.accessory=result.accessory
     return { won: result.won, chance: result.chance, dropAt: result.dropAt, segments: result.segments, prize: result.prize }
   }
 
@@ -398,14 +419,15 @@ export class RemoteGachaStore {
       throw error
     }
   }
-  async claimDaily(): Promise<boolean> {
-    const result = await request<{ claimed: boolean; save: GachaSave }>('daily', {})
+  async claimDaily(): Promise<{ claimed: boolean; coins: number; boxes: number }> {
+    const result = await request<{ claimed: boolean; coins: number; boxes: number; save: GachaSave }>('daily', {})
     this.data = result.save
-    return result.claimed
+    return { claimed: result.claimed, coins: result.coins ?? 0, boxes: result.boxes ?? 0 }
   }
 
   private apply(payload: AccountPayload): void {
     this.forge = payload.forge ?? null
+    this.accessory = payload.accessory ?? {count:0,counts:{},equipped:null}
     this.user = payload.user
     this.weed = payload.weed ?? null
     this.battle = payload.battle ?? null

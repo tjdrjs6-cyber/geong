@@ -1,10 +1,10 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
-  { id: 'chiikawa', name: '치이카와', variant: '', probability: 5.98, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
-  { id: 'hachiware', name: '하치와레', variant: '', probability: 5.98, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
-  { id: 'usagi', name: '우사기', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
-  { id: 'momonga', name: '모몽가', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 3, color: '#f1efff', accent: '#a99ae1' },
+  { id: 'chiikawa', name: '치이카와', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'hachiware', name: '하치와레', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
+  { id: 'usagi', name: '우사기', variant: '', probability: 5.96, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
+  { id: 'momonga', name: '모몽가', variant: '', probability: 5.96, tier: 'normal', weedBonus: 0, power: 3, color: '#f1efff', accent: '#a99ae1' },
   { id: 'kurimanju', name: '쿠리만쥬', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 2, color: '#f8e9d4', accent: '#b08a62' },
   { id: 'shisa', name: '시사', variant: '', probability: 5.97, tier: 'normal', weedBonus: 0, power: 2, color: '#fff0dc', accent: '#eba65a' },
   { id: 'kani', name: '카니', variant: '', probability: 6, tier: 'normal', weedBonus: 0, power: 2, color: '#ffeef2', accent: '#ec8fa8' },
@@ -40,10 +40,14 @@ export const CHARACTERS = [
   { id: 'honey', name: '꿀맛맨', variant: '', probability: 2, tier: 'mermaid', weedBonus: 10, power: 13, color: '#e8faff', accent: '#87cde3' },
   { id: 'ode', name: '오데', variant: '', probability: 0.85, tier: 'rare', weedBonus: 25, power: 25, color: '#fff6b2', accent: '#e2bb53' },
   { id: 'ode_prison', name: '오데', variant: '죄수복', probability: 0.22, tier: 'super', weedBonus: 30, power: 40, color: '#fff6b2', accent: '#5e4033' },
+  { id: 'usagi_orange', name: '우사기', variant: '귤', probability: 0.04, tier: 'legendary', weedBonus: 60, power: 15, color: '#fff6d8', accent: '#ff963e' },
+  { id: 'halloween_chiikawa', name: '치이카와', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
+  { id: 'halloween_hachiware', name: '하치와레', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
+  { id: 'halloween_usagi', name: '우사기', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -108,6 +112,8 @@ export function parseGachaSave(raw: string | null): GachaSave {
       gems: validGems,
       owned,
       lastDaily,
+      attendanceWeek: typeof data.attendanceWeek === 'string' ? data.attendanceWeek : '',
+      attendanceCount: typeof data.attendanceCount === 'number' ? data.attendanceCount : 0,
     }
   } catch {
     return base
@@ -123,7 +129,7 @@ export function drawCharacter(random: () => number = Math.random): CharacterId {
     threshold -= character.probability
     if (threshold < 0) return character.id
   }
-  return CHARACTERS[CHARACTERS.length - 1].id
+  return [...CHARACTERS].reverse().find(character => character.probability > 0)!.id
 }
 
 export function localDay(date = new Date()): string {
@@ -149,7 +155,14 @@ export class GachaStore {
   claimDaily(now = new Date()): boolean {
     const today = localDay(now)
     if (this.data.lastDaily === today) return false
-    this.update({ gems: this.data.gems + DAILY_GIFT, lastDaily: today })
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now)
+    const weekDay = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[weekday]
+    const monday = new Date(`${today}T12:00:00Z`)
+    monday.setUTCDate(monday.getUTCDate() - weekDay + 1)
+    const week = monday.toISOString().slice(0, 10)
+    const count = this.data.attendanceWeek === week ? (this.data.attendanceCount ?? 0) : 0
+    const day = Math.min(7, count + 1)
+    this.update({ gems: this.data.gems + (day <= 5 ? day * 10 : 0), lastDaily: today, attendanceWeek: week, attendanceCount: day, pendingRandomBoxes: (this.data.pendingRandomBoxes ?? 0) + (day >= 6 ? 1 : 0) })
     return true
   }
 
@@ -178,7 +191,7 @@ export class GachaStore {
 }
 
 /** Hunting ground: the enemy has 100 HP and takes the friend's battle power as damage every 5 minutes. */
-export const ENEMY_HP = 20_000
+export const ENEMY_HP = 30_000
 export const BATTLE_TICK_MS = 3_000
 /** Battle power per friend (mirrors server/game.mjs POWER). */
 export const battlePower = (id: CharacterId): number => CHARACTERS.find(item => item.id === id)?.power ?? 0
