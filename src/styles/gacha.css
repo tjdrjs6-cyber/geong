@@ -4083,3 +4083,18 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .lottery-screen .lottery-prize{position:relative;overflow:hidden}
 #ui .lottery-screen .lottery-sold-stamp{position:absolute!important;left:6%!important;top:25%!important;width:88%!important;height:60%!important;object-fit:contain!important;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 2px #55332288)}
 #ui .lottery-screen .lottery-sold-out>img:not(.lottery-sold-stamp){opacity:.4}
+
+/* test.014: use supplied horizontal ticket artwork; only perforated lower area tears */
+#ui .lottery-ticket{width:min(100%,350px);height:auto;aspect-ratio:1600/900;overflow:hidden;background:transparent;border:0}
+#ui .lottery-ticket-cover{position:absolute;inset:0;overflow:hidden;touch-action:pan-y}
+#ui .lottery-ticket-top,#ui .lottery-ticket-peel{background-image:url('/assets/lottery_ticket_custom.png');background-position:center;background-repeat:no-repeat;background-size:100% 100%;position:absolute;inset:0}
+#ui .lottery-ticket-top{clip-path:inset(0 0 48% 0);pointer-events:none;z-index:1}
+#ui .lottery-ticket-peel{clip-path:inset(52% 0 0 0);touch-action:none;cursor:grab;z-index:2;filter:drop-shadow(2px 2px 2px #5c332a55)}
+#ui .lottery-ticket-peel span{position:absolute;bottom:13%;left:12%;right:12%;font-size:11px;background:#fff7e8d9;color:#683b2c}
+
+/* test.015: readable winner chips, no overlap, and concealed prizes */
+#ui .lottery-screen .lottery-winners{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:6px!important;max-height:none!important;min-height:36px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;background:rgba(65,36,27,.91)!important;color:#fffaf0!important;border:1px solid rgba(255,238,203,.7)!important;box-shadow:0 2px 8px #3a1e1980!important;padding:7px 9px!important;position:relative!important;z-index:1!important;}
+#ui .lottery-screen .lottery-winners>strong{flex:none;font-size:11px;color:#ffe2a4;text-shadow:0 1px 2px #000}
+#ui .lottery-screen .lottery-winner-item{flex:none;display:inline-flex;align-items:center;background:rgba(255,250,237,.17);border:1px solid #ffffff55;border-radius:8px;padding:4px 7px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 2px #000}
+#ui .lottery-screen .lottery-prizes,#ui .lottery-screen .lottery-ticket,#ui .lottery-screen .lottery-results,#ui .lottery-screen .lottery-purchase{position:relative;z-index:0}
+#ui .lottery-ticket-under{visibility:hidden}

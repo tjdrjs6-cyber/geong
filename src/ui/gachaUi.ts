@@ -354,7 +354,7 @@ export class GachaUi {
         <div class="rps-scene lottery-scene">
           <div class="lottery-heading"><h2>🎟️ 제일복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
           <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 제일복권 초기화 (test 전용)</button>
-          <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 아래를 오른쪽으로 뜯어주세요 →</span></div></div></div>
+          <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
           <div class="lottery-purchase"><label>구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1"/></label><button data-action="lottery-all">남은 장수 선택</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
@@ -1369,7 +1369,7 @@ export class GachaUi {
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
     const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
     if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFG'[i]}상</b>${i<6?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
-    const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners)winners.textContent=state.winners?.length?'최근 당첨: '+state.winners.map(w=>`${w.nickname} (${w.grade}상)`).join(' · '):'아직 A~F상 당첨자가 없습니다.'
+    const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${w.grade}상`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 A~F상 당첨자가 없습니다.';winners.append(empty)}}
     const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0}
     const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
     this.updateLotteryPrice()
@@ -1423,6 +1423,8 @@ export class GachaUi {
     const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
     const idx='ABCDEFG'.indexOf(r.grade)
     under.replaceChildren()
+    // Hide the prize layer until the user actually finishes tearing.
+    under.style.visibility='hidden'
     const title=document.createElement('strong');title.textContent=`${r.grade}상 당첨!`
     under.append(title)
     if(r.id&&idx>=0&&idx<6){const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[ids[idx] as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터';under.append(img)}
@@ -1437,8 +1439,10 @@ export class GachaUi {
   private revealLottery():void{
     if(this.lotteryRevealed>=this.lotteryResults.length)return
     const r=this.lotteryResults[this.lotteryRevealed]
-    const top=this.root.querySelector<HTMLElement>('.lottery-ticket-top');if(top){top.style.transition='opacity .38s ease';top.style.opacity='0'}
+    // Keep the upper artwork stationary while the perforated lower piece slides away.
     const peel=this.root.querySelector<HTMLElement>('.lottery-ticket-peel')
+    const prizeLayer=this.root.querySelector<HTMLElement>('.lottery-ticket-under')
+    if(prizeLayer)prizeLayer.style.visibility='visible'
     if(peel){peel.style.transition='transform .38s ease';peel.style.transform='translateX(115%)';peel.onpointerdown=null;peel.onpointerup=null;peel.onpointermove=null}
     this.lotteryRevealed++
     this.renderLotteryResults()
