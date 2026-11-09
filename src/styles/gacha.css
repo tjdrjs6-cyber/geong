@@ -4876,3 +4876,52 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-screen .battle-field:has(.battle-stage-transition.is-visible) {overflow:visible!important;z-index:60!important;}
 #ui .battle-screen .battle-stage-transition {top:-112px!important;bottom:0!important;left:0!important;right:0!important;z-index:80!important;}
 @media(max-width:420px){#ui .battle-screen .battle-stage-center{top:16px!important;}#ui .battle-screen .weed-header .battle-stage-rewards{top:16px!important;}}
+
+/* Fix: meadow starts directly beneath the stage challenge control. */
+#ui .battle-screen .weed-header {
+  height:82px!important;
+  min-height:82px!important;
+  padding:0!important;
+  background:#fff!important;
+}
+#ui .battle-screen .battle-stage-center {top:9px!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards {top:9px!important;}
+#ui .battle-screen .battle-field {
+  position:relative!important;
+  overflow:visible!important;
+  z-index:2!important;
+}
+/* The transition lives inside battle-field, but must paint over the header too. */
+#ui .battle-screen .battle-field .battle-stage-transition {
+  position:absolute!important;
+  top:-82px!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:999!important;
+  display:grid!important;
+  place-items:center!important;
+  pointer-events:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  background:rgba(29,24,30,.05)!important;
+  transition:opacity .28s ease,background .28s ease,visibility .28s ease!important;
+}
+#ui .battle-screen .battle-field .battle-stage-transition.is-visible {
+  opacity:1!important;
+  visibility:visible!important;
+  background:rgba(29,24,30,.55)!important;
+}
+#ui .battle-screen .battle-field .battle-stage-transition.is-visible .battle-stage-transition-card {
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:translateY(0) scale(1)!important;
+}
+#ui .battle-screen .battle-field:has(.battle-stage-transition.is-visible) {
+  z-index:100!important;
+  overflow:visible!important;
+}
+@media(max-width:420px){
+ #ui .battle-screen .weed-header{height:82px!important;min-height:82px!important;}
+}
