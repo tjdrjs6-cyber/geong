@@ -4128,3 +4128,18 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .myroom-equipment-close { position:absolute; right:10px; top:7px; border:0; background:transparent; font-size:30px; cursor:pointer; color:#78685c; }
 .myroom-equipment-note { font-size:14px; line-height:1.7; margin:16px 0; }
 .myroom-equipment-done { border:0; border-radius:12px; background:#a8dfc2; padding:11px 35px; font-weight:700; cursor:pointer; }
+
+/* test.021: align My Room arrow with Activity/Shop and mirror on expand. */
+.gacha-screen .nav-myroom { display:flex !important; align-items:center !important; }
+.gacha-screen .nav-myroom .menu-toggle-arrow { display:block; width:39px !important; height:39px !important; max-width:39px !important; flex:0 0 39px !important; object-fit:contain; margin-left:auto !important; transition:transform .16s ease; }
+.gacha-screen .nav-myroom[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1); }
+
+/* test.022: 장터 판매 분류 */
+.shop-sell-categories{display:flex;gap:6px;padding:8px 10px;flex-wrap:wrap;justify-content:center}
+.shop-sell-categories[hidden]{display:none!important}
+.shop-sell-categories button{border:2px solid #e5b8ca;border-radius:16px;background:#fff7fa;color:#664457;padding:7px 12px;font-weight:800;cursor:pointer}
+.shop-sell-categories button.is-active{background:#f7c8da;border-color:#d78baa}
+.shop-sell-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;padding:10px}
+.shop-sell-grid .storage-item{min-width:0}
+.shop-bulk-sell{display:block;margin:8px auto;padding:9px 12px;border-radius:14px;background:#ffe4ee;border:2px solid #d998b1;color:#704458;font-weight:800}
+.shop-bulk-sell:disabled{opacity:.5}
