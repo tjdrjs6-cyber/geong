@@ -646,9 +646,9 @@ async function updateBattle(accountId, nextCharacter) {
     const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory)
     let earned = 0, coinsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
-      const power = Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
+      const power = !battle.id ? 0 : Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
       // Process individual attack ticks, respecting the 30-minute deadline for each stage.
-      const ticks = Math.min(500000, Math.max(0, Math.floor((now - battle.since) / 3000)))
+      const ticks = !battle.id ? 0 : Math.min(500000, Math.max(0, Math.floor((now - battle.since) / 3000)))
       let tickAt = battle.since
       for (let i = 0; i < ticks; i++) {
         tickAt += 3000
@@ -678,7 +678,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
       }
       if (!failedStage) battle.since = tickAt
-      if (!failedStage && now - battle.stageSince >= battle.stageLimitMs) {
+      if (battle.id && !failedStage && now - battle.stageSince >= battle.stageLimitMs) {
         failedStage = battle.stage
         battle.retryStage = failedStage > 1 ? failedStage : 0
         battle.stage = Math.max(1, battle.stage - 1)
@@ -689,7 +689,7 @@ async function updateBattle(accountId, nextCharacter) {
       battle.damage = battle.stageDamage
     }
     if (nextCharacter) {
-      if (!battle) {
+      if (!battle || !battle.id) {
         const [saved] = await conn.query('SELECT stage, boss_ready, retry_stage FROM gm_battle_saved_progress WHERE account_id = ? FOR UPDATE', [accountId])
         battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0,
           stage: Math.max(1, Number(saved[0]?.stage) || 1), stageSince: now, stageDamage: 0,
@@ -708,7 +708,12 @@ async function updateBattle(accountId, nextCharacter) {
             VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE stage=VALUES(stage),
             boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage)`,
             [accountId, battle.stage, battle.bossReady ? 1 : 0, battle.retryStage || 0])
-          battle = null
+          // Keep the battle row and its stage, but stop combat immediately.
+          // Removing the final member resets only the current attempt.
+          battle.id = ''; battle.secondId = null; battle.thirdId = null
+          battle.stageDamage = 0; battle.damage = 0
+          battle.stageSince = now; battle.since = now
+          battle.stageLimitMs = STAGE_LIMIT_MS
         }
       }
     }

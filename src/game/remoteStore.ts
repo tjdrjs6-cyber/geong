@@ -141,7 +141,7 @@ export class RemoteGachaStore {
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle = this.battle
-    if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
+    if (!battle || !battle.id) { const stage=battle?.stage ?? 1; const maxHp=battleStageHp(stage); return { kills:0,hp:maxHp,maxHp,nextIn:BATTLE_TICK_MS,power:0,stage,remaining:1800000 } }
     // forge.bonus already includes the equipped accessory. Never add it twice.
     const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0)
     const elapsed = Math.max(0, this.serverNow() - battle.since)
