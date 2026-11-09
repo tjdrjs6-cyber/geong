@@ -4131,7 +4131,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* test.021: align My Room arrow with Activity/Shop and mirror on expand. */
 .gacha-screen .nav-myroom { display:flex !important; align-items:center !important; }
-.gacha-screen .nav-myroom .menu-toggle-arrow { display:block; width:39px !important; height:39px !important; max-width:39px !important; flex:0 0 39px !important; object-fit:contain; margin-left:auto !important; transition:transform .16s ease; }
+.gacha-screen .nav-myroom .menu-toggle-arrow { display:block; width:13px !important; height:13px !important; max-width:13px !important; flex:0 0 13px !important; object-fit:contain; margin-left:auto !important; transition:transform .16s ease; }
 .gacha-screen .nav-myroom[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1); }
 
 /* test.022: 장터 판매 분류 */
@@ -4170,3 +4170,17 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .catalog-choice-button>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:4px;}
 .catalog-choice-button b{font-size:15px;}.catalog-choice-button small{font-size:12px;color:#987a8b;}
 .catalog-choice-button>span:last-child{font-size:28px;line-height:1;}
+
+/* test.027: marketplace controls stay fixed; only products scroll. */
+#ui .shop-screen.is-active .shop-panel {
+  top:34% !important; bottom:3% !important; max-height:none !important;
+  display:flex !important; flex-direction:column !important; overflow:hidden !important;
+  min-height:0 !important; padding:10px !important;
+}
+#ui .shop-panel .shop-tabs {flex:0 0 auto; margin-bottom:6px; position:relative; z-index:2;}
+#ui .shop-panel .shop-sell-categories:not([hidden]) {flex:0 0 auto; position:relative; z-index:2; padding:5px 0 9px; flex-wrap:nowrap;}
+#ui .shop-panel .shop-sell-categories button {flex:1; min-width:0; padding:9px 4px; touch-action:manipulation; position:relative; z-index:3;}
+#ui .shop-panel .shop-items {flex:1 1 auto; min-height:0; overflow-y:auto !important; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
+#ui .shop-panel .shop-sell-grid {grid-template-columns:repeat(2,minmax(0,1fr)); padding:6px 2px; gap:7px;}
+#ui .shop-panel .shop-sell-grid .storage-item {min-width:0;}
+@media(max-height:650px) {#ui .shop-screen.is-active .shop-panel {top:29% !important;}}

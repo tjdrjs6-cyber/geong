@@ -50,6 +50,7 @@ export class GachaUi {
   private wildWeedLastSlot = -1
   private shopTab: 'buy' | 'sell' = 'sell'
   private storageTab: 'char' | 'deco' | 'inventory' = 'char'
+  private shopSellTab: 'char' | 'deco' | 'inventory' = 'char'
   private noticeTimer = 0
   private chatTimer = 0
   private chatBadgeTimer = 0
@@ -347,7 +348,7 @@ export class GachaUi {
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
         <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong><img class="shop-header-face" src="/shop_armor_face.png" alt="갑옷씨 얼굴"/> 장터</strong><span aria-hidden="true"></span></header>
-        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><span class="shop-sell-title">판매</span></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="deco">데코</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
+        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button type="button" data-action="shop-tab" data-tab="buy">구매</button><button type="button" data-action="shop-tab" data-tab="sell" class="is-active">판매</button></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="deco">데코</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
       </section>
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>제일복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
@@ -498,7 +499,6 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">인벤토리</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
           <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 기타</button></div>
-          <button class="modal-primary storage-bulk-sell" data-action="storage-bulk-sell" disabled>중복 일괄 판매</button>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -613,7 +613,7 @@ export class GachaUi {
     const categories = screen.querySelector<HTMLElement>('.shop-sell-categories')
     if (categories) {
       categories.hidden = this.shopTab !== 'sell'
-      categories.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.classList.toggle('is-active', b.dataset.tab === this.storageTab))
+      categories.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.classList.toggle('is-active', b.dataset.tab === this.shopSellTab))
     }
     const items = screen.querySelector<HTMLElement>('.shop-items')
     if (!items) return
@@ -622,7 +622,7 @@ export class GachaUi {
       items.innerHTML = balance + '<div class="shop-empty-note">현재 구매 가능한 상품이 없어요.</div>'
       return
     }
-    if (this.storageTab === 'inventory') {
+    if (this.shopSellTab === 'inventory') {
       const weeds = ([['normal', this.store.wildWeed?.count ?? 0, '잡초', 5, '/field_wild_weed.png'], ['golden', this.store.wildWeed?.goldenCount ?? 0, '황금잡초', 50, '/field_golden_weed.png']] as const)
       items.innerHTML = balance + (weeds.filter(x => x[1] > 0).map(([type,count,name,price,img]) => `<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">판매할 기타 아이템이 없어요.</div>')
       return
@@ -634,7 +634,7 @@ export class GachaUi {
     const sellButtons = (kind: 'char' | 'deco', id: string, count: number, price: number) => count > 0
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 판매 +${price}</button>${count > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${count}">중복 모두 판매 +${count * price}</button>` : ''}</div>`
       : '<small class="storage-keep">판매 가능한 중복 없음</small>'
-    if (this.storageTab === 'char') {
+    if (this.shopSellTab === 'char') {
       const owned = CHARACTERS.filter(c => this.store.data.owned.includes(c.id))
       items.innerHTML = balance + bulkButton + '<div class="shop-sell-grid">' + (owned.map(c => {
         const count = this.store.dupes[c.id] ?? 0
@@ -740,6 +740,8 @@ export class GachaUi {
     if (action === 'lottery-buy') {await this.buyLottery();return}
     if (action === 'lottery-skip') {this.skipLottery();return}
     if (action === 'shop') {this.shopTab='sell';this.hideShopDialog();this.show('shop');void this.loadWildWeed();this.renderShop();return}
+    if (action === 'shop-tab' && button?.dataset.tab) { this.shopTab = button.dataset.tab === 'buy' ? 'buy' : 'sell'; this.hideShopDialog(); this.renderShop(); return }
+    if (action === 'shop-sell-category' && button?.dataset.tab) { const list = this.root.querySelector<HTMLElement>('.shop-screen .shop-items'); if (list) list.scrollTop = 0; this.shopSellTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'inventory' ? 'inventory' : 'char'; this.renderShop(); return }
     
     if (action === 'wild-weed-sell') {
       const type=button?.dataset.weedType==='golden'?'golden':'normal'
