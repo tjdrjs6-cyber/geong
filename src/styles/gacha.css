@@ -4844,3 +4844,22 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-screen .battle-stage-rewards .battle-reward-icon{width:13px!important;height:13px!important;}
 #ui .battle-screen .battle-field{position:relative!important;z-index:1!important;background:transparent!important;background-image:none!important;}
 @media(max-width:420px){#ui .battle-screen .battle-stage-center{max-width:62%!important;}#ui .battle-screen .weed-header .battle-stage-rewards{max-width:48%!important;top:82px!important;} }
+
+/* 2026-11-09: move reward card to the upper-right, raise meadow horizon */
+#ui .battle-screen .weed-header .battle-stage-rewards {
+  top:5px!important;right:5px!important;left:auto!important;bottom:auto!important;
+  max-width:31%!important;min-width:0!important;width:max-content!important;
+  padding:5px 7px!important;align-items:flex-end!important;
+  background:rgba(255,248,228,.74)!important;
+  border-radius:10px!important;z-index:48!important;
+}
+#ui .battle-screen .battle-stage-center {top:5px!important;max-width:42%!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-heading {font-size:clamp(15px,3.8vw,22px)!important;}
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]) {font-size:clamp(10px,2.6vw,13px)!important;padding:6px 9px!important;}
+#ui .battle-screen::before {background-size:100% 140%!important;background-position:center bottom!important;}
+@media(max-width:420px){
+ #ui .battle-screen .weed-header .battle-stage-rewards{top:4px!important;right:4px!important;max-width:32%!important;padding:4px 5px!important;}
+ #ui .battle-screen .battle-stage-center{max-width:43%!important;}
+ #ui .battle-screen .battle-stage-rewards .battle-reward-caption{font-size:10px!important;}
+ #ui .battle-screen .battle-stage-rewards .battle-reward-piece{font-size:10px!important;}
+}
