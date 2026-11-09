@@ -3805,7 +3805,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .shop-empty-note{text-align:center;color:#795947;font-size:12px;line-height:1.7;padding:18px 4px}
 
 /* v195: lobby character and expandable activity navigation */
-.gacha-screen .toon-hero { width:min(34.32cqw,191.4px) !important; }
+.gacha-screen .toon-hero { width:min(41.184cqw,229.68px) !important; }
 .gacha-screen .activity-menu { position:relative; width:100%; flex-shrink:0; }
 .gacha-screen .activity-menu > .nav-button { width:100%; }
 .gacha-screen .activity-options:not([hidden]) { display:flex; flex-direction:column; gap:5px; position:absolute; left:calc(100% + 6px); top:0; width:clamp(82px,24cqw,106px); z-index:80; }
@@ -4131,7 +4131,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* test.021: align My Room arrow with Activity/Shop and mirror on expand. */
 .gacha-screen .nav-myroom { display:flex !important; align-items:center !important; }
-.gacha-screen .nav-myroom .menu-toggle-arrow { display:block; width:13px !important; height:13px !important; max-width:13px !important; flex:0 0 13px !important; object-fit:contain; margin-left:auto !important; transition:transform .16s ease; }
+.gacha-screen .nav-myroom .menu-toggle-arrow { display:block; width:39px !important; height:39px !important; max-width:39px !important; flex:0 0 39px !important; object-fit:contain; margin-left:auto !important; transition:transform .16s ease; }
 .gacha-screen .nav-myroom[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1); }
 
 /* test.022: 장터 판매 분류 */
@@ -4184,3 +4184,11 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .shop-panel .shop-sell-grid {grid-template-columns:repeat(2,minmax(0,1fr)); padding:6px 2px; gap:7px;}
 #ui .shop-panel .shop-sell-grid .storage-item {min-width:0;}
 @media(max-height:650px) {#ui .shop-screen.is-active .shop-panel {top:29% !important;}}
+
+/* test.029: raise the market panel and pin bulk sale above the scrolling products. */
+#ui .shop-screen.is-active .shop-panel {top:24% !important; bottom:2% !important;}
+#ui .shop-panel .shop-bulk-fixed:not([hidden]) {flex:0 0 auto; display:flex; justify-content:center; align-items:center; padding:2px 0 8px; border-bottom:1px solid #ead2dc; z-index:2;}
+#ui .shop-panel .shop-bulk-fixed[hidden] {display:none !important;}
+#ui .shop-panel .shop-bulk-fixed .shop-bulk-sell {margin:0; width:100%; max-width:360px; padding:8px 10px;}
+#ui .shop-panel .shop-items {flex:1 1 0 !important; min-height:0 !important; overflow-y:auto !important;}
+@media(max-height:650px) {#ui .shop-screen.is-active .shop-panel {top:20% !important;}}
