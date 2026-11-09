@@ -1,4 +1,4 @@
-const BATTLE_STAGE_REWARDS: [number, number][] = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 3], [17, 3], [18, 3], [19, 3], [20, 3], [16, 4], [16, 4], [17, 4], [17, 4], [18, 4], [18, 5], [19, 5], [19, 5], [20, 5], [21, 5], [22, 6], [23, 6], [24, 6], [25, 6], [26, 6], [27, 7], [28, 7], [29, 7], [30, 7], [31, 7]];
+const BATTLE_STAGE_REWARDS: [number, number][] = [[1,0],[1,0],[2,0],[2,0],[3,0],[3,1],[4,1],[4,1],[5,1],[5,1],[6,2],[6,2],[7,2],[7,2],[8,2],[8,3],[9,3],[9,3],[10,3],[10,3],[11,4],[11,4],[12,4],[12,4],[13,4],[13,5],[14,5],[14,5],[15,5],[15,5],[16,6],[16,6],[17,6],[17,6],[18,6],[18,7],[19,7],[19,7],[20,7],[20,7]];
 const stageRewards = (stage: number): [number, number] => BATTLE_STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0,stage - 40), 7];
 const WEAPON_ACCESSORIES = [
   {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
@@ -2994,7 +2994,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const label=`${Math.floor((item.stage-1)/10)+1}-${(item.stage-1)%10+1}`
     const popup=this.root.querySelector<HTMLElement>('.battle-reward-popup')
     if(!popup)return
-    popup.textContent=`${label} 스테이지 클리어!  🪙 ${item.coins}코인 · ✨ 강화파편 ${item.fragments}개 획득!`
+    popup.innerHTML=`<div class="battle-reward-popup-title">${label} 스테이지 클리어!</div><div class="battle-reward-popup-items"><span><img src="/assets/coin.png" alt=""/> ${item.coins}코인 획득</span><span><img src="/assets/enhancement_fragment.png" alt=""/> 강화파편 ${item.fragments}개 획득</span></div>`
     popup.hidden=false
     popup.classList.remove('is-visible')
     // Restart the visible reward animation without reflow-heavy measurements.
