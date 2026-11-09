@@ -40,7 +40,7 @@ export const CHARACTERS = [
   { id: 'honey', name: '꿀맛맨', variant: '', probability: 2, tier: 'mermaid', weedBonus: 10, power: 13, color: '#e8faff', accent: '#87cde3' },
   { id: 'ode', name: '오데', variant: '', probability: 0.85, tier: 'rare', weedBonus: 25, power: 25, color: '#fff6b2', accent: '#e2bb53' },
   { id: 'ode_prison', name: '오데', variant: '죄수복', probability: 0.22, tier: 'super', weedBonus: 30, power: 40, color: '#fff6b2', accent: '#5e4033' },
-  { id: 'usagi_orange', name: '우사기', variant: '귤', probability: 0.04, tier: 'legendary', weedBonus: 0, power: 15, color: '#fff6d8', accent: '#ff963e' },
+  { id: 'usagi_orange', name: '우사기', variant: '귤', probability: 0.04, tier: 'legendary', weedBonus: 60, power: 15, color: '#fff6d8', accent: '#ff963e' },
   { id: 'halloween_chiikawa', name: '치이카와', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
   { id: 'halloween_hachiware', name: '하치와레', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
   { id: 'halloween_usagi', name: '우사기', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },

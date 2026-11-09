@@ -4493,3 +4493,9 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .lottery-screen .lottery-purchase button{padding:clamp(3px,.6dvh,8px) 6px!important;}
 #ui .lottery-screen .lottery-price{margin:0!important;font-size:clamp(12px,1.8dvh,16px)!important;line-height:1.2!important;}
 @media (max-height:740px){#ui .lottery-screen .lottery-prize>img:not(.lottery-sold-stamp){height:clamp(20px,3.5dvh,30px)!important;width:clamp(20px,3.5dvh,30px)!important;}#ui .lottery-screen .lottery-prize{padding:2px 1px!important;}#ui .lottery-screen .lottery-winners{font-size:10px!important;}}
+
+/* test.070: lottery summary heading: prevent global prize-image styling from enlarging the icon */
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card h2{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:8px;width:100%;max-width:100%;font-size:clamp(19px,5vw,26px);line-height:1.3;word-break:keep-all;white-space:nowrap;box-sizing:border-box}
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card h2 .lottery-title-icon{display:block;position:static;flex:0 0 auto;width:clamp(34px,12vw,66px)!important;height:clamp(27px,9vw,52px)!important;max-width:66px!important;max-height:52px!important;object-fit:contain!important;filter:none!important;margin:0!important}
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card{width:min(92vw,420px);max-width:100%;box-sizing:border-box;padding:20px 14px;overflow:hidden}
+.lottery-win-dialog#lottery-summary-dialog .lottery-win-card > div{box-sizing:border-box;max-width:100%}
