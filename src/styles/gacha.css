@@ -4499,3 +4499,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .lottery-win-dialog#lottery-summary-dialog .lottery-win-card h2 .lottery-title-icon{display:block;position:static;flex:0 0 auto;width:clamp(34px,12vw,66px)!important;height:clamp(27px,9vw,52px)!important;max-width:66px!important;max-height:52px!important;object-fit:contain!important;filter:none!important;margin:0!important}
 .lottery-win-dialog#lottery-summary-dialog .lottery-win-card{width:min(92vw,420px);max-width:100%;box-sizing:border-box;padding:20px 14px;overflow:hidden}
 .lottery-win-dialog#lottery-summary-dialog .lottery-win-card > div{box-sizing:border-box;max-width:100%}
+
+/* test.071: supplied autumn lobby artwork and legible lottery prize names */
+.gacha-screen,.gacha-screen.is-active{background-image:url('/lobby_autumn_071.png')!important;background-color:#ffce76!important;background-position:center center!important;background-size:cover!important;background-repeat:no-repeat!important}
+#ui .lottery-screen .lottery-prize>span{display:block!important;width:100%!important;min-width:0!important;overflow-wrap:break-word!important;word-break:keep-all!important;text-align:center!important;font-size:clamp(9px,1.35dvh,11px)!important;line-height:1.15!important}
