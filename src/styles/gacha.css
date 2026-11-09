@@ -4629,3 +4629,13 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important}
 .battle-field .battle-weapon-strike{left:22%!important;right:auto!important}
 @media(prefers-reduced-motion:reduce){.battle-screen .battle-stage-transition,.battle-screen .battle-stage-transition-card{transition:none!important}}
+
+/* 2026-11-09 updated battle layout/background */
+#ui .battle-field{background:#b9e0fb url('/assets/battle_meadow_20261109.png') center center / cover no-repeat!important}
+#ui .battle-field .bf-scene{opacity:0!important;pointer-events:none!important}
+#ui .battle-field .bf-enemy{left: auto!important;right:5%!important}
+#ui .battle-field .bf-friend:not(.bf-friend-second):not(.bf-friend-third){left:9%!important;right:auto!important}
+#ui .battle-field .bf-friend.bf-friend-second{left:31%!important;right:auto!important}
+#ui .battle-field .bf-friend.bf-friend-third{left:20%!important;right:auto!important}
+#ui .battle-field .battle-weapon-strike{left:22%!important;right:auto!important}
+.battle-test-reset:not([hidden]){display:block;margin:8px auto;padding:10px 18px;border:2px solid #a86b60;border-radius:16px;background:#ffe5d8;color:#783b32;font-weight:800;cursor:pointer}

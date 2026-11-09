@@ -1,3 +1,5 @@
+const BATTLE_STAGE_REWARDS: [number, number][] = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 3], [17, 3], [18, 3], [19, 3], [20, 3], [16, 4], [16, 4], [17, 4], [17, 4], [18, 4], [18, 5], [19, 5], [19, 5], [20, 5], [21, 5], [22, 6], [23, 6], [24, 6], [25, 6], [26, 6], [27, 7], [28, 7], [29, 7], [30, 7], [31, 7]];
+const stageRewards = (stage: number): [number, number] => BATTLE_STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0,stage - 40), 7];
 const WEAPON_ACCESSORIES = [
   {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
   {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},
@@ -334,10 +336,10 @@ export class GachaUi {
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong> · 보상은 인벤토리에 자동 지급</p>
           <p class="battle-status"></p>
-          <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button>
+          <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
           
           
-          <p class="weed-rule">1-1단계 체력 1,000부터 시작해 단계마다 1,000씩 증가해요. 30분 안에 처치하면 다음 단계로 자동 진행하고 보상은 자동 지급돼요.</p>
+          <p class="weed-rule">1-1단계 체력 4,000부터 시작하며 단계별 체력과 보상이 달라져요. 30분 안에 처치하면 다음 단계로 자동 진행하고 보상은 자동 지급돼요.</p>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -1062,6 +1064,18 @@ export class GachaUi {
         }
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.renderWeed()
+      this.renderWallet()
+      return
+    }
+    if (action === 'battle-test-reset') {
+      if (this.busy || this.store.user?.username?.toLowerCase() !== 'test') return
+      this.busy = true
+      try {
+        await this.store.testResetBattle()
+        this.lastEnemyHp = -1
+        this.toast('1-1 단계부터 다시 시작합니다.')
+      } catch (error) { this.handleError(error) } finally { this.busy = false }
+      this.renderBattle()
       this.renderWallet()
       return
     }
@@ -2896,9 +2910,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
     if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`
     const coins = this.root.querySelector<HTMLElement>('.battle-stage-coins')
-    if (coins) coins.textContent = String(view.stage)
+    if (coins) coins.textContent = String(stageRewards(view.stage)[0])
     const fragments = this.root.querySelector<HTMLElement>('.battle-stage-fragments')
-    if (fragments) fragments.textContent = String(view.stage >= 6 ? 1 : 0)
+    if (fragments) fragments.textContent = String(stageRewards(view.stage)[1])
     const remaining = Math.max(0, Math.ceil(view.remaining / 1000))
     const timeLabel = this.root.querySelector<HTMLElement>('.battle-time-remaining')
     if (timeLabel) timeLabel.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
@@ -2915,6 +2929,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
     if (testClear) testClear.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
+    const testReset = this.root.querySelector<HTMLButtonElement>('.battle-test-reset')
+    if (testReset) testReset.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
     if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}%`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')

@@ -571,8 +571,10 @@ async function getWeed(accountId) {
 
 // Each tenth encounter is a boss. Stage numbers 1..9 represent 1-1..1-9, 10 = 1-10 boss.
 const STAGE_LIMIT_MS = 30 * 60 * 1000
-function stageHp(stage) { return stage * 1000 }
-function stageReward(stage) { return { coins: stage, fragments: stage >= 6 ? 1 : 0 } }
+const STAGE_HP = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000]
+function stageHp(stage) { return STAGE_HP[stage - 1] ?? (180000 + Math.max(0,stage - 40) * 4000) }
+const STAGE_REWARDS = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 3], [17, 3], [18, 3], [19, 3], [20, 3], [16, 4], [16, 4], [17, 4], [17, 4], [18, 4], [18, 5], [19, 5], [19, 5], [20, 5], [21, 5], [22, 6], [23, 6], [24, 6], [25, 6], [26, 6], [27, 7], [28, 7], [29, 7], [30, 7], [31, 7]]
+function stageReward(stage) { const [coins, fragments] = STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0, stage - 40), 7]; return {coins, fragments} }
 function battleRow(row) {
   if (!row) return null
   return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
@@ -1539,6 +1541,15 @@ const routes = {
       await conn.commit()
       send(res, 200, { save: await getSave(account.id), battle: await getBattle(account.id), earned: 0, now })
     } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
+  },
+  'POST /api/battle/test-reset': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
+    const now = Date.now()
+    await pool.query('UPDATE gm_battle SET stage = 1, stage_since = ?, stage_damage = 0, damage = 0, since_ms = ? WHERE account_id = ?', [now, now, account.id])
+    send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
   },
   'POST /api/battle/claim': async (req, res) => {
     const account = await currentAccount(req)

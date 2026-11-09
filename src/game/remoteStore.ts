@@ -1,3 +1,5 @@
+const BATTLE_STAGE_HPS = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000];
+const battleStageHp = (stage: number): number => BATTLE_STAGE_HPS[stage - 1] ?? (180000 + Math.max(0, stage - 40) * 4000);
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
@@ -139,7 +141,7 @@ export class RemoteGachaStore {
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle = this.battle
-    if (!battle) return { kills: 0, hp: 1000, maxHp: 1000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
+    if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
     const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0) + (this.accessory?.equipped ? ({normal:1,rare:3,epic:5,unique:10,legendary:20,transcendent:30} as Record<string,number>)[this.accessory.equippedGrade || 'normal'] ?? 0 : 0)
     const elapsed = Math.max(0, this.serverNow() - battle.since)
     let stage = battle.stage ?? 1, damage = battle.stageDamage ?? battle.damage
@@ -149,9 +151,9 @@ export class RemoteGachaStore {
       tickAt += BATTLE_TICK_MS
       if (tickAt - stageSince > 1800000) { stageSince = tickAt; damage = 0 }
       damage += power
-      if (damage >= stage * 1000) { kills++; stage++; stageSince = tickAt; damage = 0 }
+      if (damage >= battleStageHp(stage)) { kills++; stage++; stageSince = tickAt; damage = 0 }
     }
-    const maxHp = stage * 1000
+    const maxHp = battleStageHp(stage)
     return { kills, hp: Math.max(0, maxHp - damage), maxHp, nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power, stage, remaining: Math.max(0, 1800000 - (this.serverNow() - stageSince)) }
   }
 
@@ -176,6 +178,10 @@ export class RemoteGachaStore {
   lastAutoEarned = 0
   async startBattle(id: CharacterId): Promise<number> {
     return this.applyBattle(await request<BattleResult>('battle/start', { id }))
+  }
+
+  async testResetBattle(): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/test-reset', {}))
   }
 
   async testClearBattle(): Promise<number> {
