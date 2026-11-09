@@ -900,10 +900,13 @@ export class GachaUi {
       this.busy=true
       try {
         const success = await this.store.upgradeForge()
-        if (this.screen === 'forge') await this.playForgeUpgradeAnimation(success)
+        // 서버가 확정한 최신 강화 단계와 재화를 애니메이션 전에 즉시 반영합니다.
         this.renderForge()
         this.renderWallet()
         this.renderBattleStatus()
+        if (this.screen === 'forge') await this.playForgeUpgradeAnimation(success)
+        // 애니메이션 중 화면을 이동했더라도 재화 표시는 최신 상태로 유지합니다.
+        this.renderWallet()
         this.toast(success ? '✨ 강화 성공! 전투력이 올랐어요!' : '강화 실패! 강화 단계는 유지돼요.')
       } catch(e) {
         if(e instanceof RequestError && ['forge_no_fragments','not_enough_coins'].includes(e.code)) this.showForgeInsufficient()
@@ -1245,7 +1248,7 @@ export class GachaUi {
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
-    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 네 개의 치이카와 모두 같은 확률과 보상이 적용돼요.'
+    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 모든 키링에 같은 확률과 보상이 적용돼요.'
     this.updateClawPosition()
   }
 
