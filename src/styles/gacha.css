@@ -4593,3 +4593,9 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
     object-position: center bottom !important;
   }
 }
+
+/* Ver.2 lobby: keep selected character visible above autumn background. */
+#ui .gacha-screen .toon-stage {z-index:5!important;overflow:visible!important;}
+#ui .gacha-screen .toon-stage .toon-hero {z-index:8!important;visibility:visible!important;opacity:1!important;display:block!important;width:min(45cqw,220px,65cqh)!important;bottom:4%!important;left:50%!important;transform:translateX(-50%)!important;}
+#ui .gacha-screen .toon-stage .toon-hero-img {display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;height:100%!important;object-fit:contain!important;}
+@media(max-width:768px){#ui .gacha-screen .toon-stage .toon-hero{width:min(46cqw,185px,62cqh)!important;bottom:3%!important;}}
