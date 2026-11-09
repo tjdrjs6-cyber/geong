@@ -85,7 +85,7 @@ export class GachaUi {
   private clawTargetId: string | null = null
   private clawBusy = false
   private lotteryState: {remaining:number[];total:number;price:number;winners?:{nickname:string;grade:string}[]}|null=null
-  private lotteryResults: {grade:string;id:string|null;duplicate:boolean}[]=[]
+  private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
   private lotteryRevealed=0
   private lotteryTimer=0
   private lotteryBusy=false
@@ -1541,9 +1541,10 @@ export class GachaUi {
     const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=this.store.data.gems.toLocaleString('ko-KR')
     const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=this.store.user?.username?.toLowerCase()!=='test'
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
-    const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
-    if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFG'[i]}상</b>${i<6?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
-    const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${w.grade}상`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 A~F상 당첨자가 없습니다.';winners.append(empty)}}
+    const ids=['halloween_chiikawa','halloween_chiikawa','halloween_chiikawa'] as const
+    const accessoryIds=['chiikawa','hachiware','usagi','momonga','kurimanju','shisa','kani','rakko']
+    if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFGHIJKL'[i]}상</b>${i<3?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:i<11?`<img src="/assets/accessories/${accessoryIds[i-3]}_keyring.png" alt=""/><span>${accessoryIds[i-3]==='chiikawa'?'치이카와':({hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'} as Record<string,string>)[accessoryIds[i-3]]} 레어 키링</span>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
+    const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${w.grade}상`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 당첨자가 없습니다.';winners.append(empty)}}
     const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0;if(Number(input.value)>state.total)input.value=String(Math.max(1,state.total))}
     const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
     this.updateLotteryPrice()
@@ -1637,15 +1638,14 @@ export class GachaUi {
     if(!ticket||!cover||!under)return
     if(this.lotteryRevealed>=this.lotteryResults.length){this.skipLottery();return}
     const r=this.lotteryResults[this.lotteryRevealed]
-    const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
-    const idx='ABCDEFG'.indexOf(r.grade)
+    const idx='ABCDEFGHIJKL'.indexOf(r.grade)
     under.replaceChildren()
     // Hide the prize layer until the user actually finishes tearing.
     under.style.visibility='hidden'
     const title=document.createElement('strong');title.textContent=`${r.grade}상 당첨!`
     under.append(title)
-    if(r.id&&idx>=0&&idx<6){const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[ids[idx] as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터';under.append(img)}
-    const desc=document.createElement('span');desc.textContent=r.id?fullName(characterById(r.id as CharacterId)):'꽝! 다음 기회에';under.append(desc)
+    if(r.id||r.accessoryId){const img=document.createElement('img');img.src=r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품';under.append(img)}
+    const desc=document.createElement('span');desc.textContent=r.accessoryId?`레어 ${({chiikawa_keyring:'치이카와',hachiware_keyring:'하치와레',usagi_keyring:'우사기',momonga_keyring:'모몽가',kurimanju_keyring:'쿠리만쥬',shisa_keyring:'시사',kani_keyring:'카니',rakko_keyring:'랏코'} as Record<string,string>)[r.accessoryId]} 키링`:r.id?fullName(characterById(r.id as CharacterId)):'꽝! 다음 기회에';under.append(desc)
     const topReset=cover.querySelector<HTMLElement>('.lottery-ticket-top');if(topReset){topReset.style.opacity='1';topReset.style.transition='none'}
     const peelReset=cover.querySelector<HTMLElement>('.lottery-ticket-peel');if(peelReset){peelReset.style.transform='translateX(0)';peelReset.style.transition='none'}
     const peel=cover.querySelector<HTMLElement>('.lottery-ticket-peel')!
@@ -1665,19 +1665,19 @@ export class GachaUi {
     this.renderLotteryResults()
     window.clearTimeout(this.lotteryTimer)
     this.lotteryTimer=window.setTimeout(()=>{
-      if(r.id)this.showLotteryWinPopup(r,()=>this.showLotteryTicket())
+      if(r.id||r.accessoryId)this.showLotteryWinPopup(r,()=>this.showLotteryTicket())
       else this.showLotteryTicket()
     },460)
   }
-  private showLotteryWinPopup(r:{grade:string;id:string|null;duplicate:boolean;bonus?:number},next:()=>void):void{
-    if(!r.id){next();return}
+  private showLotteryWinPopup(r:{grade:string;id:string|null;accessoryId?:string|null;duplicate:boolean;bonus?:number},next:()=>void):void{
+    if(!r.id&&!r.accessoryId){next();return}
     document.getElementById('lottery-win-dialog')?.remove()
     const dialog=document.createElement('dialog');dialog.id='lottery-win-dialog';dialog.className='lottery-win-dialog'
     const card=document.createElement('div');card.className='lottery-win-card'
     const heading=document.createElement('h2');heading.textContent=`🎉 ${r.grade}상 당첨!`
-    const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터'
-    const name=document.createElement('strong');name.textContent=fullName(characterById(r.id as CharacterId))
-    const message=document.createElement('p');message.textContent=r.duplicate?'중복 캐릭터! 보관함에 추가되었어요.':`새 친구 도감 등록! +${r.bonus??0}코인 획득!`
+    const img=document.createElement('img');img.src=r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품'
+    const name=document.createElement('strong');name.textContent=r.accessoryId?`레어 ${({'chiikawa_keyring':'치이카와','hachiware_keyring':'하치와레','usagi_keyring':'우사기','momonga_keyring':'모몽가','kurimanju_keyring':'쿠리만쥬','shisa_keyring':'시사','kani_keyring':'카니','rakko_keyring':'랏코'} as Record<string,string>)[r.accessoryId]} 키링`:fullName(characterById(r.id as CharacterId))
+    const message=document.createElement('p');message.textContent=r.accessoryId?'레어 무기 액세서리 1개 획득!':r.duplicate?'중복 캐릭터! 보관함에 추가되었어요.':`새 친구 도감 등록! +${r.bonus??0}코인 획득!`
     const button=document.createElement('button');button.textContent='다음 복권 확인';button.onclick=()=>dialog.close()
     card.append(heading,img,name,message,button);dialog.append(card);document.body.append(dialog)
     dialog.addEventListener('close',()=>{dialog.remove();next()},{once:true})
@@ -1690,12 +1690,12 @@ export class GachaUi {
     dialog.id='lottery-summary-dialog';dialog.className='lottery-win-dialog'
     const card=document.createElement('div');card.className='lottery-win-card'
     const heading=document.createElement('h2');heading.textContent='<img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권 뽑기 결과'
-    const description=document.createElement('p');description.textContent=`총 ${results.length}장 · 당첨 ${results.filter(r=>r.id).length}장 · 꽝 ${results.filter(r=>!r.id).length}장`
+    const description=document.createElement('p');description.textContent=`총 ${results.length}장 · 당첨 ${results.filter(r=>r.id||r.accessoryId).length}장 · 꽝 ${results.filter(r=>!r.id&&!r.accessoryId).length}장`
     const list=document.createElement('div');list.style.cssText='max-height:min(45vh,340px);overflow-y:auto;width:100%;display:grid;gap:8px;text-align:left'
     results.forEach((r,i)=>{
       const line=document.createElement('div');line.style.cssText='display:flex;align-items:center;gap:10px;padding:8px;background:#fff5e8;border-radius:10px;color:#352b29'
-      if(r.id){const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터';img.style.cssText='width:42px;height:42px;object-fit:contain;flex-shrink:0';line.append(img)}
-      const label=document.createElement('span');label.textContent=`${i+1}번째 · ${r.grade}상 · ${r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}`;line.append(label);list.append(line)
+      if(r.id||r.accessoryId){const img=document.createElement('img');img.src=r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품';img.style.cssText='width:42px;height:42px;object-fit:contain;flex-shrink:0';line.append(img)}
+      const label=document.createElement('span');label.textContent=`${i+1}번째 · ${r.grade}상 · ${r.accessoryId?`레어 ${r.accessoryId.replace('_keyring','')} 키링`:r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}`;line.append(label);list.append(line)
     })
     const close=document.createElement('button');close.textContent='확인';close.onclick=()=>dialog.close()
     card.append(heading,description,list,close);dialog.append(card);document.body.append(dialog)
@@ -1715,7 +1715,7 @@ export class GachaUi {
   }
   private renderLotteryResults():void{
     const el=this.root.querySelector<HTMLElement>('.lottery-results');if(!el)return
-    el.innerHTML=this.lotteryResults.slice(0,this.lotteryRevealed).map((r,i)=>`<div class="lottery-result"><span>${i+1}번째</span><b>${r.grade}상</b><span>${r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}</span></div>`).reverse().join('')
+    el.innerHTML=this.lotteryResults.slice(0,this.lotteryRevealed).map((r,i)=>`<div class="lottery-result"><span>${i+1}번째</span><b>${r.grade}상</b><span>${r.accessoryId?`레어 ${r.accessoryId.replace('_keyring','')} 키링`:r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}</span></div>`).reverse().join('')
     el.scrollTop=0
   }
   private async refreshRpsBadge():Promise<void>{

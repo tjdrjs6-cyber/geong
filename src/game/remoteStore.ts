@@ -206,6 +206,7 @@ export class RemoteGachaStore {
     const result=await request<{forge:ForgeState;save:GachaSave;success:boolean}>('forge/upgrade',{})
     this.forge=result.forge
     this.data=result.save
+    this.accessory=result.accessory
     return result.success
   }
   async diamondRecharge(): Promise<{ diamonds: number; nextAt: number | null; now: number; max: number }> {
@@ -288,9 +289,10 @@ export class RemoteGachaStore {
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
   async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
-  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;duplicate:boolean;bonus:number}[]}>{
-    const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;duplicate:boolean}[];save:GachaSave}>('lottery/buy',{count})
+  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
+    const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
     this.data=result.save
+    this.accessory=result.accessory
     return result
   }
   private async rpsRequest(path:string,body:object):Promise<RpsState> {
@@ -322,6 +324,7 @@ export class RemoteGachaStore {
   async rpsClaim():Promise<RpsState> {
     const result=await request<RpsState>('rps/claim',{})
     if(result.save)this.data=result.save
+    this.accessory=result.accessory
     return result
   }
   async expeditionBadge():Promise<{day:string;deployed:boolean}> {return request('expedition/badge')}

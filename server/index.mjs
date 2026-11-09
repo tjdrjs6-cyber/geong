@@ -39,7 +39,13 @@ async function prepareDatabase() {
     id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`)
-  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,2,2,2,91])])
+  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
+  // Upgrade the shared pool once when the prize schedule changes from A-G to A-L.
+  const [lotteryPoolRows] = await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
+  const existingLotteryPool = lotteryPoolRows.length ? (typeof lotteryPoolRows[0].remaining === 'string' ? JSON.parse(lotteryPoolRows[0].remaining) : lotteryPoolRows[0].remaining) : null
+  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 12) {
+    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
+  }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_lottery_history (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL,
     grade CHAR(1) NOT NULL, character_id VARCHAR(40), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -453,7 +459,10 @@ async function rechargeDiamonds(accountId) {
 async function getSave(accountId) {
   await rechargeDiamonds(accountId)
   const [rows] = await pool.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count FROM gm_saves WHERE account_id = ?', [accountId])
-  return rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+  const save = rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+  const [testRows] = await pool.query('SELECT username FROM gm_accounts WHERE id=?',[accountId])
+  if(process.env.TEST_SERVER==='true' && String(testRows[0]?.username).toLowerCase()==='test') save.owned=[...CHARACTER_IDS]
+  return save
 }
 
 const parseJson = value => (typeof value === 'string' ? JSON.parse(value) : value)
@@ -887,8 +896,9 @@ async function wildWeedState(accountId, db=pool) {
   const weeds=active.map(w=>({id:Number(w.id),x:Number(w.pos_x),y:Number(w.pos_y),type:w.weed_type==='golden'?'golden':'normal'}))
   return {visible:weeds.length>0,weeds,x:weeds[0]?.x??50,y:weeds[0]?.y??70,type:weeds[0]?.type??'normal',count:Number(base.inventory),goldenCount:Number(base.golden_inventory),slot,nextAt:(slot+1)*WILD_WEED_HOUR}
 }
-const LOTTERY_IDS = ['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi',null]
-const LOTTERY_GRADES = ['A','B','C','D','E','F','G']
+const LOTTERY_IDS = ['halloween_chiikawa','halloween_chiikawa','halloween_chiikawa',null,null,null,null,null,null,null,null,null]
+const LOTTERY_ACCESSORIES = [null,null,null,'chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring',null]
+const LOTTERY_GRADES = 'ABCDEFGHIJKL'.split('')
 const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:100})
 
 const routes = {
@@ -896,7 +906,7 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
-    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade<>'G' ORDER BY h.id DESC LIMIT 12`)
+    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade<>'L' ORDER BY h.id DESC LIMIT 12`)
     send(res,200,{...lotteryView(parseJson(rows[0].remaining)),winners})
   },
   'POST /api/lottery/reset': async (req,res) => {
@@ -907,11 +917,11 @@ const routes = {
     try{
       await conn.beginTransaction()
       await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
-      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,2,2,2,91])])
+      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
       await conn.query('DELETE FROM gm_lottery_history')
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
-    send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,91]),winners:[]})
+    send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,2,2,2,2,2,81]),winners:[]})
   },
   'POST /api/lottery/buy': async (req,res) => {
     const account=await currentAccount(req)
@@ -940,11 +950,13 @@ const routes = {
             while(ticket>=remaining[index]){ticket-=remaining[index];index++}
             remaining[index]--
             const id=LOTTERY_IDS[index]
+            const accessoryId=LOTTERY_ACCESSORIES[index]
             const duplicate=!!id&&owned.includes(id)
             const bonus=id&&!duplicate?newEntryBonus(id):0
             if(id){if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
+            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare'])}
             collectionBonus+=bonus
-            results.push({grade:LOTTERY_GRADES[index],id,duplicate,bonus})
+            results.push({grade:LOTTERY_GRADES[index],id,accessoryId,accessoryGrade:accessoryId?'rare':null,duplicate,bonus})
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
           await conn.query('UPDATE gm_saves SET gems=gems-?+?,owned=? WHERE account_id=?',[count*100,collectionBonus,JSON.stringify(owned),account.id])
@@ -956,7 +968,7 @@ const routes = {
       if(outcome.error)await conn.rollback();else await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     if(outcome.error)return send(res,400,outcome)
-    send(res,200,{...outcome,save:await getSave(account.id)})
+    send(res,200,{...outcome,save:await getSave(account.id),accessory:await getAccessory(account.id)})
   },
   'POST /api/wild-weed/state': async (req,res) => {
     const account=await currentAccount(req)
