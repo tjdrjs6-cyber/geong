@@ -350,13 +350,12 @@ export class GachaUi {
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>제일복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
         <div class="rps-scene lottery-scene">
-          <h2>🎟️ 제일복권</h2><p class="lottery-status">남은 복권 확인 중...</p>
+          <div class="lottery-heading"><h2>🎟️ 제일복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
           <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 제일복권 초기화 (test 전용)</button>
-          <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover">🎫<span>오른쪽으로 밀어서 복권 뜯기 →</span></div></div>
+          <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 아래를 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
           <div class="lottery-purchase"><label>구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1"/></label><button data-action="lottery-all">남은 장수 선택</button><p class="lottery-price">100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
-          <img class="rps-chiikawa lottery-momonga" src="/rps_momonga.png" alt="모몽가"/>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -1363,6 +1362,7 @@ export class GachaUi {
     const state=this.lotteryState;if(!state)return
     const status=this.root.querySelector<HTMLElement>('.lottery-status')
     if(status)status.textContent=`전체 100장 · 남은 복권 ${state.total}장`
+    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=this.store.data.gems.toLocaleString('ko-KR')
     const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=this.store.user?.username?.toLowerCase()!=='test'
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
     const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
@@ -1424,22 +1424,43 @@ export class GachaUi {
     under.append(title)
     if(r.id&&idx>=0&&idx<6){const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[ids[idx] as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터';under.append(img)}
     const desc=document.createElement('span');desc.textContent=r.id?fullName(characterById(r.id as CharacterId)):'꽝! 다음 기회에';under.append(desc)
-    cover.style.transform='translateX(0)';cover.style.transition='none'
-    cover.onpointerdown=(event:PointerEvent)=>{this.lotteryPointerStart=event.clientX;cover.setPointerCapture(event.pointerId)}
-    cover.onpointerup=(event:PointerEvent)=>{if(event.clientX-this.lotteryPointerStart>=65)this.revealLottery();else{cover.style.transition='transform .2s';cover.style.transform='translateX(0)'}}
-    cover.onpointermove=(event:PointerEvent)=>{if(cover.hasPointerCapture(event.pointerId)){const dx=Math.max(0,event.clientX-this.lotteryPointerStart);cover.style.transform=`translateX(${Math.min(dx,240)}px)`}}
+    const topReset=cover.querySelector<HTMLElement>('.lottery-ticket-top');if(topReset){topReset.style.opacity='1';topReset.style.transition='none'}
+    const peelReset=cover.querySelector<HTMLElement>('.lottery-ticket-peel');if(peelReset){peelReset.style.transform='translateX(0)';peelReset.style.transition='none'}
+    const peel=cover.querySelector<HTMLElement>('.lottery-ticket-peel')!
+    peel.onpointerdown=(event:PointerEvent)=>{this.lotteryPointerStart=event.clientX;peel.setPointerCapture(event.pointerId)}
+    peel.onpointerup=(event:PointerEvent)=>{if(event.clientX-this.lotteryPointerStart>=65)this.revealLottery();else{peel.style.transition='transform .2s';peel.style.transform='translateX(0)'}}
+    peel.onpointermove=(event:PointerEvent)=>{if(peel.hasPointerCapture(event.pointerId)){const dx=Math.max(0,event.clientX-this.lotteryPointerStart);peel.style.transform=`translateX(${Math.min(dx,240)}px)`}}
   }
   private revealLottery():void{
     if(this.lotteryRevealed>=this.lotteryResults.length)return
-    const cover=this.root.querySelector<HTMLElement>('.lottery-ticket-cover')
-    if(cover){cover.style.transition='transform .35s ease';cover.style.transform='translateX(110%)';cover.onpointerdown=null;cover.onpointerup=null;cover.onpointermove=null}
+    const r=this.lotteryResults[this.lotteryRevealed]
+    const top=this.root.querySelector<HTMLElement>('.lottery-ticket-top');if(top){top.style.transition='opacity .38s ease';top.style.opacity='0'}
+    const peel=this.root.querySelector<HTMLElement>('.lottery-ticket-peel')
+    if(peel){peel.style.transition='transform .38s ease';peel.style.transform='translateX(115%)';peel.onpointerdown=null;peel.onpointerup=null;peel.onpointermove=null}
     this.lotteryRevealed++
     this.renderLotteryResults()
     window.clearTimeout(this.lotteryTimer)
-    this.lotteryTimer=window.setTimeout(()=>this.showLotteryTicket(),1200)
+    this.lotteryTimer=window.setTimeout(()=>{
+      if(r.id)this.showLotteryWinPopup(r,()=>this.showLotteryTicket())
+      else this.showLotteryTicket()
+    },460)
+  }
+  private showLotteryWinPopup(r:{grade:string;id:string|null;duplicate:boolean;bonus?:number},next:()=>void):void{
+    if(!r.id){next();return}
+    document.getElementById('lottery-win-dialog')?.remove()
+    const dialog=document.createElement('dialog');dialog.id='lottery-win-dialog';dialog.className='lottery-win-dialog'
+    const card=document.createElement('div');card.className='lottery-win-card'
+    const heading=document.createElement('h2');heading.textContent=`🎉 ${r.grade}상 당첨!`
+    const img=document.createElement('img');img.src=CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 캐릭터'
+    const name=document.createElement('strong');name.textContent=fullName(characterById(r.id as CharacterId))
+    const message=document.createElement('p');message.textContent=r.duplicate?'중복 캐릭터! 보관함에 추가되었어요.':`새 친구 도감 등록! +${r.bonus??0}코인 획득!`
+    const button=document.createElement('button');button.textContent='다음 복권 확인';button.onclick=()=>dialog.close()
+    card.append(heading,img,name,message,button);dialog.append(card);document.body.append(dialog)
+    dialog.addEventListener('close',()=>{dialog.remove();next()},{once:true})
+    dialog.showModal()
   }
   private skipLottery():void{
-    window.clearTimeout(this.lotteryTimer);this.lotteryRevealed=this.lotteryResults.length
+    window.clearTimeout(this.lotteryTimer);document.getElementById('lottery-win-dialog')?.remove();this.lotteryRevealed=this.lotteryResults.length
     this.renderLotteryResults()
     this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
     this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
@@ -1449,8 +1470,8 @@ export class GachaUi {
   }
   private renderLotteryResults():void{
     const el=this.root.querySelector<HTMLElement>('.lottery-results');if(!el)return
-    el.innerHTML=this.lotteryResults.slice(0,this.lotteryRevealed).map((r,i)=>`<div class="lottery-result"><span>${i+1}번째</span><b>${r.grade}상</b><span>${r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}</span></div>`).join('')
-    el.scrollTop=el.scrollHeight
+    el.innerHTML=this.lotteryResults.slice(0,this.lotteryRevealed).map((r,i)=>`<div class="lottery-result"><span>${i+1}번째</span><b>${r.grade}상</b><span>${r.id?fullName(characterById(r.id as CharacterId)):'꽝'}${r.duplicate?' (중복)':''}</span></div>`).reverse().join('')
+    el.scrollTop=0
   }
   private async refreshRpsBadge():Promise<void>{
     const status=this.root.querySelector<HTMLElement>('.rps-lobby-status')

@@ -6,7 +6,7 @@ import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual
 import { promisify } from 'node:util'
 import mysql from 'mysql2/promise'
 import { houseCoinFor, houseCoinSlot, HOUSE_COIN_MS, BEETLE_ID, weedCoinMultiplier, WEED_MAX } from './game.mjs'
-import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots, weedFieldEarnedBetweenSlots, WEED_HOUR_MS, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
+import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots, weedFieldEarnedBetweenSlots, WEED_HOUR_MS, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, newEntryBonus, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
 
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
@@ -898,17 +898,21 @@ const routes = {
           const [dupeRows]=await conn.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[account.id])
           const dupes=dupeRows.length?parseJson(dupeRows[0].items):{}
           const results=[]
+          let collectionBonus=0
           for(let i=0;i<count;i++){
             const total=remaining.reduce((a,b)=>a+b,0)
             let ticket=randomInt(total),index=0
             while(ticket>=remaining[index]){ticket-=remaining[index];index++}
             remaining[index]--
             const id=LOTTERY_IDS[index]
-            if(id){if(owned.includes(id))dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
-            results.push({grade:LOTTERY_GRADES[index],id,duplicate:!!id&&dupes[id]>0})
+            const duplicate=!!id&&owned.includes(id)
+            const bonus=id&&!duplicate?newEntryBonus(id):0
+            if(id){if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
+            collectionBonus+=bonus
+            results.push({grade:LOTTERY_GRADES[index],id,duplicate,bonus})
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
-          await conn.query('UPDATE gm_saves SET gems=gems-?,owned=? WHERE account_id=?',[count*100,JSON.stringify(owned),account.id])
+          await conn.query('UPDATE gm_saves SET gems=gems-?+?,owned=? WHERE account_id=?',[count*100,collectionBonus,JSON.stringify(owned),account.id])
           await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
           for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
           outcome={...lotteryView(remaining),results}
