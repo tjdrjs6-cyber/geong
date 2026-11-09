@@ -580,10 +580,10 @@ async function suggestions(account) {
 const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1]
 const FORGE_COSTS = Array.from({length:25},(_,i)=>i<20?{coins:(i+1)*5,fragments:i+1}:{coins:[150,200,300,400,500][i-20],fragments:[25,30,40,50,60][i-20]})
-const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885' || account.nickname === '겅이'
+const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885'
 const forgeBonus = level => level <= 14 ? level + 1 : level === 19 ? 40 : level === 20 ? 50 : level >= 21 ? Math.min(100,50+(level-20)*10) : 20+(level-15)*5
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
-const ACCESSORY_GRADES = {rare:{cost:2,fragments:20,power:3},epic:{cost:5,fragments:50,power:5},unique:{cost:10,fragments:100,power:10},legendary:{cost:20,fragments:200,power:20},transcendent:{cost:40,fragments:400,power:30}}
+const ACCESSORY_GRADES = {rare:{cost:3,fragments:30,power:3},epic:{cost:3,fragments:50,power:5},unique:{cost:3,fragments:150,power:10},legendary:{cost:3,fragments:300,power:20},transcendent:{cost:3,fragments:500,power:30}}
 const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.power || 1) : 0
 async function getAccessory(accountId, conn=pool) {
   const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=?',[accountId])
@@ -1168,16 +1168,28 @@ const routes = {
       const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
       const [saves]=await conn.query('SELECT fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
       const isTest=process.env.TEST_SERVER==='true' && account.username.toLowerCase()==='test'
-      const [gradeRows]=await conn.query('SELECT grade,quantity FROM gm_accessory_grades WHERE account_id=? AND accessory_id=?',[account.id,id])
-      const previous={rare:null,epic:'rare',unique:'epic',legendary:'unique',transcendent:'legendary'}[grade]
-      if(previous && !gradeRows.some(r=>r.grade===previous&&Number(r.quantity)>0))return {error:'previous_grade_required'}
-      if(gradeRows.some(r=>r.grade===grade&&Number(r.quantity)>0))return {error:'already_owned'}
-      if(!isTest && Number(rows[0][id])<recipe.cost)return {error:'not_enough_keyrings'}
+      // Each synthesis consumes three copies of the immediately preceding grade.
+      // No prerequisite ownership or already-owned restriction: only available materials matter.
+      const previous={rare:'normal',epic:'rare',unique:'epic',legendary:'unique',transcendent:'legendary'}[grade]
+      const required=recipe.cost
+      if(previous==='normal'){
+        if(!isTest && Number(rows[0][id])<required)return {error:'not_enough_keyrings'}
+      }else{
+        const [previousRows]=await conn.query('SELECT quantity FROM gm_accessory_grades WHERE account_id=? AND accessory_id=? AND grade=? FOR UPDATE',[account.id,id,previous])
+        if(!isTest && Number(previousRows[0]?.quantity||0)<required)return {error:'not_enough_keyrings'}
+      }
       if(Number(saves[0]?.fragments||0)<recipe.fragments)return {error:'not_enough_fragments'}
-      if(!isTest)await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[recipe.cost,account.id])
+      if(!isTest){
+        if(previous==='normal')await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[required,account.id])
+        else await conn.query('UPDATE gm_accessory_grades SET quantity=quantity-? WHERE account_id=? AND accessory_id=? AND grade=?',[required,account.id,id,previous])
+        const [equippedRows]=await conn.query('SELECT equipped,equipped_grade FROM gm_weapon_accessories WHERE account_id=?',[account.id])
+        if(equippedRows[0]?.equipped===id && (equippedRows[0].equipped_grade||'normal')===previous){
+          const remaining=previous==='normal'?Number(rows[0][id])-required:(await conn.query('SELECT quantity FROM gm_accessory_grades WHERE account_id=? AND accessory_id=? AND grade=?',[account.id,id,previous]))[0][0]?.quantity||0
+          if(Number(remaining)<=0)await conn.query("UPDATE gm_weapon_accessories SET equipped='',equipped_grade='normal' WHERE account_id=?",[account.id])
+        }
+      }
       await conn.query('UPDATE gm_saves SET fragments=fragments-? WHERE account_id=?',[recipe.fragments,account.id])
       await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,id,grade])
-      if(!isTest && rows[0].equipped===id && (rows[0].equipped_grade||'normal')==='normal' && Number(rows[0][id])===recipe.cost)await conn.query("UPDATE gm_weapon_accessories SET equipped='',equipped_grade='normal' WHERE account_id=?",[account.id])
       return {success:true}
     })
     if(result.error)return send(res,409,result)

@@ -4946,3 +4946,16 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 }
 #ui .forge-aura.aura-25>img.weapon-keyring{animation:none!important}
 #ui .forge-power-breakdown{display:block!important;line-height:1.55!important;white-space:normal!important}
+
+/* 2026-11-10: yellow sparkles over weapon artwork, not the accessory or surrounding UI. */
+#ui .forge-current .forge-aura.aura-25::after {
+  content:'✦'!important;
+  top:44%!important;left:43%!important;right:auto!important;bottom:auto!important;
+  color:#ffe15b!important;font-size:15px!important;line-height:1!important;
+  text-shadow:-17px -10px 0 #ffe15b,18px 7px 0 #ffed86,0 0 5px #ffd000!important;
+  animation:forge-aura-sparkle 1.45s ease-in-out infinite!important;
+  pointer-events:none!important;
+}
+#ui .forge-current .forge-aura.aura-25>img.weapon-keyring{animation:none!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
+/* No unrelated sparkles on the profile badge or battle layout. */
+#ui .user-weapon-badge .forge-aura.aura-25::after{color:#ffe15b!important;text-shadow:0 0 5px #ffd000!important}
