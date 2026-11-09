@@ -4438,3 +4438,14 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .alchemy-confirm-actions{display:flex!important;justify-content:center!important;gap:12px!important;width:100%!important}
 .alchemy-confirm-actions button{flex:1!important;max-width:135px!important}
 #ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{bottom:12%!important}
+
+/* test.056: compact, centered weapon accessory reward popup */
+#ui dialog .accessory-win-panel,dialog .accessory-win-panel{width:min(92vw,390px)!important;max-width:100%!important;box-sizing:border-box!important;padding:20px 16px!important;text-align:center!important}
+#ui dialog .accessory-win-panel .accessory-item,dialog .accessory-win-panel .accessory-item{display:grid!important;grid-template-columns:120px minmax(0,1fr)!important;gap:10px!important;align-items:center!important;justify-content:center!important;padding:12px 10px!important;margin:14px 0 12px!important;box-sizing:border-box!important;width:100%!important}
+#ui dialog .accessory-win-panel .accessory-item>img,dialog .accessory-win-panel .accessory-item>img{width:120px!important;height:152px!important;max-width:100%!important;object-fit:contain!important;object-position:center!important}
+#ui dialog .accessory-win-panel .accessory-item>div,dialog .accessory-win-panel .accessory-item>div{min-width:0!important;align-items:flex-start!important;text-align:left!important;gap:8px!important;font-size:14px!important}
+#ui dialog .accessory-win-panel .accessory-item b,dialog .accessory-win-panel .accessory-item b{font-size:16px!important}
+#ui dialog .accessory-win-panel .myroom-equipment-done,dialog .accessory-win-panel .myroom-equipment-done{margin:0 auto!important}
+@media(max-width:360px){dialog .accessory-win-panel .accessory-item{grid-template-columns:95px minmax(0,1fr)!important}dialog .accessory-win-panel .accessory-item>img{width:95px!important;height:130px!important}}
+/* test.056: battle charm a little higher and farther right */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:5%!important;bottom:16%!important}

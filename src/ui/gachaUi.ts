@@ -1136,8 +1136,8 @@ export class GachaUi {
       const raw = window.localStorage.getItem(key)
       if (raw) {
         const saved: unknown = JSON.parse(raw)
-        if (Array.isArray(saved) && saved.length === 4 && saved.every((t: any) =>
-          ['chiikawa_1','chiikawa_2','chiikawa_3','chiikawa_4'].includes(t?.id) &&
+        if (Array.isArray(saved) && saved.length === 5 && saved.every((t: any) =>
+          ['chiikawa_1','chiikawa_2','chiikawa_3','chiikawa_4','chiikawa_5'].includes(t?.id) &&
           typeof t.x === 'number' && Number.isFinite(t.x) && t.x >= 0 && t.x <= 100 &&
           typeof t.y === 'number' && Number.isFinite(t.y) && t.y >= 0 && t.y <= 100)) {
           this.clawToys = saved as typeof this.clawToys
@@ -1165,6 +1165,7 @@ export class GachaUi {
       { id: 'chiikawa_2', name: '치이카와' },
       { id: 'chiikawa_3', name: '치이카와' },
       { id: 'chiikawa_4', name: '치이카와' },
+      { id: 'chiikawa_5', name: '치이카와' },
     ]
     if (!this.clawToys.length) this.clawToys = types.map(type => ({ ...type, x: 0, y: 0 }))
     for (const toy of this.clawToys) {
@@ -1469,7 +1470,7 @@ export class GachaUi {
         this.toast(earnedText)
         const popup=document.createElement('dialog')
         popup.className='myroom-equipment-dialog'
-        popup.innerHTML=`<div class="myroom-equipment-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
+        popup.innerHTML=`<div class="myroom-equipment-panel accessory-win-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
         document.body.appendChild(popup)
         popup.querySelector('button')?.addEventListener('click',()=>popup.close())
         popup.addEventListener('close',()=>popup.remove(),{once:true})
