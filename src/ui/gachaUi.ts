@@ -1946,7 +1946,7 @@ export class GachaUi {
         const percent = (user.privacy?.char ?? true) || user.me ? Math.round(user.owned.length / CHARACTERS.length * 100) : 0
         return `<button class="user-row${user.me ? ' is-me' : ''}" role="listitem" data-action="user-view" data-nickname="${escapeHtml(user.nickname)}">
           <span class="user-avatar">${(user.featured ?? user.owned[0]) ? `<img src="${CHARACTER_IMAGE_URLS[(user.featured ?? user.owned[0])!]}" alt="" />` : '?'}</span>
-          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><span class="forge-aura ${weaponAuraClass(user.weaponLevel??0)}"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/></span><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
+          <span class="user-main"><span class="user-name-line"><b>${escapeHtml(user.nickname)}${user.me ? ' <em>나</em>' : ''}</b>${user.weapon && ['pink','blue','yellow'].includes(user.weapon) ? `<span class="user-weapon-badge"><span class="forge-aura accessory-weapon ${weaponAuraClass(user.weaponLevel??0)}"><img src="/assets/forge/badge_${user.weapon}.png" alt="강화 무기"/>${user.me&&accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}</span><b>+${user.weaponLevel??0}</b></span>` : ''}</span><i class="user-bar"><i style="width:${percent}%"></i></i></span>
           <span class="user-count">${(user.privacy?.char ?? true) || user.me ? `${user.owned.length} / ${CHARACTERS.length}` : '🔒 비공개'}<small>${(user.privacy?.deco ?? true) || user.me ? `데코 ${user.decos?.length ?? 0} / ${DECOS.length}` : '데코 🔒 비공개'}</small></span>
         </button>`
       }).join('')}</div>`
@@ -2700,9 +2700,9 @@ export class GachaUi {
       // Restore the existing weapon attack animation at its original arena position.
       if (fighter && this.store.forge && ['pink','blue','yellow'].includes(this.store.forge.weapon)) {
         const weapon = document.createElement('div')
-        weapon.className = `battle-weapon-strike forge-aura ${weaponAuraClass(this.store.forge.level)}`
+        weapon.className = `battle-weapon-strike forge-aura accessory-weapon ${weaponAuraClass(this.store.forge.level)}`
         weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
-        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/><b>+${this.store.forge.level}</b>`
+        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/>${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}<b>+${this.store.forge.level}</b>`
         battleField.appendChild(weapon)
       }
     }

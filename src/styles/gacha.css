@@ -4252,3 +4252,8 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .myroom-equipment-panel .accessory-card .accessory-equip-button{width:100%;margin-top:auto;padding:7px 2px;font-size:10px;flex:none}
 .myroom-equipment-panel .accessory-card.is-equipped{border:2px solid #e59bbd;background:#fff1f8}
 @media(max-width:380px){.myroom-equipment-panel .accessory-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* test.044: keyring attachment aligned with the weapon handle; visible in battle and badges */
+.accessory-weapon .weapon-keyring{right:1%!important;bottom:1%!important;width:25%!important;height:32%!important;object-fit:contain!important;transform:none!important;animation:none!important;z-index:5!important;filter:drop-shadow(0 1px 1px #563a2855)!important}
+.battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{position:absolute!important;right:1%!important;bottom:1%!important;width:25%!important;height:32%!important;max-width:none!important;transform:none!important;object-fit:contain!important;z-index:6!important}
+.user-weapon-badge .accessory-weapon>img.weapon-keyring{position:absolute!important;right:0!important;bottom:0!important;width:28%!important;height:42%!important;transform:none!important;z-index:5!important}
