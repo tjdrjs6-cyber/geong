@@ -3083,7 +3083,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       if (fighter) {
         const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0) + (this.store.battle?.thirdId ? battlePower(this.store.battle.thirdId) : 0)
         const weaponPower = this.store.forge?.bonus ?? 0
-        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>무기 전투력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
+        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>장비 공격력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
       } else {
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }
