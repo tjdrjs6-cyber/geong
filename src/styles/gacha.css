@@ -4752,3 +4752,77 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .battle-screen .battle-field { overflow: visible !important; z-index: 31 !important; }
 #ui .battle-screen .battle-stage-heading { top: -60px !important; }
 #ui .battle-screen .battle-stage-actions { top: -11px !important; }
+
+/* 2026-11-09: non-overlapping battle header, full unzoomed supplied landscape */
+#ui .battle-screen {position:relative!important; isolation:isolate!important; background:#a9d6fb!important;}
+#ui .battle-screen::before {
+  content:""!important;position:absolute!important;inset:0!important;
+  background-image:url('/assets/battle_meadow_20261109.png')!important;
+  background-repeat:no-repeat!important;background-position:center center!important;
+  background-size:100% 100%!important;pointer-events:none!important;z-index:0!important;
+}
+#ui .battle-screen .weed-header {
+  position:relative!important;z-index:35!important;display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(145px,220px)!important;
+  grid-template-rows:auto auto!important;align-items:start!important;
+  column-gap:10px!important;row-gap:8px!important;
+  width:100%!important;min-height:0!important;height:auto!important;
+  padding:10px 12px 4px!important;box-sizing:border-box!important;
+  background:transparent!important;overflow:visible!important;
+}
+#ui .battle-screen .weed-header .weed-back {grid-column:1!important;grid-row:1!important;justify-self:start!important;align-self:start!important;position:static!important;transform:none!important;}
+#ui .battle-screen .weed-header .battle-stage-rewards {
+  grid-column:2!important;grid-row:1!important;justify-self:end!important;
+  position:static!important;transform:none!important;display:flex!important;
+  flex-direction:column!important;gap:5px!important;align-items:center!important;
+  width:100%!important;max-width:220px!important;min-width:0!important;
+  padding:9px 12px!important;box-sizing:border-box!important;
+  border-radius:16px!important;z-index:auto!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-caption {
+  display:block!important;line-height:1.3!important;font-size:12px!important;
+  font-weight:900!important;text-align:center!important;white-space:normal!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-combined {
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  gap:5px!important;width:100%!important;flex-wrap:nowrap!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  gap:5px!important;width:100%!important;white-space:nowrap!important;
+  font-size:14px!important;line-height:1.3!important;
+}
+#ui .battle-screen .battle-stage-rewards .battle-reward-piece small {font-size:12px!important;}
+#ui .battle-screen .battle-stage-rewards .battle-reward-icon {width:19px!important;height:19px!important;}
+#ui .battle-screen .battle-stage-center {
+  grid-column:1 / -1!important;grid-row:2!important;position:relative!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:7px!important;min-height:0!important;
+  z-index:2!important;pointer-events:none!important;
+}
+#ui .battle-screen .battle-stage-center .battle-stage-heading {
+  position:static!important;top:auto!important;left:auto!important;
+  transform:none!important;margin:0!important;padding:7px 16px!important;
+  width:max-content!important;max-width:95%!important;box-sizing:border-box!important;
+  font-size:clamp(20px,5vw,30px)!important;line-height:1.2!important;
+  border-radius:14px!important;pointer-events:none!important;
+}
+#ui .battle-screen .battle-stage-center .battle-stage-actions {
+  position:static!important;top:auto!important;left:auto!important;
+  transform:none!important;display:flex!important;justify-content:center!important;
+  width:100%!important;max-width:100%!important;pointer-events:none!important;
+}
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]) {
+  display:block!important;position:static!important;margin:0!important;
+  padding:9px 16px!important;max-width:100%!important;
+  white-space:normal!important;text-align:center!important;
+  font-size:clamp(13px,3.5vw,17px)!important;pointer-events:auto!important;
+}
+#ui .battle-screen .battle-field {
+  background:transparent!important;background-image:none!important;
+  position:relative!important;z-index:1!important;overflow:hidden!important;
+}
+@media(max-width:390px){
+ #ui .battle-screen .weed-header{grid-template-columns:minmax(0,1fr) minmax(140px,190px)!important;padding:8px!important;}
+ #ui .battle-screen .weed-header .battle-stage-rewards{padding:7px 8px!important;}
+}
