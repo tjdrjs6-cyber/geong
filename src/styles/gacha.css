@@ -4460,3 +4460,14 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .user-profile-tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
 #ui .user-profile-tabs .auth-tab{min-width:0!important;white-space:normal!important;font-size:12px!important;padding:8px 4px!important}
 #ui .user-grid.accessory-card-grid .accessory-card-image img{object-fit:contain!important;max-height:100%!important}
+
+/* test.059: moving right means reducing right, not increasing it. */
+#ui .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:-13%!important;bottom:16%!important}
+/* Same card and full-height keyring art as the owner's accessory encyclopedia. */
+#ui .user-grid.profile-accessory-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;align-content:start!important;overflow-x:hidden!important}
+#ui .user-grid.profile-accessory-grid .friend-card.accessory-card{min-width:0!important;box-sizing:border-box!important;overflow:visible!important;text-align:center!important}
+#ui .user-grid.profile-accessory-grid .friend-avatar{width:100%!important;height:clamp(100px,18vw,145px)!important;min-height:100px!important;max-height:none!important;aspect-ratio:auto!important;overflow:visible!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:4px!important;box-sizing:border-box!important}
+#ui .user-grid.profile-accessory-grid .friend-avatar img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;position:static!important;transform:none!important;clip-path:none!important}
+@media(max-width:380px){#ui .user-grid.profile-accessory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon{overflow:hidden!important}
+#ui .market-options [data-action="alchemy"] .chiikawa-tab-icon img{position:static!important;display:block!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;left:auto!important;top:auto!important}
