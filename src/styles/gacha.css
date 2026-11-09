@@ -4515,3 +4515,6 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
  #ui .gacha-screen .toon-stage .toon-hero-name{left:calc(50% - 20px)!important;bottom:calc(8% + 10px)!important;}
  #ui .gacha-screen .toon-stage .toon-machine{right:calc(8% + 15px)!important;bottom:calc(30% + 16px)!important;}
 }
+
+/* test.073: hide the lobby representative character's name badge only. */
+#ui .gacha-screen .toon-stage .toon-hero-name{display:none!important;}
