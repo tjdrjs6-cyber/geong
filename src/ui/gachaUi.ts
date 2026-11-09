@@ -901,16 +901,30 @@ export class GachaUi {
       try {
         const success = await this.store.upgradeForge()
         // 서버가 확정한 최신 강화 단계와 재화를 애니메이션 전에 즉시 반영합니다.
-        this.renderForge()
-        this.renderWallet()
-        this.renderBattleStatus()
+        // The upgrade has already been committed on the server. A UI refresh error
+        // must never be mistaken for a failed network request.
+        try { this.renderForge() } catch (renderError) { console.error('Forge render failed after upgrade', renderError) }
+        try { this.renderWallet() } catch (renderError) { console.error('Wallet render failed after upgrade', renderError) }
+        if (this.screen === 'battle') {
+          try { this.renderBattleStatus() } catch (renderError) { console.error('Battle render failed after upgrade', renderError) }
+        }
         if (this.screen === 'forge') await this.playForgeUpgradeAnimation(success)
         // 애니메이션 중 화면을 이동했더라도 재화 표시는 최신 상태로 유지합니다.
         this.renderWallet()
         this.toast(success ? '✨ 강화 성공! 전투력이 올랐어요!' : '강화 실패! 강화 단계는 유지돼요.')
       } catch(e) {
         if(e instanceof RequestError && ['forge_no_fragments','not_enough_coins'].includes(e.code)) this.showForgeInsufficient()
-        else this.handleError(e)
+        else if (e instanceof RequestError && e.code === 'network') {
+          // Do not retry the non-idempotent upgrade. Check authoritative server state.
+          try {
+            await this.store.restore()
+            this.renderForge()
+            this.renderWallet()
+            this.toast('강화 결과 확인이 지연됐어요. 서버에 저장된 강화 단계와 재화를 다시 불러왔어요. 확인 후 강화해 주세요.')
+          } catch {
+            this.toast('강화 결과를 확인할 수 없어요. 새로고침 후 강화 단계와 재화를 확인해 주세요. 연속으로 누르지 마세요.')
+          }
+        } else this.handleError(e)
       } finally { this.busy=false }
       return
     }
@@ -1248,7 +1262,7 @@ export class GachaUi {
     const prizeEl = this.root.querySelector<HTMLElement>('.claw-prize')
     if (prizeEl) { prizeEl.innerHTML = ''; prizeEl.classList.remove('is-delivered') }
     const msg = this.root.querySelector<HTMLElement>('.claw-message')
-if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 모든 키링에 같은 확률과 보상이 적용돼요.'
+    if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑아보세요. 모든 키링에 같은 확률과 보상이 적용돼요.'
     this.updateClawPosition()
   }
 
