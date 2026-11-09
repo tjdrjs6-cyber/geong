@@ -332,11 +332,11 @@ export class GachaUi {
         <div class="battle-field">${battleFieldMarkup()}</div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
-          <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 몬스터 1마리 처치 시 강화파편 1개! 보관함에 자동 지급돼요.</p>
+          <p class="battle-reward-hint"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 스테이지 처치 보상은 코인과 강화파편으로 자동 지급돼요.</p>
           <p class="battle-status"></p>
           
           
-          <p class="weed-rule">몬스터 체력은 ${ENEMY_HP.toLocaleString()}이에요. 캐릭터와 무기가 3초마다 함께 공격하며 총전투력만큼 피해를 줘요. 처치 보상은 강화파편으로 자동 지급돼요.</p>
+          <p class="weed-rule">1-1단계 체력 1,000부터 시작해 단계마다 1,000씩 증가해요. 30분 안에 처치하면 다음 단계로 자동 진행하고 보상은 자동 지급돼요.</p>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -1048,7 +1048,7 @@ export class GachaUi {
       const id = button.dataset.id as CharacterId
       const name = fullName(characterById(id))
       const leaving = this.store.isWeeding(id)
-      if (!leaving && (this.store.battle?.id === id || this.store.battle?.secondId === id)) { this.toast(ERROR_TEXT.busy_battle); return }
+      if (!leaving && (this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id)) { this.toast(ERROR_TEXT.busy_battle); return }
       if (!leaving && (this.store.weed?.members.length ?? 0) >= WEED_MAX) { this.toast(ERROR_TEXT.weed_full); return }
       this.busy = true
       try {
@@ -1069,7 +1069,7 @@ export class GachaUi {
       if (this.weedBusy(id)) { this.toast(ERROR_TEXT.busy_weed); return }
       this.busy = true
       try {
-        const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id
+        const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id
         const earned = await this.store.startBattle(id)
         const name = fullName(characterById(id))
         if (wasDeployed) {
@@ -2768,8 +2768,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
     if (picker) {
       picker.innerHTML = owned.length
-        ? owned.map(character => `<button class="weed-pick${this.store.isWeeding(character.id) ? ' is-active' : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? ' is-busy' : ''}" role="listitem" data-action="weed-pick" data-id="${character.id}" aria-pressed="${this.store.isWeeding(character.id)}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}${character.weedBonus ? `<em class="is-bonus">+${character.weedBonus}%</em>` : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? '<em class="is-busy-tag">토벌 중</em>' : ''}${character.id === 'beetle' && this.store.weed?.beetle ? '<em class="is-bonus">도우미</em>' : ''}</button>`).join('')
+        ? owned.map(character => `<button class="weed-pick${this.store.isWeeding(character.id) ? ' is-active' : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-busy' : ''}" role="listitem" data-action="weed-pick" data-id="${character.id}" aria-pressed="${this.store.isWeeding(character.id)}">
+            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}${character.weedBonus ? `<em class="is-bonus">+${character.weedBonus}%</em>` : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? '<em class="is-busy-tag">토벌 중</em>' : ''}${character.id === 'beetle' && this.store.weed?.beetle ? '<em class="is-bonus">도우미</em>' : ''}</button>`).join('')
         : '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'
     }
     const members = this.store.weed?.members ?? []
@@ -2794,19 +2794,26 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
     if (picker) {
       picker.innerHTML = owned.length
-        ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id}">
+        ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id}">
             <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}<em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle ? characterById(this.store.battle.id) : undefined
     const second = this.store.battle?.secondId ? characterById(this.store.battle.secondId) : undefined
+    const third = this.store.battle?.thirdId ? characterById(this.store.battle.thirdId) : undefined
+    const thirdUnit = this.root.querySelector<HTMLElement>('.bf-friend-third')
+    if (thirdUnit) {
+      thirdUnit.classList.toggle('is-empty', !third)
+      const body = thirdUnit.querySelector<HTMLElement>('.bf-friend-body')
+      if (body) body.innerHTML = third ? `<img src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
+    }
     const secondUnit = this.root.querySelector<HTMLElement>('.bf-friend-second')
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
       if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
     }
-    const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second)')
+    const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second):not(.bf-friend-third)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
@@ -2850,21 +2857,21 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const view = this.store.battleView()
     if (view.kills > 0) void this.syncBattle()
     const hourlyRate = this.root.querySelector<HTMLElement>('.battle-hourly-rate')
-    if (hourlyRate) hourlyRate.textContent = `${(view.power * 3_600_000 / BATTLE_TICK_MS / ENEMY_HP).toFixed(2)}개/시간`
+    if (hourlyRate) hourlyRate.textContent = `단계 ${Math.floor((view.stage - 1) / 10) + 1}-${((view.stage - 1) % 10) + 1}`
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
       if (fighter) {
-        const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0)
+        const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0) + (this.store.battle?.thirdId ? battlePower(this.store.battle.thirdId) : 0)
         const weaponPower = this.store.forge?.bonus ?? 0
-        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.secondId ? '2/2명' : '1/2명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>무기 전투력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
+        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>무기 전투력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
       } else {
-        status.textContent = '아래에서 토벌할 친구를 최대 2명 골라 주세요.'
+        status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }
     }
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
-    if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${ENEMY_HP.toLocaleString()} · ${(view.hp / ENEMY_HP * 100).toFixed(1)}%`
+    if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}% · 남은 시간 ${Math.ceil(view.remaining / 60000)}분`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')
-    if (fill) fill.style.transform = `scaleX(${view.hp / ENEMY_HP})`
+    if (fill) fill.style.transform = `scaleX(${view.hp / view.maxHp})`
     // Match the weapon and character attack cycles to the same 3-second server tick.
     const field = this.root.querySelector<HTMLElement>('.battle-field')
     // Set animation phase once per battle assignment, not on every 100ms UI refresh.

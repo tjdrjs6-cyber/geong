@@ -95,6 +95,9 @@ async function prepareDatabase() {
     damage INT NOT NULL DEFAULT 0
   )`)
   try { await pool.query("ALTER TABLE gm_battle ADD COLUMN second_id VARCHAR(32) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0"]) {
+    try { await pool.query(`ALTER TABLE gm_battle ADD COLUMN ${column}`) } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
     raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
     hp BIGINT NOT NULL DEFAULT 4000000, last_tick BIGINT NOT NULL,
@@ -566,54 +569,79 @@ async function getWeed(accountId) {
   return readWeed(pool, accountId)
 }
 
-async function getBattle(accountId) {
-  const [rows] = await pool.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ?', [accountId])
-  return rows[0] ? { id: rows[0].character_id, secondId: rows[0].second_id || null, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+// Each tenth encounter is a boss. Stage numbers 1..9 represent 1-1..1-9, 10 = 1-10 boss.
+const STAGE_LIMIT_MS = 30 * 60 * 1000
+function stageHp(stage) { return stage * 1000 }
+function stageReward(stage) { return { coins: stage, fragments: stage >= 6 ? 1 : 0 } }
+function battleRow(row) {
+  if (!row) return null
+  return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
+    since: Number(row.since_ms), damage: Number(row.damage), stage: Math.max(1, Number(row.stage) || 1),
+    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0 }
 }
-
-/** Settles defeated enemies into coins and optionally switches the fighting friend, atomically with the save. */
+const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage FROM gm_battle WHERE account_id = ?'
+async function getBattle(accountId) {
+  const [rows] = await pool.query(BATTLE_SELECT, [accountId])
+  return battleRow(rows[0])
+}
 async function updateBattle(accountId, nextCharacter) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
     const [saves] = await conn.query('SELECT gems, diamonds, fragments, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
-    const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
-    const [rows] = await conn.query('SELECT character_id, second_id, since_ms, damage FROM gm_battle WHERE account_id = ? FOR UPDATE', [accountId])
+    const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], fragments: 0 }
+    const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [accountId])
     const now = Date.now()
-    let battle = rows[0] ? { id: rows[0].character_id, secondId: rows[0].second_id || null, since: Number(rows[0].since_ms), damage: Number(rows[0].damage) } : null
+    let battle = battleRow(rows[0])
     if (nextCharacter && !state.owned.includes(nextCharacter)) { await conn.rollback(); return { error: 'not_owned' } }
     if (nextCharacter) {
       const [busy] = await conn.query('SELECT 1 FROM gm_weed_slots WHERE account_id = ? AND character_id = ? UNION ALL SELECT 1 FROM gm_weeding WHERE account_id = ? AND beetle = 1 AND ? = ?', [accountId, nextCharacter, accountId, nextCharacter, BEETLE_ID])
       if (busy.length) { await conn.rollback(); return { error: 'busy_weed' } }
     }
     const [forgeRows] = await conn.query('SELECT level FROM gm_forge WHERE account_id = ?', [accountId])
-    const accessory=await getAccessory(accountId,conn)
-    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0)+accessoryPower(accessory)
-    let earned = 0
+    const accessory = await getAccessory(accountId, conn)
+    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory)
+    let earned = 0, coinsEarned = 0
     if (battle) {
-      const settled = settleBattle(battle.since, battle.damage, now, (POWER[battle.id] ?? 10) + (battle.secondId ? (POWER[battle.secondId] ?? 10) : 0) + weaponBonus)
-      earned = settled.kills
-      battle = { ...battle, since: settled.since, damage: settled.damage }
+      const power = Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
+      // Process individual attack ticks, respecting the 30-minute deadline for each stage.
+      const ticks = Math.min(500000, Math.max(0, Math.floor((now - battle.since) / 3000)))
+      let tickAt = battle.since
+      for (let i = 0; i < ticks; i++) {
+        tickAt += 3000
+        if (tickAt - battle.stageSince > STAGE_LIMIT_MS) { battle.stageSince = tickAt; battle.stageDamage = 0 }
+        battle.stageDamage += power
+        if (battle.stageDamage >= stageHp(battle.stage)) {
+          const reward = stageReward(battle.stage)
+          coinsEarned += reward.coins; earned += reward.fragments
+          battle.stage++; battle.stageSince = tickAt; battle.stageDamage = 0
+        }
+      }
+      battle.since = tickAt
+      if (now - battle.stageSince >= STAGE_LIMIT_MS) { battle.stageSince = now; battle.stageDamage = 0; battle.since = now }
+      battle.damage = battle.stageDamage
     }
-    if (nextCharacter) battle = battle ? (battle.id === nextCharacter || battle.secondId === nextCharacter ? (battle.secondId === nextCharacter ? { ...battle, secondId: null } : battle.secondId ? { ...battle, id: battle.secondId, secondId: null } : null) : battle.secondId ? { ...battle, secondId: nextCharacter } : { ...battle, secondId: nextCharacter }) : { id: nextCharacter, secondId: null, since: now, damage: 0 }
-    if (!battle) {
-      if (earned > 0) await conn.query('UPDATE gm_saves SET fragments = fragments + ? WHERE account_id = ?', [earned, accountId])
-      state.fragments = (state.fragments ?? 0) + earned
-      await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
-      await conn.commit()
-      return { save: state, battle: null, earned, now }
+    if (nextCharacter) {
+      if (!battle) battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0, stage: 1, stageSince: now, stageDamage: 0 }
+      else {
+        const members = [battle.id, battle.secondId, battle.thirdId].filter(Boolean)
+        if (members.includes(nextCharacter)) members.splice(members.indexOf(nextCharacter), 1)
+        else if (members.length < 3) members.push(nextCharacter)
+        else { await conn.rollback(); return { error: 'battle_full' } }
+        if (members.length) [battle.id, battle.secondId, battle.thirdId] = [members[0], members[1] || null, members[2] || null]
+        else battle = null
+      }
     }
+    if (earned || coinsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, gems = gems + ? WHERE account_id = ?', [earned, coinsEarned, accountId])
     state.fragments = (state.fragments ?? 0) + earned
-    if (earned > 0) await conn.query('UPDATE gm_saves SET fragments = fragments + ? WHERE account_id = ?', [earned, accountId])
-    await conn.query('INSERT INTO gm_battle (account_id, character_id, second_id, since_ms, damage) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id = VALUES(character_id), second_id = VALUES(second_id), since_ms = VALUES(since_ms), damage = VALUES(damage)', [accountId, battle.id, battle.secondId || '', battle.since, battle.damage])
+    state.gems = (state.gems ?? 0) + coinsEarned
+    if (!battle) await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
+    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage)`,
+      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage])
     await conn.commit()
-    return { save: state, battle, earned, now }
-  } catch (error) {
-    await conn.rollback().catch(() => {})
-    throw error
-  } finally {
-    conn.release()
-  }
+    return { save: state, battle, earned, coinsEarned, now }
+  } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
 }
 
 /** Weeding view: up to 3 members (each with its own timer) plus the 풍뎅이 helper flag. */
@@ -650,7 +678,7 @@ async function updateWeed(accountId, op = {}) {
       if (!state.owned.includes(op.add)) return fail('not_owned')
       if (members.some(m => m.id === op.add)) return fail('already_weeding')
       if (members.length >= WEED_MAX) return fail('weed_full')
-      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND (character_id = ? OR second_id = ?)', [accountId, op.add, op.add])
+      const [busy] = await conn.query('SELECT 1 FROM gm_battle WHERE account_id = ? AND (character_id = ? OR second_id = ? OR third_id = ?)', [accountId, op.add, op.add, op.add])
       if (busy.length) return fail('busy_battle')
     }
     if (op.remove && !members.some(m => m.id === op.remove)) return fail('not_weeding')
