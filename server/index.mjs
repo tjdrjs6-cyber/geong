@@ -103,6 +103,14 @@ async function prepareDatabase() {
     hp BIGINT NOT NULL DEFAULT 4000000, last_tick BIGINT NOT NULL,
     PRIMARY KEY (raid_day, server_id)
   )`)
+  for (const column of ['stage INT NOT NULL DEFAULT 1']) {
+    try { await pool.query(`ALTER TABLE gm_expedition_boss ADD COLUMN ${column}`) } catch(error) { if(error?.code!=='ER_DUP_FIELDNAME') throw error }
+  }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_stage_paid (
+    raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
+    stage INT NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY(raid_day,server_id,stage,account_id)
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_hp_migration (
     raid_day VARCHAR(10) NOT NULL,
     server_id TINYINT UNSIGNED NOT NULL,
@@ -749,6 +757,7 @@ async function ensureGlobalChatTables() {
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
 const EXP_HP = 4000000
 const EXP_TICK = 3000
+const expeditionMaxHp = stage => stage === 1 ? 4000000 : 10000000
 function expeditionWindow(now = Date.now()) {
   const kst = new Date(now + 9 * 3600000)
   const midnight = Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate()) - 9*3600000
@@ -771,35 +780,34 @@ async function expeditionMigrateHp(conn,day,serverId) {
   }
 }
 async function expeditionSettle(conn, day, serverId, now) {
-  const [bossRows] = await conn.query('SELECT hp,last_tick FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
-  if (!bossRows.length) return null
-  const boss=bossRows[0]
-  let hp=Number(boss.hp),last=Number(boss.last_tick)
-  const ticks=hp>0 ? Math.max(0,Math.floor((now-last)/EXP_TICK)) : 0
+  const [bossRows]=await conn.query('SELECT hp,last_tick,stage FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+  if(!bossRows.length)return null
+  let {hp,last_tick:last,stage}=bossRows[0]
+  hp=Number(hp);last=Number(last);stage=Number(stage)
+  const ticks=hp>0?Math.max(0,Math.floor((now-last)/EXP_TICK)):0
   if(ticks) {
     const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
-    // One permanent weapon bonus per participating account, regardless of party size.
     const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?1:0),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
-    if(hp===0) {
-      const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
-      for(const player of players) {
-        const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_paid (raid_day,server_id,account_id) VALUES (?,?,?)',[day,serverId,player.account_id])
-        if(paid.affectedRows) {
-          // System mail: reward is credited only when the recipient claims it.
-          // The mail `coins` column is the game's coin balance (`gm_saves.gems`).
-          await conn.query(
-            'INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',
-            [0,player.account_id,'원정대 보스를 토벌하였습니다!',300,30,day,now]
-          )
-          await trimInbox(conn,player.account_id)
-        }
+  }
+  if(hp===0) {
+    const [players]=await conn.query('SELECT account_id FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
+    for(const player of players) {
+      const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
+      if(paid.affectedRows) {
+        const coins=stage===1?300:500, fragments=stage===1?30:50
+        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
+        await trimInbox(conn,player.account_id)
       }
     }
+    if(stage===1) {
+      stage=2;hp=expeditionMaxHp(stage);last=now
+      await conn.query('UPDATE gm_expedition_boss SET stage=?,hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[stage,hp,last,day,serverId])
+    }
   }
-  return hp
+  return {hp,stage}
 }
 // Retrying a deadlocked transaction is safe: InnoDB rolls back the victim.
 const isDbContention = error => ['ER_LOCK_DEADLOCK','ER_LOCK_WAIT_TIMEOUT'].includes(error?.code)
@@ -829,9 +837,9 @@ async function expeditionSnapshot(accountId) {
       const [insertedBoss]=await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,id,EXP_HP,start])
       if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,id])
       await expeditionMigrateHp(conn,day,id)
-      const hp=await expeditionSettle(conn,day,id,now)
+      const bossState=await expeditionSettle(conn,day,id,now)
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
-      servers.push({id,hp,members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,me:String(m.account_id)===String(accountId)}))})
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -845,10 +853,10 @@ async function expeditionJoin(accountId,serverId,characterId) {
     const [insertedBoss]=await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick) VALUES (?,?,?,?)',[day,serverId,EXP_HP,start])
       if(insertedBoss.affectedRows)await conn.query('INSERT IGNORE INTO gm_expedition_hp_migration (raid_day,server_id) VALUES (?,?)',[day,serverId])
       await expeditionMigrateHp(conn,day,serverId)
-    const hp=await expeditionSettle(conn,day,serverId,now)
+    const bossState=await expeditionSettle(conn,day,serverId,now)
     const [old]=await conn.query('SELECT server_id FROM gm_expedition_member WHERE raid_day=? AND account_id=?',[day,accountId])
     if(old.length && Number(old[0].server_id)!==serverId) {await conn.rollback();return 'exp_already_joined'}
-    if(hp<=0) {await conn.rollback();return 'exp_boss_dead'}
+    if(bossState.hp<=0) {await conn.rollback();return 'exp_boss_dead'}
     const [count]=await conn.query('SELECT COUNT(*) AS n FROM gm_expedition_member WHERE raid_day=? AND server_id=?',[day,serverId])
     if(!old.length && Number(count[0].n)>=10){await conn.rollback();return 'exp_full'}
     const [owned]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[accountId])
@@ -1240,6 +1248,25 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     send(res,200,await expeditionBadge(account.id))
+  },
+  'POST /api/expedition/test-control': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    if(process.env.TEST_SERVER!=='true'||String(account.username).toLowerCase()!=='test')return send(res,403,{error:'forbidden'})
+    const {serverId,action}=await readJson(req)
+    if(![1,2,3].includes(Number(serverId))||!['hp100','respawn'].includes(action))return send(res,400,{error:'invalid_action'})
+    const {day,start}=expeditionWindow()
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_expedition_boss (raid_day,server_id,hp,last_tick,stage) VALUES (?,?,?,?,1)',[day,serverId,EXP_HP,start])
+      const [rows]=await conn.query('SELECT stage FROM gm_expedition_boss WHERE raid_day=? AND server_id=? FOR UPDATE',[day,serverId])
+      const stage=Number(rows[0].stage)
+      const hp=action==='hp100'?100:expeditionMaxHp(stage)
+      await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,Date.now(),day,serverId])
+      await conn.commit()
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+    send(res,200,{ok:true})
   },
   'GET /api/expedition': async (req,res) => {
     const account=await currentAccount(req)

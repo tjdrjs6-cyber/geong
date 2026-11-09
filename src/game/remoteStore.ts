@@ -6,7 +6,7 @@ import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
-export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
@@ -349,6 +349,7 @@ export class RemoteGachaStore {
     return result
   }
   async expeditionBadge():Promise<{day:string;deployed:boolean}> {return request('expedition/badge')}
+  async expeditionTestControl(serverId:number,action:'hp100'|'respawn'):Promise<void> {await request('expedition/test-control',{serverId,action})}
   async expedition():Promise<ExpeditionState> {return request<ExpeditionState>('expedition')}
   async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
   async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }

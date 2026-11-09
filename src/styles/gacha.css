@@ -4656,3 +4656,9 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .battle-screen .battle-stage-transition-card small{display:none!important}
 .battle-screen .battle-visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .battle-screen .battle-status-help,.battle-screen .weed-rule,.battle-screen .bf-title{display:none!important}
+
+.expedition-stage-label{position:absolute;top:17%;left:50%;transform:translateX(-50%);z-index:5;font-weight:900;font-size:clamp(20px,5vw,30px);color:#fff;text-shadow:0 2px 5px #142d56,0 0 12px #102c53;pointer-events:none}
+.expedition-test-tools:not([hidden]){display:flex;justify-content:center;gap:8px;margin:8px}
+.expedition-test-tools button{padding:8px 12px;border-radius:12px;background:#fff2d8;border:2px solid #bd8b5b;font-weight:800}
+
+.battle-clear-reward-label{display:block;font-weight:900;font-size:12px;opacity:.9;margin-bottom:3px}

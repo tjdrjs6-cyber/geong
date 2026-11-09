@@ -329,7 +329,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 가챠로</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
-          <div class="battle-stage-rewards" aria-live="polite"><span>🪙 <b class="battle-stage-coins">1</b> 골드</span><span>✦ <b class="battle-stage-fragments">0</b> 강화파편</span></div>
+          <div class="battle-stage-rewards" aria-live="polite"><span class="battle-clear-reward-label">스테이지 클리어 시</span><span>🪙 <b class="battle-stage-coins">1</b> 골드</span><span>✦ <b class="battle-stage-fragments">0</b> 강화파편</span></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span>STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
         <div class="weed-panel battle-panel">
@@ -362,8 +362,8 @@ export class GachaUi {
       <section class="weed-screen expedition-screen" data-screen="expedition" aria-hidden="true">
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
-        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-party"></div><div class="expedition-defeated-message" aria-live="polite" hidden>보스가 토벌되었습니다.</div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 처치 시 참여자 우편함으로 300코인 + 강화파편 30개 보상 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
+        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 300코인·강화파편 30개 / 2단계 500코인·강화파편 50개 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -940,6 +940,17 @@ export class GachaUi {
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
     if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.expeditionPendingDamage.clear();this.show('expedition');return}
+    if (action === 'exp-test-hp' || action === 'exp-test-respawn') {
+      if(this.store.user?.username?.toLowerCase()!=='test')return
+      try {
+        await this.store.expeditionTestControl(this.expeditionServer,action==='exp-test-hp'?'hp100':'respawn')
+        this.expeditionPreviousHp.delete(this.expeditionServer)
+        this.expeditionPendingDamage.delete(this.expeditionServer)
+        await this.loadExpedition()
+        this.toast(action==='exp-test-hp'?'보스 HP를 100으로 변경했습니다.':'현재 단계 보스를 재생성했습니다.')
+      }catch(e){this.handleError(e)}
+      return
+    }
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.expeditionImpactServer=this.expeditionServer;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
@@ -2283,6 +2294,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const room=state.servers.find(r=>r.id===this.expeditionServer)!
     this.root.querySelectorAll<HTMLButtonElement>('.expedition-server-tabs button').forEach(b=>b.classList.toggle('selected',Number(b.dataset.id)===room.id))
     const hp=Math.max(0,room.hp)
+    const maxHp=room.maxHp||4000000
+    const stageLabel=this.root.querySelector<HTMLElement>('.expedition-stage-label')
+    if(stageLabel)stageLabel.textContent=`${room.stage||1}단계`
+    const hpLabel=this.root.querySelector<HTMLElement>('.expedition-hp-label')
+    if(hpLabel)hpLabel.innerHTML=`보스 체력 <b class="exp-hp">${hp.toLocaleString('ko-KR')}</b> / ${maxHp.toLocaleString('ko-KR')}`
+    const testTools=this.root.querySelector<HTMLElement>('.expedition-test-tools')
+    if(testTools)testTools.hidden=this.store.user?.username?.toLowerCase()!=='test'
     // Show only damage actually confirmed by the server, not a guessed per-hit value.
     const oldHp=this.expeditionPreviousHp.get(room.id)
     this.expeditionPreviousHp.set(room.id,hp)
@@ -2291,13 +2309,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.expeditionPendingDamage.set(room.id,(this.expeditionPendingDamage.get(room.id)??0)+(oldHp-hp))
     }
     const label=this.root.querySelector<HTMLElement>('.exp-hp');if(label)label.textContent=hp.toLocaleString('ko-KR')
-    const fill=this.root.querySelector<HTMLElement>('.expedition-hp-fill');if(fill)fill.style.width=`${hp/4000000*100}%`
-    const percent=this.root.querySelector<HTMLElement>('.expedition-hp-percent');if(percent)percent.textContent=`${(hp/4000000*100).toFixed(2)}%`
+    const fill=this.root.querySelector<HTMLElement>('.expedition-hp-fill');if(fill)fill.style.width=`${hp/maxHp*100}%`
+    const percent=this.root.querySelector<HTMLElement>('.expedition-hp-percent');if(percent)percent.textContent=`${(hp/maxHp*100).toFixed(2)}%`
     const boss=this.root.querySelector<HTMLElement>('.expedition-boss');if(boss){boss.classList.toggle('defeated',hp===0);boss.classList.toggle('under-attack',hp>0 && room.members.length>0)}
     const status=this.root.querySelector<HTMLElement>('.expedition-status')
-    if(status)status.textContent=hp===0?'보스 토벌 성공! 우편함에서 보상을 받아주세요! 🎁':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
-    const defeatedMessage=this.root.querySelector<HTMLElement>('.expedition-defeated-message')
-    if(defeatedMessage)defeatedMessage.hidden=hp!==0
+    if(status)status.textContent=hp===0?'':`서버 ${room.id} · ${room.members.length}/10명 · ${state.mine?`오늘 ${state.mine.serverId}서버에 배치 완료`:'캐릭터를 직접 배치해 주세요'}`
+
+
     const weaponPower=(level:number|null|undefined)=>level==null?0:level<=14?level+1:level===20?50:20+(level-15)*5
     const rankedMembers=[...room.members].sort((a,b)=>(battlePower(b.characterId)+weaponPower(b.weaponLevel))-(battlePower(a.characterId)+weaponPower(a.weaponLevel)))
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
