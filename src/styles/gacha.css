@@ -4074,3 +4074,12 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .lottery-win-card{display:flex;align-items:center;flex-direction:column;gap:12px;padding:24px 18px;background:#fff8e9;border:4px solid #e5aa77;border-radius:24px;text-align:center;color:#613e2e;box-shadow:0 15px 45px #0007}
 .lottery-win-card h2{font-size:26px;margin:0}.lottery-win-card img{height:min(40vh,230px);width:min(65vw,230px);object-fit:contain;filter:drop-shadow(0 8px 7px #0002)}
 .lottery-win-card strong{font-size:22px}.lottery-win-card p{font-weight:800;margin:0}.lottery-win-card button{background:#ffe0a1;border:2px solid #a87555;border-radius:12px;padding:12px 26px;font-weight:900}
+
+/* test.013: compact purchase state, no empty center until tickets are purchased */
+#ui .lottery-screen .lottery-scene{justify-content:flex-start!important}
+#ui .lottery-screen:not(.lottery-playing) .lottery-purchase{margin-top:10px!important}
+#ui .lottery-screen:not(.lottery-playing) .lottery-results{display:none!important}
+#ui .lottery-screen.lottery-playing .lottery-purchase{display:none!important}
+#ui .lottery-screen .lottery-prize{position:relative;overflow:hidden}
+#ui .lottery-screen .lottery-sold-stamp{position:absolute!important;left:6%!important;top:25%!important;width:88%!important;height:60%!important;object-fit:contain!important;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 2px #55332288)}
+#ui .lottery-screen .lottery-sold-out>img:not(.lottery-sold-stamp){opacity:.4}

@@ -158,6 +158,8 @@ export class GachaUi {
   }
 
   show(screen: Screen): void {
+    // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
+    if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.skipLottery()
     this.screen = screen
     if (screen !== 'users') {
       const usersCard = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card')
@@ -1350,7 +1352,7 @@ export class GachaUi {
     try{const state=await this.store.lottery();if(this.screen==='rps'&&!this.lotteryResults.length){this.lotteryState=state;this.renderLottery()}}catch{}
   }
   private async openLottery():Promise<void>{
-    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.renderLottery()}
+    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing');this.renderLottery()}
     catch{const el=this.root.querySelector<HTMLElement>('.lottery-status');if(el)el.textContent='복권 정보를 불러오지 못했습니다.'}
   }
   private updateLotteryPrice():void{
@@ -1366,7 +1368,7 @@ export class GachaUi {
     const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=this.store.user?.username?.toLowerCase()!=='test'
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
     const ids=['kurimanju_bean','rakko_limited','beetle_berserk','ginger_chiikawa','ginger_hachiware','ginger_usagi'] as const
-    if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize"><b>${'ABCDEFG'[i]}상</b>${i<6?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small></div>`).join('')
+    if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFG'[i]}상</b>${i<6?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(1):'0.0'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
     const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners)winners.textContent=state.winners?.length?'최근 당첨: '+state.winners.map(w=>`${w.nickname} (${w.grade}상)`).join(' · '):'아직 A~F상 당첨자가 없습니다.'
     const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0}
     const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
@@ -1403,6 +1405,7 @@ export class GachaUi {
       const result=await this.store.lotteryBuy(count)
       this.lotteryState=result;this.lotteryResults=result.results;this.lotteryRevealed=0
       this.renderWallet();this.renderLottery()
+      this.root.querySelector('.lottery-screen')?.classList.add('lottery-playing')
       this.root.querySelector<HTMLElement>('.lottery-ticket')?.removeAttribute('hidden')
       this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.removeAttribute('hidden')
       const list=this.root.querySelector<HTMLElement>('.lottery-results');if(list)list.innerHTML=''
@@ -1466,6 +1469,7 @@ export class GachaUi {
     this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
     this.renderCollection()
     this.lotteryResults=[]
+    this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing')
     void this.refreshLotteryLive()
   }
   private renderLotteryResults():void{
