@@ -424,7 +424,7 @@ export class GachaUi {
           <p class="collection-summary">총 ${CHARACTERS.length}종 · 노멀 ${CHARACTERS.filter(c => c.tier === 'normal').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 레어 ${CHARACTERS.filter(c => c.tier === 'mermaid').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 에픽 ${CHARACTERS.filter(c => c.tier === 'rare').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 유니크 ${CHARACTERS.filter(c => c.tier === 'super').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 레전더리 ${CHARACTERS.filter(c => c.tier === 'legendary').reduce((n,c) => n+c.probability,0).toFixed(2)}%</p></div>
           <div class="collection-grid"></div>
           <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
-          <button class="modal-primary" data-action="close">가챠로 돌아가기</button>
+          <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
         </div>
       </section>
       <section class="gacha-modal" data-screen="roulette" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roulette-title">
@@ -444,7 +444,7 @@ export class GachaUi {
           <p class="collection-summary">데코 ${DECOS.length}종 · 모두 같은 확률(각 ${DECO_PROBABILITY}%)</p></div>
           <div class="collection-grid deco-grid"></div>
           <div class="duplicate-note">새 데코 등록 +${DECO_NEW_BONUS}코인 · 중복 데코는 하우스에 하나 더 놓을 수 있어요</div>
-          <button class="modal-primary" data-action="house">🏠 하우스 꾸미러 가기</button>
+          <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
         </div>
       </section>
       <section class="gacha-modal" data-screen="announcements" aria-hidden="true" role="dialog" aria-modal="true">
@@ -562,7 +562,7 @@ export class GachaUi {
     const cards=WEAPON_ACCESSORIES.map(item=>{const count=counts[item.id]||0;const has=count>0;return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'}" style="--friend:#fbe3ea;--accent:#e99aae"><div class="friend-avatar">${has?`<img src="${item.image}" alt="${item.name}" loading="lazy"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">노말</div><b>${has?item.name:'???'}</b><small>전투력 +1</small><span class="friend-lock">${has?`${count}개 보유`:'미획득'}</span></article>`}).join('')
     const dialog=document.createElement('dialog')
     dialog.className='myroom-equipment-dialog accessory-catalog-dialog'
-    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><p class="collection-summary">${WEAPON_ACCESSORIES.filter(item=>(counts[item.id]||0)>0).length} / ${WEAPON_ACCESSORIES.length} 수집</p><div class="accessory-scroll collection-grid accessory-card-grid">${cards}</div><button class="myroom-equipment-done">확인</button></div>`
+    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><p class="collection-summary">${WEAPON_ACCESSORIES.filter(item=>(counts[item.id]||0)>0).length} / ${WEAPON_ACCESSORIES.length} 수집</p><div class="accessory-scroll collection-grid accessory-card-grid">${cards}</div><button class="myroom-equipment-done">← 뒤로가기</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
     dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
@@ -584,7 +584,22 @@ export class GachaUi {
     document.body.appendChild(dialog)
     dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(button=>button.addEventListener('click',async()=>{
       const id=button.dataset.accessory||null
-      try { await this.store.equipAccessory(this.store.accessory.equipped===id?null:id);dialog.close();await this.showEquipmentStatus();this.renderWallet() }
+      try {
+        if(button.disabled)return
+        dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(b=>b.disabled=true)
+        await this.store.equipAccessory(this.store.accessory.equipped===id?null:id)
+        const current=this.store.accessory.equipped
+        dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(b=>{
+          const owned=(this.store.accessory.counts||{})[b.dataset.accessory||'']||0
+          b.disabled=!this.store.forge||owned<1
+          b.textContent=owned<1?'미획득':current===b.dataset.accessory?'장착 해제':'장착하기'
+          b.closest('.accessory-card')?.classList.toggle('is-equipped',current===b.dataset.accessory)
+        })
+        const currentCharm=accessoryInfo(current)
+        const weaponSlot=dialog.querySelector<HTMLElement>('.forge-current .accessory-weapon')
+        if(weaponSlot){weaponSlot.querySelector('.weapon-keyring')?.remove();if(currentCharm){const img=document.createElement('img');img.className='weapon-keyring';img.src=currentCharm.image;img.alt=`장착된 ${currentCharm.name}`;weaponSlot.appendChild(img)}}
+        this.renderWallet()
+      }
       catch(error){this.handleError(error)}
     }))
     dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
@@ -844,6 +859,7 @@ export class GachaUi {
       await this.handleClaw(action); return
     }
     if (action === 'accessory-catalog') { this.showAccessoryCatalog(); return }
+    if (action === 'catalog-back') { this.show('catalog'); return }
     if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${Object.values(this.store.accessory.counts||{}).filter(n=>n>0).length} / 8`;this.show('catalog'); return }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
