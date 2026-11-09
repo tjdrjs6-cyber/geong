@@ -4563,3 +4563,17 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   position:relative!important;
 }
 #ui .update-notice-scroll * {touch-action:pan-y!important;}
+
+/* Ver.2: keep the lobby character fully inside the PC stage at all window heights. */
+@media (min-width: 769px) {
+  #ui .gacha-screen .toon-stage .toon-hero {
+    width: min(59.30496cqw, 330px, 68cqh) !important;
+    bottom: max(5%, 8px) !important;
+    box-sizing: border-box;
+  }
+  #ui .gacha-screen .toon-stage .toon-hero-img {
+    object-fit: contain !important;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}

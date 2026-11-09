@@ -206,7 +206,8 @@ export class RemoteGachaStore {
     const result=await request<{forge:ForgeState;save:GachaSave;success:boolean}>('forge/upgrade',{})
     this.forge=result.forge
     this.data=result.save
-    this.accessory=result.accessory
+    // The forge upgrade endpoint does not return accessory data.
+    // Preserve the existing accessory state instead of overwriting it with undefined.
     return result.success
   }
   async diamondRecharge(): Promise<{ diamonds: number; nextAt: number | null; now: number; max: number }> {
