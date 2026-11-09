@@ -560,16 +560,28 @@ export class GachaUi {
 
   private showAlchemy():void {
     const dialog=document.createElement('dialog');dialog.className='myroom-equipment-dialog alchemy-dialog'
+    let selected=WEAPON_ACCESSORIES[0].id
     const render=()=>{
       const counts=this.store.accessory.counts||{}
-      dialog.innerHTML=`<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close">×</button><h2>⚗ 연금술</h2><p>같은 종류의 노말 키링으로 상위 등급 키링을 제작해요. 성공률 100%</p><p>보유 강화파편: ${(this.store.data.fragments||0).toLocaleString()}개</p><div class="alchemy-scroll">${WEAPON_ACCESSORIES.map(item=>`<section class="alchemy-group"><h3><img src="${item.image}" alt=""/>${item.name} · 노말 ${counts[item.id]||0}개</h3><div class="alchemy-recipes">${ALCHEMY_GRADES.slice(1).map((g,gi)=>`<button type="button" class="alchemy-recipe" data-id="${item.id}" data-grade="${g.id}" ${(counts[item.id]||0)<g.cost||(this.store.data.fragments||0)<g.fragments||(gi>0&&!(this.store.accessory.grades?.[item.id]?.[ALCHEMY_GRADES[gi].id]>0))?'disabled':''}><b style="color:${g.color}">${g.name}</b><small>노말 ${g.cost}개 + 파편 ${g.fragments}개${gi>0?' · '+ALCHEMY_GRADES[gi].name+' 획득 후 해금':''}</small><strong>전투력 +${g.power}</strong></button>`).join('')}</div></section>`).join('')}</div><button type="button" class="myroom-equipment-done">닫기</button></div>`
+      const item=accessoryInfo(selected) || WEAPON_ACCESSORIES[0]
+      const normal=counts[selected]||0
+      const fragments=this.store.data.fragments||0
+      const owned=this.store.accessory.grades?.[selected]||{}
+      dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel"><button type="button" class="myroom-equipment-close">×</button><h2>⚗ 연금술</h2><p class="alchemy-description">같은 캐릭터의 노말 키링으로 합성 · 성공률 100%</p><div class="alchemy-picker">${WEAPON_ACCESSORIES.map(x=>`<button type="button" class="alchemy-pick ${x.id===selected?'selected':''}" data-pick="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===selected}"><img src="${x.image}" alt=""/><span>${x.name.replace(' 키링','')}</span></button>`).join('')}</div><div class="alchemy-inventory"><div><img src="${item.image}" alt=""/><span>보유 노말 키링<strong>${normal.toLocaleString()}개</strong></span></div><div><img src="/assets/enhancement_fragment.png" alt=""/><span>보유 강화파편<strong>${fragments.toLocaleString()}개</strong></span></div></div><div class="alchemy-recipes">${ALCHEMY_GRADES.slice(1).map((g,gi)=>{const has=(owned[g.id]||0)>0;const locked=gi>0&&!(owned[ALCHEMY_GRADES[gi].id]>0);const shortage=normal<g.cost||fragments<g.fragments;return `<button type="button" class="alchemy-recipe ${has?'is-owned':''}" data-id="${selected}" data-grade="${g.id}" ${has||locked||shortage?'disabled':''}><b style="color:${g.color}">${g.name}</b><small>노말 ${g.cost}개 · 파편 ${g.fragments}개</small><strong>${has?'보유함':locked?'이전 등급 필요':shortage?'재료 부족':`합성 · 전투력 +${g.power}`}</strong></button>`}).join('')}</div><button type="button" class="myroom-equipment-done">닫기</button></div>`
       dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
       dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
+      dialog.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.pick!;render()}))
       dialog.querySelectorAll<HTMLButtonElement>('.alchemy-recipe').forEach(btn=>btn.addEventListener('click',async()=>{
         if(btn.disabled)return
         btn.disabled=true
-        try{await this.store.synthesizeAccessory(btn.dataset.id!,btn.dataset.grade!);const item=accessoryInfo(btn.dataset.id!)!;const grade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!;dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2>합성 성공!</h2><div class="alchemy-animation"><img src="${item.image}"/><img src="${item.image}"/></div><img class="alchemy-result-image" style="filter:drop-shadow(0 0 18px ${grade.color})" src="${item.image}"/><h3>${grade.name} ${item.name}</h3><p>전투력 +${grade.power}</p><button type="button" class="myroom-equipment-done">확인</button></div>`;dialog.querySelector('button')?.addEventListener('click',render);this.renderWallet()}
-        catch(e){this.handleError(e);render()}
+        try{
+          await this.store.synthesizeAccessory(btn.dataset.id!,btn.dataset.grade!)
+          const charm=accessoryInfo(btn.dataset.id!)!
+          const grade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
+          dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2>합성 중...</h2><div class="alchemy-animation"><img src="${charm.image}" alt="왼쪽 키링"/><img src="${charm.image}" alt="오른쪽 키링"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" style="--alchemy-grade-glow:${grade.color}" src="${charm.image}" alt="합성된 키링"/><h3>${grade.name} ${charm.name}</h3><p>전투력 +${grade.power}</p></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+          dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
+          this.renderWallet()
+        }catch(e){this.handleError(e);render()}
       }))
     }
     document.body.appendChild(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});render();dialog.showModal()
@@ -2739,7 +2751,7 @@ export class GachaUi {
         const weapon = document.createElement('div')
         weapon.className = `battle-weapon-strike forge-aura accessory-weapon ${weaponAuraClass(this.store.forge.level)}`
         weapon.setAttribute('aria-label', `강화 무기 +${this.store.forge.level}`)
-        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/>${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}<b>+${this.store.forge.level}</b>`
+        weapon.innerHTML = `<img src="/assets/forge/${this.store.forge.weapon}.png" alt="장착 무기"/>${accessoryInfo(this.store.accessory.equipped)?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${accessoryInfo(this.store.accessory.equipped)!.image}" alt="장착된 키링"/>`:``}`
         battleField.appendChild(weapon)
       }
     }

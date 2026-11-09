@@ -1043,6 +1043,7 @@ const routes = {
       const [gradeRows]=await conn.query('SELECT grade,quantity FROM gm_accessory_grades WHERE account_id=? AND accessory_id=?',[account.id,id])
       const previous={rare:null,epic:'rare',unique:'epic',legendary:'unique',transcendent:'legendary'}[grade]
       if(previous && !gradeRows.some(r=>r.grade===previous&&Number(r.quantity)>0))return {error:'previous_grade_required'}
+      if(gradeRows.some(r=>r.grade===grade&&Number(r.quantity)>0))return {error:'already_owned'}
       if(!isTest && Number(rows[0][id])<recipe.cost)return {error:'not_enough_keyrings'}
       if(Number(saves[0]?.fragments||0)<recipe.fragments)return {error:'not_enough_fragments'}
       if(!isTest)await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[recipe.cost,account.id])

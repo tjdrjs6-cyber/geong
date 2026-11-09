@@ -4276,3 +4276,33 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen .toon-hero{width:min(59.30496cqw,330.7392px)!important;}
 #ui .lottery-title-icon{display:inline-block;width:31px;height:22px;object-fit:contain;vertical-align:middle;margin-right:5px;}
 #ui .rps-lobby-tab .reward-icon img{object-fit:contain!important;}
+
+/* test.049: compact alchemy and two-charm collision reveal */
+.alchemy-panel{max-width:560px!important}
+.alchemy-description{font-size:12px;margin:2px 0 9px!important}
+.alchemy-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:8px 0}
+.alchemy-pick{min-width:0;border:1px solid #e9dce1;border-radius:10px;background:#fff;padding:4px 2px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:11px;cursor:pointer}
+.alchemy-pick.selected{border:2px solid #ec8bb2;background:#fff0f5}
+.alchemy-pick img{width:36px;height:42px;object-fit:contain}
+.alchemy-pick span{white-space:nowrap;font-size:10px}
+.alchemy-inventory{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.alchemy-inventory>div{display:flex;align-items:center;gap:6px;background:#fff5f8;border:1px solid #efd6df;border-radius:10px;padding:7px;min-width:0}
+.alchemy-inventory img{width:34px;height:34px;object-fit:contain;flex-shrink:0}
+.alchemy-inventory span{font-size:11px;display:flex;flex-direction:column;min-width:0}
+.alchemy-inventory strong{font-size:15px;color:#a54770}
+.alchemy-panel .alchemy-recipes{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.alchemy-panel .alchemy-recipe{padding:8px 5px;gap:2px;min-height:68px}
+.alchemy-panel .alchemy-recipe.is-owned{background:#f4f4f4;opacity:.78;border-color:#ddd}
+.alchemy-panel .alchemy-recipe.is-owned strong{color:#57846a}
+.alchemy-result .alchemy-animation{position:relative;width:min(100%,320px);height:155px;margin:8px auto;display:block;animation:none;overflow:hidden}
+.alchemy-result .alchemy-animation img{position:absolute;top:20px;width:100px;height:110px;object-fit:contain;animation-duration:1.05s;animation-fill-mode:forwards;animation-timing-function:ease-in-out}
+.alchemy-result .alchemy-animation img:first-child{left:0;animation-name:alchemy-left-collision}
+.alchemy-result .alchemy-animation img:nth-child(2){right:0;animation-name:alchemy-right-collision}
+.alchemy-impact{position:absolute;left:50%;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;transform:translate(-50%,-50%) scale(0);animation:alchemy-white-impact .65s .72s ease-out forwards;pointer-events:none}
+.alchemy-reveal{opacity:0;animation:alchemy-reveal-in .4s 1.05s forwards}
+.alchemy-result .alchemy-result-image{animation:none!important;filter:drop-shadow(0 0 9px var(--alchemy-grade-glow))!important}
+@keyframes alchemy-left-collision{0%{transform:translateX(0);opacity:1}72%{transform:translateX(105px);opacity:1}85%,100%{transform:translateX(105px) scale(.55);opacity:0}}
+@keyframes alchemy-right-collision{0%{transform:translateX(0);opacity:1}72%{transform:translateX(-105px);opacity:1}85%,100%{transform:translateX(-105px) scale(.55);opacity:0}}
+@keyframes alchemy-white-impact{0%,15%{transform:translate(-50%,-50%) scale(0);opacity:0}40%{transform:translate(-50%,-50%) scale(22);opacity:1}100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
+@keyframes alchemy-reveal-in{to{opacity:1}}
+.battle-field>.battle-weapon-strike>b{display:none!important}
