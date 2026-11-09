@@ -4104,3 +4104,27 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .lottery-purchase .lottery-count::-webkit-inner-spin-button,#ui .lottery-purchase .lottery-count::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .lottery-confirm-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}
 .lottery-multi-count{width:110px;max-width:100%;padding:9px;border:2px solid #c9a17e;border-radius:10px;font-size:18px;text-align:center}
+
+/* test.017: prevent iOS Safari input auto-zoom; display quantity cannot receive focus */
+#ui .lottery-purchase .lottery-count{font-size:16px!important;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#ui .lottery-purchase .lottery-count-display{display:inline-flex;align-items:center;gap:5px;font-size:14px}
+.lottery-multi-count{font-size:18px!important;touch-action:manipulation}
+
+/* test.019: My Room uses the same arrow and compact flyout layout as Activity/Shop. */
+.gacha-screen .myroom-menu { position:relative; width:100%; flex-shrink:0; overflow:visible !important; z-index:90; }
+.gacha-screen .myroom-menu > .nav-button { width:100%; }
+.gacha-screen .myroom-menu:has(.myroom-options:not([hidden])) { z-index:910 !important; }
+.gacha-screen .myroom-options[hidden] { display:none !important; }
+.gacha-screen .myroom-options:not([hidden]) { display:flex !important; flex-direction:column; gap:4px !important; position:absolute !important; left:calc(100% + 7px) !important; right:auto !important; top:0 !important; width:70px !important; z-index:950 !important; filter:drop-shadow(0 3px 5px #394b3a35); }
+.gacha-screen .myroom-options .nav-button { display:flex; align-items:center; justify-content:center; width:100% !important; min-height:24px !important; height:25px !important; padding:3px 2px !important; font-size:9px !important; line-height:1 !important; border-radius:11px !important; gap:2px !important; white-space:nowrap !important; background:linear-gradient(145deg,#fffdfa,#e9f9f0) !important; border-color:#b9e6d0 !important; box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25 !important; }
+.gacha-screen .myroom-options .chiikawa-tab-icon { display:inline-flex !important; width:15px !important; height:15px !important; flex:0 0 15px !important; align-items:center; justify-content:center; }
+.gacha-screen .myroom-options .chiikawa-tab-icon img { display:block; width:100% !important; height:100% !important; object-fit:contain; }
+.myroom-equipment-dialog { border:0; border-radius:20px; padding:0; max-width:min(92vw,420px); width:100%; background:#fffdf6; color:#493d35; box-shadow:0 15px 60px #0005; }
+.myroom-equipment-dialog::backdrop { background:#1c181a99; }
+.myroom-equipment-panel { position:relative; padding:24px 20px 20px; text-align:center; }
+.myroom-equipment-panel h2 { display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 20px; font-size:22px; }
+.myroom-equipment-panel h2 img { width:32px; height:32px; object-fit:contain; }
+.myroom-equipment-panel .forge-current { text-align:left; margin:0 auto 18px; }
+.myroom-equipment-close { position:absolute; right:10px; top:7px; border:0; background:transparent; font-size:30px; cursor:pointer; color:#78685c; }
+.myroom-equipment-note { font-size:14px; line-height:1.7; margin:16px 0; }
+.myroom-equipment-done { border:0; border-radius:12px; background:#a8dfc2; padding:11px 35px; font-weight:700; cursor:pointer; }
