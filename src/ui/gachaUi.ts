@@ -57,6 +57,7 @@ export class GachaUi {
   private userTab: 'char' | 'deco' | 'house' = 'char'
   private mailTab: 'in' | 'sent' = 'in'
   private wildWeedHold = 0
+  private wildWeedCountdown = 0
   private wildWeedTargetId = 0
   private wildWeedBusy = false
   private wildWeedLastSlot = -1
@@ -122,9 +123,15 @@ export class GachaUi {
       target.classList.add('is-holding')
       this.wildWeedTargetId=Number(target.dataset.weedId)
       window.clearTimeout(this.wildWeedHold)
-      this.wildWeedHold=window.setTimeout(()=>{target.classList.remove('is-holding');void this.pickWildWeed(Number(target.dataset.weedId))},target.dataset.weedType==='golden'?3600:2400)
+      const duration=target.dataset.weedType==='golden'?2520:1680
+      const started=performance.now()
+      const label=target.querySelector<HTMLElement>('.wild-weed-hold-text')
+      if(label)label.textContent=`남은 시간 ${(duration/1000).toFixed(1)}초`
+      const update=()=>{if(!target.classList.contains('is-holding'))return;const remain=Math.max(0,(duration-(performance.now()-started))/1000);if(label)label.textContent=`남은 시간 ${remain.toFixed(1)}초`;this.wildWeedCountdown=window.setTimeout(update,50)}
+      window.clearTimeout(this.wildWeedCountdown);update()
+      this.wildWeedHold=window.setTimeout(()=>{window.clearTimeout(this.wildWeedCountdown);target.classList.remove('is-holding');void this.pickWildWeed(Number(target.dataset.weedId))},duration)
     })
-    const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedHold);this.root.querySelectorAll('.wild-weed-pick').forEach(el=>el.classList.remove('is-holding'))}
+    const cancelWeedHold=()=>{window.clearTimeout(this.wildWeedCountdown);window.clearTimeout(this.wildWeedHold);this.root.querySelectorAll('.wild-weed-pick').forEach(el=>el.classList.remove('is-holding'))}
     window.addEventListener('pointerup',cancelWeedHold)
     window.addEventListener('pointercancel',cancelWeedHold)
     window.addEventListener('blur',cancelWeedHold)
@@ -2684,7 +2691,7 @@ export class GachaUi {
     const field=this.root.querySelector<HTMLElement>('.wild-weed-spawns')
     if(!field)return
     const weeds=this.store.wildWeed?.weeds??[]
-    field.innerHTML=weeds.map(weed=>`<button type="button" class="wild-weed-pick${weed.type==='golden'?' is-golden':''}" data-weed-id="${weed.id}" data-weed-type="${weed.type}" aria-label="잡초 길게 누르기" style="left:${weed.x}%;top:${weed.y}%"><img src="${weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png'}" alt="잡초"/><span class="wild-weed-hold-text">잡초를 뽑는 중입니다.</span></button>`).join('')
+    field.innerHTML=weeds.map(weed=>`<button type="button" class="wild-weed-pick${weed.type==='golden'?' is-golden':''}" data-weed-id="${weed.id}" data-weed-type="${weed.type}" aria-label="잡초 길게 누르기" style="left:${weed.x}%;top:${weed.y}%"><img src="${weed.type==='golden'?'/field_golden_weed.png':'/field_wild_weed.png'}" alt="잡초"/><span class="wild-weed-hold-text">남은 시간 1.7초</span></button>`).join('')
   }
   private async pickWildWeed(id:number): Promise<void> {
     if(this.wildWeedBusy||!this.store.wildWeed?.weeds.some(w=>w.id===id))return

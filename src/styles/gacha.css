@@ -4326,3 +4326,24 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .forge-current .accessory-weapon,.battle-field .battle-weapon-strike.accessory-weapon{position:relative!important;overflow:visible!important}
 .forge-current .accessory-weapon>img:first-child,.battle-field .battle-weapon-strike.accessory-weapon>img:first-child{object-fit:contain!important}
 .forge-current .accessory-weapon>img.weapon-keyring,.battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{position:absolute!important;right:2%!important;bottom:0%!important;width:25%!important;height:32%!important;object-fit:contain!important;transform:none!important;max-width:none!important;z-index:7!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
+
+/* test.051: 30% faster weeds, visible remaining time */
+#ui .wild-weed-pick.is-holding .wild-weed-progress{animation-duration:1.68s!important}
+#ui .wild-weed-pick.is-holding.is-golden .wild-weed-progress{animation-duration:2.52s!important}
+#ui .wild-weed-pick .wild-weed-hold-text{bottom:calc(100% + 6px)!important;min-width:106px;text-align:center;font-variant-numeric:tabular-nums}
+/* Compact alchemy result modal with precise symmetrical center collision */
+.alchemy-dialog .alchemy-result{max-height:min(92dvh,720px)!important;overflow:hidden!important;padding:12px 16px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:space-between!important}
+.alchemy-dialog .alchemy-result h2{margin:0!important;font-size:18px!important}
+.alchemy-dialog .alchemy-result .alchemy-stage{width:100%!important;height:min(58dvh,380px)!important;margin:2px auto!important;flex:1 1 auto!important;min-height:170px!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img{width:44%!important;max-width:190px!important;height:85%!important;top:50%!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:first-child{left:0!important;animation-name:alchemy051-left!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:nth-child(2){right:0!important;animation-name:alchemy051-right!important}
+.alchemy-dialog .alchemy-result .alchemy-reveal .alchemy-result-image{width:min(60%,230px)!important;height:75%!important}
+.alchemy-dialog .alchemy-result .myroom-equipment-done{margin:4px auto 0!important;flex:0 0 auto!important}
+@keyframes alchemy051-left{0%,12%{transform:translate(0,-50%);opacity:1}78%{transform:translate(calc(50% + 6.82%),-50%);opacity:1}88%,100%{transform:translate(calc(50% + 6.82%),-50%) scale(.7);opacity:0}}
+@keyframes alchemy051-right{0%,12%{transform:translate(0,-50%);opacity:1}78%{transform:translate(calc(-50% - 6.82%),-50%);opacity:1}88%,100%{transform:translate(calc(-50% - 6.82%),-50%) scale(.7);opacity:0}}
+
+.alchemy-dialog .alchemy-result .alchemy-animation img:first-child{left:50%!important;right:auto!important;animation-name:alchemy051-center-left!important}
+.alchemy-dialog .alchemy-result .alchemy-animation img:nth-child(2){left:50%!important;right:auto!important;animation-name:alchemy051-center-right!important}
+@keyframes alchemy051-center-left{0%,12%{transform:translate(-135%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+@keyframes alchemy051-center-right{0%,12%{transform:translate(35%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
