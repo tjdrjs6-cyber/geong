@@ -4662,3 +4662,8 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .expedition-test-tools button{padding:8px 12px;border-radius:12px;background:#fff2d8;border:2px solid #bd8b5b;font-weight:800}
 
 .battle-clear-reward-label{display:block;font-weight:900;font-size:12px;opacity:.9;margin-bottom:3px}
+
+/* 3-character formation: weapon centered, synchronized on the same 3s animation clock */
+#ui .battle-field .battle-weapon-strike{left:auto!important;right:22%!important;bottom:36%!important;animation-duration:3s!important;animation-delay:var(--battle-cycle-offset,0s)!important}
+#ui .battle-field .bf-friend{animation-duration:3s!important;animation-delay:var(--battle-cycle-offset,0s)!important}
+.battle-test-hp500:not([hidden]){display:block;margin:8px auto;padding:10px 18px;border:2px solid #a86b60;border-radius:16px;background:#fff0d7;color:#783b32;font-weight:800;cursor:pointer}

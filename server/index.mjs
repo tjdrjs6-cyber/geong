@@ -1569,6 +1569,25 @@ const routes = {
       send(res, 200, { save: await getSave(account.id), battle: await getBattle(account.id), earned: 0, now })
     } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
   },
+  'POST /api/battle/test-hp500': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    await readJson(req)
+    if (process.env.TEST_SERVER !== 'true' || String(account.username).toLowerCase() !== 'test') return send(res, 403, { error: 'forbidden' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [account.id])
+      const battle = battleRow(rows[0])
+      if (!battle) { await conn.rollback(); return send(res, 400, { error: 'battle_not_started' }) }
+      const now = Date.now()
+      const damage = Math.max(0, stageHp(battle.stage) - 500)
+      await conn.query('UPDATE gm_battle SET stage_damage=?, damage=?, since_ms=?, stage_since=? WHERE account_id=?',
+        [damage, damage, now, now, account.id])
+      await conn.commit()
+      send(res, 200, { battle: await getBattle(account.id), save: await getSave(account.id), earned: 0, now })
+    } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
+  },
   'POST /api/battle/test-reset': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })

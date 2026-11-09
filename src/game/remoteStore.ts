@@ -142,7 +142,8 @@ export class RemoteGachaStore {
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle = this.battle
     if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
-    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0) + (this.accessory?.equipped ? ({normal:1,rare:3,epic:5,unique:10,legendary:20,transcendent:30} as Record<string,number>)[this.accessory.equippedGrade || 'normal'] ?? 0 : 0)
+    // forge.bonus already includes the equipped accessory. Never add it twice.
+    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0)
     const elapsed = Math.max(0, this.serverNow() - battle.since)
     let stage = battle.stage ?? 1, damage = battle.stageDamage ?? battle.damage
     const ticks = Math.min(500000, Math.floor(elapsed / BATTLE_TICK_MS))
@@ -180,6 +181,7 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/start', { id }))
   }
 
+  async testBattleHp500(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-hp500', {})) }
   async testResetBattle(): Promise<number> {
     return this.applyBattle(await request<BattleResult>('battle/test-reset', {}))
   }

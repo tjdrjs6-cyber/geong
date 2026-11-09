@@ -336,7 +336,7 @@ export class GachaUi {
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
           <p class="battle-status"></p>
-          <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
+          <button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
@@ -1073,6 +1073,15 @@ export class GachaUi {
       } catch (error) { this.handleError(error) } finally { this.busy = false }
       this.renderWeed()
       this.renderWallet()
+      return
+    }
+    if (action === 'battle-test-hp500') {
+      if (this.busy || this.store.user?.username?.toLowerCase() !== 'test') return
+      this.busy = true
+      try { await this.store.testBattleHp500(); this.lastEnemyHp = -1; this.toast('현재 단계 몬스터 HP가 500이 되었습니다.') }
+      catch (error) { this.handleError(error) }
+      finally { this.busy = false }
+      this.renderBattleStatus()
       return
     }
     if (action === 'battle-test-reset') {
@@ -2940,7 +2949,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (enemyUnit) {
       const isBoss = view.stage % 10 === 0
       enemyUnit.classList.toggle('is-stage-boss', isBoss)
-      enemyUnit.classList.toggle('is-stage-changing', this.battleStageChanging || view.hp <= 0)
+      enemyUnit.classList.toggle('is-stage-changing', this.battleStageChanging || view.hp <= 0 || view.kills > 0)
     }
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
@@ -2954,6 +2963,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
     if (testClear) testClear.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
+    const testHp500 = this.root.querySelector<HTMLButtonElement>('.battle-test-hp500')
+    if (testHp500) testHp500.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const testReset = this.root.querySelector<HTMLButtonElement>('.battle-test-reset')
     if (testReset) testReset.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
@@ -2970,7 +2981,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       field.style.setProperty('--battle-cycle-offset', `${-(BATTLE_TICK_MS - view.nextIn) / 1000}s`)
     }
     // A real attack landed since the last frame: show the damage number and a hit shake.
-    if (fighter && !this.battleStageChanging && this.lastEnemyHp >= 0 && view.hp !== this.lastEnemyHp) {
+    if (fighter && !this.battleStageChanging && view.kills === 0 && this.lastEnemyHp >= 0 && view.hp < this.lastEnemyHp) {
       const hit = this.root.querySelector<HTMLElement>('.bf-hit')
       const enemy = this.root.querySelector<HTMLElement>('.bf-enemy')
       if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
