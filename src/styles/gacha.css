@@ -4347,3 +4347,46 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .alchemy-dialog .alchemy-result .alchemy-animation img:nth-child(2){left:50%!important;right:auto!important;animation-name:alchemy051-center-right!important}
 @keyframes alchemy051-center-left{0%,12%{transform:translate(-135%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
 @keyframes alchemy051-center-right{0%,12%{transform:translate(35%,-50%);opacity:1}78%{transform:translate(-50%,-50%);opacity:1}88%,100%{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+
+/* test.052: result dialog fits the visible screen, with no horizontal/vertical scrollbars. */
+.alchemy-dialog:has(.alchemy-result){
+  box-sizing:border-box!important;
+  width:min(420px,calc(100vw - 24px))!important;
+  max-width:calc(100vw - 24px)!important;
+  max-height:calc(100dvh - 24px)!important;
+  margin:auto!important;
+  overflow:hidden!important;
+}
+.alchemy-dialog .alchemy-result{
+  box-sizing:border-box!important;
+  width:100%!important;max-width:100%!important;
+  height:min(520px,calc(100dvh - 32px))!important;
+  max-height:calc(100dvh - 32px)!important;
+  min-height:0!important;overflow:hidden!important;
+  padding:12px 14px 14px!important;gap:4px!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-stage{
+  box-sizing:border-box!important;min-width:0!important;
+  width:100%!important;max-width:100%!important;
+  height:auto!important;min-height:0!important;
+  flex:1 1 0!important;overflow:hidden!important;
+  margin:0!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-animation{
+  box-sizing:border-box!important;max-width:100%!important;
+  overflow:hidden!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-reveal{
+  box-sizing:border-box!important;max-width:100%!important;overflow:hidden!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-reveal .alchemy-result-image{
+  max-width:100%!important;max-height:72%!important;min-height:0!important;
+}
+.alchemy-dialog .alchemy-result .alchemy-reveal h3{font-size:clamp(13px,4vw,18px)!important;line-height:1.25!important}
+.alchemy-dialog .alchemy-result .alchemy-reveal p{font-size:13px!important}
+.alchemy-dialog .alchemy-result .myroom-equipment-done{max-width:100%!important}
+@media(max-height:500px){
+ .alchemy-dialog .alchemy-result{padding:6px 12px!important}
+ .alchemy-dialog .alchemy-result h2{font-size:15px!important}
+ .alchemy-dialog .alchemy-result .alchemy-reveal .alchemy-result-image{max-height:62%!important}
+}

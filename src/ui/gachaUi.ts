@@ -585,7 +585,7 @@ export class GachaUi {
           await this.store.synthesizeAccessory(btn.dataset.id!,btn.dataset.grade!)
           const charm=accessoryInfo(btn.dataset.id!)!
           const grade=ALCHEMY_GRADES.find(g=>g.id===btn.dataset.grade)!
-          dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2>합성 중...</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${charm.image}" alt="왼쪽 키링"/><img src="${charm.image}" alt="오른쪽 키링"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" style="--alchemy-grade-glow:${grade.color}" src="${charm.image}" alt="합성된 키링"/><h3>${grade.name} ${charm.name}</h3><p>전투력 +${grade.power}</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+          dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2>합성 성공!</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${charm.image}" alt="왼쪽 키링"/><img src="${charm.image}" alt="오른쪽 키링"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" style="--alchemy-grade-glow:${grade.color}" src="${charm.image}" alt="합성된 키링"/><h3>${grade.name} ${charm.name}</h3><p>전투력 +${grade.power}</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
           dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
           this.renderWallet()
         }catch(e){this.handleError(e);render()}
