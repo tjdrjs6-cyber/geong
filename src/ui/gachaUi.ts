@@ -363,10 +363,10 @@ export class GachaUi {
         <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button type="button" data-action="shop-tab" data-tab="buy">구매</button><button type="button" data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="deco">데코</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-bulk-fixed" hidden></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
       </section>
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
-        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>제일복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
+        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>겅이복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
         <div class="rps-scene lottery-scene">
-          <div class="lottery-heading"><h2>🎟️ 제일복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
-          <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 제일복권 초기화 (test 전용)</button>
+          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
+          <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 겅이복권 초기화 (test 전용)</button>
           <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
@@ -378,7 +378,7 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/chars/momonga.png" alt="모몽가"/></span><span><b>제일복권</b></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon">🎡</span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/lottery_ticket_custom.png" alt="복권"/></span><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>인형뽑기</button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비</button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/shisa_keyring.png" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'" alt="" /></span>연금술</button></div></div></nav>
@@ -881,7 +881,7 @@ export class GachaUi {
     }
     if (action === 'accessory-catalog') { this.showAccessoryCatalog(); return }
     if (action === 'catalog-back') { this.show('catalog'); return }
-    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${Object.values(this.store.accessory.counts||{}).filter(n=>n>0).length} / 8`;this.show('catalog'); return }
+    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>(g.id==='normal'?(this.store.accessory.counts?.[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0).length,0)} / 48`;this.show('catalog'); return }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
@@ -1514,7 +1514,7 @@ export class GachaUi {
     document.getElementById('lottery-alert')?.remove()
     const dialog=document.createElement('dialog');dialog.id='lottery-alert';dialog.className='lottery-alert'
     const panel=document.createElement('div');panel.className='lottery-alert-inner'
-    const title=document.createElement('h3');title.textContent='제일복권'
+    const title=document.createElement('h3');title.textContent='겅이복권'
     const body=document.createElement('p');body.textContent=message
     const button=document.createElement('button');button.textContent='확인';button.addEventListener('click',()=>dialog.close())
     panel.append(title,body,button);dialog.append(panel);document.body.append(dialog)
@@ -1525,7 +1525,7 @@ export class GachaUi {
       document.getElementById('lottery-confirm')?.remove()
       const dialog=document.createElement('dialog');dialog.id='lottery-confirm';dialog.className='lottery-alert'
       const panel=document.createElement('div');panel.className='lottery-alert-inner'
-      const title=document.createElement('h3');title.textContent='제일복권 구매 확인'
+      const title=document.createElement('h3');title.textContent='겅이복권 구매 확인'
       const body=document.createElement('p');body.textContent=message;body.style.whiteSpace='pre-line'
       const actions=document.createElement('div');actions.className='lottery-confirm-actions'
       const cancel=document.createElement('button');cancel.textContent='취소'
@@ -1570,7 +1570,7 @@ export class GachaUi {
       this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
       this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
       const results=this.root.querySelector<HTMLElement>('.lottery-results');if(results)results.innerHTML=''
-      this.renderLottery();this.lotteryTopPopup('공용 제일복권 100장이 초기화되었습니다.')
+      this.renderLottery();this.lotteryTopPopup('공용 겅이복권 100장이 초기화되었습니다.')
     }catch(e){this.handleError(e)}
   }
   private async buyLottery():Promise<void>{
@@ -1651,7 +1651,7 @@ export class GachaUi {
     const dialog=document.createElement('dialog')
     dialog.id='lottery-summary-dialog';dialog.className='lottery-win-dialog'
     const card=document.createElement('div');card.className='lottery-win-card'
-    const heading=document.createElement('h2');heading.textContent='🎟️ 제일복권 뽑기 결과'
+    const heading=document.createElement('h2');heading.textContent='<img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권 뽑기 결과'
     const description=document.createElement('p');description.textContent=`총 ${results.length}장 · 당첨 ${results.filter(r=>r.id).length}장 · 꽝 ${results.filter(r=>!r.id).length}장`
     const list=document.createElement('div');list.style.cssText='max-height:min(45vh,340px);overflow-y:auto;width:100%;display:grid;gap:8px;text-align:left'
     results.forEach((r,i)=>{

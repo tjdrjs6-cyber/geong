@@ -4271,3 +4271,8 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .accessory-weapon .weapon-keyring{right:2.5%!important;bottom:-0.5%!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa)) drop-shadow(0 0 3px var(--keyring-glow,#aaa))!important}
 .battle-field .battle-weapon-strike.accessory-weapon>img.weapon-keyring{right:2.5%!important;bottom:-0.5%!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
 .user-weapon-badge .accessory-weapon>img.weapon-keyring{right:1.5%!important;bottom:-1%!important;filter:drop-shadow(0 0 7px var(--keyring-glow,#aaa))!important}
+
+/* test.048: representative +20%, lottery ticket icon */
+.gacha-screen .toon-hero{width:min(59.30496cqw,330.7392px)!important;}
+#ui .lottery-title-icon{display:inline-block;width:31px;height:22px;object-fit:contain;vertical-align:middle;margin-right:5px;}
+#ui .rps-lobby-tab .reward-icon img{object-fit:contain!important;}
