@@ -5029,3 +5029,33 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #achievement-v23-overlay .achievement-v23-item.achievement-tier-에픽{border-color:#f3b4b8!important;box-shadow:inset 0 0 11px #ffe0e1!important;}
 #achievement-v23-overlay .achievement-v23-item.achievement-tier-유니크{border-color:#d4b5f5!important;box-shadow:inset 0 0 11px #eee0ff!important;}
 #achievement-v23-overlay .achievement-v23-item.achievement-tier-레전더리{border-color:#f1d47e!important;box-shadow:inset 0 0 11px #fff2b9!important;}
+
+/* V2.7: reward popup, fixed lobby icons, readable character cards */
+#achievement-reward-popup{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:#38232a99;padding:18px}
+#achievement-reward-popup .achievement-reward-dialog{width:min(370px,100%);border-radius:24px;padding:26px 22px;text-align:center;background:#fffaf5;color:#77505c;box-shadow:0 18px 55px #24111d55}
+#achievement-reward-popup h2{font-size:22px;margin:0 0 18px}
+#achievement-reward-popup p{margin:9px 0;font-size:17px}
+#achievement-reward-popup b{color:#d16f85}
+#achievement-reward-popup button{width:100%;border:0;border-radius:12px;background:#d88da5;color:white;padding:12px;font-weight:800;margin-top:20px}
+.gacha-screen>.collection-peek .achievement-lobby-tab .reward-icon,.gacha-screen>.collection-peek .achievement-lobby-tab .reward-icon img,.gacha-screen>.collection-peek .daily-button .reward-icon,.gacha-screen>.collection-peek .daily-button .reward-icon img{animation:none!important;transition:none!important;transform:none!important;translate:none!important;rotate:none!important;scale:none!important}
+.gacha-screen .collection-grid .friend-card{min-width:0;box-sizing:border-box;overflow:hidden}
+.gacha-screen .collection-grid .friend-card>b{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.35;margin-top:4px}
+.gacha-screen .collection-grid .friend-card .friend-bonus-slot{position:relative;min-height:21px;display:flex;align-items:center;justify-content:center}
+.gacha-screen .collection-grid .friend-card .friend-avatar{flex-shrink:0}
+
+/* V2.9: compact, right-aligned icon-free lobby action stack */
+.gacha-screen>.collection-peek.collection-peek,
+.gacha-screen>.top-rewards.top-rewards{right:5px!important;left:auto!important;width:clamp(83px,23vw,104px)!important;max-width:104px!important;box-sizing:border-box!important;gap:5px!important}
+.gacha-screen>.collection-peek .reward-chip,
+.gacha-screen>.top-rewards .reward-chip{width:100%!important;min-width:0!important;justify-content:center!important;padding:5px 3px!important;gap:0!important;box-sizing:border-box!important}
+.gacha-screen>.collection-peek .reward-chip>b,
+.gacha-screen>.collection-peek .reward-chip span b,
+.gacha-screen>.top-rewards .reward-chip span b{font-size:11px!important;white-space:nowrap!important;text-align:center!important}
+.gacha-screen>.collection-peek .reward-icon,
+.gacha-screen>.top-rewards .reward-icon{display:none!important}
+.gacha-screen>.collection-peek .achievement-lobby-tab{position:relative!important}
+.gacha-screen>.collection-peek .achievement-lobby-tab.has-claimable-achievement::after{content:'';position:absolute;top:4px;right:5px;width:9px;height:9px;border-radius:50%;background:#f03645;box-shadow:0 0 0 2px #fff,0 1px 5px #bd203c66;pointer-events:none}
+/* Battle picker: keep long names readable on mobile without overlapping power badges. */
+.weed-screen .battle-picker .weed-pick{min-width:0!important;gap:3px!important;padding:7px 3px 8px!important;overflow:hidden!important}
+.weed-screen .battle-picker .weed-pick .battle-pick-name{display:block!important;width:100%!important;max-width:100%!important;min-height:27px!important;height:auto!important;line-height:1.2!important;font-size:10px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:keep-all!important;overflow:visible!important;text-overflow:clip!important;text-align:center!important}
+.weed-screen .battle-picker .weed-pick .is-power{display:block!important;flex:none!important;max-width:100%!important;line-height:1.35!important;white-space:nowrap!important;margin:0!important}
