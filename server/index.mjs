@@ -927,6 +927,42 @@ async function expeditionSettle(conn, day, serverId, now) {
   }
   return {hp,stage}
 }
+// Advance active expedition rooms on the server, even when nobody opens the expedition UI.
+// The row lock in expeditionSettle prevents duplicate damage, stage rewards or transitions
+// when a player request and this worker run concurrently.
+let expeditionWorkerBusy = false
+async function expeditionBackgroundTick() {
+  if (!ready || expeditionWorkerBusy) return
+  expeditionWorkerBusy = true
+  try {
+    const now = Date.now()
+    const {day} = expeditionWindow(now)
+    const [rooms] = await pool.query(
+      'SELECT DISTINCT b.server_id FROM gm_expedition_boss b JOIN gm_expedition_member m ON m.raid_day=b.raid_day AND m.server_id=b.server_id WHERE b.raid_day=? ORDER BY b.server_id',
+      [day]
+    )
+    for (const room of rooms) {
+      await retryDbContention(async () => {
+        const conn = await pool.getConnection()
+        try {
+          await conn.beginTransaction()
+          await expeditionSettle(conn, day, Number(room.server_id), Date.now())
+          await conn.commit()
+        } catch (error) {
+          await conn.rollback()
+          throw error
+        } finally {
+          conn.release()
+        }
+      })
+    }
+  } catch (error) {
+    console.error('[expedition] background tick failed:', error?.code || error)
+  } finally {
+    expeditionWorkerBusy = false
+  }
+}
+
 // Retrying a deadlocked transaction is safe: InnoDB rolls back the victim.
 const isDbContention = error => ['ER_LOCK_DEADLOCK','ER_LOCK_WAIT_TIMEOUT'].includes(error?.code)
 async function retryDbContention(task, attempts=3) {
@@ -2256,4 +2292,6 @@ server.listen(PORT, () => {
     }
   }
   attempt(20)
+  // Server-side progression must not depend on an expedition page visit.
+  setInterval(expeditionBackgroundTick, EXP_TICK)
 })
