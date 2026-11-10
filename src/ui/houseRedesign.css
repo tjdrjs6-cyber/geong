@@ -158,3 +158,40 @@
   #ui .house-screen .house-scroll-viewport {max-height:55dvh !important;}
   #ui .house-screen .house-lot {width:min(100%, 540px, calc(55dvh * 1086 / 1448)) !important;}
 }
+
+/* test12: read-only house in another player's collection/profile.
+   Do not inherit fixed-height/stretching rules from the collection card. */
+.house-lot.house-visit {
+  display:block !important;
+  position:relative !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:540px !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  aspect-ratio:1086 / 1448 !important;
+  flex:none !important;
+  align-self:center !important;
+  margin-inline:auto !important;
+  transform:none !important;
+  overflow:hidden !important;
+  background:#bdeeff !important;
+}
+.house-lot.house-visit > .house-bg {
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  transform:none !important;
+}
+.house-lot.house-visit > .house-items {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+}
