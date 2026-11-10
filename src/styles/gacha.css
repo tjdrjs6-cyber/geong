@@ -5075,3 +5075,11 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .weed-screen .battle-picker .weed-pick .is-power{display:block!important;flex:0 0 auto!important;visibility:visible!important;opacity:1!important;position:static!important;font-size:10px!important;line-height:1.4!important;margin-top:3px!important;}
 #ui .battle-field .bf-friend-body>img.battle-facing-flipped{transform:scaleX(-1)!important;}
 #ui .gacha-screen>.collection-peek .reward-chip b,#ui .gacha-screen>.top-rewards .reward-chip b{font-size:11.5px!important;letter-spacing:0!important;}
+
+/* V3.2: allow deployed character artwork to extend beyond its slot without being clipped. */
+#ui .battle-field .bf-friend-body,
+#ui .battle-field .bf-friend-body > img,
+#ui .battle-field .bf-friend,
+#ui .expedition-field .exp-friend,
+#ui .house-character { overflow:visible!important; }
+#ui .battle-field .bf-friend-body > img {object-fit:contain!important;}
