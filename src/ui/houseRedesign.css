@@ -33,3 +33,14 @@
 .house-lot.house-grid-visible.house-grid-wall::before {
   clip-path:polygon(2% 40%,50% 23%,98% 40%,98% 55%,50% 39%,2% 55%);
 }
+
+/* test08: soft pastel backdrop and a shorter room illustration.
+   Keep image aspect ratio intact (no vertical stretching). */
+.house-lot {
+  background: radial-gradient(ellipse at 24% 22%,#fff1f6 0%,transparent 55%),
+              radial-gradient(ellipse at 78% 78%,#e5f7f2 0%,transparent 58%),
+              linear-gradient(165deg,#f4efff 0%,#fff7e9 53%,#edf8ff 100%);
+}
+.house-lot .house-bg {
+  inset: 4% 0 auto; height: 92%; width:100%; object-fit:contain;
+}
