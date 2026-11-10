@@ -89,7 +89,7 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
-  private lotteryState: {remaining:number[];total:number;price:number;winners?:{nickname:string;grade:string}[]}|null=null
+  private lotteryState: {remaining:number[];total:number;price:number;resetNoticeId?:number;winners?:{nickname:string;grade:string}[]}|null=null
   private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
   private lotteryRevealed=0
   private lotteryTimer=0
@@ -359,7 +359,7 @@ export class GachaUi {
         <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
         <div class="weed-panel house-panel">
           <div class="field-info-sticky">
-          <div class="house-panel-head"><div class="auth-tabs house-tabs" role="tablist"><button type="button" class="auth-tab is-active" data-action="house-tab" data-tab="deco" role="tab" aria-selected="true">🎀 데코</button><button type="button" class="auth-tab" data-action="house-tab" data-tab="friend" role="tab" aria-selected="false">🐾 친구 3명</button></div><span class="house-meta"><b class="house-count">0 / 20</b> · <span class="house-save">자동 저장</span></span></div>
+          <div class="house-panel-head"><div class="auth-tabs house-tabs" role="tablist"><button type="button" class="auth-tab is-active" data-action="house-tab" data-tab="floor" role="tab" aria-selected="true">🪑 데코(바닥)</button><button type="button" class="auth-tab" data-action="house-tab" data-tab="wall" role="tab" aria-selected="false">🖼 데코(벽)</button><button type="button" class="auth-tab" data-action="house-tab" data-tab="friend" role="tab" aria-selected="false">🐾 캐릭터</button></div><span class="house-meta"><b class="house-count">0 / 20</b> · <span class="house-save">자동 저장</span></span></div>
           <p class="weed-rule">데코를 눌러 공터에 꺼내고, 끌어서 옮겨요. 놓인 데코를 누르면 뒤집기·크기·넣기를 할 수 있어요.</p>
                     </div>
           <div class="house-inventory" role="list" aria-label="꺼낼 데코"></div>
@@ -1623,7 +1623,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     try{const state=await this.store.lottery();if(this.screen==='rps'&&!this.lotteryResults.length){this.lotteryState=state;this.renderLottery()}}catch{}
   }
   private async openLottery():Promise<void>{
-    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing');this.renderLottery()}
+    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing');this.renderLottery();void this.showLotteryResetNotice()}
     catch{const el=this.root.querySelector<HTMLElement>('.lottery-status');if(el)el.textContent='복권 정보를 불러오지 못했습니다.'}
   }
   private updateLotteryPrice():void{
@@ -1650,6 +1650,18 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0;if(Number(input.value)>state.total)input.value=String(Math.max(1,state.total))}
     const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||this.lotteryBusy
     this.updateLotteryPrice()
+  }
+  private async showLotteryResetNotice():Promise<void>{
+    const id=this.lotteryState?.resetNoticeId
+    if(!id || document.getElementById('lottery-reset-notice'))return
+    const dialog=document.createElement('dialog');dialog.id='lottery-reset-notice';dialog.className='lottery-alert'
+    const panel=document.createElement('div');panel.className='lottery-alert-inner'
+    const title=document.createElement('h3');title.textContent='겅이복권 안내'
+    const body=document.createElement('p');body.textContent='상위상이 전부 품절되어 겅이복권이 초기화되었습니다.'
+    const close=document.createElement('button');close.textContent='닫기';close.addEventListener('click',()=>dialog.close())
+    panel.append(title,body,close);dialog.append(panel);document.body.append(dialog)
+    dialog.addEventListener('close',()=>{dialog.remove();void this.store.lotteryResetSeen(id).catch(()=>{})},{once:true})
+    dialog.showModal()
   }
   private lotteryTopPopup(message:string):void{
     document.getElementById('lottery-alert')?.remove()

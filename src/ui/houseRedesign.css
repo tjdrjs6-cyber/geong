@@ -1,4 +1,4 @@
-/* test02 house room overlay. Isolated from the game's main CSS. */
+/* test06 house room overlay. Isolated from the game's main CSS. */
 .house-lot { position:relative; overflow:hidden; aspect-ratio:941 / 1672; width:100%; max-width:540px; margin-inline:auto; touch-action:none; }
 .house-lot .house-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; user-select:none; }
 .house-lot .house-items { position:absolute; inset:0; z-index:3; pointer-events:none; }
@@ -13,3 +13,9 @@
 .house-lot .house-coin { z-index:8; }
 .house-lot.house-visit .house-piece { transition:none; }
 @media (prefers-reduced-motion:reduce) { .house-lot .house-piece { transition:none!important; } }
+
+/* test06: wall and floor decoration zones */
+.house-lot.house-grid-visible:before {left:3%;right:3%;top:20%;bottom:31%;background-size:12.5% 16.666%;clip-path:none;opacity:.55}
+.house-tabs {display:flex;gap:3px;flex-wrap:nowrap}
+.house-tabs .auth-tab {font-size:11px;padding:7px 4px;white-space:nowrap;flex:1;min-width:0}
+.house-lot .house-piece[data-kind="piece"] {transition:none}

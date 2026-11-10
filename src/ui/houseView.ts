@@ -9,7 +9,12 @@ type Selection = { kind: 'piece' | 'friend'; index: number } | null
 const FRIEND_LAYER = 5000
 type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
 
-const HOUSE_BG_URL = '/assets/bg/house_room_test02.webp'
+const HOUSE_BG_URL = '/assets/bg/house_room_test06.webp'
+const WALL_DECO_IDS = new Set<DecoId>(['d21','d29','d31','d32','d33','d34','d39','d40','d44','d46','d48'])
+const isWallDeco = (id: DecoId): boolean => WALL_DECO_IDS.has(id)
+const withinWall = (x: number,y: number): boolean => y >= 24 && y <= 51 && (x < 48 ? y >= 53 - 0.48 * x : y >= 53 - 0.48 * (100 - x))
+const floorY = (x: number): number => 53 + 0.42 * Math.abs(x-50)
+
 
 /** House background: the user's hand-drawn stone room with a window to the forest. */
 export function houseLotMarkup(): string {
@@ -30,7 +35,7 @@ export function houseVisitMarkup(layout: HouseLayout): string {
 export class HouseView {
   private layout: HouseLayout = { pieces: [], friends: [] }
   private selected: Selection = null
-  private tab: 'deco' | 'friend' = 'deco'
+  private tab: 'floor' | 'wall' | 'friend' = 'floor'
   private saveTimer = 0
   private coin: HouseCoin | null = null
   private coinNextAt = 0
@@ -73,7 +78,7 @@ export class HouseView {
   /** Handles house-specific button actions; returns true when the action was consumed. */
   handle(action: string, button: HTMLElement): boolean {
     if (action === 'house-coin') return true
-    if (action === 'house-tab') { this.tab = button.dataset.tab === 'friend' ? 'friend' : 'deco'; this.renderPanel(); return true }
+    if (action === 'house-tab') { this.tab = button.dataset.tab === 'friend' ? 'friend' : button.dataset.tab === 'wall' ? 'wall' : 'floor'; this.renderPanel(); return true }
     if (action === 'house-add' && button.dataset.id) { this.addPiece(button.dataset.id as DecoId); return true }
     if (action === 'house-friend' && button.dataset.id) { this.placeFriend(button.dataset.id as CharacterId); return true }
     if (action === 'house-flip') { this.mutateSelected(item => { item.f = !item.f }); return true }
@@ -181,7 +186,7 @@ export class HouseView {
     if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
     if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
     const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 10, 90), y: 72, s: 1, f: false })
+    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 12, 88), y: isWallDeco(id) ? 43 : 70, s: 1, f: false })
     this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
     this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
     this.changed()
@@ -269,8 +274,8 @@ export class HouseView {
     })
     const list = this.root.querySelector<HTMLElement>('.house-inventory')
     if (!list) return
-    if (this.tab === 'deco') {
-      const owned = DECOS.filter(deco => (this.store.decos[deco.id] ?? 0) > 0)
+    if (this.tab !== 'friend') {
+      const owned = DECOS.filter(deco => (this.store.decos[deco.id] ?? 0) > 0 && isWallDeco(deco.id) === (this.tab === 'wall'))
       list.innerHTML = owned.length
         ? owned.map(deco => {
           const left = this.remaining(deco.id)
@@ -288,11 +293,13 @@ export class HouseView {
         : `<p class="weed-empty">가챠에서 친구를 뽑으면 하우스에 최대 ${HOUSE_MAX_FRIENDS}명까지 데려올 수 있어요.</p>`
     }
     const count = this.root.querySelector<HTMLElement>('.house-count')
-    if (count) count.textContent = this.tab === 'deco' ? `데코 ${this.layout.pieces.length} / ${HOUSE_MAX_PIECES}` : `친구 ${this.layout.friends.length} / ${HOUSE_MAX_FRIENDS}`
+    if (count) count.textContent = this.tab !== 'friend' ? `데코 ${this.layout.pieces.length} / ${HOUSE_MAX_PIECES}` : `친구 ${this.layout.friends.length} / ${HOUSE_MAX_FRIENDS}`
     const friendTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="friend"]')
     if (friendTab) friendTab.textContent = `🐾 친구 ${this.layout.friends.length} / ${HOUSE_MAX_FRIENDS}`
-    const decoTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="deco"]')
-    if (decoTab) decoTab.textContent = `🎀 데코 ${this.layout.pieces.length} / ${HOUSE_MAX_PIECES}`
+    const floorTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="floor"]')
+    if (floorTab) floorTab.textContent = `🪑 데코(바닥)`
+    const wallTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="wall"]')
+    if (wallTab) wallTab.textContent = `🖼 데코(벽)`
   }
 
   private onPointerDown(event: PointerEvent): void {
@@ -320,7 +327,12 @@ export class HouseView {
     const dy = (event.clientY - this.drag.startY) / rect.height * 100
     if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
     item.x = this.selected?.kind === 'piece' ? this.snap(this.drag.originX + dx, 18, 82) : Math.round(Math.min(82, Math.max(18, this.drag.originX + dx)) * 10) / 10
-    item.y = this.selected?.kind === 'piece' ? this.snap(this.drag.originY + dy, 52, 84) : Math.round(Math.min(80, Math.max(54, this.drag.originY + dy)) * 10) / 10
+    if (this.selected?.kind === 'piece') {
+      const piece = this.layout.pieces[this.selected.index]
+      const wall = isWallDeco(piece.id)
+      const candidate = this.snap(this.drag.originY + dy, wall ? 27 : 54, wall ? 51 : 83)
+      item.y = wall ? Math.max(27, Math.min(51, Math.max(53 - 0.48 * Math.min(item.x,100-item.x), candidate))) : Math.max(floorY(item.x), candidate)
+    } else item.y = Math.round(Math.min(80, Math.max(54, this.drag.originY + dy)) * 10) / 10
     const isFriend = this.selected?.kind === 'friend'
     const node = this.lot.querySelector<HTMLElement>(`.house-piece[data-kind="${isFriend ? 'friend' : 'piece'}"][data-index="${this.selected!.index}"]`)
     if (node) { node.style.left = `${item.x}%`; node.style.top = `${item.y}%`; node.style.zIndex = String((isFriend ? FRIEND_LAYER : 0) + Math.round(item.y * 10)) }

@@ -6,7 +6,7 @@ import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
-export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null;power?:number}[]}[] }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
@@ -141,7 +141,7 @@ export class RemoteGachaStore {
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle = this.battle
-    if (!battle || !battle.id) { const stage=battle?.stage ?? 1; const maxHp=battleStageHp(stage); return { kills:0,hp:maxHp,maxHp,nextIn:BATTLE_TICK_MS,power:0,stage,remaining:1800000 } }
+    if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
     // forge.bonus already includes the equipped accessory. Never add it twice.
     const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0)
     const elapsed = Math.max(0, this.serverNow() - battle.since)
@@ -316,6 +316,7 @@ export class RemoteGachaStore {
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
   async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
   async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
     const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
