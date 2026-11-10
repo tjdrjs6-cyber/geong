@@ -15,7 +15,7 @@ const isWallDeco = (id: DecoId): boolean => WALL_DECO_IDS.has(id)
 // Geometry follows the un-stretched 1086×1448 background: upper red trim,
 // yellow wall/floor boundary and the diamond-shaped floor.
 // Exact boundary slopes derived from the supplied 1086 x 1448 room artwork.
-const wallTop = (x: number): number => 22.5 + 0.365 * Math.abs(x - 50)
+const wallTop = (x: number): number => 22.5 + 0.350 * Math.abs(x - 50)
 const wallBottom = (x: number): number => 38.4 + 0.338 * Math.abs(x - 50)
 const floorTop = (x: number): number => wallBottom(x) + 0.8
 const floorBottom = (x: number): number => 76.9 - 0.394 * Math.abs(x - 50)
@@ -202,7 +202,9 @@ export class HouseView {
     if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
     if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
     const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 12, 88), y: isWallDeco(id) ? 31 : 58, s: 1, f: false })
+    const x = this.snap(50 + jitter, 12, 88)
+    const y = isWallDeco(id) ? this.snap((wallTop(x) + wallBottom(x)) / 2, wallTop(x) + 2, wallBottom(x) - 2) : this.snap((floorTop(x) + floorBottom(x)) / 2, floorTop(x) + 2, floorBottom(x) - 2)
+    this.layout.pieces.push({ id, x, y, s: 1, f: false })
     this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
     this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
     this.changed()
@@ -343,7 +345,7 @@ export class HouseView {
     const dx = (event.clientX - this.drag.startX) / rect.width * 100
     const dy = (event.clientY - this.drag.startY) / rect.height * 100
     if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
-    const x = this.snap(this.drag.originX + dx, 9, 91)
+    const x = this.snap(this.drag.originX + dx, 10, 90)
     item.x = x
     if (this.selected?.kind === 'piece') {
       const piece = this.layout.pieces[this.selected.index]

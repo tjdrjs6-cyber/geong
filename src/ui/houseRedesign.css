@@ -57,3 +57,42 @@
 .house-lot.house-grid-visible.house-grid-wall::before {
  clip-path:polygon(1.8% 40.0%,50% 22.5%,98.2% 40.0%,98.2% 55.3%,50% 38.4%,1.8% 55.3%);
 }
+
+/* test10: room is a fixed, non-scrolling stage; only the larger editor list scrolls. */
+#ui .house-screen[aria-hidden="false"],
+#ui .house-screen.is-active {
+  display:flex; flex-direction:column; overflow:hidden !important;
+  height:100%; max-height:100%; min-height:0;
+  overscroll-behavior:contain;
+}
+#ui .house-screen .weed-header { flex:0 0 auto; }
+#ui .house-screen .house-scroll-viewport {
+  display:flex; align-items:center; justify-content:center;
+  flex:0 1 auto; height:min(49dvh, 480px); min-height:0;
+  max-height:49%; overflow:hidden !important;
+  overscroll-behavior:none; touch-action:pan-x;
+  padding:0; margin:0; background:#bdeeff;
+}
+#ui .house-screen .house-lot {
+  flex:0 0 auto; width:auto !important; height:100% !important;
+  max-width:100%; max-height:100%; aspect-ratio:1086 / 1448 !important;
+  overflow:hidden; background:#bdeeff !important;
+}
+#ui .house-screen .house-lot .house-bg {
+  inset:0 !important; width:100% !important; height:100% !important;
+  object-fit:contain !important; object-position:center !important;
+}
+#ui .house-screen .house-tools { flex:0 0 auto; max-height:90px; overflow-x:auto; }
+#ui .house-screen .house-panel {
+  display:flex; flex-direction:column; flex:1 1 auto;
+  min-height:0; overflow:hidden !important; margin-bottom:0;
+}
+#ui .house-screen .house-panel .field-info-sticky { flex:0 0 auto; }
+#ui .house-screen .house-inventory {
+  flex:1 1 auto; min-height:0; overflow-y:auto !important;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  touch-action:pan-y; padding-bottom:24px;
+}
+@media(max-height:700px) {
+  #ui .house-screen .house-scroll-viewport { height:42dvh; max-height:42%; }
+}
