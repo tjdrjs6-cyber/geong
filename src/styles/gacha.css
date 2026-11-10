@@ -5005,3 +5005,15 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #achievement-v23-overlay .achievement-v24-face img{width:100%!important;height:55px!important;object-fit:contain!important}
 #achievement-v23-overlay .achievement-v24-face small{font-size:9px!important;line-height:1.2!important;text-align:center!important;overflow-wrap:anywhere!important;color:#75555d!important}
 .achievement-combat-bonus{margin:5px 0!important;padding:6px 9px!important;background:#fff4dc!important;border-radius:9px!important;color:#9a632b!important;font-size:12px!important;font-weight:700!important;text-align:center!important}
+
+/* V2.5: consistent right-side menu, no overlap */
+.gacha-screen>.collection-peek.collection-peek{top:calc(76px + var(--safe-t,0px))!important;right:8px!important;width:clamp(104px,29vw,136px)!important;display:flex!important;flex-direction:column!important;gap:5px!important;padding:0!important;margin:0!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;}
+.gacha-screen>.collection-peek .reward-chip{width:100%!important;height:34px!important;min-height:34px!important;max-height:34px!important;flex:0 0 34px!important;margin:0!important;padding:4px 7px!important;gap:5px!important;border-radius:11px!important;overflow:hidden!important;box-sizing:border-box!important;}
+.gacha-screen>.collection-peek .reward-icon{width:20px!important;min-width:20px!important;flex:0 0 20px!important;}
+.gacha-screen>.collection-peek .reward-icon img{width:20px!important;height:20px!important;object-fit:contain!important;}
+.gacha-screen>.collection-peek .reward-chip b{font-size:11px!important;line-height:1.2!important;white-space:nowrap!important;}
+.gacha-screen>.collection-peek .reward-chip small{display:none!important;}
+.gacha-screen>.top-rewards{top:calc(198px + var(--safe-t,0px))!important;right:8px!important;width:clamp(104px,29vw,136px)!important;display:flex!important;flex-direction:column!important;gap:5px!important;}
+.gacha-screen>.top-rewards .reward-chip{height:34px!important;min-height:34px!important;max-height:34px!important;box-sizing:border-box!important;}
+.achievement-v25-unknown{display:flex;align-items:center;justify-content:center;height:55px;width:100%;font-size:31px;color:#a49ca2;}
+.expedition-equipment-bonus{margin:5px 0!important;padding:6px 9px!important;background:#e9f5ff!important;border-radius:9px!important;color:#446c9a!important;font-size:12px!important;font-weight:700!important;text-align:center!important;}
