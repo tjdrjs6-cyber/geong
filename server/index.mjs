@@ -1266,12 +1266,12 @@ const routes = {
       const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
       if(id){const current=await getAccessory(account.id,conn);if(grade==='normal'?!Number(current.counts[id]):!Number(current.grades[id]?.[grade])){await conn.rollback();return send(res,409,{error:'accessory_not_owned'})}}
       // Settle existing battle with old power before changing the bonus.
-      const [battles]=await conn.query('SELECT character_id,second_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
+      const [battles]=await conn.query('SELECT character_id,second_id,third_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
       if(battles.length){
         const [forgeRows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[account.id])
         const b=battles[0]
         const oldBonus=forgeRows.length?forgeBonus(Number(forgeRows[0].level)):0
-        const power=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+oldBonus+accessoryPower(await getAccessory(account.id,conn))
+        const power=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+(b.third_id?(POWER[b.third_id]??10):0)+oldBonus+accessoryPower(await getAccessory(account.id,conn))+await achievementPower(account.id,conn)
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),power)
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
         if(settled.kills)await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[settled.kills,account.id])
@@ -1357,12 +1357,12 @@ const routes = {
       if(!saves.length || (!rpsAdmin(account) && Number(saves[0].fragments)<fragments)){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
       if(!rpsAdmin(account) && Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
       // Settle battle damage with the OLD bonus before raising weapon level.
-      const [battles]=await conn.query('SELECT character_id,second_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
+      const [battles]=await conn.query('SELECT character_id,second_id,third_id,since_ms,damage FROM gm_battle WHERE account_id=? FOR UPDATE',[account.id])
       let earned=0
       if(battles.length){
         const b=battles[0]
         const accessory=await getAccessory(account.id,conn)
-        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+forgeBonus(level)+accessoryPower(accessory)+await achievementPower(account.id,conn)
+        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+(b.third_id?(POWER[b.third_id]??10):0)+forgeBonus(level)+accessoryPower(accessory)+await achievementPower(account.id,conn)
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),oldPower)
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
