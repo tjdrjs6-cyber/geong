@@ -404,7 +404,7 @@ export class GachaUi {
           <span class="toon-hero-name"></span>
           <i class="toon-capsule"></i>
         </section>
-        <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span class="reward-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" /></span><span><b>도감</b></span></button></aside>
+        <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span class="reward-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" /></span><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span class="reward-icon">🏆</span><span><b>업적</b></span></button></aside>
         <footer class="gacha-actions">
           <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
           ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
@@ -793,6 +793,29 @@ export class GachaUi {
     this.shopPendingSell = null
   }
 
+
+  private async openAchievements(tab:'collection'|'title'='collection'):Promise<void> {
+    let overlay=document.querySelector<HTMLElement>('#achievement-v23-overlay')
+    if(!overlay){overlay=document.createElement('div');overlay.id='achievement-v23-overlay';document.body.append(overlay)}
+    overlay.hidden=false
+    const close=()=>{if(overlay)overlay.hidden=true}
+    overlay.innerHTML='<div class="achievement-v23-panel"><button class="achievement-v23-close" aria-label="닫기">×</button><h2>🏆 업적</h2><p>불러오는 중...</p></div>'
+    overlay.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
+    const panel=overlay.querySelector<HTMLElement>('.achievement-v23-panel')!
+    const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))
+    const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>🏆 업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
+    if(tab==='title'){showTitle();return}
+    try {
+      const res=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
+      if(!res.ok)throw Error('업적 정보를 불러오지 못했어요.')
+      const data=await res.json() as {items:{id:string;tier:string;name:string;ids:string[];owned:string[];coins:number;power:number;claimed:boolean}[];power:number}
+      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>🏆 업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="'+(item.owned.includes(id)?'has':'')+'">'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
+      panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
+      panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
+      panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');await this.store.restore();await this.openAchievements('collection');this.toast('컬렉션 보상을 수령했어요!')}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
+    }catch(error){panel.innerHTML='<button class="achievement-v23-close">×</button><p>업적 정보를 불러오지 못했습니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close}
+  }
+
   private async onClick(event: MouseEvent): Promise<void> {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]')
     const action = button?.dataset.action
@@ -975,6 +998,7 @@ export class GachaUi {
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
     if (action === 'user-sort') { const mode = button.dataset.sort; if (mode === 'name' || mode === 'level') { this.userSortMode = mode; this.renderUsers() } return }
+    if (action === 'achievements') { await this.openAchievements(); return }
     if (action === 'users') { const card = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card'); card?.classList.remove('privacy-mode'); card?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden'); this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }

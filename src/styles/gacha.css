@@ -4959,3 +4959,32 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .forge-current .forge-aura.aura-25>img.weapon-keyring{animation:none!important;filter:drop-shadow(0 0 9px var(--keyring-glow,#aaa))!important}
 /* No unrelated sparkles on the profile badge or battle layout. */
 #ui .user-weapon-badge .forge-aura.aura-25::after{color:#ffe15b!important;text-shadow:0 0 5px #ffd000!important}
+/* Stage title and challenge button raised into the sky header area. */
+#ui .battle-screen .battle-field { overflow: visible !important; z-index: 31 !important; }
+#ui .battle-screen .battle-stage-heading { top: -60px !important; }
+#ui .battle-screen .battle-stage-actions { top: -11px !important; }
+
+/* V2.3 achievements */
+.collection-peek .achievement-lobby-tab{margin-top:5px;display:flex;align-items:center;justify-content:center;gap:4px}
+#achievement-v23-overlay[hidden]{display:none!important}
+#achievement-v23-overlay{position:fixed;inset:0;z-index:999999;background:#392a2a85;display:flex;align-items:center;justify-content:center;padding:14px}
+.achievement-v23-panel{position:relative;width:min(95vw,480px);max-height:86dvh;overflow:auto;border-radius:23px;background:#fffaf5;padding:22px 14px;box-shadow:0 12px 40px #36242a40;color:#62434b}
+.achievement-v23-panel h2{text-align:center;margin:4px 0 16px}
+.achievement-v23-close{position:absolute;right:12px;top:10px;border:0;border-radius:50%;width:34px;height:34px;background:#f6e4e7;color:#6c5558;font-size:23px}
+.achievement-v23-tabs{display:flex;gap:8px;margin-bottom:12px}
+.achievement-v23-tabs button{flex:1;border:1px solid #e7cbd3;background:white;border-radius:13px;padding:10px;color:#9a6477}
+.achievement-v23-tabs button.active{background:#f3dce4;font-weight:800}
+.achievement-v23-summary,.achievement-v23-empty{text-align:center;color:#ad7589}
+.achievement-v23-empty{padding:60px 10px}
+.achievement-v23-items{display:grid;gap:9px}
+.achievement-v23-item{border:1px solid #f0d7d9;background:white;border-radius:15px;padding:12px}
+.achievement-v23-item>div:first-child{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.achievement-v23-item b{font-size:14px}
+.achievement-v23-item small{color:#b06d83}
+.achievement-v23-item span{font-size:11px;color:#a78d95}
+.achievement-v23-item p{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}
+.achievement-v23-item p span{background:#eee9e9;border-radius:6px;padding:3px 5px}
+.achievement-v23-item p span.has{background:#f8e3e9;color:#a94e70}
+.achievement-v23-reward{font-size:12px;color:#b07547;margin-bottom:8px}
+.achievement-v23-item button{width:100%;padding:8px;border:0;border-radius:10px;background:#db91a5;color:white;font-weight:bold}
+.achievement-v23-item button:disabled{background:#eee5e6;color:#aa9b9e}
