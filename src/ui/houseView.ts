@@ -12,8 +12,14 @@ type Hooks = { toast(text: string): void; error(error: unknown): void; wallet():
 const HOUSE_BG_URL = '/assets/bg/house_room_test06.webp'
 const WALL_DECO_IDS = new Set<DecoId>(['d21','d29','d31','d32','d33','d34','d39','d40','d44','d46','d48'])
 const isWallDeco = (id: DecoId): boolean => WALL_DECO_IDS.has(id)
-const withinWall = (x: number,y: number): boolean => y >= 24 && y <= 51 && (x < 48 ? y >= 53 - 0.48 * x : y >= 53 - 0.48 * (100 - x))
-const floorY = (x: number): number => 53 + 0.42 * Math.abs(x-50)
+// Geometry follows the un-stretched 1086×1448 background: upper red trim,
+// yellow wall/floor boundary and the diamond-shaped floor.
+const wallTop = (x: number): number => 23 + 0.36 * Math.abs(x - 50)
+const wallBottom = (x: number): number => 39 + 0.34 * Math.abs(x - 50)
+const floorTop = (x: number): number => wallBottom(x) + 1
+const floorBottom = (x: number): number => 77 - 0.42 * Math.abs(x - 50)
+const clamp = (n: number, low: number, high: number): number => Math.min(high, Math.max(low, n))
+
 
 
 /** House background: the user's hand-drawn stone room with a window to the forest. */
@@ -42,7 +48,8 @@ export class HouseView {
   private coinClockSkew = 0
   private coinTimer = 0
   private coinBusy = false
-  private wanderTimer = 0
+  private wanderTimers: number[] = []
+  private wanderGeneration = 0
   private drag: { pointerId: number; startX: number; startY: number; originX: number; originY: number; moved: boolean } | null = null
 
   constructor(private readonly root: HTMLElement, private readonly store: RemoteGachaStore, private readonly hooks: Hooks) {
@@ -68,8 +75,10 @@ export class HouseView {
     this.layout.friends = this.layout.friends.filter(friend => this.store.data.owned.includes(friend.id as CharacterId))
     this.selected = null
     this.render()
-    window.clearInterval(this.wanderTimer)
-    this.wanderTimer = window.setInterval(() => this.wanderFriends(), 3400)
+    this.wanderTimers.forEach(timer => window.clearTimeout(timer))
+    this.wanderTimers = []
+    const generation = ++this.wanderGeneration
+    this.layout.friends.forEach((_, index) => this.scheduleWander(index, generation, 700 + index * 1650 + Math.random() * 1100))
     this.hooks.coinAvailable(false)
     this.coin = null
     this.renderCoin()
@@ -159,23 +168,29 @@ export class HouseView {
       this.renderCoin()
     }
   }
-  /** Deco positions are stored on a simple 10-column floor grid. */
+  /** 2% grid with wall/floor geometry constraints. */
   private snap(value: number, low: number, high: number): number {
-    return Math.min(high, Math.max(low, Math.round(value / 8) * 8))
+    return clamp(Math.round(value / 2) * 2, low, high)
   }
 
-  /** Visual-only wandering; does not overwrite the player's saved positions. */
-  private wanderFriends(): void {
-    if (!this.isOpen || this.drag || this.selected?.kind === 'friend') return
-    this.lot.querySelectorAll<HTMLElement>('.house-friend').forEach((node, index) => {
+  /** Each character has an independent clock and direction, never a shared tick. */
+  private scheduleWander(index: number, generation: number, delay: number): void {
+    const timer = window.setTimeout(() => {
+      if (generation !== this.wanderGeneration || !this.isOpen) return
       const friend = this.layout.friends[index]
-      if (!friend) return
-      const dx = (Math.random() - 0.5) * 17
-      const dy = (Math.random() - 0.5) * 9
-      node.style.left = `${Math.max(25, Math.min(77, friend.x + dx))}%`
-      node.style.top = `${Math.max(58, Math.min(79, friend.y + dy))}%`
-      node.classList.toggle('is-walking-left', dx < 0)
-    })
+      const node = this.lot.querySelector<HTMLElement>(`.house-friend[data-index="${index}"]`)
+      if (friend && node && !this.drag && !(this.selected?.kind === 'friend' && this.selected.index === index)) {
+        const dx = (Math.random() - 0.5) * (9 + index * 4)
+        const x = clamp(friend.x + dx, 17, 83)
+        const y = clamp(friend.y + (Math.random() - 0.5) * (4 + index * 2), floorTop(x) + 4, floorBottom(x) - 3)
+        node.style.left = `${x}%`
+        node.style.top = `${y}%`
+        node.style.transitionDuration = `${1.8 + index * .65 + Math.random() * 1.2}s`
+        node.classList.toggle('is-walking-left', dx < 0)
+      }
+      this.scheduleWander(index, generation, 2400 + index * 1200 + Math.random() * 3200)
+    }, delay)
+    this.wanderTimers[index] = timer
   }
 
   private remaining(id: DecoId): number {
@@ -186,7 +201,7 @@ export class HouseView {
     if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
     if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
     const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 12, 88), y: isWallDeco(id) ? 43 : 70, s: 1, f: false })
+    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 12, 88), y: isWallDeco(id) ? 43 : 63, s: 1, f: false })
     this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
     this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
     this.changed()
@@ -255,6 +270,7 @@ export class HouseView {
     })
     layer.innerHTML = pieces.join('')
     this.lot.classList.toggle('house-grid-visible', this.selected?.kind === 'piece')
+    this.lot.classList.toggle('house-grid-wall', this.selected?.kind === 'piece' && isWallDeco(this.layout.pieces[this.selected.index]?.id))
     const empty = this.lot.querySelector<HTMLElement>('.house-empty')
     if (empty) empty.hidden = pieces.length > 0
     const tools = this.root.querySelector<HTMLElement>('.house-tools')
@@ -326,13 +342,17 @@ export class HouseView {
     const dx = (event.clientX - this.drag.startX) / rect.width * 100
     const dy = (event.clientY - this.drag.startY) / rect.height * 100
     if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
-    item.x = this.selected?.kind === 'piece' ? this.snap(this.drag.originX + dx, 18, 82) : Math.round(Math.min(82, Math.max(18, this.drag.originX + dx)) * 10) / 10
+    const x = this.snap(this.drag.originX + dx, 9, 91)
+    item.x = x
     if (this.selected?.kind === 'piece') {
       const piece = this.layout.pieces[this.selected.index]
       const wall = isWallDeco(piece.id)
-      const candidate = this.snap(this.drag.originY + dy, wall ? 27 : 54, wall ? 51 : 83)
-      item.y = wall ? Math.max(27, Math.min(51, Math.max(53 - 0.48 * Math.min(item.x,100-item.x), candidate))) : Math.max(floorY(item.x), candidate)
-    } else item.y = Math.round(Math.min(80, Math.max(54, this.drag.originY + dy)) * 10) / 10
+      const low = wall ? wallTop(x) + 2 : floorTop(x) + 2
+      const high = wall ? wallBottom(x) - 2 : floorBottom(x) - 2
+      item.y = this.snap(this.drag.originY + dy, low, high)
+    } else {
+      item.y = clamp(this.drag.originY + dy, floorTop(x) + 3, floorBottom(x) - 2)
+    }
     const isFriend = this.selected?.kind === 'friend'
     const node = this.lot.querySelector<HTMLElement>(`.house-piece[data-kind="${isFriend ? 'friend' : 'piece'}"][data-index="${this.selected!.index}"]`)
     if (node) { node.style.left = `${item.x}%`; node.style.top = `${item.y}%`; node.style.zIndex = String((isFriend ? FRIEND_LAYER : 0) + Math.round(item.y * 10)) }

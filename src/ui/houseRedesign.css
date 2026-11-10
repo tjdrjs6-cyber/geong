@@ -19,3 +19,17 @@
 .house-tabs {display:flex;gap:3px;flex-wrap:nowrap}
 .house-tabs .auth-tab {font-size:11px;padding:7px 4px;white-space:nowrap;flex:1;min-width:0}
 .house-lot .house-piece[data-kind="piece"] {transition:none}
+
+/* test07: preserve the exact aspect ratio of the supplied 1086x1448 room. */
+.house-lot { aspect-ratio:1086 / 1448; }
+.house-lot .house-bg { object-fit:contain; }
+/* Smaller 2%-spacing grid, clipped to the actual floor or wall polygons. */
+.house-lot.house-grid-visible::before {
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background-image:linear-gradient(to right,#bd8d6470 1px,transparent 1px),linear-gradient(to bottom,#bd8d6470 1px,transparent 1px);
+  background-size:2% 2%;opacity:.55;
+  clip-path:polygon(2% 55%,50% 39%,98% 55%,98% 57%,50% 77%,2% 57%);
+}
+.house-lot.house-grid-visible.house-grid-wall::before {
+  clip-path:polygon(2% 40%,50% 23%,98% 40%,98% 55%,50% 39%,2% 55%);
+}
