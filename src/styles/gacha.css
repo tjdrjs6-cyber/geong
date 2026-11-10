@@ -5127,3 +5127,16 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
   white-space:nowrap!important;
   line-height:1.4!important;
 }
+
+/* V3.6: all six owned alchemy grades and uniform shortage state */
+.alchemy-panel .alchemy-owned-title{font-size:12px;font-weight:700;color:#7b5968;margin:10px 0 5px}
+.alchemy-panel .alchemy-owned-grades{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.alchemy-panel .alchemy-owned-grade{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:3px;padding:8px 6px;border:1px solid #e9dce1;border-left:3px solid var(--alchemy-accent);border-radius:9px;background:#fffafb;font-size:11px}
+.alchemy-panel .alchemy-owned-grade strong{font-size:12px;color:#8c4565;white-space:nowrap}
+.alchemy-panel .alchemy-fragments{display:flex;align-items:center;gap:7px;background:#fff5f8;border:1px solid #efd6df;border-radius:10px;padding:7px 10px;margin:8px 0;font-size:12px}
+.alchemy-panel .alchemy-fragments img{width:26px;height:26px;object-fit:contain}
+.alchemy-panel .alchemy-fragments strong{margin-left:auto;color:#a54770;font-size:15px}
+.alchemy-panel .alchemy-recipe.is-shortage{background:#f8f8f8;border-color:#e6e3e5;opacity:.75}
+.alchemy-panel .alchemy-recipe.is-shortage strong{color:#888}
+.alchemy-panel .alchemy-recipe.is-ready{background:#fff8fa;border-color:#e9cad7;opacity:1}
+.alchemy-panel .alchemy-recipe.is-ready strong{color:#568c6b}
