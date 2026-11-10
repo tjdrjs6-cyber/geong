@@ -100,6 +100,7 @@ export class GachaUi {
   private rpsTimer = 0
   private rpsResolving = false
   private expedition: ExpeditionState | null = null
+  private expeditionPrefetch: Promise<ExpeditionState> | null = null
   private expeditionServer = 1
   private expeditionPendingDamage = new Map<number, number>()
   private expeditionImpactTimer = 0
@@ -218,10 +219,10 @@ export class GachaUi {
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
     if (screen === 'title' && this.store.user) window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
-    if (screen === 'title') { void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
+    if (screen === 'title') { this.prefetchQuickPanels(); void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
-    if (screen === 'lobby' && !this.achievementSnapshot) { void fetch('/api/achievements',{credentials:'include'}).then(r=>r.ok?r.json():null).then(data=>{if(data)this.achievementSnapshot=data}).catch(()=>{}) }
+
     if (screen === 'battle') { void this.refreshAchievementCombatLabels(); this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
     if (screen === 'nickname') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#nickname-input')?.focus(), 50)
     if (screen === 'auth') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#auth-username')?.focus(), 50)
@@ -795,13 +796,33 @@ export class GachaUi {
   }
 
 
+  private achievementPrefetch: Promise<NonNullable<typeof this.achievementSnapshot>> | null = null
+  private fetchAchievementsOnce(): Promise<NonNullable<typeof this.achievementSnapshot>> {
+    if (this.achievementSnapshot) return Promise.resolve(this.achievementSnapshot)
+    if (!this.achievementPrefetch) {
+      this.achievementPrefetch = fetch('/api/achievements', {credentials:'include',cache:'no-store'})
+        .then(async response => {if(!response.ok)throw Error('업적 정보를 불러오지 못했어요.');return await response.json() as NonNullable<typeof this.achievementSnapshot>})
+        .then(data => {this.achievementSnapshot=data;return data})
+        .finally(() => {this.achievementPrefetch=null})
+    }
+    return this.achievementPrefetch
+  }
+  private prefetchQuickPanels():void {
+    if(!this.store.user)return
+    // Share a single in-flight achievements request with the badge and modal.
+    void this.fetchAchievementsOnce().catch(()=>{})
+    // Prefetch expedition once; entry still fetches live data before applying actions.
+    if(!this.expedition && !this.expeditionPrefetch) {
+      this.expeditionPrefetch=this.store.expedition().finally(()=>{this.expeditionPrefetch=null})
+      void this.expeditionPrefetch.then(data=>{if(!this.expedition)this.expedition=data}).catch(()=>{})
+    }
+  }
+
   private async refreshAchievementReadyBadge():Promise<void> {
     const button=this.root.querySelector<HTMLElement>('.achievement-lobby-tab')
     if(!button || !this.store.user)return
     try {
-      const response=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
-      if(!response.ok)return
-      const data=await response.json() as {items?:{ids:string[];owned:string[];claimed:boolean}[]}
+      const data=await this.fetchAchievementsOnce()
       const ready=Boolean(data.items?.some(item=>!item.claimed && item.ids.every(id=>item.owned.includes(id))))
       button.classList.toggle('has-claimable-achievement',ready)
       button.setAttribute('aria-label',ready?'업적 - 수령 가능한 보상 있음':'업적')
@@ -837,7 +858,7 @@ export class GachaUi {
     const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
     if(tab==='title'){showTitle();return}
     try {
-      const data=await (async()=>{if(this.achievementSnapshot)return this.achievementSnapshot;const res=await fetch('/api/achievements',{credentials:'include',cache:'no-store'});if(!res.ok)throw Error('업적 정보를 불러오지 못했어요.');return this.achievementSnapshot=await res.json() as {items:{id:string;tier:string;name:string;ids:string[];owned:string[];coins:number;power:number;claimed:boolean}[];power:number}})()
+      const data=await this.fetchAchievementsOnce()
       panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
       panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
       panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
@@ -2380,7 +2401,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition();void this.refreshAchievementCombatLabels()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    if(this.expedition) this.renderExpedition()
+    try {const firstLoad=this.expedition===null;this.expedition=await (this.expeditionPrefetch || this.store.expedition());if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition();void this.refreshAchievementCombatLabels()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private startExpeditionImpactClock():void {
     window.clearInterval(this.expeditionImpactTimer)

@@ -52,6 +52,7 @@ const initialArt = [
   '/assets/chars/usagi.png', '/assets/chars/kani.png',
   '/assets/coin.png', '/assets/attendance_kani.png',
   '/assets/roulette_icon_074.png', '/assets/lottery_ticket_custom.png',
+  '/lobby_meadow.png', '/expedition_cave.png', '/expedition_banner.jpg',
 ]
 function warmImage(url: string): Promise<void> {
   return new Promise(resolve => {
@@ -95,8 +96,11 @@ async function boot(): Promise<void> {
       ui.setBootProgress(0.6)
       let user = null
       try { user = await collection.restore() } catch { user = null }
-      // Avoid a blank lobby while essential images are still downloading.
-      await artReady
+      // Include the selected representative character before displaying the lobby.
+      // Backgrounds and the hero must be ready; other collection art stays lazy.
+      const hero = collection.featured && collection.data.owned.includes(collection.featured)
+        ? collection.featured : (collection.data.owned[0] || 'chiikawa')
+      await Promise.all([artReady, warmImage(CHARACTER_IMAGE_URLS[hero])])
       ui.setBootProgress(1)
       ;(window as unknown as { __game: unknown }).__game = { ui, store: collection }
       ui.show(user ? (user.nickname ? 'title' : 'nickname') : 'auth')
