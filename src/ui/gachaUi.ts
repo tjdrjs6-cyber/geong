@@ -100,6 +100,7 @@ export class GachaUi {
   private rpsTimer = 0
   private rpsResolving = false
   private expedition: ExpeditionState | null = null
+  private expeditionPrefetch: Promise<ExpeditionState> | null = null
   private expeditionServer = 1
   private expeditionPendingDamage = new Map<number, number>()
   private expeditionImpactTimer = 0
@@ -168,7 +169,7 @@ export class GachaUi {
     void this.refreshExpeditionBadge(true)
     void this.refreshRpsBadge()
     void this.refreshHouseCoinBadge()
-    window.setInterval(() => { if (this.screen === 'title') void this.refreshHouseCoinBadge() }, 30_000)
+    window.setInterval(() => { if (this.screen === 'title') void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }, 30_000)
     this.chatBadgeTimer = window.setInterval(() => { if (this.screen === 'title') void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge() }, 12000)
     // Keep the 2D stage (floor + name tag) clear of the bottom controls, whatever their height.
     const fitStage = (): void => {
@@ -218,10 +219,11 @@ export class GachaUi {
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
     if (screen === 'title' && this.store.user) window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
-    if (screen === 'title') { void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge() }
+    if (screen === 'title') { this.prefetchQuickPanels(); void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
-    if (screen === 'battle') { this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
+
+    if (screen === 'battle') { void this.refreshAchievementCombatLabels(); this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
     if (screen === 'nickname') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#nickname-input')?.focus(), 50)
     if (screen === 'auth') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#auth-username')?.focus(), 50)
   }
@@ -341,7 +343,7 @@ export class GachaUi {
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
-          <p class="battle-status"></p>
+          <p class="battle-status"></p><p class="achievement-combat-bonus">컬렉션 영구 전투력 확인 중...</p>
           <button type="button" class="battle-test-time5" data-action="battle-test-time5" hidden>남은 시간 5초</button><button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
@@ -370,7 +372,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-stage-transition" aria-hidden="true"><strong>STAGE CLEAR!</strong><span class="expedition-stage-next">다음 단계</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 150코인·강화파편 15개 / 2단계 300코인·강화파편 20개 / 3단계 500코인·강화파편 30개 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><p class="achievement-combat-bonus">컬렉션 영구 전투력 확인 중...</p><p class="expedition-equipment-bonus">장비 전투력 적용 중: 확인 중...</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 150코인·강화파편 15개 / 2단계 300코인·강화파편 20개 / 3단계 500코인·강화파편 30개 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -393,7 +395,7 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong><span class="diamond-capacity">/20</span></span><small class="diamond-recharge-countdown">충전 확인 중</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip daily-button" data-action="daily"><span class="reward-icon"><img class="attendance-kani-button" src="/assets/attendance_kani.png" alt="카니"/></span><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button><button class="reward-chip roulette-chip" data-action="roulette"><span class="reward-icon"><img src="/assets/roulette_icon_074.png" alt="" /></span><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span class="reward-icon"><img src="/assets/lottery_ticket_custom.png" alt="복권"/></span><span><b>겅이복권</b></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip roulette-chip" data-action="roulette"><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
@@ -404,7 +406,7 @@ export class GachaUi {
           <span class="toon-hero-name"></span>
           <i class="toon-capsule"></i>
         </section>
-        <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span class="reward-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" /></span><span><b>도감</b></span></button></aside>
+        <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
           <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
           ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
@@ -477,7 +479,7 @@ export class GachaUi {
           <div class="modal-kicker">GEONGI MARKET CHAT</div><h2>💬 전체채팅</h2>
           <p class="collection-summary">모든 유저와 대화해요 · 최대 30자 · 10초에 1회</p>
           <div class="global-chat-messages" role="log" aria-live="polite"></div>
-          <div class="global-chat-compose"><input class="global-chat-input" maxlength="60" placeholder="메시지 입력 (최대 30자)" aria-label="전체채팅 메시지" /><button class="modal-primary" data-action="global-chat-send">전송</button></div>
+          <div class="global-chat-compose"><input class="global-chat-input" maxlength="50" placeholder="메시지 입력 (최대 50자)" aria-label="전체채팅 메시지" /><button class="modal-primary" data-action="global-chat-send">전송</button></div>
           <p class="global-chat-hint" aria-live="polite"></p>
         </div>
       </section>
@@ -621,10 +623,10 @@ export class GachaUi {
 
   private showAccessoryCatalog(): void {
     const counts=this.store.accessory.counts||{}
-    const cards=WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(g=>{const count=g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0);const has=count>0;return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'}" style="--friend:#fbe3ea;--accent:${g.color}"><div class="friend-avatar">${has?`<img style="filter:drop-shadow(0 0 8px ${g.color})" src="${item.image}" alt="${item.name}"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${g.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${g.power}</small><span class="friend-lock">${has?`${count}개 보유`:'미획득'}</span></article>`})).join('')
+    const cards=WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(g=>{const count=g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0);const has=count>0 || (this.store.accessory.discovered||[]).includes(`${item.id}:${g.id}`);return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'}" style="--friend:#fbe3ea;--accent:${g.color}"><div class="friend-avatar">${has?`<img style="filter:drop-shadow(0 0 8px ${g.color})" src="${item.image}" alt="${item.name}"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${g.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${g.power}</small><span class="friend-lock">${has?(count>0?`${count}개 보유`:'수집 완료'):'미획득'}</span></article>`})).join('')
     const dialog=document.createElement('dialog')
     dialog.className='myroom-equipment-dialog accessory-catalog-dialog'
-    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><p class="collection-summary">${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>(g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0).length,0)} / 48 수집</p><div class="accessory-scroll collection-grid accessory-card-grid">${cards}</div><button class="myroom-equipment-done">← 뒤로가기</button></div>`
+    dialog.innerHTML=`<div class="myroom-equipment-panel"><button class="myroom-equipment-close" type="button">×</button><h2>무기 액세서리 도감</h2><p class="collection-summary">${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>((this.store.accessory.discovered||[]).includes(`${item.id}:${g.id}`)||(g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0)).length,0)} / 48 수집</p><div class="accessory-scroll collection-grid accessory-card-grid">${cards}</div><button class="myroom-equipment-done">← 뒤로가기</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
     dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
@@ -756,7 +758,7 @@ export class GachaUi {
       items.innerHTML = balance + '<div class="shop-sell-grid">' + (owned.map(c => {
         const count = this.store.dupes[c.id] ?? 0
         const price = CHAR_SELL_PRICES[c.tier === 'mermaid' ? 'rare' : c.tier === 'rare' ? 'epic' : c.tier === 'super' || c.tier === 'legendary' ? 'unique' : 'normal']
-        return `<article class="storage-item"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy"/></span><b>${escapeHtml(fullName(c))}</b><small>보유 ${count + 1}개 · 판매 가능 ${count}개</small>${sellButtons('char', c.id, count, price)}</article>`
+        return `<article class="storage-item"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="eager"/></span><b>${escapeHtml(fullName(c))}</b><small>보유 ${count + 1}개 · 판매 가능 ${count}개</small>${sellButtons('char', c.id, count, price)}</article>`
       }).join('') || '<div class="shop-empty-note">보유한 캐릭터가 없어요.</div>') + '</div>'
     } else {
       const placed: Record<string, number> = {}
@@ -765,7 +767,7 @@ export class GachaUi {
       items.innerHTML = balance + '<div class="shop-sell-grid">' + (owned.map(d => {
         const have = this.store.decos[d.id] ?? 0
         const count = Math.max(0, have - Math.max(1, placed[d.id] ?? 0))
-        return `<article class="storage-item"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/></span><b>${escapeHtml(d.name)}</b><small>보유 ${have}개 · 판매 가능 ${count}개</small>${sellButtons('deco', d.id, count, DECO_SELL_PRICE)}</article>`
+        return `<article class="storage-item"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="eager"/></span><b>${escapeHtml(d.name)}</b><small>보유 ${have}개 · 판매 가능 ${count}개</small>${sellButtons('deco', d.id, count, DECO_SELL_PRICE)}</article>`
       }).join('') || '<div class="shop-empty-note">보유한 데코가 없어요.</div>') + '</div>'
     }
   }
@@ -791,6 +793,86 @@ export class GachaUi {
     if (dialog) dialog.hidden = true
     this.shopPendingQuantity = 0
     this.shopPendingSell = null
+  }
+
+
+  private achievementPrefetch: Promise<NonNullable<typeof this.achievementSnapshot>> | null = null
+  private fetchAchievementsOnce(): Promise<NonNullable<typeof this.achievementSnapshot>> {
+    if (this.achievementSnapshot) return Promise.resolve(this.achievementSnapshot)
+    if (!this.achievementPrefetch) {
+      this.achievementPrefetch = fetch('/api/achievements', {credentials:'include',cache:'no-store'})
+        .then(async response => {if(!response.ok)throw Error('업적 정보를 불러오지 못했어요.');return await response.json() as NonNullable<typeof this.achievementSnapshot>})
+        .then(data => {this.achievementSnapshot=data;return data})
+        .finally(() => {this.achievementPrefetch=null})
+    }
+    return this.achievementPrefetch
+  }
+  private prefetchQuickPanels():void {
+    if(!this.store.user)return
+    // Share a single in-flight achievements request with the badge and modal.
+    void this.fetchAchievementsOnce().catch(()=>{})
+    // Prefetch expedition once; entry still fetches live data before applying actions.
+    if(!this.expedition && !this.expeditionPrefetch) {
+      this.expeditionPrefetch=this.store.expedition().finally(()=>{this.expeditionPrefetch=null})
+      void this.expeditionPrefetch.then(data=>{if(!this.expedition)this.expedition=data}).catch(()=>{})
+    }
+  }
+
+  private async refreshAchievementReadyBadge():Promise<void> {
+    const button=this.root.querySelector<HTMLElement>('.achievement-lobby-tab')
+    if(!button || !this.store.user)return
+    try {
+      const data=await this.fetchAchievementsOnce()
+      const ready=Boolean(data.items?.some(item=>!item.claimed && item.ids.every(id=>item.owned.includes(id))))
+      button.classList.toggle('has-claimable-achievement',ready)
+      button.setAttribute('aria-label',ready?'업적 - 수령 가능한 보상 있음':'업적')
+    }catch{/* Keep last known state during network interruptions. */}
+  }
+
+  private achievementSnapshot: {items:{id:string;tier:string;name:string;ids:string[];owned:string[];coins:number;power:number;claimed:boolean}[];power:number}|null = null
+  private collectionCombatPower = 0
+
+  private async refreshAchievementCombatLabels():Promise<void> {
+    try {
+      const res=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
+      if(!res.ok)return
+      const data=await res.json() as {power:number}
+      const power=Math.max(0,Number(data.power)||0)
+      this.collectionCombatPower=power
+      if(this.screen==='battle')this.renderBattleStatus()
+      this.root.querySelectorAll<HTMLElement>('.achievement-combat-bonus').forEach(el=>{
+        el.textContent=`컬렉션 영구 전투력 +${power} 적용 중`
+      })
+    }catch{/* Offline: preserve the last displayed value. */}
+  }
+
+  private async openAchievements(tab:'collection'|'title'='collection'):Promise<void> {
+    let overlay=document.querySelector<HTMLElement>('#achievement-v23-overlay')
+    if(!overlay){overlay=document.createElement('div');overlay.id='achievement-v23-overlay';document.body.append(overlay)}
+    overlay.hidden=false
+    const close=()=>{if(overlay)overlay.hidden=true}
+    overlay.innerHTML='<div class="achievement-v23-panel"><button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2></div>'
+    overlay.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
+    const panel=overlay.querySelector<HTMLElement>('.achievement-v23-panel')!
+    const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))
+    const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
+    if(tab==='title'){showTitle();return}
+    try {
+      const data=await this.fetchAchievementsOnce()
+      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
+      panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
+      panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
+      panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');const reward=await response.json() as {coins:number;power:number};await this.store.restore();this.achievementSnapshot=null;await this.openAchievements('collection');void this.refreshAchievementReadyBadge();this.showAchievementReward(reward.coins,reward.power)}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
+    }catch(error){panel.innerHTML='<button class="achievement-v23-close">×</button><p>업적 정보를 불러오지 못했습니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close}
+  }
+
+  private showAchievementReward(coins:number,power:number):void {
+    document.getElementById('achievement-reward-popup')?.remove()
+    const overlay=document.createElement('div')
+    overlay.id='achievement-reward-popup'
+    overlay.innerHTML=`<div class="achievement-reward-dialog" role="dialog" aria-modal="true" aria-label="컬렉션 보상"><h2>컬렉션 보상 획득!</h2><p>코인 <b>${Math.max(0,Number(coins)||0)}개</b> 획득!</p>${power>0?`<p>영구 전투력 <b>+${Math.max(0,Number(power)||0)}</b> 획득!</p>`:''}<button type="button">닫기</button></div>`
+    overlay.querySelector('button')?.addEventListener('click',()=>overlay.remove())
+    document.body.append(overlay)
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
@@ -944,7 +1026,7 @@ export class GachaUi {
     }
     if (action === 'accessory-catalog') { this.showAccessoryCatalog(); return }
     if (action === 'catalog-back') { this.show('catalog'); return }
-    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>(g.id==='normal'?(this.store.accessory.counts?.[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0).length,0)} / 48`;this.show('catalog'); return }
+    if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>((this.store.accessory.discovered||[]).includes(`${item.id}:${g.id}`)||(g.id==='normal'?(this.store.accessory.counts?.[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0)).length,0)} / 48`;this.show('catalog'); return }
     if (action === 'collection') { this.show('collection'); return }
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'house') { this.show('house'); return }
@@ -975,6 +1057,7 @@ export class GachaUi {
     if (action === 'privacy') { await this.openPrivacy(); return }
     if (action === 'privacy-save') { await this.savePrivacy(); return }
     if (action === 'user-sort') { const mode = button.dataset.sort; if (mode === 'name' || mode === 'level') { this.userSortMode = mode; this.renderUsers() } return }
+    if (action === 'achievements') { await this.openAchievements(); return }
     if (action === 'users') { const card = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card'); card?.classList.remove('privacy-mode'); card?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden'); this.show('users'); void this.loadUsers(); return }
     if (action === 'mail') { this.show('mail'); return }
     if (action === 'admin-broadcast') { this.show('users'); this.renderBroadcast(); return }
@@ -1660,7 +1743,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const body=document.createElement('p');body.textContent='상위상이 전부 품절되어 겅이복권이 초기화되었습니다.'
     const close=document.createElement('button');close.textContent='닫기';close.addEventListener('click',()=>dialog.close())
     panel.append(title,body,close);dialog.append(panel);document.body.append(dialog)
-    dialog.addEventListener('close',()=>{dialog.remove();void this.store.lotteryResetSeen(id).catch(()=>{})},{once:true})
+    dialog.addEventListener('close',()=>{
+      dialog.remove()
+      // Prevent the same notice reopening while the server acknowledgement is in flight.
+      if(this.lotteryState?.resetNoticeId===id)this.lotteryState.resetNoticeId=undefined
+      void this.store.lotteryResetSeen(id).catch(()=>{})
+    },{once:true})
     dialog.showModal()
   }
   private lotteryTopPopup(message:string):void{
@@ -1973,7 +2061,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   private refreshEquipmentAndKeyringDots(): void {
     const canPull = !!this.store.user && Number(this.store.data.diamonds ?? 0) >= 20
-    const needsAccessory = !!this.store.user && !this.store.accessory.equipped
+    const hasAccessory = Object.values(this.store.accessory.counts || {}).some(count => Number(count) > 0) || Object.values(this.store.accessory.grades || {}).some(grades => Object.values(grades || {}).some(count => Number(count) > 0))
+    const needsAccessory = !!this.store.user && hasAccessory && !this.store.accessory.equipped
     this.root.querySelectorAll<HTMLElement>('.geongi-keyring-dot').forEach(dot => { dot.hidden = !canPull })
     this.root.querySelectorAll<HTMLElement>('.geongi-equipment-dot').forEach(dot => { dot.hidden = !needsAccessory })
   }
@@ -2050,7 +2139,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''} tier-${character.tier === 'mermaid' ? 'rare' : character.tier === 'rare' ? 'epic' : character.tier === 'super' ? 'unique' : character.tier}" style="--friend:${character.color};--accent:${character.accent}">
-        <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
+        <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="eager" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
         <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited ? '<div class="halloween-limited-label">🎃 한정판 · 뽑기 획득 불가</div>' : ''}
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
@@ -2079,7 +2168,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const count = counts[deco.id] ?? 0
       const has = count > 0
       return `<article class="friend-card deco-card ${has ? 'is-owned' : 'is-locked'}" style="--friend:#fbe3ea;--accent:#e99aae">
-        <div class="friend-avatar">${has ? `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="${deco.name}" loading="lazy" />` : '<span class="friend-unknown" aria-label="아직 모르는 데코">?</span>'}</div>
+        <div class="friend-avatar">${has ? `<img src="${DECO_IMAGE_URLS[deco.id]}" alt="${deco.name}" loading="eager" />` : '<span class="friend-unknown" aria-label="아직 모르는 데코">?</span>'}</div>
         <div class="friend-chance">데코</div>
         <b>${has ? deco.name : '???'}</b>
         <small>${has ? (showCount ? `${count}개 보유` : '도감 등록') : '아직 만나지 못했어요'}</small>
@@ -2255,7 +2344,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private async sendGlobalChat(): Promise<void> {
     const input = this.root.querySelector<HTMLInputElement>('.global-chat-input')
     const message = input?.value.trim() || ''
-    if (!message || [...message].length > 30) { this.toast('메시지는 1~30자로 입력해 주세요.'); return }
+    if (!message || [...message].length > 50) { this.toast('메시지는 1~50자로 입력해 주세요.'); return }
     if (Date.now() < this.chatNextAt) { this.toast('10초마다 한 번씩 보낼 수 있어요.'); return }
     const button = this.root.querySelector<HTMLButtonElement>('[data-action="global-chat-send"]')
     if (button) button.disabled = true
@@ -2317,7 +2406,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    if(this.expedition) this.renderExpedition()
+    try {const firstLoad=this.expedition===null;this.expedition=await (this.expeditionPrefetch || this.store.expedition());if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition();void this.refreshAchievementCombatLabels()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private startExpeditionImpactClock():void {
     window.clearInterval(this.expeditionImpactTimer)
@@ -2425,8 +2515,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         })
       }))
     }
+    const equipmentLabel=this.root.querySelector<HTMLElement>('.expedition-equipment-bonus')
+    if(equipmentLabel)equipmentLabel.textContent=`장비 전투력 +${Math.max(0,Number(this.store.forge?.bonus)||0)} 적용 중`
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)+(this.store.forge?.bonus??0)}${this.store.forge?` (장비 +${this.store.forge.bonus})`:``}</small></span></button>`).join('')}</div>`
+    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
       if(picker.innerHTML!==html){
         const choices=picker.querySelector<HTMLElement>('.expedition-choices')
@@ -2588,7 +2680,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         const count = grade.id === 'normal' ? (counts[item.id] || 0) : (this.store.accessory.grades?.[item.id]?.[grade.id] || 0)
         if (count <= 0) return ''
         const equipped = this.store.accessory.equipped === item.id && (this.store.accessory.equippedGrade || 'normal') === grade.id
-        return `<article class="storage-item accessory-storage-item" role="listitem"><span class="storage-pic is-accessory"><img src="${item.image}" alt="${item.name}" loading="lazy" style="filter:drop-shadow(0 0 7px ${grade.color})"/></span><b>${item.name}</b><small style="color:${grade.color}">${grade.name} · 전투력 +${grade.power}</small><small class="storage-count">보유 ${count.toLocaleString('ko-KR')}개${equipped ? ' · 장착 중' : ''}</small></article>`
+        return `<article class="storage-item accessory-storage-item" role="listitem"><span class="storage-pic is-accessory"><img src="${item.image}" alt="${item.name}" loading="eager" style="filter:drop-shadow(0 0 7px ${grade.color})"/></span><b>${item.name}</b><small style="color:${grade.color}">${grade.name} · 전투력 +${grade.power}</small><small class="storage-count">보유 ${count.toLocaleString('ko-KR')}개${equipped ? ' · 장착 중' : ''}</small></article>`
       })).filter(Boolean)
       if (summary) summary.textContent = `보유 무기 액세서리 ${cards.length} / 48종 · 장착은 마이룸 → 장비에서 할 수 있어요.`
       grid.innerHTML = cards.join('') || '<p class="users-empty">아직 획득한 무기 액세서리가 없어요.</p>'
@@ -2598,7 +2690,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       if (summary) summary.textContent = `보유 캐릭터 ${owned.length}종 · 중복 ${extras}개 · 판매는 장터에서 이용해 주세요.`
       grid.innerHTML = owned.length ? owned.map(c => {
         const extra = this.store.dupes[c.id] ?? 0
-        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small></article>`
+        return `<article class="storage-item" role="listitem"><span class="storage-pic"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="eager" /></span><b>${escapeHtml(fullName(c))}</b><small class="storage-count">보유 ${1 + extra}개${extra ? ` · 중복 ${extra}` : ''}</small></article>`
       }).join('') : '<p class="users-empty">아직 뽑은 캐릭터가 없어요.</p>'
     } else {
       const placed: Record<string, number> = {}
@@ -2610,7 +2702,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         const have = this.store.decos[d.id] ?? 0
         const onHouse = placed[d.id] ?? 0
         const extra = Math.max(0, have - Math.max(1, onHouse))
-        return `<article class="storage-item" role="listitem"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy" /></span><b>${escapeHtml(d.name)}</b><small class="storage-count">보유 ${have}개${onHouse ? ` · 하우스 ${onHouse}` : ''}</small></article>`
+        return `<article class="storage-item" role="listitem"><span class="storage-pic is-deco"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="eager" /></span><b>${escapeHtml(d.name)}</b><small class="storage-count">보유 ${have}개${onHouse ? ` · 하우스 ${onHouse}` : ''}</small></article>`
       }).join('') : '<p class="users-empty">아직 뽑은 데코가 없어요.</p>'
     }
   }
@@ -2911,13 +3003,15 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.renderWeedStatus()
   }
 
+  private battleFlipCharacter(id:string):boolean { return ['m_shisa','m_rakko','shimajiro','staff_chiikawa','staff_hachiware'].includes(id) }
+
   private renderBattle(): void {
     const picker = this.root.querySelector<HTMLElement>('.battle-picker')
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}<em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
+            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
@@ -2927,19 +3021,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (thirdUnit) {
       thirdUnit.classList.toggle('is-empty', !third)
       const body = thirdUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = third ? `<img src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
+      if (body) body.innerHTML = third ? `<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
     }
     const secondUnit = this.root.querySelector<HTMLElement>('.bf-friend-second')
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = second ? `<img src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
+      if (body) body.innerHTML = second ? `<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second):not(.bf-friend-third)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = fighter ? `<img src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {
@@ -3095,7 +3189,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       if (fighter) {
         const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0) + (this.store.battle?.thirdId ? battlePower(this.store.battle.thirdId) : 0)
         const weaponPower = this.store.forge?.bonus ?? 0
-        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>장비 공격력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
+        const collectionPower = this.collectionCombatPower
+        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>전투력 <b>${characterPower}</b></span><span>장비 공격력 <b>${weaponPower}</b></span><span>컬렉션 <b>+${collectionPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower + collectionPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
       } else {
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }

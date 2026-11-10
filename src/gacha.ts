@@ -44,6 +44,36 @@ function keepPageAtTop(): void {
 }
 keepPageAtTop()
 
+/** Warm the image cache while the account request is running. Keep this bounded so boot
+ * does not wait for the entire collection and does not flood mobile connections. */
+const initialArt = [
+  '/assets/chars/chiikawa_tab_icon.png', '/assets/chars/hachiware_face.png',
+  '/assets/chars/chiikawa.png', '/assets/chars/hachiware.png',
+  '/assets/chars/usagi.png', '/assets/chars/kani.png',
+  '/assets/coin.png', '/assets/attendance_kani.png',
+  '/assets/roulette_icon_074.png', '/assets/lottery_ticket_custom.png',
+  '/lobby_meadow.png', '/expedition_cave.png', '/expedition_banner.jpg',
+]
+function warmImage(url: string): Promise<void> {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = () => resolve()
+    img.src = url
+    if (img.complete) resolve()
+  })
+}
+function warmCollectionArt(): void {
+  // Browser scheduling keeps these requests low priority relative to visible UI.
+  const urls = Object.values(CHARACTER_IMAGE_URLS)
+  let index = 0
+  const next = (): void => {
+    if (index >= urls.length) return
+    void warmImage(urls[index++]!).then(next)
+  }
+  for (let i = 0; i < 3; i++) next()
+}
+
 /** 2D cartoon gacha: no WebGL, just the DOM UI with character art. */
 async function boot(): Promise<void> {
   document.documentElement.lang = 'ko'
@@ -61,18 +91,20 @@ async function boot(): Promise<void> {
     ui.show('boot')
     ui.setBootProgress(0.2)
     try {
-      // Warm the art cache so pops and the collection appear instantly.
-      let done = 0
-      await Promise.all(CHARACTERS.map(character => new Promise<void>(resolve => {
-        const image = new Image()
-        image.onload = image.onerror = () => { done += 1; ui.setBootProgress(0.2 + (done / CHARACTERS.length) * 0.6); resolve() }
-        image.src = CHARACTER_IMAGE_URLS[character.id]
-      })))
+      // Fetch essential lobby art in parallel with the account restore.
+      const artReady = Promise.all(initialArt.map(warmImage))
+      ui.setBootProgress(0.6)
       let user = null
       try { user = await collection.restore() } catch { user = null }
+      // Include the selected representative character before displaying the lobby.
+      // Backgrounds and the hero must be ready; other collection art stays lazy.
+      const hero = collection.featured && collection.data.owned.includes(collection.featured)
+        ? collection.featured : (collection.data.owned[0] || 'chiikawa')
+      await Promise.all([artReady, warmImage(CHARACTER_IMAGE_URLS[hero])])
       ui.setBootProgress(1)
       ;(window as unknown as { __game: unknown }).__game = { ui, store: collection }
       ui.show(user ? (user.nickname ? 'title' : 'nickname') : 'auth')
+      warmCollectionArt()
     } catch (error) {
       console.error(error)
       ui.showLoadError()

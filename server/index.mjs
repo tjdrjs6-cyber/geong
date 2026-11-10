@@ -198,6 +198,16 @@ async function prepareDatabase() {
     PRIMARY KEY(account_id,accessory_id,grade)
   )`)
   try { await pool.query("ALTER TABLE gm_weapon_accessories ADD COLUMN equipped_grade VARCHAR(20) NOT NULL DEFAULT 'normal'") } catch(error) { if(error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  // Persistent accessory catalog: crafting/consuming an accessory must not erase discovery.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_accessory_discoveries (
+    account_id BIGINT UNSIGNED NOT NULL, accessory_id VARCHAR(40) NOT NULL,
+    grade VARCHAR(20) NOT NULL, PRIMARY KEY(account_id,accessory_id,grade)
+  )`)
+  // Recover currently held items from older versions without removing prior discoveries.
+  for (const id of ['chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring']) {
+    await pool.query(`INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) SELECT account_id,?, 'normal' FROM gm_weapon_accessories WHERE ${id}>0`,[id])
+  }
+  await pool.query(`INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) SELECT account_id,accessory_id,grade FROM gm_accessory_grades WHERE quantity>0`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_forge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     weapon VARCHAR(12) NOT NULL,
@@ -620,12 +630,13 @@ async function getAccessory(accountId, conn=pool) {
   const isTest=process.env.TEST_SERVER==='true' && (await conn.query('SELECT username FROM gm_accounts WHERE id=?',[accountId]))[0][0]?.username?.toLowerCase()==='test'
   const counts=Object.fromEntries(ACCESSORY_IDS.map(id=>[id,isTest?1000000000:Number(row[id]||0)]))
   const [gradeRows]=await conn.query('SELECT accessory_id,grade,quantity FROM gm_accessory_grades WHERE account_id=?',[accountId])
+  const [discoveryRows]=await conn.query('SELECT accessory_id,grade FROM gm_accessory_discoveries WHERE account_id=?',[accountId])
   const grades={}
   for(const r of gradeRows){if(!grades[r.accessory_id])grades[r.accessory_id]={};grades[r.accessory_id][r.grade]=Number(r.quantity)}
   const equippedGrade=ACCESSORY_GRADES[row.equipped_grade]?row.equipped_grade:'normal'
   const owned=equippedGrade==='normal'?counts[row.equipped]:Number(grades[row.equipped]?.[equippedGrade]||0)
   const equipped=ACCESSORY_IDS.includes(row.equipped)&&owned>0?row.equipped:null
-  return {count:counts.chiikawa_keyring,counts,grades,equipped,equippedGrade:equipped?equippedGrade:'normal'}
+  return {count:counts.chiikawa_keyring,counts,grades,discovered:discoveryRows.map(r=>`${r.accessory_id}:${r.grade}`),equipped,equippedGrade:equipped?equippedGrade:'normal'}
 }
 async function getForge(accountId) {
   const [rows] = await pool.query('SELECT weapon, level FROM gm_forge WHERE account_id = ?', [accountId])
@@ -674,7 +685,7 @@ async function updateBattle(accountId, nextCharacter) {
     }
     const [forgeRows] = await conn.query('SELECT level FROM gm_forge WHERE account_id = ?', [accountId])
     const accessory = await getAccessory(accountId, conn)
-    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory)
+    const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory) + await achievementPower(accountId,conn)
     let earned = 0, coinsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
       const power = !battle.id ? 0 : Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
@@ -892,8 +903,9 @@ async function expeditionSettle(conn, day, serverId, now) {
   hp=Number(hp);last=Number(last);stage=Number(stage)
   const ticks=hp>0?Math.max(0,Math.floor((now-last)/EXP_TICK)):0
   if(ticks) {
-    const [members]=await conn.query('SELECT m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped,a.equipped_grade AS accessory_grade FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
-    const power=members.reduce((sum,m)=>sum+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 1):0),0)
+    const [members]=await conn.query('SELECT m.account_id,m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped,a.equipped_grade AS accessory_grade FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
+    const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
+    const power=members.reduce((sum,m,i)=>sum+achievementBonuses[i]+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 1):0),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
@@ -945,7 +957,8 @@ async function expeditionSnapshot(accountId) {
       await expeditionMigrateHp(conn,day,id)
       const bossState=await expeditionSettle(conn,day,id,now)
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level,wa.equipped AS accessory_equipped,wa.equipped_grade AS accessory_grade FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories wa ON wa.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
-      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map(m=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:(POWER[m.character_id]||0)+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||1):0),me:String(m.account_id)===String(accountId)}))})
+      const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:achievementBonuses[i]+(POWER[m.character_id]||0)+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||1):0),me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -1056,7 +1069,63 @@ async function ensureLotteryNoticeTables(){
 }
 
 
+
+// V2.3: collection achievements. Only server-verified owned characters qualify.
+const ACHIEVEMENTS = [
+ {id:'normal',tier:'노말',name:'기본캐릭터 수집',ids:['chiikawa','hachiware','usagi','momonga','kurimanju','kani','shisa','rakko'],coins:20,power:0},
+ {id:'mermaid',tier:'레어',name:'인어의섬 수집',ids:['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_kani','m_shisa','m_rakko'],coins:30,power:0},
+ {id:'staff',tier:'에픽',name:'토벌시리즈 수집',ids:['staff_chiikawa','staff_hachiware','staff_usagi'],coins:30,power:1},
+ {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:30,power:2},
+ {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:30,power:2},
+ {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:30,power:2},
+ {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:50,power:3}
+]
+let achievementTableReady=null
+async function ensureAchievementTable(){
+ if(!achievementTableReady) achievementTableReady=pool.query('CREATE TABLE IF NOT EXISTS gm_achievement_claims (account_id BIGINT UNSIGNED NOT NULL, achievement_id VARCHAR(32) NOT NULL, claimed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(account_id,achievement_id))').catch(error=>{achievementTableReady=null;throw error})
+ await achievementTableReady
+}
+async function achievementPower(accountId,conn=pool){
+ await ensureAchievementTable()
+ const [rows]=await conn.query('SELECT achievement_id FROM gm_achievement_claims WHERE account_id=?',[accountId])
+ const ids=new Set(rows.map(r=>r.achievement_id))
+ return ACHIEVEMENTS.reduce((sum,a)=>sum+(ids.has(a.id)?a.power:0),0)
+}
+
 const routes = {
+  'GET /api/achievements': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await ensureAchievementTable()
+    const [[saveRows],[claimRows]]=await Promise.all([
+      pool.query('SELECT owned FROM gm_saves WHERE account_id=?',[account.id]),
+      pool.query('SELECT achievement_id FROM gm_achievement_claims WHERE account_id=?',[account.id])
+    ])
+    const owned=new Set(saveRows.length?normalizeOwned(parseJson(saveRows[0].owned)):[])
+    const claimed=new Set(claimRows.map(row=>row.achievement_id))
+    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
+  },
+  'POST /api/achievements/claim': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {id}=await readJson(req)
+    const item=ACHIEVEMENTS.find(a=>a.id===id)
+    if(!item)return send(res,400,{error:'invalid_achievement'})
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await ensureAchievementTable()
+      const [rows]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      const owned=new Set(rows.length?normalizeOwned(parseJson(rows[0].owned)):[])
+      if(!item.ids.every(cid=>owned.has(cid))){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
+      const [inserted]=await conn.query('INSERT IGNORE INTO gm_achievement_claims(account_id,achievement_id) VALUES (?,?)',[account.id,item.id])
+      if(!inserted.affectedRows){await conn.rollback();return send(res,409,{error:'already_claimed'})}
+      await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[item.coins,account.id])
+      await conn.commit()
+      send(res,200,{coins:item.coins,power:item.power})
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+  },
+
   'GET /api/lottery': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -1124,7 +1193,7 @@ const routes = {
             const duplicate=!!id&&owned.includes(id)
             const bonus=id&&!duplicate?newEntryBonus(id):0
             if(id){if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
-            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare'])}
+            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare']);await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,accessoryId,'rare'])}
             collectionBonus+=bonus
             results.push({grade:LOTTERY_GRADES[index],id,accessoryId,accessoryGrade:accessoryId?'rare':null,duplicate,bonus})
           }
@@ -1245,6 +1314,7 @@ const routes = {
       }
       await conn.query('UPDATE gm_saves SET fragments=fragments-? WHERE account_id=?',[recipe.fragments,account.id])
       await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,id,grade])
+      await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,id,grade])
       return {success:true}
     })
     if(result.error)return send(res,409,result)
@@ -1292,7 +1362,7 @@ const routes = {
       if(battles.length){
         const b=battles[0]
         const accessory=await getAccessory(account.id,conn)
-        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+forgeBonus(level)+accessoryPower(accessory)
+        const oldPower=(POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+forgeBonus(level)+accessoryPower(accessory)+await achievementPower(account.id,conn)
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),oldPower)
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
@@ -1454,7 +1524,7 @@ const routes = {
     if (!account) return send(res, 401, { error: 'login_required' })
     const body = await readJson(req)
     const message = String(body?.message || '').trim()
-    if (!message || [...message].length > 30) return send(res, 400, { error: 'chat_invalid' })
+    if (!message || [...message].length > 50) return send(res, 400, { error: 'chat_invalid' })
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
@@ -1988,6 +2058,7 @@ const routes = {
       let bonus = 0
       if (prize) {
         await conn.query(`INSERT INTO gm_weapon_accessories(account_id,${prize}) VALUES(?,1) ON DUPLICATE KEY UPDATE ${prize}=${prize}+1`,[account.id])
+        await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,prize,'normal'])
       }
       await conn.commit()
       send(res, 200, { won, chance, dropAt, segments, prize, bonus, save: await getSave(account.id), decos: await getDecos(account.id), accessory: await getAccessory(account.id) })
