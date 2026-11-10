@@ -198,6 +198,16 @@ async function prepareDatabase() {
     PRIMARY KEY(account_id,accessory_id,grade)
   )`)
   try { await pool.query("ALTER TABLE gm_weapon_accessories ADD COLUMN equipped_grade VARCHAR(20) NOT NULL DEFAULT 'normal'") } catch(error) { if(error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  // Persistent accessory catalog: crafting/consuming an accessory must not erase discovery.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_accessory_discoveries (
+    account_id BIGINT UNSIGNED NOT NULL, accessory_id VARCHAR(40) NOT NULL,
+    grade VARCHAR(20) NOT NULL, PRIMARY KEY(account_id,accessory_id,grade)
+  )`)
+  // Recover currently held items from older versions without removing prior discoveries.
+  for (const id of ['chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring']) {
+    await pool.query(`INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) SELECT account_id,?, 'normal' FROM gm_weapon_accessories WHERE ${id}>0`,[id])
+  }
+  await pool.query(`INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) SELECT account_id,accessory_id,grade FROM gm_accessory_grades WHERE quantity>0`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_forge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     weapon VARCHAR(12) NOT NULL,
@@ -620,12 +630,13 @@ async function getAccessory(accountId, conn=pool) {
   const isTest=process.env.TEST_SERVER==='true' && (await conn.query('SELECT username FROM gm_accounts WHERE id=?',[accountId]))[0][0]?.username?.toLowerCase()==='test'
   const counts=Object.fromEntries(ACCESSORY_IDS.map(id=>[id,isTest?1000000000:Number(row[id]||0)]))
   const [gradeRows]=await conn.query('SELECT accessory_id,grade,quantity FROM gm_accessory_grades WHERE account_id=?',[accountId])
+  const [discoveryRows]=await conn.query('SELECT accessory_id,grade FROM gm_accessory_discoveries WHERE account_id=?',[accountId])
   const grades={}
   for(const r of gradeRows){if(!grades[r.accessory_id])grades[r.accessory_id]={};grades[r.accessory_id][r.grade]=Number(r.quantity)}
   const equippedGrade=ACCESSORY_GRADES[row.equipped_grade]?row.equipped_grade:'normal'
   const owned=equippedGrade==='normal'?counts[row.equipped]:Number(grades[row.equipped]?.[equippedGrade]||0)
   const equipped=ACCESSORY_IDS.includes(row.equipped)&&owned>0?row.equipped:null
-  return {count:counts.chiikawa_keyring,counts,grades,equipped,equippedGrade:equipped?equippedGrade:'normal'}
+  return {count:counts.chiikawa_keyring,counts,grades,discovered:discoveryRows.map(r=>`${r.accessory_id}:${r.grade}`),equipped,equippedGrade:equipped?equippedGrade:'normal'}
 }
 async function getForge(accountId) {
   const [rows] = await pool.query('SELECT weapon, level FROM gm_forge WHERE account_id = ?', [accountId])
@@ -1182,7 +1193,7 @@ const routes = {
             const duplicate=!!id&&owned.includes(id)
             const bonus=id&&!duplicate?newEntryBonus(id):0
             if(id){if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
-            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare'])}
+            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare']);await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,accessoryId,'rare'])}
             collectionBonus+=bonus
             results.push({grade:LOTTERY_GRADES[index],id,accessoryId,accessoryGrade:accessoryId?'rare':null,duplicate,bonus})
           }
@@ -1303,6 +1314,7 @@ const routes = {
       }
       await conn.query('UPDATE gm_saves SET fragments=fragments-? WHERE account_id=?',[recipe.fragments,account.id])
       await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,id,grade])
+      await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,id,grade])
       return {success:true}
     })
     if(result.error)return send(res,409,result)
@@ -1512,7 +1524,7 @@ const routes = {
     if (!account) return send(res, 401, { error: 'login_required' })
     const body = await readJson(req)
     const message = String(body?.message || '').trim()
-    if (!message || [...message].length > 30) return send(res, 400, { error: 'chat_invalid' })
+    if (!message || [...message].length > 50) return send(res, 400, { error: 'chat_invalid' })
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
@@ -2046,6 +2058,7 @@ const routes = {
       let bonus = 0
       if (prize) {
         await conn.query(`INSERT INTO gm_weapon_accessories(account_id,${prize}) VALUES(?,1) ON DUPLICATE KEY UPDATE ${prize}=${prize}+1`,[account.id])
+        await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,prize,'normal'])
       }
       await conn.commit()
       send(res, 200, { won, chance, dropAt, segments, prize, bonus, save: await getSave(account.id), decos: await getDecos(account.id), accessory: await getAccessory(account.id) })

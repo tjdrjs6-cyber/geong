@@ -61,13 +61,8 @@ async function boot(): Promise<void> {
     ui.show('boot')
     ui.setBootProgress(0.2)
     try {
-      // Warm the art cache so pops and the collection appear instantly.
-      let done = 0
-      await Promise.all(CHARACTERS.map(character => new Promise<void>(resolve => {
-        const image = new Image()
-        image.onload = image.onerror = () => { done += 1; ui.setBootProgress(0.2 + (done / CHARACTERS.length) * 0.6); resolve() }
-        image.src = CHARACTER_IMAGE_URLS[character.id]
-      })))
+      // Render the login/title screen immediately. Character art loads lazily in the background.
+      ui.setBootProgress(0.8)
       let user = null
       try { user = await collection.restore() } catch { user = null }
       ui.setBootProgress(1)
