@@ -3180,7 +3180,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private showUpdateNoticeOnce(): void {
     const username = this.store.user?.username
     if (!username || this.screen !== 'title') return
-    const key = `geongi-update-20261109-${username.toLowerCase()}`
+    const key = `geongi-update-20261110-${username.toLowerCase()}`
     try { if (window.localStorage.getItem(key) === 'seen') return } catch { /* private mode */ }
     if (this.root.querySelector('.update-notice-overlay')) return
     const overlay = document.createElement('div')
@@ -3189,14 +3189,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     overlay.setAttribute('aria-modal', 'true')
     overlay.setAttribute('aria-label', '업데이트 안내')
     overlay.innerHTML = `<div class="update-notice-panel"><div class="update-notice-scroll">
-      <h2>업데이트 안내</h2><p class="update-notice-date">2026년 11월 9일 업데이트 내역</p>
-      <p>이번 업데이트에서는 신규 콘텐츠인 겅이복권, 무기 액세서리, 연금술 시스템이 추가되었으며, 신규 레전더리 캐릭터 4종과 다양한 밸런스 조정이 진행되었습니다.</p>
-      <h3>1. 신규 콘텐츠 – 겅이복권 출시</h3><ul><li>겅이복권이 새롭게 추가되었습니다.</li><li>복권은 1회당 100코인으로 이용할 수 있습니다.</li><li>모든 유저가 복권의 남은 수량을 공유합니다.</li><li>복권을 통해 레전더리 등급의 한정판 캐릭터를 획득할 수 있습니다.</li><li>상위 등급 상품이 모두 소진되면 복권이 초기화됩니다.</li></ul>
-      <h3>2. 무기 액세서리 시스템 추가</h3><ul><li>무기에 장착할 수 있는 액세서리가 추가되었습니다.</li><li>무기 액세서리를 장착하면 전투력이 증가합니다.</li><li>무기 액세서리는 '활동 → 키링뽑기'에서 획득할 수 있습니다.</li><li>기존 데코뽑기는 삭제되고 키링뽑기로 변경됩니다.</li><li>동일 캐릭터의 직전 등급 액세서리 3개와 강화파편을 사용하여 합성할 수 있습니다.</li><li>무기 액세서리는 '마이룸 → 장비창'에서 장착할 수 있습니다.</li><li>무기 액세서리 도감이 새롭게 추가되었습니다.</li></ul>
-      <h3>3. 신규 시스템 – 연금술 추가</h3><ul><li>연금술을 통해 무기 액세서리를 합성할 수 있습니다.</li><li>합성에는 동일 캐릭터의 직전 등급 액세서리 3개와 강화파편이 필요합니다.</li><li>필요한 재료가 모두 준비되면 100% 확률로 합성에 성공합니다.</li></ul>
-      <h3>4. 신규 레전더리 캐릭터 4종 추가</h3><ul><li>우사기(귤) – 레전더리</li><li>치이카와(할로윈) – 레전더리 / 한정판</li><li>하치와레(할로윈) – 레전더리 / 한정판</li><li>우사기(할로윈) – 레전더리 / 한정판</li></ul>
-      <h3>5. 기타 변경 및 밸런스 조정</h3><ul><li>토벌장 몬스터 체력 20,000 → 30,000 상향</li><li>몬스터 체력 증가에 따른 강화파편 수급량 하향</li><li>장터 내 강화파편 구매 기능 삭제</li><li>모몽가와 가위바위보 콘텐츠 삭제</li><li>출석체크 보상 상향</li><li>기존 데코뽑기 삭제</li><li>무기 액세서리 도감 추가</li></ul>
-      <h3>6. 기타 안내사항</h3><p>이번 업데이트에서는 신규 콘텐츠와 시스템이 다수 추가되어 일부 버그 및 UI 오류가 발생할 수 있습니다.</p><p>게임 이용 중 오류나 개선이 필요한 사항을 발견하시면 제보 부탁드립니다.</p>
+      <h2>업데이트 안내</h2><p class="update-notice-date">2026년 11월 10일 업데이트 내역</p>
+      <h3>1. 신규 캐릭터 추가</h3><ul><li>치이카와(파자마)</li><li>하치와레(파자마)</li><li>우사기(파자마)</li><li>치이카와(토벌봉)</li><li>하치와레(토벌봉)</li><li>우사기(토벌봉)</li><li>모몽가(천사)</li><li>모몽가(악마)</li></ul>
+      <h3>2. 하우스·데코 개편</h3><ul><li>하우스 데코 배치 시스템을 전면 개편했습니다.</li><li>하우스에 배치한 캐릭터들이 자동으로 움직입니다.</li><li>기존 데코를 전부 삭제하고 신규 데코 31종을 추가했습니다.</li><li>추가 데코는 추후 업데이트 예정입니다.</li></ul>
+      <h3>3. 데코 삭제 보상</h3><p>기존 데코 삭제 보상으로 모든 유저에게 300코인을 지급합니다.</p>
+      <h3>4. 기타 안내사항</h3><p>이번 업데이트에서는 신규 콘텐츠와 시스템이 다수 추가되어 일부 버그 및 UI 오류가 발생할 수 있습니다.</p><p>게임 이용 중 오류나 개선이 필요한 사항을 발견하시면 제보 부탁드립니다.</p>
       <button type="button" class="update-notice-close">닫기</button>
     </div></div>`
     overlay.querySelector<HTMLButtonElement>('.update-notice-close')?.addEventListener('click', () => {
