@@ -1743,7 +1743,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const body=document.createElement('p');body.textContent='상위상이 전부 품절되어 겅이복권이 초기화되었습니다.'
     const close=document.createElement('button');close.textContent='닫기';close.addEventListener('click',()=>dialog.close())
     panel.append(title,body,close);dialog.append(panel);document.body.append(dialog)
-    dialog.addEventListener('close',()=>{dialog.remove();void this.store.lotteryResetSeen(id).catch(()=>{})},{once:true})
+    dialog.addEventListener('close',()=>{
+      dialog.remove()
+      // Prevent the same notice reopening while the server acknowledgement is in flight.
+      if(this.lotteryState?.resetNoticeId===id)this.lotteryState.resetNoticeId=undefined
+      void this.store.lotteryResetSeen(id).catch(()=>{})
+    },{once:true})
     dialog.showModal()
   }
   private lotteryTopPopup(message:string):void{

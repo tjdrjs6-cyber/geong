@@ -5083,3 +5083,47 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .expedition-field .exp-friend,
 #ui .house-character { overflow:visible!important; }
 #ui .battle-field .bf-friend-body > img {object-fit:contain!important;}
+
+/* V3.4: battle character picker cards must accommodate long variant names and power. */
+#ui .weed-screen .weed-panel.battle-panel .battle-picker,
+#ui .weed-screen .weed-panel.battle-panel .weed-picker.battle-picker {
+  grid-auto-rows:minmax(122px,auto)!important;
+  align-content:start!important;
+  overflow-y:auto!important;
+}
+#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick {
+  box-sizing:border-box!important;
+  height:auto!important;
+  min-height:122px!important;
+  padding:7px 3px 9px!important;
+  gap:3px!important;
+  overflow:visible!important;
+  justify-content:flex-start!important;
+}
+#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick img {
+  flex:0 0 54px!important;
+  width:54px!important;
+  height:54px!important;
+  object-fit:contain!important;
+}
+#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick .battle-pick-name {
+  flex:0 0 auto!important;
+  display:block!important;
+  min-height:28px!important;
+  max-height:none!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  line-height:1.25!important;
+  overflow-wrap:anywhere!important;
+  font-size:10px!important;
+}
+#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick em.is-power {
+  display:block!important;
+  flex:0 0 auto!important;
+  position:static!important;
+  visibility:visible!important;
+  opacity:1!important;
+  margin:0!important;
+  white-space:nowrap!important;
+  line-height:1.4!important;
+}
