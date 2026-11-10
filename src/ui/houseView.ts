@@ -36,7 +36,7 @@ export function houseVisitMarkup(layout: HouseLayout): string {
     const character = characterById(friend.id as CharacterId)
     items.push(`<div class="house-piece house-friend${friend.f ? ' is-flipped' : ''}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
   })
-  return `<div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${items.join('')}</div>${items.length ? '' : '<p class="house-visit-empty">아직 꾸민 데코가 없어요</p>'}</div>`
+  return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${items.join('')}</div>${items.length ? '' : '<p class="house-visit-empty">아직 꾸민 데코가 없어요</p>'}</div></div>`
 }
 
 export class HouseView {

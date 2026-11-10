@@ -195,3 +195,26 @@
   width:100% !important;
   height:100% !important;
 }
+
+/* test13: crop ONLY the empty top/bottom margins in the visiting preview.
+   The complete 1086x1448 room image, characters and decorations share
+   one proportional stage; nothing is stretched independently. */
+#ui .user-house { width:100% !important; max-width:none !important; min-width:0 !important; }
+#ui .user-house .house-visit-frame {
+  position:relative !important; box-sizing:border-box !important;
+  display:block !important; width:100% !important; max-width:100% !important;
+  height:auto !important; aspect-ratio:1086 / 927 !important;
+  overflow:hidden !important; margin:0 auto !important;
+  border-radius:14px; background:#bdeeff;
+}
+#ui .user-house .house-visit-frame > .house-lot.house-visit {
+  position:absolute !important; left:0 !important; top:-28.125% !important;
+  width:100% !important; max-width:none !important;
+  height:auto !important; aspect-ratio:1086 / 1448 !important;
+  margin:0 !important; padding:0 !important;
+  transform:none !important; overflow:hidden !important;
+}
+#ui .user-house .house-visit-frame .house-bg {
+  width:100% !important; height:100% !important;
+  object-fit:contain !important; transform:none !important;
+}
