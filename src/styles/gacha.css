@@ -5059,3 +5059,11 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .weed-screen .battle-picker .weed-pick{min-width:0!important;gap:3px!important;padding:7px 3px 8px!important;overflow:hidden!important}
 .weed-screen .battle-picker .weed-pick .battle-pick-name{display:block!important;width:100%!important;max-width:100%!important;min-height:27px!important;height:auto!important;line-height:1.2!important;font-size:10px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:keep-all!important;overflow:visible!important;text-overflow:clip!important;text-align:center!important}
 .weed-screen .battle-picker .weed-pick .is-power{display:block!important;flex:none!important;max-width:100%!important;line-height:1.35!important;white-space:nowrap!important;margin:0!important}
+
+/* V3.0: compact, right-aligned lobby actions, consistent on mobile */
+#ui .gacha-screen>.collection-peek.collection-peek,
+#ui .gacha-screen>.top-rewards.top-rewards {right:2px!important;left:auto!important;width:clamp(70px,19vw,86px)!important;max-width:86px!important;gap:4px!important;padding:0!important;}
+#ui .gacha-screen>.collection-peek .reward-chip,
+#ui .gacha-screen>.top-rewards .reward-chip {width:100%!important;min-width:0!important;padding:4px 2px!important;justify-content:center!important;border-radius:10px!important;}
+#ui .gacha-screen>.collection-peek .reward-chip b,
+#ui .gacha-screen>.top-rewards .reward-chip b {font-size:10px!important;letter-spacing:-.3px!important;}
