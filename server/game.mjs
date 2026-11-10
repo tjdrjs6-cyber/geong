@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto'
 // Server-authoritative gacha rules. Keep these values in sync with src/game/collection.ts (tests verify).
 export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison', 'usagi_orange', 'halloween_chiikawa', 'halloween_hachiware', 'halloween_usagi', 'pajama_chiikawa', 'pajama_hachiware', 'pajama_usagi', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga']
-/** Draw weights out of 100000 (operator table): 노말 6.07%/6.06%, 레어 2.20%, 에픽 1.00%, 유니크 0.30%. */
-export const WEIGHTS = {chiikawa: 4700, hachiware: 4700, usagi: 4700, momonga: 4700, kurimanju: 4700, shisa: 4700, kani: 4700, goblin: 4700, rakko: 4700, armor1: 4700, armor2: 4700, armor3: 4700, m_chiikawa: 1940, m_hachiware: 1940, m_usagi: 1940, m_momonga: 1940, m_kurimanju: 1940, m_shisa: 1940, m_kani: 1940, m_rakko: 1940, hanip: 1940, duip: 1940, siren: 750, shimajiro: 750, anoko: 750, dekatsuyo: 750, c_curry: 200, h_curry: 200, u_curry: 200, ginger_chiikawa: 200, beetle: 200, ginger_hachiware: 200, ginger_usagi: 200, beetle_berserk: 40, kurimanju_bean: 40, rakko_limited: 40, honey: 1940, ode: 750, ode_prison: 200, pajama_chiikawa: 4700, pajama_hachiware: 4700, pajama_usagi: 4700, staff_chiikawa: 750, staff_hachiware: 750, staff_usagi: 750, devil_momonga: 200, angel_momonga: 200}
+/** Draw weights out of 100000. Unlisted characters have zero draw weight. */
+export const WEIGHTS = {chiikawa: 4700, hachiware: 4700, usagi: 4700, momonga: 4700, kurimanju: 4700, shisa: 4700, kani: 4700, goblin: 4700, rakko: 4700, armor1: 4700, armor2: 4700, armor3: 4700, m_chiikawa: 1940, m_hachiware: 1940, m_usagi: 1940, m_momonga: 1940, m_kurimanju: 1940, m_shisa: 1940, m_kani: 1940, m_rakko: 1940, hanip: 1940, duip: 1940, siren: 750, shimajiro: 750, anoko: 750, dekatsuyo: 750, c_curry: 200, h_curry: 200, u_curry: 200, ginger_chiikawa: 200, beetle: 200, ginger_hachiware: 200, ginger_usagi: 200, beetle_berserk: 40, usagi_orange: 40, kurimanju_bean: 40, rakko_limited: 40, honey: 1940, ode: 750, ode_prison: 200, pajama_chiikawa: 4700, pajama_hachiware: 4700, pajama_usagi: 4700, staff_chiikawa: 750, staff_hachiware: 750, staff_usagi: 750, devil_momonga: 200, angel_momonga: 200}
 /** Weeding speed bonus in percent. */
 export const WEED_BONUS = {chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30, usagi_orange: 60, halloween_chiikawa: 0, halloween_hachiware: 0, halloween_usagi: 0, pajama_chiikawa: 0, pajama_hachiware: 0, pajama_usagi: 0, staff_chiikawa: 10, staff_hachiware: 10, staff_usagi: 10, devil_momonga: 35, angel_momonga: 52}
 export const RARE_IDS = ['staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
@@ -21,10 +21,12 @@ export const newEntryBonus = id => (RARE_IDS.includes(id) ? SIREN_NEW_BONUS : NE
 export function characterForRoll(roll) {
   let threshold = roll
   for (const id of CHARACTER_IDS) {
-    threshold -= WEIGHTS[id]
+    const weight = WEIGHTS[id] ?? 0
+    if (!Number.isFinite(weight) || weight < 0) throw new Error(`Invalid gacha weight: ${id}`)
+    threshold -= weight
     if (threshold < 0) return id
   }
-  return CHARACTER_IDS[CHARACTER_IDS.length - 1]
+  throw new Error(`Gacha roll out of range: ${roll}`)
 }
 
 const VALID = new Set(CHARACTER_IDS)
