@@ -4988,3 +4988,20 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .achievement-v23-reward{font-size:12px;color:#b07547;margin-bottom:8px}
 .achievement-v23-item button{width:100%;padding:8px;border:0;border-radius:10px;background:#db91a5;color:white;font-weight:bold}
 .achievement-v23-item button:disabled{background:#eee5e6;color:#aa9b9e}
+
+/* V2.4 achievement layout / attendance restoration */
+.gacha-screen>.collection-peek.collection-peek{height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important;display:flex!important;flex-direction:column!important;gap:6px!important;padding:4px!important;background:transparent!important;box-shadow:none!important;border:0!important}
+.gacha-screen>.collection-peek .reward-chip{position:relative!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;width:100%!important;min-height:36px!important;height:auto!important;flex:0 0 auto!important;gap:5px!important;padding:6px 7px!important;box-sizing:border-box!important;border-radius:12px!important}
+.gacha-screen>.collection-peek .reward-chip b{font-size:11px!important;white-space:nowrap!important}
+.gacha-screen>.collection-peek .reward-icon{flex:0 0 21px!important;display:flex!important;justify-content:center!important}
+.gacha-screen>.collection-peek .daily-button{background:#fff7e6!important}
+.gacha-screen>.top-rewards{top:calc(238px + var(--safe-t,0px))!important}
+#achievement-v23-overlay .achievement-v23-panel{display:flex!important;flex-direction:column!important;overflow:hidden!important;max-height:min(88dvh,760px)!important;min-height:0!important;padding:18px 14px 12px!important}
+#achievement-v23-overlay .achievement-v23-panel>h2,#achievement-v23-overlay .achievement-v23-tabs,#achievement-v23-overlay .achievement-v23-summary{flex:0 0 auto!important}
+#achievement-v23-overlay .achievement-v23-items{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:2px 3px 12px!important;align-content:start!important}
+#achievement-v23-overlay .achievement-v23-item p{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+#achievement-v23-overlay .achievement-v23-item .achievement-v24-face{min-width:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:3px!important;padding:5px 2px!important;border-radius:10px!important;background:#f2f0ef!important;opacity:.55}
+#achievement-v23-overlay .achievement-v23-item .achievement-v24-face.has{opacity:1;background:#fff0f5!important}
+#achievement-v23-overlay .achievement-v24-face img{width:100%!important;height:55px!important;object-fit:contain!important}
+#achievement-v23-overlay .achievement-v24-face small{font-size:9px!important;line-height:1.2!important;text-align:center!important;overflow-wrap:anywhere!important;color:#75555d!important}
+.achievement-combat-bonus{margin:5px 0!important;padding:6px 9px!important;background:#fff4dc!important;border-radius:9px!important;color:#9a632b!important;font-size:12px!important;font-weight:700!important;text-align:center!important}
