@@ -314,6 +314,35 @@ async function prepareDatabase() {
   } finally {
     resetConn.release()
   }
+  // One-time test15 catalog migration: clear previous decorations and placed decoration items.
+  // Does not alter characters, coins, equipment or placed friends.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_content_migrations (
+    name VARCHAR(80) PRIMARY KEY, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`)
+  const decoResetConn = await pool.getConnection()
+  try {
+    await decoResetConn.beginTransaction()
+    const [already] = await decoResetConn.query('SELECT name FROM gm_content_migrations WHERE name = ? FOR UPDATE', ['deco_catalog_test15'])
+    if (!already.length) {
+      await decoResetConn.query('UPDATE gm_decos SET items = ?', ['{}'])
+      const [houses] = await decoResetConn.query('SELECT account_id, layout FROM gm_house FOR UPDATE')
+      for (const house of houses) {
+        const layout = parseJson(house.layout) || {}
+        layout.pieces = []
+        await decoResetConn.query('UPDATE gm_house SET layout = ? WHERE account_id = ?', [JSON.stringify(layout), house.account_id])
+      }
+      await decoResetConn.query('INSERT INTO gm_content_migrations (name) VALUES (?)', ['deco_catalog_test15'])
+    }
+    await decoResetConn.commit()
+  } catch (error) {
+    await decoResetConn.rollback().catch(() => {})
+    throw error
+  } finally {
+    decoResetConn.release()
+  }
+  // Admin collections are repopulated after the one-time reset.
+  const [decoAdmins] = await pool.query("SELECT id FROM gm_accounts WHERE username IN ('test','tjdrjs885')")
+  for (const admin of decoAdmins) await grantAdminCollection(admin.id)
   ready = true
 }
 
@@ -1509,7 +1538,7 @@ const routes = {
     const valid = await verifyPassword(password, account ? account.password_hash : DUMMY_HASH)
     if (!account || !valid) { recordFailure(key); return send(res, 401, { error: 'invalid_credentials' }) }
     failures.delete(key)
-    if (account.is_admin) await grantAdminCollection(account.id)
+    if (account.is_admin || account.username === 'test' || account.username === 'tjdrjs885') await grantAdminCollection(account.id)
     return startSession(res, account.id, account.username, account.nickname, await getSave(account.id), account.is_admin)
   },
   'POST /api/auth/logout': async (req, res) => {
@@ -1531,7 +1560,7 @@ const routes = {
   'GET /api/me': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 200, { user: null })
-    if (account.is_admin) await grantAdminCollection(account.id)
+    if (account.is_admin || account.username === 'test' || account.username === 'tjdrjs885') await grantAdminCollection(account.id)
     const autoEarned = await autoSettle(account.id)
     send(res, 200, { autoEarned, user: { username: account.username, nickname: account.nickname || null, admin: Boolean(account.is_admin) }, ...(await accountState(account.id)) })
   },
