@@ -9,15 +9,16 @@ type Selection = { kind: 'piece' | 'friend'; index: number } | null
 const FRIEND_LAYER = 5000
 type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
 
-const HOUSE_BG_URL = '/assets/bg/house_room_test06.webp'
+const HOUSE_BG_URL = '/assets/bg/house_room_test09.png'
 const WALL_DECO_IDS = new Set<DecoId>(['d21','d29','d31','d32','d33','d34','d39','d40','d44','d46','d48'])
 const isWallDeco = (id: DecoId): boolean => WALL_DECO_IDS.has(id)
 // Geometry follows the un-stretched 1086×1448 background: upper red trim,
 // yellow wall/floor boundary and the diamond-shaped floor.
-const wallTop = (x: number): number => 23 + 0.36 * Math.abs(x - 50)
-const wallBottom = (x: number): number => 39 + 0.34 * Math.abs(x - 50)
-const floorTop = (x: number): number => wallBottom(x) + 1
-const floorBottom = (x: number): number => 77 - 0.42 * Math.abs(x - 50)
+// Exact boundary slopes derived from the supplied 1086 x 1448 room artwork.
+const wallTop = (x: number): number => 22.5 + 0.365 * Math.abs(x - 50)
+const wallBottom = (x: number): number => 38.4 + 0.338 * Math.abs(x - 50)
+const floorTop = (x: number): number => wallBottom(x) + 0.8
+const floorBottom = (x: number): number => 76.9 - 0.394 * Math.abs(x - 50)
 const clamp = (n: number, low: number, high: number): number => Math.min(high, Math.max(low, n))
 
 
@@ -201,7 +202,7 @@ export class HouseView {
     if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
     if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
     const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 12, 88), y: isWallDeco(id) ? 43 : 63, s: 1, f: false })
+    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 12, 88), y: isWallDeco(id) ? 31 : 58, s: 1, f: false })
     this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
     this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
     this.changed()
@@ -219,7 +220,7 @@ export class HouseView {
     }
     if (this.layout.friends.length >= HOUSE_MAX_FRIENDS) { this.hooks.toast(`친구는 최대 ${HOUSE_MAX_FRIENDS}명까지 데려올 수 있어요.`); return }
     const slot = [55, 38, 70][this.layout.friends.length] ?? 50
-    this.layout.friends.push({ id, x: slot, y: 72, s: 1, f: false })
+    this.layout.friends.push({ id, x: slot, y: 59, s: 1, f: false })
     this.selected = { kind: 'friend', index: this.layout.friends.length - 1 }
     this.hooks.toast(`${fullName(characterById(id))}이(가) 하우스에 놀러 왔어요!`)
     this.changed()

@@ -44,3 +44,16 @@
 .house-lot .house-bg {
   inset: 4% 0 auto; height: 92%; width:100%; object-fit:contain;
 }
+
+/* test09: original 1086x1448 art is never stretched or cropped.
+   The transparent outer margin reveals the sky-blue backdrop. */
+.house-lot {aspect-ratio:1086 / 1448; background:#bdeeff !important;}
+.house-lot .house-bg {inset:0 !important;width:100% !important;height:100% !important;object-fit:contain !important;}
+/* Polygon grid is tied to the exact pixel coordinates of the supplied room. */
+.house-lot.house-grid-visible::before {
+ inset:0;clip-path:polygon(1.8% 55.3%,50% 38.4%,98.2% 55.3%,98.2% 57.2%,50% 76.9%,1.8% 57.2%);
+ background-size:2% 2%;
+}
+.house-lot.house-grid-visible.house-grid-wall::before {
+ clip-path:polygon(1.8% 40.0%,50% 22.5%,98.2% 40.0%,98.2% 55.3%,50% 38.4%,1.8% 55.3%);
+}
