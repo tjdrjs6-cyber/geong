@@ -345,7 +345,7 @@ export class HouseView {
     const dx = (event.clientX - this.drag.startX) / rect.width * 100
     const dy = (event.clientY - this.drag.startY) / rect.height * 100
     if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
-    const x = this.snap(this.drag.originX + dx, 10, 90)
+    const x = this.snap(this.drag.originX + dx, 8, 92)
     item.x = x
     if (this.selected?.kind === 'piece') {
       const piece = this.layout.pieces[this.selected.index]

@@ -96,3 +96,65 @@
 @media(max-height:700px) {
   #ui .house-screen .house-scroll-viewport { height:42dvh; max-height:42%; }
 }
+
+
+/* test11: prioritize the room width, while preserving its native aspect ratio.
+   The entire stage, including its hit-test coordinates, scales as ONE box. */
+#ui .house-screen .house-scroll-viewport {
+  flex:0 0 auto !important;
+  width:100% !important;
+  height:auto !important;
+  max-height:62dvh !important;
+  min-height:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  padding:0 !important;
+  margin:0 !important;
+  touch-action:none;
+  background:#bdeeff;
+}
+#ui .house-screen .house-lot {
+  position:relative !important;
+  flex:0 0 auto !important;
+  width:min(100%, 540px, calc(62dvh * 1086 / 1448)) !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:none !important;
+  aspect-ratio:1086 / 1448 !important;
+  margin:0 auto !important;
+  transform:none !important;
+}
+#ui .house-screen .house-lot .house-bg {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
+#ui .house-screen .house-panel {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+#ui .house-screen .house-inventory {
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+}
+/* Boundary polygons share the background's percentage coordinate system. */
+#ui .house-screen .house-lot.house-grid-visible::before {
+  inset:0 !important;
+  background-size:2% 2% !important;
+  clip-path:polygon(1.8% 55.3%,50% 38.4%,98.2% 55.3%,98.2% 57.2%,50% 76.9%,1.8% 57.2%) !important;
+}
+#ui .house-screen .house-lot.house-grid-visible.house-grid-wall::before {
+  clip-path:polygon(1.8% 40%,50% 22.5%,98.2% 40%,98.2% 55.3%,50% 38.4%,1.8% 55.3%) !important;
+}
+@media(max-height:650px) {
+  #ui .house-screen .house-scroll-viewport {max-height:55dvh !important;}
+  #ui .house-screen .house-lot {width:min(100%, 540px, calc(55dvh * 1086 / 1448)) !important;}
+}
