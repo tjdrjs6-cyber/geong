@@ -10,8 +10,7 @@ const FRIEND_LAYER = 5000
 type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
 
 const HOUSE_BG_URL = '/assets/bg/house_room_test09.png'
-const WALL_DECO_IDS = new Set<DecoId>(['d21','d29','d31','d32','d33','d34','d39','d40','d44','d46','d48'])
-const isWallDeco = (id: DecoId): boolean => WALL_DECO_IDS.has(id)
+const isWallDeco = (id: DecoId): boolean => decoById(id).zone === 'wall'
 // Geometry follows the un-stretched 1086×1448 background: upper red trim,
 // yellow wall/floor boundary and the diamond-shaped floor.
 // Exact boundary slopes derived from the supplied 1086 x 1448 room artwork.
