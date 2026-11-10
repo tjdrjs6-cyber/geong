@@ -794,12 +794,16 @@ export class GachaUi {
   }
 
 
+  private collectionCombatPower = 0
+
   private async refreshAchievementCombatLabels():Promise<void> {
     try {
       const res=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
       if(!res.ok)return
       const data=await res.json() as {power:number}
       const power=Math.max(0,Number(data.power)||0)
+      this.collectionCombatPower=power
+      if(this.screen==='battle')this.renderBattleStatus()
       this.root.querySelectorAll<HTMLElement>('.achievement-combat-bonus').forEach(el=>{
         el.textContent=`컬렉션 영구 전투력 +${power} 적용 중`
       })
@@ -811,17 +815,17 @@ export class GachaUi {
     if(!overlay){overlay=document.createElement('div');overlay.id='achievement-v23-overlay';document.body.append(overlay)}
     overlay.hidden=false
     const close=()=>{if(overlay)overlay.hidden=true}
-    overlay.innerHTML='<div class="achievement-v23-panel"><button class="achievement-v23-close" aria-label="닫기">×</button><h2>🏆 업적</h2><p>불러오는 중...</p></div>'
+    overlay.innerHTML='<div class="achievement-v23-panel"><button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><p>불러오는 중...</p></div>'
     overlay.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
     const panel=overlay.querySelector<HTMLElement>('.achievement-v23-panel')!
     const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))
-    const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>🏆 업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
+    const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
     if(tab==='title'){showTitle();return}
     try {
       const res=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
       if(!res.ok)throw Error('업적 정보를 불러오지 못했어요.')
       const data=await res.json() as {items:{id:string;tier:string;name:string;ids:string[];owned:string[];coins:number;power:number;claimed:boolean}[];power:number}
-      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>🏆 업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="lazy" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
+      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="lazy" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
       panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
       panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
       panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');await this.store.restore();await this.openAchievements('collection');this.toast('컬렉션 보상을 수령했어요!')}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
@@ -2464,7 +2468,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const equipmentLabel=this.root.querySelector<HTMLElement>('.expedition-equipment-bonus')
     if(equipmentLabel)equipmentLabel.textContent=`장비 전투력 +${Math.max(0,Number(this.store.forge?.bonus)||0)} 적용 중`
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>캐릭터 전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
       if(picker.innerHTML!==html){
         const choices=picker.querySelector<HTMLElement>('.expedition-choices')
@@ -3133,7 +3137,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       if (fighter) {
         const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0) + (this.store.battle?.thirdId ? battlePower(this.store.battle.thirdId) : 0)
         const weaponPower = this.store.forge?.bonus ?? 0
-        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>캐릭터 전투력 <b>${characterPower}</b></span><span>장비 공격력 <b>${weaponPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
+        const collectionPower = this.collectionCombatPower
+        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>전투력 <b>${characterPower}</b></span><span>장비 공격력 <b>${weaponPower}</b></span><span>컬렉션 <b>+${collectionPower}</b></span><span class="battle-total-power">총전투력 <b>${characterPower + weaponPower + collectionPower}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
       } else {
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }
