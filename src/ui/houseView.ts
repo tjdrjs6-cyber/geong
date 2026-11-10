@@ -1,3 +1,4 @@
+import './houseRedesign.css'
 import { CHARACTERS, characterById, fullName, type CharacterId } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
 import { DECOS, DECO_IMAGE_URLS, HOUSE_MAX_FRIENDS, HOUSE_MAX_PIECES, decoById, type DecoId, type HouseLayout } from '../game/decos'
@@ -8,7 +9,7 @@ type Selection = { kind: 'piece' | 'friend'; index: number } | null
 const FRIEND_LAYER = 5000
 type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
 
-const HOUSE_BG_URL = '/assets/bg/house.webp?v=12'
+const HOUSE_BG_URL = '/assets/bg/house_room_test02.webp'
 
 /** House background: the user's hand-drawn stone room with a window to the forest. */
 export function houseLotMarkup(): string {
@@ -36,6 +37,7 @@ export class HouseView {
   private coinClockSkew = 0
   private coinTimer = 0
   private coinBusy = false
+  private wanderTimer = 0
   private drag: { pointerId: number; startX: number; startY: number; originX: number; originY: number; moved: boolean } | null = null
 
   constructor(private readonly root: HTMLElement, private readonly store: RemoteGachaStore, private readonly hooks: Hooks) {
@@ -61,6 +63,8 @@ export class HouseView {
     this.layout.friends = this.layout.friends.filter(friend => this.store.data.owned.includes(friend.id as CharacterId))
     this.selected = null
     this.render()
+    window.clearInterval(this.wanderTimer)
+    this.wanderTimer = window.setInterval(() => this.wanderFriends(), 3400)
     this.hooks.coinAvailable(false)
     this.coin = null
     this.renderCoin()
@@ -150,6 +154,25 @@ export class HouseView {
       this.renderCoin()
     }
   }
+  /** Deco positions are stored on a simple 10-column floor grid. */
+  private snap(value: number, low: number, high: number): number {
+    return Math.min(high, Math.max(low, Math.round(value / 8) * 8))
+  }
+
+  /** Visual-only wandering; does not overwrite the player's saved positions. */
+  private wanderFriends(): void {
+    if (!this.isOpen || this.drag || this.selected?.kind === 'friend') return
+    this.lot.querySelectorAll<HTMLElement>('.house-friend').forEach((node, index) => {
+      const friend = this.layout.friends[index]
+      if (!friend) return
+      const dx = (Math.random() - 0.5) * 17
+      const dy = (Math.random() - 0.5) * 9
+      node.style.left = `${Math.max(25, Math.min(77, friend.x + dx))}%`
+      node.style.top = `${Math.max(58, Math.min(79, friend.y + dy))}%`
+      node.classList.toggle('is-walking-left', dx < 0)
+    })
+  }
+
   private remaining(id: DecoId): number {
     return (this.store.decos[id] ?? 0) - this.layout.pieces.filter(piece => piece.id === id).length
   }
@@ -158,9 +181,9 @@ export class HouseView {
     if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
     if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
     const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    this.layout.pieces.push({ id, x: 50 + jitter, y: 72, s: 1, f: false })
+    this.layout.pieces.push({ id, x: this.snap(50 + jitter, 10, 90), y: 72, s: 1, f: false })
     this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
-    this.hooks.toast(`${decoById(id).name}을(를) 공터에 꺼냈어요. 끌어서 옮겨 보세요!`)
+    this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
     this.changed()
   }
 
@@ -175,8 +198,8 @@ export class HouseView {
       return
     }
     if (this.layout.friends.length >= HOUSE_MAX_FRIENDS) { this.hooks.toast(`친구는 최대 ${HOUSE_MAX_FRIENDS}명까지 데려올 수 있어요.`); return }
-    const slot = [62, 38, 80][this.layout.friends.length] ?? 50
-    this.layout.friends.push({ id, x: slot, y: 84, s: 1, f: false })
+    const slot = [55, 38, 70][this.layout.friends.length] ?? 50
+    this.layout.friends.push({ id, x: slot, y: 72, s: 1, f: false })
     this.selected = { kind: 'friend', index: this.layout.friends.length - 1 }
     this.hooks.toast(`${fullName(characterById(id))}이(가) 하우스에 놀러 왔어요!`)
     this.changed()
@@ -226,6 +249,7 @@ export class HouseView {
       pieces.push(`<div class="house-piece house-friend${selected ? ' is-selected' : ''}${friend.f ? ' is-flipped' : ''}" data-kind="friend" data-index="${index}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
     })
     layer.innerHTML = pieces.join('')
+    this.lot.classList.toggle('house-grid-visible', this.selected?.kind === 'piece')
     const empty = this.lot.querySelector<HTMLElement>('.house-empty')
     if (empty) empty.hidden = pieces.length > 0
     const tools = this.root.querySelector<HTMLElement>('.house-tools')
@@ -295,8 +319,8 @@ export class HouseView {
     const dx = (event.clientX - this.drag.startX) / rect.width * 100
     const dy = (event.clientY - this.drag.startY) / rect.height * 100
     if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
-    item.x = Math.round(Math.min(97, Math.max(3, this.drag.originX + dx)) * 10) / 10
-    item.y = Math.round(Math.min(99, Math.max(12, this.drag.originY + dy)) * 10) / 10
+    item.x = this.selected?.kind === 'piece' ? this.snap(this.drag.originX + dx, 18, 82) : Math.round(Math.min(82, Math.max(18, this.drag.originX + dx)) * 10) / 10
+    item.y = this.selected?.kind === 'piece' ? this.snap(this.drag.originY + dy, 52, 84) : Math.round(Math.min(80, Math.max(54, this.drag.originY + dy)) * 10) / 10
     const isFriend = this.selected?.kind === 'friend'
     const node = this.lot.querySelector<HTMLElement>(`.house-piece[data-kind="${isFriend ? 'friend' : 'piece'}"][data-index="${this.selected!.index}"]`)
     if (node) { node.style.left = `${item.x}%`; node.style.top = `${item.y}%`; node.style.zIndex = String((isFriend ? FRIEND_LAYER : 0) + Math.round(item.y * 10)) }

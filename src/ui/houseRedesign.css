@@ -1,0 +1,15 @@
+/* test02 house room overlay. Isolated from the game's main CSS. */
+.house-lot { position:relative; overflow:hidden; aspect-ratio:941 / 1672; width:100%; max-width:540px; margin-inline:auto; touch-action:none; }
+.house-lot .house-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; user-select:none; }
+.house-lot .house-items { position:absolute; inset:0; z-index:3; pointer-events:none; }
+.house-lot .house-piece { position:absolute; display:flex; align-items:center; justify-content:center; width:14%; height:9%; transform:translate(-50%,-50%) scale(var(--s,1)); transform-origin:center; pointer-events:auto; cursor:grab; touch-action:none; transition:left 2.8s ease-in-out,top 2.8s ease-in-out; }
+.house-lot .house-piece[data-kind="piece"] { transition:none; }
+.house-lot .house-piece img { max-width:100%; max-height:100%; object-fit:contain; pointer-events:none; user-select:none; }
+.house-lot .house-piece.is-flipped img { transform:scaleX(-1); }
+.house-lot .house-friend.is-walking-left:not(.is-flipped) img { transform:scaleX(-1); }
+.house-lot .house-piece.is-selected { outline:2px dashed #f2a65a; border-radius:12px; background:#fff5d866; }
+.house-lot.house-grid-visible:before { content:''; position:absolute; left:16%; right:16%; top:51%; bottom:15%; z-index:2; pointer-events:none; background-image:linear-gradient(to right,#bb8c6870 1px,transparent 1px),linear-gradient(to bottom,#bb8c6870 1px,transparent 1px); background-size:12.5% 25%; clip-path:polygon(50% 0,100% 44%,50% 100%,0 44%); }
+.house-lot .house-empty { display:none!important; }
+.house-lot .house-coin { z-index:8; }
+.house-lot.house-visit .house-piece { transition:none; }
+@media (prefers-reduced-motion:reduce) { .house-lot .house-piece { transition:none!important; } }
