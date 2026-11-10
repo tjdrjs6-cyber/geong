@@ -1,6 +1,15 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art. New PNGs should use a centered square transparent canvas with minimal padding to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
+  pajama_chiikawa: '/assets/chars/pajama_chiikawa.png',
+  pajama_hachiware: '/assets/chars/pajama_hachiware.png',
+  pajama_usagi: '/assets/chars/pajama_usagi.png',
+  staff_chiikawa: '/assets/chars/staff_chiikawa.png',
+  staff_hachiware: '/assets/chars/staff_hachiware.png',
+  staff_usagi: '/assets/chars/staff_usagi.png',
+  devil_momonga: '/assets/chars/devil_momonga.png',
+  angel_momonga: '/assets/chars/angel_momonga.png',
+
   halloween_chiikawa: '/assets/chars/halloween_chiikawa.png',
   halloween_hachiware: '/assets/chars/halloween_hachiware.png',
   halloween_usagi: '/assets/chars/halloween_usagi.png',
@@ -48,6 +57,15 @@ const previewUrls: Record<CharacterId, string> = {
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
+  pajama_chiikawa: '/assets/chars/pajama_chiikawa.png',
+  pajama_hachiware: '/assets/chars/pajama_hachiware.png',
+  pajama_usagi: '/assets/chars/pajama_usagi.png',
+  staff_chiikawa: '/assets/chars/staff_chiikawa.png',
+  staff_hachiware: '/assets/chars/staff_hachiware.png',
+  staff_usagi: '/assets/chars/staff_usagi.png',
+  devil_momonga: '/assets/chars/devil_momonga.png',
+  angel_momonga: '/assets/chars/angel_momonga.png',
+
   halloween_chiikawa: '/assets/chars/halloween_chiikawa.png',
   halloween_hachiware: '/assets/chars/halloween_hachiware.png',
   halloween_usagi: '/assets/chars/halloween_usagi.png',

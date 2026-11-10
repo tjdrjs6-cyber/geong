@@ -1,0 +1,220 @@
+/* test06 house room overlay. Isolated from the game's main CSS. */
+.house-lot { position:relative; overflow:hidden; aspect-ratio:941 / 1672; width:100%; max-width:540px; margin-inline:auto; touch-action:none; }
+.house-lot .house-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; user-select:none; }
+.house-lot .house-items { position:absolute; inset:0; z-index:3; pointer-events:none; }
+.house-lot .house-piece { position:absolute; display:flex; align-items:center; justify-content:center; width:14%; height:9%; transform:translate(-50%,-50%) scale(var(--s,1)); transform-origin:center; pointer-events:auto; cursor:grab; touch-action:none; transition:left 2.8s ease-in-out,top 2.8s ease-in-out; }
+.house-lot .house-piece[data-kind="piece"] { transition:none; }
+.house-lot .house-piece img { max-width:100%; max-height:100%; object-fit:contain; pointer-events:none; user-select:none; }
+.house-lot .house-piece.is-flipped img { transform:scaleX(-1); }
+.house-lot .house-friend.is-walking-left:not(.is-flipped) img { transform:scaleX(-1); }
+.house-lot .house-piece.is-selected { outline:2px dashed #f2a65a; border-radius:12px; background:#fff5d866; }
+.house-lot.house-grid-visible:before { content:''; position:absolute; left:16%; right:16%; top:51%; bottom:15%; z-index:2; pointer-events:none; background-image:linear-gradient(to right,#bb8c6870 1px,transparent 1px),linear-gradient(to bottom,#bb8c6870 1px,transparent 1px); background-size:12.5% 25%; clip-path:polygon(50% 0,100% 44%,50% 100%,0 44%); }
+.house-lot .house-empty { display:none!important; }
+.house-lot .house-coin { z-index:8; }
+.house-lot.house-visit .house-piece { transition:none; }
+@media (prefers-reduced-motion:reduce) { .house-lot .house-piece { transition:none!important; } }
+
+/* test06: wall and floor decoration zones */
+.house-lot.house-grid-visible:before {left:3%;right:3%;top:20%;bottom:31%;background-size:12.5% 16.666%;clip-path:none;opacity:.55}
+.house-tabs {display:flex;gap:3px;flex-wrap:nowrap}
+.house-tabs .auth-tab {font-size:11px;padding:7px 4px;white-space:nowrap;flex:1;min-width:0}
+.house-lot .house-piece[data-kind="piece"] {transition:none}
+
+/* test07: preserve the exact aspect ratio of the supplied 1086x1448 room. */
+.house-lot { aspect-ratio:1086 / 1448; }
+.house-lot .house-bg { object-fit:contain; }
+/* Smaller 2%-spacing grid, clipped to the actual floor or wall polygons. */
+.house-lot.house-grid-visible::before {
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background-image:linear-gradient(to right,#bd8d6470 1px,transparent 1px),linear-gradient(to bottom,#bd8d6470 1px,transparent 1px);
+  background-size:2% 2%;opacity:.55;
+  clip-path:polygon(2% 55%,50% 39%,98% 55%,98% 57%,50% 77%,2% 57%);
+}
+.house-lot.house-grid-visible.house-grid-wall::before {
+  clip-path:polygon(2% 40%,50% 23%,98% 40%,98% 55%,50% 39%,2% 55%);
+}
+
+/* test08: soft pastel backdrop and a shorter room illustration.
+   Keep image aspect ratio intact (no vertical stretching). */
+.house-lot {
+  background: radial-gradient(ellipse at 24% 22%,#fff1f6 0%,transparent 55%),
+              radial-gradient(ellipse at 78% 78%,#e5f7f2 0%,transparent 58%),
+              linear-gradient(165deg,#f4efff 0%,#fff7e9 53%,#edf8ff 100%);
+}
+.house-lot .house-bg {
+  inset: 4% 0 auto; height: 92%; width:100%; object-fit:contain;
+}
+
+/* test09: original 1086x1448 art is never stretched or cropped.
+   The transparent outer margin reveals the sky-blue backdrop. */
+.house-lot {aspect-ratio:1086 / 1448; background:#bdeeff !important;}
+.house-lot .house-bg {inset:0 !important;width:100% !important;height:100% !important;object-fit:contain !important;}
+/* Polygon grid is tied to the exact pixel coordinates of the supplied room. */
+.house-lot.house-grid-visible::before {
+ inset:0;clip-path:polygon(1.8% 55.3%,50% 38.4%,98.2% 55.3%,98.2% 57.2%,50% 76.9%,1.8% 57.2%);
+ background-size:2% 2%;
+}
+.house-lot.house-grid-visible.house-grid-wall::before {
+ clip-path:polygon(1.8% 40.0%,50% 22.5%,98.2% 40.0%,98.2% 55.3%,50% 38.4%,1.8% 55.3%);
+}
+
+/* test10: room is a fixed, non-scrolling stage; only the larger editor list scrolls. */
+#ui .house-screen[aria-hidden="false"],
+#ui .house-screen.is-active {
+  display:flex; flex-direction:column; overflow:hidden !important;
+  height:100%; max-height:100%; min-height:0;
+  overscroll-behavior:contain;
+}
+#ui .house-screen .weed-header { flex:0 0 auto; }
+#ui .house-screen .house-scroll-viewport {
+  display:flex; align-items:center; justify-content:center;
+  flex:0 1 auto; height:min(49dvh, 480px); min-height:0;
+  max-height:49%; overflow:hidden !important;
+  overscroll-behavior:none; touch-action:pan-x;
+  padding:0; margin:0; background:#bdeeff;
+}
+#ui .house-screen .house-lot {
+  flex:0 0 auto; width:auto !important; height:100% !important;
+  max-width:100%; max-height:100%; aspect-ratio:1086 / 1448 !important;
+  overflow:hidden; background:#bdeeff !important;
+}
+#ui .house-screen .house-lot .house-bg {
+  inset:0 !important; width:100% !important; height:100% !important;
+  object-fit:contain !important; object-position:center !important;
+}
+#ui .house-screen .house-tools { flex:0 0 auto; max-height:90px; overflow-x:auto; }
+#ui .house-screen .house-panel {
+  display:flex; flex-direction:column; flex:1 1 auto;
+  min-height:0; overflow:hidden !important; margin-bottom:0;
+}
+#ui .house-screen .house-panel .field-info-sticky { flex:0 0 auto; }
+#ui .house-screen .house-inventory {
+  flex:1 1 auto; min-height:0; overflow-y:auto !important;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  touch-action:pan-y; padding-bottom:24px;
+}
+@media(max-height:700px) {
+  #ui .house-screen .house-scroll-viewport { height:42dvh; max-height:42%; }
+}
+
+
+/* test11: prioritize the room width, while preserving its native aspect ratio.
+   The entire stage, including its hit-test coordinates, scales as ONE box. */
+#ui .house-screen .house-scroll-viewport {
+  flex:0 0 auto !important;
+  width:100% !important;
+  height:auto !important;
+  max-height:62dvh !important;
+  min-height:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  padding:0 !important;
+  margin:0 !important;
+  touch-action:none;
+  background:#bdeeff;
+}
+#ui .house-screen .house-lot {
+  position:relative !important;
+  flex:0 0 auto !important;
+  width:min(100%, 540px, calc(62dvh * 1086 / 1448)) !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:none !important;
+  aspect-ratio:1086 / 1448 !important;
+  margin:0 auto !important;
+  transform:none !important;
+}
+#ui .house-screen .house-lot .house-bg {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
+#ui .house-screen .house-panel {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+#ui .house-screen .house-inventory {
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+}
+/* Boundary polygons share the background's percentage coordinate system. */
+#ui .house-screen .house-lot.house-grid-visible::before {
+  inset:0 !important;
+  background-size:2% 2% !important;
+  clip-path:polygon(1.8% 55.3%,50% 38.4%,98.2% 55.3%,98.2% 57.2%,50% 76.9%,1.8% 57.2%) !important;
+}
+#ui .house-screen .house-lot.house-grid-visible.house-grid-wall::before {
+  clip-path:polygon(1.8% 40%,50% 22.5%,98.2% 40%,98.2% 55.3%,50% 38.4%,1.8% 55.3%) !important;
+}
+@media(max-height:650px) {
+  #ui .house-screen .house-scroll-viewport {max-height:55dvh !important;}
+  #ui .house-screen .house-lot {width:min(100%, 540px, calc(55dvh * 1086 / 1448)) !important;}
+}
+
+/* test12: read-only house in another player's collection/profile.
+   Do not inherit fixed-height/stretching rules from the collection card. */
+.house-lot.house-visit {
+  display:block !important;
+  position:relative !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:540px !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  aspect-ratio:1086 / 1448 !important;
+  flex:none !important;
+  align-self:center !important;
+  margin-inline:auto !important;
+  transform:none !important;
+  overflow:hidden !important;
+  background:#bdeeff !important;
+}
+.house-lot.house-visit > .house-bg {
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  transform:none !important;
+}
+.house-lot.house-visit > .house-items {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+}
+
+/* test13: crop ONLY the empty top/bottom margins in the visiting preview.
+   The complete 1086x1448 room image, characters and decorations share
+   one proportional stage; nothing is stretched independently. */
+#ui .user-house { width:100% !important; max-width:none !important; min-width:0 !important; }
+#ui .user-house .house-visit-frame {
+  position:relative !important; box-sizing:border-box !important;
+  display:block !important; width:100% !important; max-width:100% !important;
+  height:auto !important; aspect-ratio:1086 / 927 !important;
+  overflow:hidden !important; margin:0 auto !important;
+  border-radius:14px; background:#bdeeff;
+}
+#ui .user-house .house-visit-frame > .house-lot.house-visit {
+  position:absolute !important; left:0 !important; top:-28.125% !important;
+  width:100% !important; max-width:none !important;
+  height:auto !important; aspect-ratio:1086 / 1448 !important;
+  margin:0 !important; padding:0 !important;
+  transform:none !important; overflow:hidden !important;
+}
+#ui .user-house .house-visit-frame .house-bg {
+  width:100% !important; height:100% !important;
+  object-fit:contain !important; transform:none !important;
+}

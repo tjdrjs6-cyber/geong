@@ -314,6 +314,35 @@ async function prepareDatabase() {
   } finally {
     resetConn.release()
   }
+  // One-time test15 catalog migration: clear previous decorations and placed decoration items.
+  // Does not alter characters, coins, equipment or placed friends.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_content_migrations (
+    name VARCHAR(80) PRIMARY KEY, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`)
+  const decoResetConn = await pool.getConnection()
+  try {
+    await decoResetConn.beginTransaction()
+    const [already] = await decoResetConn.query('SELECT name FROM gm_content_migrations WHERE name = ? FOR UPDATE', ['deco_catalog_test15'])
+    if (!already.length) {
+      await decoResetConn.query('UPDATE gm_decos SET items = ?', ['{}'])
+      const [houses] = await decoResetConn.query('SELECT account_id, layout FROM gm_house FOR UPDATE')
+      for (const house of houses) {
+        const layout = parseJson(house.layout) || {}
+        layout.pieces = []
+        await decoResetConn.query('UPDATE gm_house SET layout = ? WHERE account_id = ?', [JSON.stringify(layout), house.account_id])
+      }
+      await decoResetConn.query('INSERT INTO gm_content_migrations (name) VALUES (?)', ['deco_catalog_test15'])
+    }
+    await decoResetConn.commit()
+  } catch (error) {
+    await decoResetConn.rollback().catch(() => {})
+    throw error
+  } finally {
+    decoResetConn.release()
+  }
+  // Admin collections are repopulated after the one-time reset.
+  const [decoAdmins] = await pool.query("SELECT id FROM gm_accounts WHERE username IN ('test','tjdrjs885')")
+  for (const admin of decoAdmins) await grantAdminCollection(admin.id)
   ready = true
 }
 
@@ -1015,6 +1044,17 @@ const LOTTERY_IDS = ['halloween_chiikawa','halloween_hachiware','halloween_usagi
 const LOTTERY_ACCESSORIES = [null,null,null,'chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring',null]
 const LOTTERY_GRADES = 'ABCDEFGHIJKL'.split('')
 const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:100})
+let lotteryNoticeTablesReady = null
+async function ensureLotteryNoticeTables(){
+  if(!lotteryNoticeTablesReady){
+    lotteryNoticeTablesReady=(async()=>{
+      await pool.query('CREATE TABLE IF NOT EXISTS gm_lottery_reset_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+      await pool.query('CREATE TABLE IF NOT EXISTS gm_lottery_reset_seen (account_id BIGINT NOT NULL, event_id BIGINT NOT NULL, PRIMARY KEY(account_id,event_id))')
+    })().catch(e=>{lotteryNoticeTablesReady=null;throw e})
+  }
+  return lotteryNoticeTablesReady
+}
+
 
 const routes = {
   'GET /api/lottery': async (req,res) => {
@@ -1022,7 +1062,9 @@ const routes = {
     if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
     const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade<>'L' ORDER BY h.id DESC LIMIT 12`)
-    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),winners})
+    await ensureLotteryNoticeTables()
+    const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
+    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
   },
   'POST /api/lottery/reset': async (req,res) => {
     const account=await currentAccount(req)
@@ -1034,9 +1076,22 @@ const routes = {
       await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
       await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
       await conn.query('DELETE FROM gm_lottery_history')
+      await ensureLotteryNoticeTables()
+      await conn.query('INSERT INTO gm_lottery_reset_events () VALUES ()')
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,2,2,2,2,2,81]),winners:[]})
+  },
+  'POST /api/lottery/reset-seen': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {id}=await readJson(req)
+    if(!Number.isSafeInteger(id)||id<1)return send(res,400,{error:'invalid_id'})
+    await ensureLotteryNoticeTables()
+    const [events]=await pool.query('SELECT id FROM gm_lottery_reset_events WHERE id=?',[id])
+    if(!events.length)return send(res,404,{error:'notice_not_found'})
+    await pool.query('INSERT IGNORE INTO gm_lottery_reset_seen (account_id,event_id) VALUES (?,?)',[account.id,id])
+    send(res,200,{ok:true})
   },
   'POST /api/lottery/buy': async (req,res) => {
     const account=await currentAccount(req)
@@ -1483,7 +1538,7 @@ const routes = {
     const valid = await verifyPassword(password, account ? account.password_hash : DUMMY_HASH)
     if (!account || !valid) { recordFailure(key); return send(res, 401, { error: 'invalid_credentials' }) }
     failures.delete(key)
-    if (account.is_admin) await grantAdminCollection(account.id)
+    if (account.is_admin || account.username === 'test' || account.username === 'tjdrjs885') await grantAdminCollection(account.id)
     return startSession(res, account.id, account.username, account.nickname, await getSave(account.id), account.is_admin)
   },
   'POST /api/auth/logout': async (req, res) => {
@@ -1505,7 +1560,7 @@ const routes = {
   'GET /api/me': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 200, { user: null })
-    if (account.is_admin) await grantAdminCollection(account.id)
+    if (account.is_admin || account.username === 'test' || account.username === 'tjdrjs885') await grantAdminCollection(account.id)
     const autoEarned = await autoSettle(account.id)
     send(res, 200, { autoEarned, user: { username: account.username, nickname: account.nickname || null, admin: Boolean(account.is_admin) }, ...(await accountState(account.id)) })
   },
