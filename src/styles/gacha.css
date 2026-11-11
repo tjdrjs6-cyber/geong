@@ -5133,3 +5133,19 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .gacha-actions>.pull-popup .pull-button{width:min(100%,460px)!important;max-width:460px!important;min-height:54px!important;display:flex;}
 #ui .gacha-actions>.pull-popup:not(.is-deco) .deco-pull,#ui .gacha-actions>.pull-popup.is-deco .pull-button:not(.deco-pull){display:none!important}
 #ui .gacha-actions>.pull-popup .pull-showcase{flex-shrink:0}
+
+/* V2.29: Anchor draw tabs to the viewport bottom, not to the stage layout. */
+#ui .gacha-screen.is-active > .gacha-actions {
+  position:fixed!important;
+  top:auto!important;
+  bottom:calc(18px + env(safe-area-inset-bottom, 0px))!important;
+  left:50%!important; right:auto!important;
+  width:min(440px, calc(100vw - 28px))!important;
+  max-width:calc(100vw - 28px)!important;
+  margin:0!important; padding:0!important;
+  transform:translateX(-50%)!important;
+  display:flex!important; align-items:stretch!important; justify-content:center!important;
+  pointer-events:auto!important; z-index:80!important;
+}
+#ui .gacha-screen.is-active > .gacha-actions > .pull-mode {width:100%!important;}
+#ui .gacha-screen.is-active > .gacha-actions > .pull-popup {position:fixed!important;}
