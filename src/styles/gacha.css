@@ -5363,3 +5363,21 @@ body>.pull-rates-dialog footer button{width:100%!important}
 #ui .pull-popup .pull-action-row .pull-button small{font-size:clamp(9px,2.4vw,11px)!important}
 #ui .pull-popup .pull-action-row .pull-button:disabled{opacity:.55!important;box-shadow:none!important}
 @media(max-width:390px){#ui .pull-popup .pull-showcase-characters{height:305px!important}#ui .pull-popup .pull-showcase-characters .pull-feature-main img{max-height:255px!important}#ui .pull-popup .pull-showcase-characters .pull-feature img{max-height:145px!important}}
+
+/* V2.40 — correct rarity hierarchy and centered peek-behind character art */
+body>.pull-rates-dialog .pull-rate-rare,#ui>.pull-rates-dialog .pull-rate-rare{background:#f0e3ff!important;border-color:#b990e8!important;color:#6f369e!important}
+body>.pull-rates-dialog .pull-rate-mermaid,#ui>.pull-rates-dialog .pull-rate-mermaid{background:#e8f5ff!important;border-color:#8ac8ed!important}
+body>.pull-rates-dialog .pull-rate-super,#ui>.pull-rates-dialog .pull-rate-super{background:#f6e6ff!important;border-color:#b48cdd!important}
+#ui .pull-popup .pull-showcase-char{width:100%!important;min-width:0!important;overflow:visible!important}
+#ui .pull-popup .pull-showcase-characters{position:relative!important;display:block!important;box-sizing:border-box!important;width:100%!important;max-width:480px!important;height:clamp(330px,92vw,470px)!important;margin:0 auto!important;padding:0!important;overflow:visible!important;isolation:isolate!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature{position:absolute!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-end!important;box-sizing:border-box!important;bottom:8px!important;top:auto!important;left:auto!important;right:auto!important;flex:none!important;width:27%!important;min-width:0!important;height:auto!important;max-height:none!important;margin:0!important;transform:none!important;z-index:2!important;overflow:visible!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature:nth-child(1){left:1%!important;right:auto!important;bottom:12px!important;transform:none!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature:nth-child(2){left:17%!important;right:auto!important;bottom:15px!important;transform:none!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature:nth-child(4){right:17%!important;left:auto!important;bottom:15px!important;transform:none!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature:nth-child(5){right:1%!important;left:auto!important;bottom:12px!important;transform:none!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature.pull-feature-main{position:absolute!important;left:50%!important;right:auto!important;bottom:0!important;width:58%!important;transform:translateX(-50%)!important;z-index:6!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature img{display:block!important;box-sizing:border-box!important;position:relative!important;width:100%!important;height:clamp(135px,36vw,200px)!important;max-height:none!important;max-width:100%!important;object-fit:contain!important;object-position:center bottom!important;margin:0!important;transform:none!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature.pull-feature-main img{width:100%!important;max-width:100%!important;height:clamp(290px,75vw,410px)!important;max-height:none!important;object-fit:contain!important;object-position:center bottom!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature-label{position:relative!important;z-index:15!important;flex:none!important;order:0!important;max-width:110%!important;width:max-content!important;margin:0 auto 2px!important;padding:3px 5px!important;transform:none!important;white-space:normal!important;overflow:visible!important;line-height:1.12!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature-main .pull-feature-label{z-index:20!important}
+@media(max-width:390px){#ui .pull-popup .pull-showcase-characters{height:clamp(310px,92vw,365px)!important}#ui .pull-popup .pull-showcase-characters .pull-feature.pull-feature-main img{height:clamp(275px,73vw,330px)!important}}
