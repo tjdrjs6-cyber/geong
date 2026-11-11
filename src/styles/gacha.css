@@ -5381,3 +5381,47 @@ body>.pull-rates-dialog .pull-rate-super,#ui>.pull-rates-dialog .pull-rate-super
 #ui .pull-popup .pull-showcase-characters .pull-feature-label{position:relative!important;z-index:15!important;flex:none!important;order:0!important;max-width:110%!important;width:max-content!important;margin:0 auto 2px!important;padding:3px 5px!important;transform:none!important;white-space:normal!important;overflow:visible!important;line-height:1.12!important}
 #ui .pull-popup .pull-showcase-characters .pull-feature-main .pull-feature-label{z-index:20!important}
 @media(max-width:390px){#ui .pull-popup .pull-showcase-characters{height:clamp(310px,92vw,365px)!important}#ui .pull-popup .pull-showcase-characters .pull-feature.pull-feature-main img{height:clamp(275px,73vw,330px)!important}}
+
+
+/* V2.41 — probability list: consistent typography and high-contrast rarity colors */
+body>.pull-rates-dialog .pull-rate-row,
+#ui>.pull-rates-dialog .pull-rate-row {
+  color:#1d1715!important;
+  font-family:'Gowun Dodum',sans-serif!important;
+  border-width:2px!important;
+  border-style:solid!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 2px 4px rgba(60,36,20,.09)!important;
+}
+body>.pull-rates-dialog .pull-rate-row span,
+#ui>.pull-rates-dialog .pull-rate-row span {
+  font-family:'Gowun Dodum',sans-serif!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  color:#1d1715!important;
+  line-height:1.4!important;
+  opacity:1!important;
+}
+body>.pull-rates-dialog .pull-rate-row small,
+#ui>.pull-rates-dialog .pull-rate-row small {
+  font-family:'Gowun Dodum',sans-serif!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  color:#1d1715!important;
+  opacity:1!important;
+}
+body>.pull-rates-dialog .pull-rate-row b,
+#ui>.pull-rates-dialog .pull-rate-row b {
+  font-family:'Gowun Dodum',sans-serif!important;
+  font-size:14px!important;
+  font-weight:800!important;
+  color:#1d1715!important;
+  opacity:1!important;
+}
+/* Tier IDs: transcendent=초월, legendary=레전더리, super=유니크,
+   rare=에픽, mermaid=레어, normal=노말 */
+body>.pull-rates-dialog .pull-rate-transcendent,#ui>.pull-rates-dialog .pull-rate-transcendent{background:#f5a34d!important;border-color:#d46a14!important}
+body>.pull-rates-dialog .pull-rate-legendary,#ui>.pull-rates-dialog .pull-rate-legendary{background:#f8d763!important;border-color:#caa028!important}
+body>.pull-rates-dialog .pull-rate-super,#ui>.pull-rates-dialog .pull-rate-super{background:#c7a0f2!important;border-color:#8d56d2!important}
+body>.pull-rates-dialog .pull-rate-rare,#ui>.pull-rates-dialog .pull-rate-rare{background:#f4a6a6!important;border-color:#d46b70!important}
+body>.pull-rates-dialog .pull-rate-mermaid,#ui>.pull-rates-dialog .pull-rate-mermaid{background:#b9dcfa!important;border-color:#72ade2!important}
+body>.pull-rates-dialog .pull-rate-normal,#ui>.pull-rates-dialog .pull-rate-normal{background:#fffaf3!important;border-color:#e6d8c9!important}
