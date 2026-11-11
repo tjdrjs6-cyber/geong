@@ -5504,3 +5504,26 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 #ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;gap:4px 12px!important;width:fit-content!important;max-width:100%!important;padding:7px 10px!important;background:#e3faed!important;border-left:3px solid #48a48b!important;border-radius:4px 12px 12px 4px!important;text-align:left!important;box-sizing:border-box!important;}
 #ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info b{font-size:clamp(10px,2.7vw,14px)!important;font-weight:900!important;color:#bb5e31!important;}
 #ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info span{font-size:clamp(9px,2.5vw,13px)!important;color:#39776b!important;font-weight:700!important;}
+
+/* V2.51: probability button at the top-left of both character/deco draw dialogs */
+#ui>.pull-popup .pull-rates-toggle,
+#ui .gacha-actions>.pull-popup .pull-rates-toggle{
+  position:absolute!important;
+  top:max(18px,env(safe-area-inset-top,0px))!important;
+  left:max(20px,calc((100% - 480px)/2 + 22px))!important;
+  right:auto!important;
+  bottom:auto!important;
+  z-index:30!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-width:90px!important;min-height:42px!important;
+  padding:9px 14px!important;
+  background:#fff8e9!important;
+  color:#754b3b!important;
+  border:2px solid #d9ac81!important;
+  border-radius:14px!important;
+  box-shadow:0 3px 0 #e7c7a5,0 5px 12px #6e483222!important;
+  font-size:14px!important;font-weight:900!important;letter-spacing:-.3px!important;
+  white-space:nowrap!important;cursor:pointer!important;
+}
+#ui>.pull-popup .pull-rates-toggle:focus-visible{outline:3px solid #429c87!important;outline-offset:3px!important}
+@media(max-width:380px){#ui>.pull-popup .pull-rates-toggle{left:18px!important;min-width:80px!important;padding:8px 10px!important;font-size:13px!important}}
