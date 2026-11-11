@@ -5239,3 +5239,22 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui>.pull-rates-dialog .pull-rates-list>div{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid #efdfce;color:#785442;font-size:13px}
 #ui>.pull-rates-dialog .pull-rates-list b{white-space:nowrap;color:#a05c34}
 @media(max-width:390px){#ui>.pull-popup .pull-showcase-characters img.showcase-main{width:39%!important}#ui>.pull-popup .pull-showcase-characters img{width:15%!important}}
+
+/* V2.34: scrollable independent probability sheet */
+#ui>.pull-rates-dialog{position:fixed!important;inset:0!important;z-index:2147483640!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;overscroll-behavior:contain!important}
+#ui>.pull-rates-dialog .pull-rates-card{box-sizing:border-box!important;width:min(100%,480px)!important;height:min(84dvh,780px)!important;max-height:84dvh!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#ui>.pull-rates-dialog .pull-rates-card header{flex:0 0 auto!important}
+#ui>.pull-rates-dialog .pull-rates-list{flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;touch-action:pan-y!important;padding:8px 14px!important}
+#ui>.pull-rates-dialog .pull-rate-row{display:flex!important;align-items:center!important;gap:10px!important;min-height:58px!important;padding:7px 9px!important;margin:4px 0!important;border:1px solid #e8d9ca!important;border-radius:13px!important;background:#fffdfa!important}
+#ui>.pull-rates-dialog .pull-rate-row img{width:44px!important;height:44px!important;object-fit:contain!important;flex:none!important}
+#ui>.pull-rates-dialog .pull-rate-row span{flex:1!important;min-width:0!important;font-weight:700!important}
+#ui>.pull-rates-dialog .pull-rate-row small{display:block!important;font-size:10px!important;font-weight:500!important;opacity:.8!important}
+#ui>.pull-rates-dialog .pull-rate-row b{font-size:13px!important}
+#ui>.pull-rates-dialog .pull-rate-normal{background:#fffdf8!important}
+#ui>.pull-rates-dialog .pull-rate-mermaid{background:#e9f6ff!important;border-color:#9dc9e7!important}
+#ui>.pull-rates-dialog .pull-rate-rare{background:#e9f4ff!important;border-color:#8cbcf0!important}
+#ui>.pull-rates-dialog .pull-rate-super{background:#f3eaff!important;border-color:#b69de9!important}
+#ui>.pull-rates-dialog .pull-rate-legendary{background:#fff5d7!important;border-color:#e9c05d!important}
+#ui>.pull-rates-dialog .pull-rate-transcendent{background:#fff0dc!important;border-color:#f4a454!important}
+#ui>.pull-rates-dialog footer{flex:none!important;padding:10px 16px 15px!important;border-top:1px solid #ead8c4!important}
+#ui>.pull-rates-dialog footer button{display:block!important;width:100%!important;border-radius:12px!important;background:#d9935d!important;color:#fff!important;padding:12px!important;font-weight:800!important}
