@@ -30,7 +30,7 @@ import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
 import { DECOS, DECO_IMAGE_URLS, DECO_NEW_BONUS, DECO_PROBABILITY, DECO_PULL_OPTIONS, decoById, decoPullCost, type DecoId, type DecoPullCount, type DecoPullResult } from '../game/decos'
 import { machineMarkup } from './toonMachine'
 
-const MACHINE_SPIN_SECONDS = 1.35
+const MACHINE_SPIN_SECONDS = 0.45
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
@@ -412,9 +412,9 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-showcase-caption">초월 세이렌(카레) 등장!</div><div class="pull-showcase-characters"><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>랏코(한정선)</span></div><img src="/assets/chars/rakko_limited.png" alt="랏코(한정선)"/></div><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>쿠리만쥬(콩)</span></div><img src="/assets/chars/kurimanju_bean.png" alt="쿠리만쥬(콩)"/></div><div class="pull-feature pull-feature-transcendent pull-feature-main"><div class="pull-feature-label"><strong>초월</strong><span>세이렌(카레)</span></div><img src="/assets/chars/siren_curry.png" alt="세이렌(카레)"/></div><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>풍뎅이(광폭)</span></div><img src="/assets/chars/beetle_berserk.png" alt="풍뎅이(광폭)"/></div><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>우사기(귤)</span></div><img src="/assets/chars/usagi_orange.png" alt="우사기(귤)"/></div></div></div><div class="pull-showcase-deco" hidden><div class="pull-showcase-caption">🎀 귀여운 데코를 만나보세요!</div><div class="pull-showcase-decos">${["d05","d10","d15","d26","d45"].map(id=>`<img src="${DECO_IMAGE_URLS[id as DecoId]}" alt="데코 아이템"/>`).join("")}</div></div>
-          <div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · DECO PICK UP</span><h2>데코 뽑기 등장!</h2><div class="pull-event-info"><b>데코 · 꾸미기 아이템</b><span>확률 보기에서 획득 확률 확인</span></div></div><img class="pull-deco-event-image" src="/assets/gacha/deco_event.png" alt="데코 뽑기 일러스트" /></div>
+          <div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 10+1회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
+          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
           </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
           </div>
@@ -1139,7 +1139,7 @@ export class GachaUi {
       this.renderWallet()
       this.renderFreePullStatus()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.min(350, Math.max(0, duration) * 220))
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -1164,7 +1164,7 @@ export class GachaUi {
       const sequence = ++this.revealSequence
       this.renderWallet()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.min(350, Math.max(0, duration) * 220))
       return
     }
     if (action === 'weed-pick' && button.dataset.id) {
@@ -2188,7 +2188,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
     if(!dialog){
       dialog=document.createElement('div');dialog.className='pull-confirm-overlay'
-      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><div class="pull-confirm-emoji">🎁</div><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
+      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
       this.root.append(dialog)
       // Handle the confirmation locally so a covered/disabled lobby cannot swallow clicks.
       dialog.querySelector<HTMLButtonElement>('[data-action="confirm-pull-yes"]')?.addEventListener('click',event=>{event.stopPropagation();this.acceptPullConfirmation()})
@@ -2196,7 +2196,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     dialog.dataset.kind=kind;dialog.dataset.count=String(count)
     const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
-    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${count}회 · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
+    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
     dialog.hidden=false
   }
   private openPullRatesDialog():void {
@@ -3500,7 +3500,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   /** Pops every pulled friend one at a time; tapping the pop skips to the next one. */
   private async playPops(results: RevealItem[], sequence: number): Promise<void> {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
-    const hold = results.length === 1 ? 1500 : 1050
+    const hold = results.length === 1 ? 650 : 280
     for (let index = 0; index < results.length; index += 1) {
       if (sequence !== this.revealSequence) return
       this.popReveal(results[index], index, results.length)

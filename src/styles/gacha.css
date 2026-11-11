@@ -5425,3 +5425,105 @@ body>.pull-rates-dialog .pull-rate-super,#ui>.pull-rates-dialog .pull-rate-super
 body>.pull-rates-dialog .pull-rate-rare,#ui>.pull-rates-dialog .pull-rate-rare{background:#f4a6a6!important;border-color:#d46b70!important}
 body>.pull-rates-dialog .pull-rate-mermaid,#ui>.pull-rates-dialog .pull-rate-mermaid{background:#b9dcfa!important;border-color:#72ade2!important}
 body>.pull-rates-dialog .pull-rate-normal,#ui>.pull-rates-dialog .pull-rate-normal{background:#fffaf3!important;border-color:#e6d8c9!important}
+
+/* V2.42: 이벤트 배너형 캐릭터 뽑기 — 데코 및 확률창에는 적용하지 않음 */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char{position:relative!important;min-height:440px!important;background:radial-gradient(ellipse at 72% 57%,#fff7d9 0%,#ffe9bf 35%,transparent 68%),linear-gradient(120deg,#e5fff4 0%,#f9fff4 36%,#fff0d9 100%)!important;border:1px solid #b4e0cc!important;border-radius:18px!important;overflow:hidden!important;box-shadow:inset 0 0 35px #91d9b33a!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(125deg,transparent 0 38px,#70c8aa0e 39px 42px,transparent 43px 88px)}
+#ui .pull-popup:not(.is-deco) .pull-event-copy{position:absolute;left:4%;top:5%;width:46%;z-index:25;text-align:left;color:#287d69;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+#ui .pull-popup:not(.is-deco) .pull-event-kicker{font-size:clamp(8px,2vw,11px);letter-spacing:1.2px;font-weight:900;color:#4aa58d}
+#ui .pull-popup:not(.is-deco) .pull-event-copy h2{font-size:clamp(19px,5vw,29px);line-height:1.15;margin:0;font-weight:900;word-break:keep-all;color:#208d79;text-shadow:0 2px #ffffffb8}
+#ui .pull-popup:not(.is-deco) .pull-event-copy p{font-size:clamp(10px,2.7vw,14px);font-weight:800;margin:0;color:#39776b}
+#ui .pull-popup:not(.is-deco) .pull-event-info{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:#e2fff0db;border-left:4px solid #40a78d;border-radius:4px 10px 10px 4px;padding:8px 9px;max-width:100%;font-size:clamp(9px,2.4vw,12px);color:#276e60}
+#ui .pull-popup:not(.is-deco) .pull-event-info b{color:#bc5d22}
+#ui .pull-popup:not(.is-deco) .pull-event-copy>small{font-size:clamp(8px,2vw,10px);color:#4c8a7a}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters{height:clamp(400px,112vw,510px)!important;max-width:560px!important;position:relative!important;margin:0 auto!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature{bottom:14px!important;width:26%!important;z-index:4!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature:nth-child(1){left:1%!important;bottom:20px!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature:nth-child(2){left:17%!important;bottom:12px!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature:nth-child(4){right:17%!important;bottom:12px!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature:nth-child(5){right:1%!important;bottom:20px!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature.pull-feature-main{left:62%!important;width:62%!important;bottom:8px!important;z-index:9!important;transform:translateX(-50%)!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature:not(.pull-feature-main) img{height:clamp(118px,31vw,168px)!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature-main img{height:clamp(300px,81vw,420px)!important;filter:drop-shadow(0 6px 14px #d57e4470)!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature-label{z-index:12!important;background:#fffffff0!important;border:1px solid #d7e7d7!important;color:#3e594e!important;box-shadow:0 2px 7px #38765a24!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature-main .pull-feature-label{background:#fff0d4!important;border:1px solid #e8b772!important;color:#9c4b19!important}
+#ui .pull-popup:not(.is-deco) .pull-action-row{margin-top:10px!important}
+@media(max-width:390px){#ui .pull-popup:not(.is-deco) .pull-showcase-characters{height:400px!important}#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature-main img{height:305px!important}#ui .pull-popup:not(.is-deco) .pull-event-copy{width:48%!important}}
+
+
+/* V2.43 — 도감과 같은 은은한 등급별 확률표 카드 */
+body>.pull-rates-dialog .pull-rate-row,
+#ui>.pull-rates-dialog .pull-rate-row {
+  border-width:1px!important;
+  box-shadow:none!important;
+  border-radius:14px!important;
+  padding:9px 11px!important;
+  margin:5px 0!important;
+}
+body>.pull-rates-dialog .pull-rate-transcendent,#ui>.pull-rates-dialog .pull-rate-transcendent{background:#fff3e4!important;border-color:#d9a05c!important}
+body>.pull-rates-dialog .pull-rate-legendary,#ui>.pull-rates-dialog .pull-rate-legendary{background:#fffbeb!important;border-color:#d4b25c!important}
+body>.pull-rates-dialog .pull-rate-super,#ui>.pull-rates-dialog .pull-rate-super{background:#f7f1fb!important;border-color:#c9a6df!important}
+body>.pull-rates-dialog .pull-rate-rare,#ui>.pull-rates-dialog .pull-rate-rare{background:#fff0f0!important;border-color:#e3b0b0!important}
+body>.pull-rates-dialog .pull-rate-mermaid,#ui>.pull-rates-dialog .pull-rate-mermaid{background:#eff7ff!important;border-color:#b4d2eb!important}
+body>.pull-rates-dialog .pull-rate-normal,#ui>.pull-rates-dialog .pull-rate-normal{background:#fffdf9!important;border-color:#e7d8c9!important}
+body>.pull-rates-dialog .pull-rate-row span,#ui>.pull-rates-dialog .pull-rate-row span{color:#54443e!important;font-weight:700!important}
+body>.pull-rates-dialog .pull-rate-row small,#ui>.pull-rates-dialog .pull-rate-row small{color:#947d72!important;font-weight:600!important}
+body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b{color:#604a43!important;font-weight:800!important}
+
+/* V2.44: single full-width supplied event artwork; no duplicate character labels */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char{display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:stretch!important;min-height:0!important;height:clamp(410px,111vw,590px)!important;padding:clamp(14px,4vw,24px)!important;overflow:hidden!important;box-sizing:border-box!important}
+#ui .pull-popup:not(.is-deco) .pull-event-copy{position:relative!important;left:auto!important;top:auto!important;width:100%!important;max-width:100%!important;flex:0 0 auto!important;z-index:3!important;gap:6px!important;padding:0!important}
+#ui .pull-popup:not(.is-deco) .pull-event-copy h2{font-size:clamp(21px,5.4vw,30px)!important}
+#ui .pull-popup:not(.is-deco) .pull-event-info{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;gap:4px 12px!important;width:fit-content!important;padding:7px 10px!important}
+#ui .pull-popup:not(.is-deco) .pull-event-hero-image{display:block!important;position:relative!important;z-index:2!important;align-self:center!important;width:100%!important;max-width:100%!important;min-height:0!important;height:auto!important;max-height:calc(100% - 116px)!important;object-fit:contain!important;object-position:center bottom!important;margin:auto 0 0!important;filter:drop-shadow(0 7px 10px #8e5b4730)!important}
+@media(max-width:390px){#ui .pull-popup:not(.is-deco) .pull-showcase-char{height:clamp(375px,109vw,490px)!important;padding:12px!important}#ui .pull-popup:not(.is-deco) .pull-event-hero-image{max-height:calc(100% - 105px)!important}}
+
+/* V2.45: enlarge event illustration 300% and soften contrast; crop inside banner */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char{isolation:isolate!important;overflow:hidden!important}
+#ui .pull-popup:not(.is-deco) .pull-event-hero-image{transform:scale(3)!important;transform-origin:center 58%!important;opacity:.68!important;filter:drop-shadow(0 4px 6px #8e5b4715)!important;pointer-events:none!important}
+#ui .pull-popup:not(.is-deco) .pull-event-copy{z-index:5!important}
+
+/* V2.46: Deco banner matches the character event UI; artwork stays behind controls */
+#ui .pull-popup.is-deco .pull-showcase-deco{display:flex!important;position:relative!important;flex-direction:column!important;align-items:stretch!important;justify-content:space-between!important;box-sizing:border-box!important;width:100%!important;height:clamp(410px,111vw,590px)!important;min-height:0!important;padding:clamp(14px,4vw,24px)!important;overflow:hidden!important;isolation:isolate!important;background:radial-gradient(ellipse at 70% 65%,#fff8e7 0%,#fff0e2 52%,transparent 85%),linear-gradient(120deg,#f5fff4 0%,#fff6ed 100%)!important;border:1px solid #b4e0cc!important;border-radius:18px!important}
+#ui .pull-popup.is-deco .pull-showcase-deco[hidden]{display:none!important}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-copy{display:flex!important;flex-direction:column!important;gap:6px!important;position:relative!important;z-index:5!important;width:100%!important;max-width:100%!important;padding:0!important;flex:0 0 auto!important}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-copy h2{font-size:clamp(21px,5.4vw,30px)!important;margin:0!important}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info{display:flex!important;flex-wrap:wrap!important;gap:4px 12px!important;width:fit-content!important;padding:7px 10px!important}
+#ui .pull-popup.is-deco .pull-deco-event-image{display:block!important;position:relative!important;z-index:2!important;align-self:center!important;width:100%!important;max-width:100%!important;height:auto!important;max-height:calc(100% - 105px)!important;min-height:0!important;object-fit:contain!important;object-position:center bottom!important;margin:auto 0 0!important;transform:scale(2.1)!important;transform-origin:center 58%!important;opacity:.72!important;pointer-events:none!important;filter:drop-shadow(0 4px 6px #8e5b4715)!important}
+#ui .pull-popup.is-deco .pull-action-row{position:relative!important;z-index:6!important}
+@media(max-width:390px){#ui .pull-popup.is-deco .pull-showcase-deco{height:clamp(375px,109vw,490px)!important;padding:12px!important}}
+
+/* V2.47: both event illustrations reduced to 60% of their V2.46 display scale */
+#ui .pull-popup:not(.is-deco) .pull-event-hero-image{transform:scale(1.8)!important}
+#ui .pull-popup.is-deco .pull-deco-event-image{transform:scale(1.26)!important}
+
+/* V2.49: deco event headline follows the character pick-up banner typography */
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-copy{align-items:flex-start!important;text-align:left!important;gap:7px!important;color:#287d69!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-kicker{display:block!important;font-size:clamp(8px,2vw,11px)!important;letter-spacing:1.2px!important;font-weight:900!important;color:#4aa58d!important;line-height:1.4!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-copy h2{font-size:clamp(21px,5.4vw,30px)!important;line-height:1.15!important;margin:0!important;font-weight:900!important;word-break:keep-all!important;color:#208d79!important;text-shadow:0 2px #ffffffb8!important;text-align:left!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;gap:4px 12px!important;width:fit-content!important;max-width:100%!important;padding:7px 10px!important;background:#e3faed!important;border-left:3px solid #48a48b!important;border-radius:4px 12px 12px 4px!important;text-align:left!important;box-sizing:border-box!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info b{font-size:clamp(10px,2.7vw,14px)!important;font-weight:900!important;color:#bb5e31!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info span{font-size:clamp(9px,2.5vw,13px)!important;color:#39776b!important;font-weight:700!important;}
+
+/* V2.51: probability button at the top-left of both character/deco draw dialogs */
+#ui>.pull-popup .pull-rates-toggle,
+#ui .gacha-actions>.pull-popup .pull-rates-toggle{
+  position:absolute!important;
+  top:max(18px,env(safe-area-inset-top,0px))!important;
+  left:max(20px,calc((100% - 480px)/2 + 22px))!important;
+  right:auto!important;
+  bottom:auto!important;
+  z-index:30!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-width:90px!important;min-height:42px!important;
+  padding:9px 14px!important;
+  background:#fff8e9!important;
+  color:#754b3b!important;
+  border:2px solid #d9ac81!important;
+  border-radius:14px!important;
+  box-shadow:0 3px 0 #e7c7a5,0 5px 12px #6e483222!important;
+  font-size:14px!important;font-weight:900!important;letter-spacing:-.3px!important;
+  white-space:nowrap!important;cursor:pointer!important;
+}
+#ui>.pull-popup .pull-rates-toggle:focus-visible{outline:3px solid #429c87!important;outline-offset:3px!important}
+@media(max-width:380px){#ui>.pull-popup .pull-rates-toggle{left:18px!important;min-width:80px!important;padding:8px 10px!important;font-size:13px!important}}

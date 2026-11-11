@@ -2026,9 +2026,9 @@ const routes = {
       const day = checkInDay()
       const used = state.freePullDay === day ? state.freePullUsed || 0 : 0
       if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
-      const cost = count === 10 ? 90 : 10
+      const cost = count === 10 ? 100 : 10
       const source = free ? {...state, gems:state.gems + cost} : account.is_admin ? {...state,gems:1_000_000_000} : state
-      let result = pull(source, count, n => randomInt(n))
+      let result = pull(source, count, n => randomInt(n), !free)
       if (result.ok && free) result = {...result,state:{...result.state, gems:state.gems,freePullDay:day,freePullUsed:used+count}}
       if (result.ok && account.is_admin && !free) result = { ...result, state: { ...result.state, gems: state.gems } }
       if (!result.ok) return result
