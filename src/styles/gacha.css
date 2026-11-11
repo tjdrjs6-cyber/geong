@@ -5496,3 +5496,11 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 /* V2.47: both event illustrations reduced to 60% of their V2.46 display scale */
 #ui .pull-popup:not(.is-deco) .pull-event-hero-image{transform:scale(1.8)!important}
 #ui .pull-popup.is-deco .pull-deco-event-image{transform:scale(1.26)!important}
+
+/* V2.49: deco event headline follows the character pick-up banner typography */
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-copy{align-items:flex-start!important;text-align:left!important;gap:7px!important;color:#287d69!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-kicker{display:block!important;font-size:clamp(8px,2vw,11px)!important;letter-spacing:1.2px!important;font-weight:900!important;color:#4aa58d!important;line-height:1.4!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-copy h2{font-size:clamp(21px,5.4vw,30px)!important;line-height:1.15!important;margin:0!important;font-weight:900!important;word-break:keep-all!important;color:#208d79!important;text-shadow:0 2px #ffffffb8!important;text-align:left!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;gap:4px 12px!important;width:fit-content!important;max-width:100%!important;padding:7px 10px!important;background:#e3faed!important;border-left:3px solid #48a48b!important;border-radius:4px 12px 12px 4px!important;text-align:left!important;box-sizing:border-box!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info b{font-size:clamp(10px,2.7vw,14px)!important;font-weight:900!important;color:#bb5e31!important;}
+#ui .pull-popup.is-deco .pull-showcase-deco .pull-event-info span{font-size:clamp(9px,2.5vw,13px)!important;color:#39776b!important;font-weight:700!important;}
