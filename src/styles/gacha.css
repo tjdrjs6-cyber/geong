@@ -5154,3 +5154,6 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* 2026-11-11: deployed Shimajiro +25%, Anoko slightly lower; portraits untouched. */
 #ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/shimajiro.png"],[src$="/shimajiro.webp"]) {scale:1.25!important;transform-origin:center bottom!important;object-fit:contain!important;}
 #ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]) {position:relative;top:15px!important;}
+
+/* V2.21: Anoko has extra transparent space below its artwork; lower deployed sprite only. */
+#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]) {translate:0 16%!important;}
