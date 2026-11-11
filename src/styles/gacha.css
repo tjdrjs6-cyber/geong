@@ -11,3 +11,15 @@
 @keyframes transcendent-pulse {50%{box-shadow:0 0 18px #ff7b00,0 0 39px #ffae00aa,inset 0 0 22px #ffd28a}}
 @keyframes transcendent-sparkle {to{opacity:.45;transform:scale(1.15) rotate(8deg)}}
 @media(prefers-reduced-motion:reduce){.friend-card.tier-transcendent.is-owned,.friend-card.tier-transcendent.is-owned::after{animation:none}}
+
+/* V2.24 - Featured draw showcase */
+.pull-showcase{width:100%;max-width:540px;margin:0 auto 8px;padding:10px 8px 6px;border:2px solid #f8c6a8;border-radius:20px;background:linear-gradient(145deg,#fff5e8,#fff0f5);box-shadow:0 4px 15px #bd80602b;text-align:center}
+.pull-showcase-caption{font-size:13px;font-weight:900;color:#aa5a39;margin-bottom:5px}
+.pull-showcase-characters,.pull-showcase-decos{display:flex;justify-content:space-around;align-items:end;gap:2px;min-height:80px}
+.pull-showcase-characters img,.pull-showcase-decos img{display:block;width:17%;height:76px;object-fit:contain;filter:drop-shadow(0 3px 2px #a6656144)}
+.pull-showcase-characters img.showcase-main{width:26%;height:112px;filter:drop-shadow(0 0 9px #ff8c00) drop-shadow(0 0 7px #ffae24);animation:showcaseGlow 2s ease-in-out infinite alternate}
+.pull-showcase-decos img{width:19%;height:90px}
+@keyframes showcaseGlow{to{filter:drop-shadow(0 0 14px #ff8c00) drop-shadow(0 0 16px #ffc043);transform:translateY(-3px)}}
+.pull-mode-button{position:relative}
+.free-pull-dot:not([hidden]){position:absolute;right:3px;top:1px;width:10px;height:10px;border-radius:50%;background:#f32938;border:2px solid white;box-shadow:0 0 0 1px #dc3040}
+.pull-showcase [hidden]{display:none!important}

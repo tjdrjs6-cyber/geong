@@ -402,11 +402,11 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span class="reward-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="치이카와 얼굴" /></span><span><b>도감</b></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
-          ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-          ${PULL_OPTIONS.map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '✦ 한 번 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          <div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-showcase-caption">✨ 초월 세이렌(카레) 등장! ✨</div><div class="pull-showcase-characters"><img src="/assets/chars/rakko_limited.png" alt="랏코 한정선"/><img src="/assets/chars/kurimanju_bean.png" alt="쿠리만쥬 콩"/><img class="showcase-main" src="/assets/chars/siren_curry.png" alt="세이렌 카레"/><img src="/assets/chars/beetle_berserk.png" alt="풍뎅이 광폭"/><img src="/assets/chars/usagi_orange.png" alt="우사기 귤"/></div></div><div class="pull-showcase-deco" hidden><div class="pull-showcase-caption">🎀 귀여운 데코를 만나보세요!</div><div class="pull-showcase-decos">${["d05","d10","d15","d26","d45"].map(id=>`<img src="${DECO_IMAGE_URLS[id as DecoId]}" alt="데코 아이템"/>`).join("")}</div></div></div><div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
+          ${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '✦ 한 번 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
         </footer>
-        <div class="free-note">이 게임의 모든 뽑기는 게임 속 무료 코인으로 즐길 수 있어요.</div>
+        <div class="free-note">캐릭터 뽑기 하루 10회 무료! 매일 자정(한국시간) 초기화 · 남은 무료 뽑기 <b class="free-pull-remaining">10</b>회</div>
         <div class="toast" aria-live="polite"></div>
       </main>
       <div class="insufficient-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="insufficient-title" aria-describedby="insufficient-message">
@@ -1011,13 +1011,14 @@ export class GachaUi {
     if (action === 'pull') {
       const count = Number(button.dataset.count) as PullCount
       if (!PULL_OPTIONS.some(option => option.count === count)) return
-      const cost = pullCost(count)
+      const free = this.freePullRemaining() >= count
+      const cost = free ? 0 : pullCost(count)
       if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
       let result: PullResult[]
-      try { result = await this.store.pull(count) } catch (error) {
+      try { result = await this.store.pull(count, free) } catch (error) {
         this.revealing = false
         this.handleError(error)
         this.renderWallet()
@@ -1030,6 +1031,7 @@ export class GachaUi {
       const duration = this.spinMachine(characterById(result[result.length - 1].id).accent)
       const sequence = ++this.revealSequence
       this.renderWallet()
+      this.renderFreePullStatus()
       this.renderResults()
       window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
       return
@@ -1950,6 +1952,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private renderWallet(): void {
+    this.renderFreePullStatus()
     this.root.querySelectorAll<HTMLElement>('.wallet-value').forEach(balance => { balance.textContent = this.isAdmin ? '∞' : this.store.data.gems.toLocaleString('ko-KR') })
     this.root.querySelectorAll<HTMLElement>('.fragment-value').forEach(el => { el.textContent = (this.isAdmin ? '∞' : (this.store.data.fragments ?? 0).toLocaleString('ko-KR')) })
     this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
@@ -2029,8 +2032,29 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }).join('')
   }
 
+  private freePullRemaining(): number {
+    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+    return Math.max(0,10-(this.store.data.freePullDay===day?(this.store.data.freePullUsed||0):0))
+  }
+  private renderFreePullStatus(): void {
+    const remaining=this.freePullRemaining()
+    const badge=this.root.querySelector<HTMLElement>('.free-pull-dot')
+    if(badge)badge.hidden=remaining===0
+    const counter=this.root.querySelector<HTMLElement>('.free-pull-remaining')
+    if(counter)counter.textContent=String(remaining)
+    this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
+      const count=Number(button.dataset.count)
+      const small=button.querySelector('small')
+      if(small)small.textContent=remaining>=count?'무료 · '+remaining+'회 남음':pullCost(count)+' 코인'
+    })
+  }
   private setPullMode(mode: 'char' | 'deco'): void {
     this.root.querySelector('.gacha-actions')?.classList.toggle('is-deco', mode === 'deco')
+    const charPanel=this.root.querySelector<HTMLElement>('.pull-showcase-char')
+    const decoPanel=this.root.querySelector<HTMLElement>('.pull-showcase-deco')
+    if(charPanel)charPanel.hidden=mode==='deco'
+    if(decoPanel)decoPanel.hidden=mode==='char'
+    this.renderFreePullStatus()
     this.root.querySelectorAll<HTMLButtonElement>('.pull-mode-button').forEach(tab => {
       const active = tab.dataset.mode === mode
       tab.classList.toggle('is-active', active)

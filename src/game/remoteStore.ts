@@ -38,6 +38,7 @@ export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
 type ApiError = { error?: string }
 
 export const ERROR_TEXT: Record<string, string> = {
+  free_pull_limit: '오늘의 무료 뽑기를 모두 사용했어요.',
   invalid_username: '아이디는 3~20자의 한글, 영문, 숫자, 밑줄(_)만 쓸 수 있어요.',
   invalid_password: '비밀번호는 6~72자로 입력해 주세요.',
   username_taken: '이미 사용 중인 아이디예요.',
@@ -138,15 +139,12 @@ export class RemoteGachaStore {
     return WEED_HOUR_MS - (now % WEED_HOUR_MS)
   }
 
-  /** Server-verified, claimed collection bonus shared by combat previews. */
-  collectionCombatPower = 0
-
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle = this.battle
     if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
     // forge.bonus already includes the equipped accessory. Never add it twice.
-    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0) + this.collectionCombatPower
+    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0)
     const elapsed = Math.max(0, this.serverNow() - battle.since)
     let stage = battle.stage ?? 1, damage = battle.stageDamage ?? battle.damage
     const ticks = Math.min(500000, Math.floor(elapsed / BATTLE_TICK_MS))
@@ -319,7 +317,6 @@ export class RemoteGachaStore {
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
   async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
-  async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
   async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
     const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
@@ -407,8 +404,8 @@ export class RemoteGachaStore {
     this.apply({ user: null })
   }
 
-  async pull(count: PullCount): Promise<PullResult[]> {
-    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count })
+  async pull(count: PullCount, free = false): Promise<PullResult[]> {
+    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free })
     this.data = result.save
     if (result.dupes) this.dupes = result.dupes
     return result.results
