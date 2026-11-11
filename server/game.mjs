@@ -15,7 +15,11 @@ export const DAILY_GIFT = 10
 export const NEW_ENTRY_BONUS = 10
 export const DUPLICATE_BONUS = 0
 export const SIREN_NEW_BONUS = 50
-export const newEntryBonus = id => (RARE_IDS.includes(id) ? SIREN_NEW_BONUS : NEW_ENTRY_BONUS)
+const ENTRY_REWARD_15 = new Set(['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_shisa','m_kani','m_rakko','hanip','duip','honey'])
+const ENTRY_REWARD_30 = new Set(['siren','shimajiro','anoko','dekatsuyo','ode','staff_chiikawa','staff_hachiware','staff_usagi'])
+const ENTRY_REWARD_50 = new Set(['c_curry','h_curry','u_curry','ginger_chiikawa','ginger_hachiware','ginger_usagi','beetle','ode_prison','angel_momonga','devil_momonga'])
+const ENTRY_REWARD_80 = new Set(['kurimanju_bean','beetle_berserk','rakko_limited','usagi_orange','halloween_chiikawa','halloween_hachiware','halloween_usagi'])
+export const newEntryBonus = id => id === 'siren_curry' ? 150 : ENTRY_REWARD_80.has(id) ? 80 : ENTRY_REWARD_50.has(id) ? 50 : ENTRY_REWARD_30.has(id) ? 30 : ENTRY_REWARD_15.has(id) ? 15 : 10
 
 /** Maps an integer roll in [0, TOTAL_WEIGHT) to a character id. */
 export function characterForRoll(roll) {
