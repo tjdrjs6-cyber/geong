@@ -32,7 +32,7 @@ import { machineMarkup } from './toonMachine'
 
 const MACHINE_SPIN_SECONDS = 1.35
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
-const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
+const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
 type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
@@ -189,6 +189,7 @@ export class GachaUi {
     // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
     if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.skipLottery()
     this.screen = screen
+    if (screen !== 'lobby') { const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=true }
     if (screen !== 'users') {
       const usersCard = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card')
       usersCard?.classList.remove('privacy-mode')
@@ -408,10 +409,12 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
-          ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-          ${PULL_OPTIONS.map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '✦ 한 번 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-        </footer>
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-showcase-caption">★ 초월 세이렌(카레) 등장!</div><div class="pull-showcase-characters"><img src="/assets/chars/rakko_limited.png" alt="랏코 한정선"/><img src="/assets/chars/kurimanju_bean.png" alt="쿠리만쥬 콩"/><img class="showcase-main" src="/assets/chars/siren_curry.png" alt="세이렌 카레"/><img src="/assets/chars/beetle_berserk.png" alt="풍뎅이 광폭"/><img src="/assets/chars/usagi_orange.png" alt="우사기 귤"/></div></div><div class="pull-showcase-deco" hidden><div class="pull-showcase-caption">🎀 귀여운 데코를 만나보세요!</div><div class="pull-showcase-decos">${["d05","d10","d15","d26","d45"].map(id=>`<img src="${DECO_IMAGE_URLS[id as DecoId]}" alt="데코 아이템"/>`).join("")}</div></div>
+          ${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '✦ 한 번 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          </div>
+        </div></footer>
+        <div class="free-note" hidden>캐릭터 뽑기 하루 10회 무료 · 남은 무료 뽑기 <b class="free-pull-remaining">10</b>회</div>
         <div class="free-note">이 게임의 모든 뽑기는 게임 속 무료 코인으로 즐길 수 있어요.</div>
         <div class="toast" aria-live="polite"></div>
       </main>
@@ -1046,7 +1049,8 @@ export class GachaUi {
     }
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.expeditionImpactServer=this.expeditionServer;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
-    if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
+    if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=false; return }
+    if (action === 'close-pull-popup') { const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=true; return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
     if (action === 'weed') { this.show('weed'); return }
@@ -1102,13 +1106,14 @@ export class GachaUi {
     if (action === 'pull') {
       const count = Number(button.dataset.count) as PullCount
       if (!PULL_OPTIONS.some(option => option.count === count)) return
-      const cost = pullCost(count)
+      const free = this.freePullRemaining() >= count
+      const cost = free ? 0 : pullCost(count)
       if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
       let result: PullResult[]
-      try { result = await this.store.pull(count) } catch (error) {
+      try { result = await this.store.pull(count, free) } catch (error) {
         this.revealing = false
         this.handleError(error)
         this.renderWallet()
@@ -1121,6 +1126,7 @@ export class GachaUi {
       const duration = this.spinMachine(characterById(result[result.length - 1].id).accent)
       const sequence = ++this.revealSequence
       this.renderWallet()
+      this.renderFreePullStatus()
       this.renderResults()
       window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
       return
@@ -2133,7 +2139,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   /** Collection cards; uncollected friends stay gray with a question mark. */
   private collectionCards(owned: readonly CharacterId[], interactive: boolean): string {
-    return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4}[b.tier])).map(character => {
+    return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4,transcendent:5}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4,transcendent:5}[b.tier])).map(character => {
       const has = owned.includes(character.id)
       const isFeatured = has && character.id === this.heroId()
       const isHalloweenLimited = String(character.id).startsWith('halloween_')
@@ -2150,8 +2156,30 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }).join('')
   }
 
+  private freePullRemaining(): number {
+    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+    return Math.max(0,10-(this.store.data.freePullDay===day?(this.store.data.freePullUsed||0):0))
+  }
+  private renderFreePullStatus(): void {
+    const remaining=this.freePullRemaining()
+    const badge=this.root.querySelector<HTMLElement>('.free-pull-dot')
+    if(badge)badge.hidden=remaining===0
+    const counter=this.root.querySelector<HTMLElement>('.free-pull-remaining')
+    if(counter)counter.textContent=String(remaining)
+    this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
+      const count=Number(button.dataset.count)
+      const small=button.querySelector('small')
+      if(small)small.textContent=remaining>=count?'무료 · '+remaining+'회 남음':pullCost(count)+' 코인'
+    })
+  }
   private setPullMode(mode: 'char' | 'deco'): void {
     this.root.querySelector('.gacha-actions')?.classList.toggle('is-deco', mode === 'deco')
+    this.root.querySelector('.pull-popup')?.classList.toggle('is-deco', mode === 'deco')
+    const charPanel=this.root.querySelector<HTMLElement>('.pull-showcase-char')
+    const decoPanel=this.root.querySelector<HTMLElement>('.pull-showcase-deco')
+    if(charPanel)charPanel.hidden=mode==='deco'
+    if(decoPanel)decoPanel.hidden=mode==='char'
+    this.renderFreePullStatus()
     this.root.querySelectorAll<HTMLButtonElement>('.pull-mode-button').forEach(tab => {
       const active = tab.dataset.mode === mode
       tab.classList.toggle('is-active', active)

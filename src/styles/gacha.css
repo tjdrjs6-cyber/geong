@@ -2675,7 +2675,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* v0.30: show claw-machine currency errors in front of the claw modal, not behind it. */
 .claw-screen.is-active .claw-card { position:relative; isolation:isolate; }
 .claw-screen.is-active .claw-toast {
-  position:sticky!important; top:15px!important; bottom:auto!important; left:auto!important;
+  position:sticky!important; top:8px!important; bottom:auto!important; left:auto!important;
   display:block; width:max-content; max-width:calc(100% - 16px); margin:0 auto -4px;
   z-index:999!important; box-sizing:border-box; white-space:normal!important;
   overflow:visible!important; text-overflow:clip!important; text-align:center;
@@ -5043,117 +5043,93 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .gacha-screen .collection-grid .friend-card .friend-bonus-slot{position:relative;min-height:21px;display:flex;align-items:center;justify-content:center}
 .gacha-screen .collection-grid .friend-card .friend-avatar{flex-shrink:0}
 
-/* V2.9: compact, right-aligned icon-free lobby action stack */
-.gacha-screen>.collection-peek.collection-peek,
-.gacha-screen>.top-rewards.top-rewards{right:5px!important;left:auto!important;width:clamp(83px,23vw,104px)!important;max-width:104px!important;box-sizing:border-box!important;gap:5px!important}
-.gacha-screen>.collection-peek .reward-chip,
-.gacha-screen>.top-rewards .reward-chip{width:100%!important;min-width:0!important;justify-content:center!important;padding:5px 3px!important;gap:0!important;box-sizing:border-box!important}
-.gacha-screen>.collection-peek .reward-chip>b,
-.gacha-screen>.collection-peek .reward-chip span b,
-.gacha-screen>.top-rewards .reward-chip span b{font-size:11px!important;white-space:nowrap!important;text-align:center!important}
-.gacha-screen>.collection-peek .reward-icon,
-.gacha-screen>.top-rewards .reward-icon{display:none!important}
-.gacha-screen>.collection-peek .achievement-lobby-tab{position:relative!important}
-.gacha-screen>.collection-peek .achievement-lobby-tab.has-claimable-achievement::after{content:'';position:absolute;top:4px;right:5px;width:9px;height:9px;border-radius:50%;background:#f03645;box-shadow:0 0 0 2px #fff,0 1px 5px #bd203c66;pointer-events:none}
-/* Battle picker: keep long names readable on mobile without overlapping power badges. */
-.weed-screen .battle-picker .weed-pick{min-width:0!important;gap:3px!important;padding:7px 3px 8px!important;overflow:hidden!important}
-.weed-screen .battle-picker .weed-pick .battle-pick-name{display:block!important;width:100%!important;max-width:100%!important;min-height:27px!important;height:auto!important;line-height:1.2!important;font-size:10px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:keep-all!important;overflow:visible!important;text-overflow:clip!important;text-align:center!important}
-.weed-screen .battle-picker .weed-pick .is-power{display:block!important;flex:none!important;max-width:100%!important;line-height:1.35!important;white-space:nowrap!important;margin:0!important}
 
-/* V3.0: compact, right-aligned lobby actions, consistent on mobile */
-#ui .gacha-screen>.collection-peek.collection-peek,
-#ui .gacha-screen>.top-rewards.top-rewards {right:2px!important;left:auto!important;width:clamp(70px,19vw,86px)!important;max-width:86px!important;gap:4px!important;padding:0!important;}
-#ui .gacha-screen>.collection-peek .reward-chip,
-#ui .gacha-screen>.top-rewards .reward-chip {width:100%!important;min-width:0!important;padding:4px 2px!important;justify-content:center!important;border-radius:10px!important;}
-#ui .gacha-screen>.collection-peek .reward-chip b,
-#ui .gacha-screen>.top-rewards .reward-chip b {font-size:10px!important;letter-spacing:-.3px!important;}
+/* Retained recent patch overrides */
+/* Stage title and challenge button raised into the sky header area. */
+#ui .battle-screen .battle-field { overflow: visible !important; z-index: 31 !important; }
+#ui .battle-screen .battle-stage-heading { top: -60px !important; }
+#ui .battle-screen .battle-stage-actions { top: -11px !important; }
 
-/* V3.1: battle character labels, scroll and menu legibility */
-#ui .weed-screen .battle-picker{overflow-y:auto!important;overscroll-behavior:contain!important;touch-action:pan-y!important;min-height:0!important;}
-#ui .weed-screen .battle-picker .weed-pick{height:auto!important;min-height:110px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important;}
-#ui .weed-screen .battle-picker .weed-pick .battle-pick-name{display:block!important;flex:0 0 auto!important;min-height:0!important;height:auto!important;line-height:1.35!important;font-size:11px!important;overflow:visible!important;white-space:normal!important;word-break:keep-all!important;}
-#ui .weed-screen .battle-picker .weed-pick .is-power{display:block!important;flex:0 0 auto!important;visibility:visible!important;opacity:1!important;position:static!important;font-size:10px!important;line-height:1.4!important;margin-top:3px!important;}
-#ui .battle-field .bf-friend-body>img.battle-facing-flipped{transform:scaleX(-1)!important;}
-#ui .gacha-screen>.collection-peek .reward-chip b,#ui .gacha-screen>.top-rewards .reward-chip b{font-size:11.5px!important;letter-spacing:0!important;}
+/* V2.23: transcendent orange aura, brighter than legendary */
+.friend-card.tier-transcendent.is-owned { position:relative; isolation:isolate; border:2px solid #ff9a19!important; background:linear-gradient(145deg,#fff6d9,#ffddb0 55%,#fff2d8)!important; box-shadow:0 0 12px #ff8a00,0 0 27px #ff9b0077,inset 0 0 17px #ffcf7b!important; animation:transcendent-pulse 2.4s ease-in-out infinite; }
+.friend-card.tier-transcendent.is-owned .friend-avatar img { filter:drop-shadow(0 0 8px #ffae00) drop-shadow(0 0 15px #ff6a00)!important; }
+.friend-card.tier-transcendent.is-owned .friend-chance { color:#b64c00!important;font-weight:900;text-shadow:0 0 7px #ffb443; }
+.friend-card.tier-transcendent.is-owned::after {content:'✦ ✧ ✦';position:absolute;top:5px;right:8px;color:#ff8c00;font-size:17px;text-shadow:0 0 9px #ffbb00;pointer-events:none;animation:transcendent-sparkle 1.5s ease-in-out infinite alternate;}
+@keyframes transcendent-pulse {50%{box-shadow:0 0 18px #ff7b00,0 0 39px #ffae00aa,inset 0 0 22px #ffd28a}}
+@keyframes transcendent-sparkle {to{opacity:.45;transform:scale(1.15) rotate(8deg)}}
+@media(prefers-reduced-motion:reduce){.friend-card.tier-transcendent.is-owned,.friend-card.tier-transcendent.is-owned::after{animation:none}}
 
-/* V3.2: allow deployed character artwork to extend beyond its slot without being clipped. */
-#ui .battle-field .bf-friend-body,
-#ui .battle-field .bf-friend-body > img,
-#ui .battle-field .bf-friend,
-#ui .expedition-field .exp-friend,
-#ui .house-character { overflow:visible!important; }
-#ui .battle-field .bf-friend-body > img {object-fit:contain!important;}
-
-/* V3.4: battle character picker cards must accommodate long variant names and power. */
-#ui .weed-screen .weed-panel.battle-panel .battle-picker,
-#ui .weed-screen .weed-panel.battle-panel .weed-picker.battle-picker {
-  grid-auto-rows:minmax(122px,auto)!important;
-  align-content:start!important;
-  overflow-y:auto!important;
-}
-#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick {
-  box-sizing:border-box!important;
-  height:auto!important;
-  min-height:122px!important;
-  padding:7px 3px 9px!important;
-  gap:3px!important;
-  overflow:visible!important;
-  justify-content:flex-start!important;
-}
-#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick img {
-  flex:0 0 54px!important;
-  width:54px!important;
-  height:54px!important;
-  object-fit:contain!important;
-}
-#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick .battle-pick-name {
-  flex:0 0 auto!important;
-  display:block!important;
-  min-height:28px!important;
-  max-height:none!important;
-  white-space:normal!important;
-  overflow:visible!important;
-  line-height:1.25!important;
-  overflow-wrap:anywhere!important;
-  font-size:10px!important;
-}
-#ui .weed-screen .weed-panel.battle-panel .battle-picker .weed-pick em.is-power {
-  display:block!important;
-  flex:0 0 auto!important;
-  position:static!important;
-  visibility:visible!important;
-  opacity:1!important;
-  margin:0!important;
-  white-space:nowrap!important;
-  line-height:1.4!important;
-}
-
-/* V3.6: all six owned alchemy grades and uniform shortage state */
-.alchemy-panel .alchemy-owned-title{font-size:12px;font-weight:700;color:#7b5968;margin:10px 0 5px}
-.alchemy-panel .alchemy-owned-grades{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.alchemy-panel .alchemy-owned-grade{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:3px;padding:8px 6px;border:1px solid #e9dce1;border-left:3px solid var(--alchemy-accent);border-radius:9px;background:#fffafb;font-size:11px}
-.alchemy-panel .alchemy-owned-grade strong{font-size:12px;color:#8c4565;white-space:nowrap}
-.alchemy-panel .alchemy-fragments{display:flex;align-items:center;gap:7px;background:#fff5f8;border:1px solid #efd6df;border-radius:10px;padding:7px 10px;margin:8px 0;font-size:12px}
-.alchemy-panel .alchemy-fragments img{width:26px;height:26px;object-fit:contain}
-.alchemy-panel .alchemy-fragments strong{margin-left:auto;color:#a54770;font-size:15px}
-.alchemy-panel .alchemy-recipe.is-shortage{background:#f8f8f8;border-color:#e6e3e5;opacity:.75}
-.alchemy-panel .alchemy-recipe.is-shortage strong{color:#888}
-.alchemy-panel .alchemy-recipe.is-ready{background:#fff8fa;border-color:#e9cad7;opacity:1}
-.alchemy-panel .alchemy-recipe.is-ready strong{color:#568c6b}
+/* V2.24 - Featured draw showcase */
+.pull-showcase{width:100%;max-width:540px;margin:0 auto 8px;padding:10px 8px 6px;border:2px solid #f8c6a8;border-radius:20px;background:linear-gradient(145deg,#fff5e8,#fff0f5);box-shadow:0 4px 15px #bd80602b;text-align:center}
+.pull-showcase-caption{font-size:13px;font-weight:900;color:#aa5a39;margin-bottom:5px}
+.pull-showcase-characters,.pull-showcase-decos{display:flex;justify-content:space-around;align-items:end;gap:2px;min-height:80px}
+.pull-showcase-characters img,.pull-showcase-decos img{display:block;width:17%;height:76px;object-fit:contain;filter:drop-shadow(0 3px 2px #a6656144)}
+.pull-showcase-characters img.showcase-main{width:26%;height:112px;filter:drop-shadow(0 0 9px #ff8c00) drop-shadow(0 0 7px #ffae24);animation:showcaseGlow 2s ease-in-out infinite alternate}
+.pull-showcase-decos img{width:19%;height:90px}
+@keyframes showcaseGlow{to{filter:drop-shadow(0 0 14px #ff8c00) drop-shadow(0 0 16px #ffc043);transform:translateY(-3px)}}
+.pull-mode-button{position:relative}
+.free-pull-dot:not([hidden]){position:absolute;right:3px;top:1px;width:10px;height:10px;border-radius:50%;background:#f32938;border:2px solid white;box-shadow:0 0 0 1px #dc3040}
+.pull-showcase [hidden]{display:none!important}
 
 
-/* 2026-11-11: deployed artwork sizes only. Keep catalog and collection portraits unchanged.
-   CSS scale is independent of existing transform/flip/attack animations. */
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]),
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img[src*="/weed/anoko.png"] { scale:1.7!important; transform-origin:center bottom!important; }
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/siren.png"],[src$="/dekatsuyo.png"],[src$="/siren.webp"],[src$="/dekatsuyo.webp"]),
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src*="/weed/siren.png"],[src*="/weed/dekatsuyo.png"]) { scale:1.2!important; transform-origin:center bottom!important; }
-#ui :is(.battle-field,.weed-field,.expedition-field,.house-lot,.house-scene,.house-stage,.house-room) :is(.bf-friend,.bf-friend-body,.weed-friend,.exp-friend,.house-friend,.house-character) { overflow:visible!important; }
-#ui :is(.battle-field,.weed-field,.expedition-field,.house-lot,.house-scene,.house-stage,.house-room) img:is([src$="/anoko.png"],[src$="/siren.png"],[src$="/dekatsuyo.png"]) { object-fit:contain!important; }
+/* V2.25 emergency repair: auth/boot screen styles that were absent from the UI stylesheet. */
+#ui { position:fixed; inset:0; width:100%; height:100dvh; overflow:hidden; isolation:isolate; font-family:'Gowun Dodum',sans-serif; color:#563c39; }
+#ui *, #ui *::before, #ui *::after { box-sizing:border-box; }
+#ui .gacha-boot, #ui .gacha-modal { position:absolute; inset:0; }
+#ui .gacha-boot { display:none; z-index:80; background:linear-gradient(160deg,#fff5e9,#ffe0d6); flex-direction:column; justify-content:center; align-items:center; gap:14px; text-align:center; }
+#ui .gacha-boot.is-active { display:flex; }
+#ui .gacha-boot h1 { font-size:34px; color:#9d584d; margin:0; }
+#ui .gacha-boot p { margin:0; font-weight:700; }
+#ui .boot-capsule { width:90px; height:90px; display:grid; place-items:center; background:white; border-radius:50%; box-shadow:0 5px 18px #ba847344; }
+#ui .boot-capsule img { width:70px; height:70px; object-fit:contain; }
+#ui .boot-track { width:min(270px,75vw); height:13px; background:white; border-radius:20px; overflow:hidden; border:2px solid #eab4a1; }
+#ui .boot-fill { display:block; height:100%; width:20%; background:#fa9a78; transition:width .2s; }
+#ui .boot-retry.is-hidden, #ui .auth-confirm-wrap.is-hidden { display:none!important; }
+#ui .gacha-modal { display:none; z-index:90; background:linear-gradient(155deg,#fff8ef,#ffe7df); padding:22px 16px; overflow-y:auto; align-items:center; justify-content:center; }
+#ui .gacha-modal.is-active { display:flex; }
+#ui .gacha-modal .modal-card { width:min(100%,400px); margin:auto; background:#fffefa; border:2px solid #f4c7b9; border-radius:24px; padding:25px 22px; box-shadow:0 12px 40px #ac79613d; }
+#ui .modal-kicker { font-size:12px; letter-spacing:.15em; color:#b98474; font-weight:900; }
+#ui .auth-card h2 { font-size:27px; margin:6px 0 8px; color:#995c52; }
+#ui .auth-sub { font-size:13px; line-height:1.7; margin:0 0 20px; }
+#ui .auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+#ui .auth-tab { background:#fff1e9; border:1px solid #edc6b9; border-radius:12px; padding:11px; font-weight:800; color:#9c7469; }
+#ui .auth-tab.is-active { background:#f49b82; color:white; border-color:#e98b71; }
+#ui .auth-form, #ui .nickname-form { display:flex; flex-direction:column; gap:9px; }
+#ui .auth-form label, #ui .nickname-form label { font-size:13px; font-weight:800; }
+#ui .auth-form input, #ui .nickname-form input { width:100%; min-width:0; height:45px; padding:0 12px; border:1px solid #eac7ba; background:white; color:#543e3a; border-radius:10px; font-size:14px; }
+#ui .auth-confirm-wrap:not(.is-hidden) { display:flex; flex-direction:column; gap:9px; }
+#ui .auth-error { min-height:0; color:#cf4e50; margin:0; font-size:12px; }
+#ui .modal-primary { width:100%; min-height:46px; border:0; border-radius:12px; background:linear-gradient(135deg,#ffb48b,#f48d83); color:white; font-size:15px; font-weight:900; cursor:pointer; }
+#ui .auth-note { font-size:11px; color:#957c72; line-height:1.6; margin:16px 0 0; }
+@media(max-height:550px){#ui .gacha-modal { justify-content:flex-start; }}
 
-/* 2026-11-11: deployed Shimajiro +25%, Anoko slightly lower; portraits untouched. */
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/shimajiro.png"],[src$="/shimajiro.webp"]) {scale:1.25!important;transform-origin:center bottom!important;object-fit:contain!important;}
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]) {position:relative;top:15px!important;}
+/* V2.27: isolated draw dialog; preserve the original game screens */
+.gacha-actions { position:relative; }
+.gacha-actions > .pull-mode { display:flex!important; gap:10px; width:100%; }
+.gacha-actions > .pull-mode .pull-mode-button { flex:1; }
+.gacha-actions > .pull-popup[hidden] { display:none!important; }
+.gacha-actions > .pull-popup { position:fixed; z-index:9990; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow-y:auto; padding:48px 14px 20px; background:rgba(23,16,40,.74); backdrop-filter:blur(5px); }
+.gacha-actions > .pull-popup .pull-showcase { width:min(100%,460px); max-height:48vh; overflow:auto; border-radius:18px 18px 0 0; padding:14px; background:#fff5e9; }
+.gacha-actions > .pull-popup .pull-button { width:min(100%,460px); margin:0; border-radius:0; flex-shrink:0; }
+.gacha-actions > .pull-popup .pull-button:last-child { border-radius:0 0 18px 18px; }
+.gacha-actions > .pull-popup .pull-popup-close { position:absolute; top:15px; right:18px; z-index:2; font-size:30px; color:#fff; border:0; background:transparent; cursor:pointer; }
+.gacha-actions > .pull-popup:not(.is-deco) .deco-pull, .gacha-actions > .pull-popup.is-deco .pull-button:not(.deco-pull) { display:none!important; }
+.gacha-actions > .pull-popup .pull-showcase-char[hidden], .gacha-actions > .pull-popup .pull-showcase-deco[hidden] { display:none!important; }
+.gacha-actions .free-pull-dot:not([hidden]) { display:block; position:absolute; right:3px; top:2px; width:9px; height:9px; background:#f33; border-radius:50%; }
 
-/* V2.21: Anoko has extra transparent space below its artwork; lower deployed sprite only. */
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]) {translate:0 16%!important;}
+/* V2.28: restrained orange transcendent grade, no sparkles or animation. */
+#ui .friend-card.tier-transcendent.is-owned { border:2px solid #ef901f!important; background:linear-gradient(150deg,#fff2dc,#ffcc8e)!important; box-shadow:0 0 12px rgba(255,142,0,.48),inset 0 0 8px #ffdfb5!important; animation:none!important; }
+#ui .friend-card.tier-transcendent.is-owned::after {content:none!important;display:none!important;animation:none!important}
+#ui .friend-card.tier-transcendent.is-owned .friend-avatar img {filter:drop-shadow(0 0 5px rgba(255,138,0,.5))!important}
+/* Restore the original camp loading artwork over emergency login CSS. */
+#ui .gacha-boot.is-active {background:#4c5e8a linear-gradient(180deg,rgba(20,27,52,.06),rgba(20,27,52,.14)),url('/boot_camp_night.webp') center center / cover no-repeat!important;}
+#ui .gacha-boot.is-active h1,#ui .gacha-boot.is-active p{color:#fffaf1!important;text-shadow:0 2px 7px #192137!important}
+/* Only the two draw tabs remain at the very bottom of the lobby. */
+#ui .gacha-actions {bottom:calc(12px + var(--safe-b))!important;left:12px;right:12px;display:flex!important;justify-content:center;align-items:end;z-index:35;}
+#ui .gacha-actions>.pull-mode {width:min(100%,460px)!important;display:grid!important;grid-template-columns:1fr 1fr;gap:8px;}
+#ui .gacha-actions>.pull-mode .pull-mode-button {min-height:48px!important;border-radius:15px!important;}
+#ui .gacha-actions>.pull-popup[hidden]{display:none!important}
+#ui .gacha-actions>.pull-popup{position:fixed!important;inset:0!important;z-index:9990!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;padding:45px 14px 25px!important;overflow:auto!important;}
+#ui .gacha-actions>.pull-popup .pull-button{width:min(100%,460px)!important;max-width:460px!important;min-height:54px!important;display:flex;}
+#ui .gacha-actions>.pull-popup:not(.is-deco) .deco-pull,#ui .gacha-actions>.pull-popup.is-deco .pull-button:not(.deco-pull){display:none!important}
+#ui .gacha-actions>.pull-popup .pull-showcase{flex-shrink:0}
