@@ -5530,3 +5530,48 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 
 /* V2.53: keep each character's weed-speed bonus legible in the picker. */
 .weed-screen .weed-picker .weed-pick .weed-speed-label { display:block; max-width:100%; box-sizing:border-box; font-size:10px; font-weight:700; line-height:1.45; padding:2px 5px; white-space:normal; overflow-wrap:anywhere; text-align:center; background:#fff1cf; color:#80500d; }
+
+/* V2.54: weed-picker cards grow vertically to show full names and bonus.
+   Override the older fixed 82/86px mobile card rules without affecting house/battle cards. */
+.weed-screen .weed-panel:not(.house-panel) .weed-picker {
+  grid-auto-rows:minmax(132px,auto) !important;
+  align-content:start;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding-bottom:12px !important;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick {
+  height:auto !important;
+  min-height:132px !important;
+  box-sizing:border-box;
+  padding:8px 5px 10px !important;
+  gap:4px !important;
+  justify-content:flex-start;
+  overflow:visible !important;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick img {
+  width:48px !important; height:48px !important;
+  flex:0 0 48px; object-fit:contain;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick span {
+  display:block !important;
+  max-width:100% !important;
+  min-height:16px;
+  font-size:11px !important;
+  line-height:1.3 !important;
+  font-weight:700;
+  text-align:center;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick em {
+  max-width:100%; height:auto !important; line-height:1.3;
+  white-space:normal !important; overflow:visible !important;
+  text-align:center; overflow-wrap:anywhere;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick .weed-speed-label {
+  font-size:10px !important; padding:3px 4px !important;
+}
