@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
 // Server-authoritative gacha rules. Keep these values in sync with src/game/collection.ts (tests verify).
-export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison', 'usagi_orange', 'halloween_chiikawa', 'halloween_hachiware', 'halloween_usagi', 'pajama_chiikawa', 'pajama_hachiware', 'pajama_usagi', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga']
-/** Draw weights out of 100000. Unlisted characters have zero draw weight. */
-export const WEIGHTS = {chiikawa: 4700, hachiware: 4700, usagi: 4700, momonga: 4700, kurimanju: 4700, shisa: 4700, kani: 4700, goblin: 4700, rakko: 4700, armor1: 4700, armor2: 4700, armor3: 4700, m_chiikawa: 1940, m_hachiware: 1940, m_usagi: 1940, m_momonga: 1940, m_kurimanju: 1940, m_shisa: 1940, m_kani: 1940, m_rakko: 1940, hanip: 1940, duip: 1940, siren: 750, shimajiro: 750, anoko: 750, dekatsuyo: 750, c_curry: 200, h_curry: 200, u_curry: 200, ginger_chiikawa: 200, beetle: 200, ginger_hachiware: 200, ginger_usagi: 200, beetle_berserk: 40, usagi_orange: 40, kurimanju_bean: 40, rakko_limited: 40, honey: 1940, ode: 750, ode_prison: 200, pajama_chiikawa: 4700, pajama_hachiware: 4700, pajama_usagi: 4700, staff_chiikawa: 750, staff_hachiware: 750, staff_usagi: 750, devil_momonga: 200, angel_momonga: 200}
+export const CHARACTER_IDS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison', 'usagi_orange', 'halloween_chiikawa', 'halloween_hachiware', 'halloween_usagi', 'siren_curry']
+/** Draw weights out of 100000 (operator table): 노말 6.07%/6.06%, 레어 2.20%, 에픽 1.00%, 유니크 0.30%. */
+export const WEIGHTS = {siren_curry: 10,chiikawa: 5970, hachiware: 5980, usagi: 5970, momonga: 5970, kurimanju: 5970, shisa: 5970, kani: 6000, goblin: 6000, rakko: 6000, armor1: 6000, armor2: 6000, armor3: 6000, m_chiikawa: 2000, m_hachiware: 2000, m_usagi: 2000, m_momonga: 2000, m_kurimanju: 2000, m_shisa: 2000, m_kani: 2000, m_rakko: 2000, hanip: 2000, duip: 2000, siren: 850, shimajiro: 850, anoko: 850, dekatsuyo: 850, c_curry: 220, h_curry: 220, u_curry: 220, ginger_chiikawa: 220, beetle: 220, ginger_hachiware: 220, ginger_usagi: 220, beetle_berserk: 50, kurimanju_bean: 50, rakko_limited: 50, honey: 2000, ode: 850, ode_prison: 220}
 /** Weeding speed bonus in percent. */
-export const WEED_BONUS = {chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30, usagi_orange: 60, halloween_chiikawa: 0, halloween_hachiware: 0, halloween_usagi: 0, pajama_chiikawa: 0, pajama_hachiware: 0, pajama_usagi: 0, staff_chiikawa: 10, staff_hachiware: 10, staff_usagi: 10, devil_momonga: 35, angel_momonga: 52}
-export const RARE_IDS = ['staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
+export const WEED_BONUS = {siren_curry: 70,chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30, usagi_orange: 60, halloween_chiikawa: 0, halloween_hachiware: 0, halloween_usagi: 0}
+export const RARE_IDS = ['siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison', 'siren_curry']
 export const TOTAL_WEIGHT = 100000
 export const STARTING_COINS = 100
 export const PULL_COST = 10
@@ -21,12 +21,10 @@ export const newEntryBonus = id => (RARE_IDS.includes(id) ? SIREN_NEW_BONUS : NE
 export function characterForRoll(roll) {
   let threshold = roll
   for (const id of CHARACTER_IDS) {
-    const weight = WEIGHTS[id] ?? 0
-    if (!Number.isFinite(weight) || weight < 0) throw new Error(`Invalid gacha weight: ${id}`)
-    threshold -= weight
+    threshold -= WEIGHTS[id]
     if (threshold < 0) return id
   }
-  throw new Error(`Gacha roll out of range: ${roll}`)
+  return CHARACTER_IDS[CHARACTER_IDS.length - 1]
 }
 
 const VALID = new Set(CHARACTER_IDS)
@@ -125,7 +123,7 @@ export const ENEMY_HP = 30_000
 export const BATTLE_TICK_MS = 3_000
 export const BATTLE_DIAMOND_CHANCE = 1
 /** Battle power per friend. */
-export const POWER = {chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 10, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50, kurimanju_bean: 10, rakko_limited: 50, honey: 13, ode: 25, ode_prison: 40, usagi_orange: 15, halloween_chiikawa: 50, halloween_hachiware: 50, halloween_usagi: 50, pajama_chiikawa: 4, pajama_hachiware: 6, pajama_usagi: 7, staff_chiikawa: 27, staff_hachiware: 27, staff_usagi: 27, devil_momonga: 42, angel_momonga: 20}
+export const POWER = {siren_curry: 70,chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 10, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50, kurimanju_bean: 10, rakko_limited: 50, honey: 13, ode: 25, ode_prison: 40, usagi_orange: 15, halloween_chiikawa: 50, halloween_hachiware: 50, halloween_usagi: 50}
 /** Settles elapsed attacks: returns defeated enemies (1 coin each), the leftover damage and the new tick anchor. */
 export function settleBattle(since, damage, now, power) {
   const ticks = Math.max(0, Math.floor((now - since) / BATTLE_TICK_MS))
@@ -134,9 +132,9 @@ export function settleBattle(since, damage, now, power) {
   return { kills: defeated, damage: total % ENEMY_HP, since: since + ticks * BATTLE_TICK_MS }
 }
 
-/** 데코 뽑기: decorations with equal chance; 20 coins each, 10 pulls for 180. */
-export const DECO_IDS = ["d001", "d002", "d003", "d004", "d005", "d006", "d007", "d008", "d009", "d010", "d011", "d012", "d013", "d014", "d015", "d016", "d017", "d018", "d019", "d020", "d021", "d022", "d023", "d024", "d025", "d026", "d027", "d028", "d029", "d030", "d031"]
-export const DECO_PULL_COSTS = { 1: 20, 3: 60, 5: 100, 10: 200 }
+/** 데코 뽑기: 50 decorations with equal chance; 20 coins each, 10 pulls for 180. */
+export const DECO_IDS = ["d01", "d02", "d03", "d04", "d05", "d06", "d07", "d08", "d09", "d10", "d11", "d12", "d13", "d14", "d15", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31", "d32", "d33", "d34", "d35", "d36", "d37", "d38", "d39", "d40", "d41", "d42", "d43", "d44", "d45", "d46", "d47", "d48", "d49", "d50"]
+export const DECO_PULL_COSTS = { 1: 20, 3: 60, 5: 100, 10: 180 }
 export const DECO_NEW_BONUS = 10
 const VALID_DECO = new Set(DECO_IDS)
 export function normalizeDecos(value) {

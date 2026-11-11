@@ -1,15 +1,6 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art. New PNGs should use a centered square transparent canvas with minimal padding to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
-  pajama_chiikawa: '/assets/chars/pajama_chiikawa.png',
-  pajama_hachiware: '/assets/chars/pajama_hachiware.png',
-  pajama_usagi: '/assets/chars/pajama_usagi.png',
-  staff_chiikawa: '/assets/chars/staff_chiikawa.png',
-  staff_hachiware: '/assets/chars/staff_hachiware.png',
-  staff_usagi: '/assets/chars/staff_usagi.png',
-  devil_momonga: '/assets/chars/devil_momonga.png',
-  angel_momonga: '/assets/chars/angel_momonga.png',
-
   halloween_chiikawa: '/assets/chars/halloween_chiikawa.png',
   halloween_hachiware: '/assets/chars/halloween_hachiware.png',
   halloween_usagi: '/assets/chars/halloween_usagi.png',
@@ -54,18 +45,10 @@ const previewUrls: Record<CharacterId, string> = {
   shimajiro: '/assets/chars/shimajiro.png',
   shisa: '/assets/chars/shisa.png',
   siren: '/assets/chars/siren.png',
+  siren_curry: '/assets/chars/siren_curry.png',
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
-  pajama_chiikawa: '/assets/chars/pajama_chiikawa.png',
-  pajama_hachiware: '/assets/chars/pajama_hachiware.png',
-  pajama_usagi: '/assets/chars/pajama_usagi.png',
-  staff_chiikawa: '/assets/chars/staff_chiikawa.png',
-  staff_hachiware: '/assets/chars/staff_hachiware.png',
-  staff_usagi: '/assets/chars/staff_usagi.png',
-  devil_momonga: '/assets/chars/devil_momonga.png',
-  angel_momonga: '/assets/chars/angel_momonga.png',
-
   halloween_chiikawa: '/assets/chars/halloween_chiikawa.png',
   halloween_hachiware: '/assets/chars/halloween_hachiware.png',
   halloween_usagi: '/assets/chars/halloween_usagi.png',
@@ -108,6 +91,7 @@ const managedUrls: Record<CharacterId, string> = {
   rakko: '/manus-storage/game/sha256/0265dc3eb4f6bcf662f16cc157352f3fa24e1038808e3f600e1dbbd38b6274e9.png',
   shimajiro: '/manus-storage/game/sha256/d4c7c7ce6908b3aed1b5b8f1a6f4f2866c9e5194a4a31a18a8279f0ec37b0d77.png',
   shisa: '/manus-storage/game/sha256/8b290196f8ee15f532962f38dc795a351304655562a4518733db82fe54941f9f.png',
+  siren_curry: '/assets/chars/siren_curry.png',
   siren: '/manus-storage/game/sha256/73d92496a8c33d278e49afdad08df1a4d3342292ef9bd7abd2fc3c99827c3174.png',
   usagi: '/manus-storage/game/sha256/7f39a9a2cf18bdd471da044f1efc2884ba7088073f407017518a72fbc51fac87.png',
 }
