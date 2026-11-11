@@ -5342,3 +5342,24 @@ body>.pull-rates-dialog footer button{width:100%!important}
 #ui>.pull-popup .pull-action-row .pull-button b{font-size:clamp(11px,3vw,15px)!important}
 #ui>.pull-popup .pull-action-row .pull-button small{font-size:clamp(9px,2.5vw,12px)!important}
 @media(max-width:380px){#ui>.pull-popup .pull-showcase-characters{height:330px!important}#ui>.pull-popup .pull-feature-main{width:55%!important}#ui>.pull-popup .pull-action-row{gap:5px!important;padding-left:8px!important;padding-right:8px!important}}
+
+/* V2.39: only the active draw type is visible, including on narrow screens. */
+#ui .pull-popup:not(.is-deco) .pull-action-row .deco-pull{display:none!important}
+#ui .pull-popup.is-deco .pull-action-row .pull-button:not(.deco-pull){display:none!important}
+#ui .pull-popup.is-deco .pull-showcase-char{display:none!important}
+#ui .pull-popup:not(.is-deco) .pull-showcase-deco{display:none!important}
+#ui .pull-popup .pull-showcase-characters{position:relative!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;gap:0!important;width:100%!important;max-width:520px!important;margin:0 auto!important;height:clamp(295px,75vw,390px)!important;overflow:visible!important;padding:35px 8px 0!important;isolation:isolate!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature{position:relative!important;flex:0 0 19%!important;width:19%!important;min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:flex-end!important;align-items:center!important;overflow:visible!important;z-index:2!important;margin:0 -1.3%!important;transform:translateY(-3px)!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature-main{flex:0 0 39%!important;width:39%!important;z-index:3!important;margin:0 -5%!important;transform:translateY(2px)!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature img{display:block!important;position:relative!important;width:135%!important;max-width:none!important;height:auto!important;max-height:185px!important;object-fit:contain!important;object-position:bottom!important;margin:0!important;filter:drop-shadow(0 5px 4px #6d3d2b30)}
+#ui .pull-popup .pull-showcase-characters .pull-feature-main img{width:135%!important;max-height:315px!important;filter:drop-shadow(0 7px 9px #a7573560)}
+#ui .pull-popup .pull-showcase-characters .pull-feature-label{position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;z-index:20!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;margin:0 0 4px!important;padding:3px 2px!important;width:max-content!important;max-width:140%!important;background:#fff8e9ed!important;border-radius:10px!important;white-space:normal!important;text-align:center!important;line-height:1.2!important;box-shadow:0 2px 5px #6c402b19!important;pointer-events:none!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature-label strong{font-size:clamp(9px,2.5vw,12px)!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature-label span{font-size:clamp(8px,2.2vw,11px)!important;overflow-wrap:anywhere!important}
+#ui .pull-popup .pull-showcase-characters .pull-feature-main .pull-feature-label{max-width:125%!important}
+#ui .pull-popup .pull-action-row{display:flex!important;align-items:stretch!important;justify-content:center!important;gap:8px!important;flex-wrap:nowrap!important;padding:13px!important;border-radius:18px!important;background:#fff6e8!important;border:1px solid #ebc6a2!important}
+#ui .pull-popup .pull-action-row .pull-button{flex:1 1 0!important;min-width:0!important;max-width:none!important;border:1.5px solid #dda36d!important;border-radius:15px!important;background:linear-gradient(180deg,#fffdf6,#ffecd0)!important;box-shadow:0 3px 0 #e4b88e!important;padding:11px 4px!important;white-space:normal!important}
+#ui .pull-popup .pull-action-row .pull-button b{font-size:clamp(11px,3vw,14px)!important}
+#ui .pull-popup .pull-action-row .pull-button small{font-size:clamp(9px,2.4vw,11px)!important}
+#ui .pull-popup .pull-action-row .pull-button:disabled{opacity:.55!important;box-shadow:none!important}
+@media(max-width:390px){#ui .pull-popup .pull-showcase-characters{height:305px!important}#ui .pull-popup .pull-showcase-characters .pull-feature-main img{max-height:255px!important}#ui .pull-popup .pull-showcase-characters .pull-feature img{max-height:145px!important}}

@@ -2234,6 +2234,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private setPullMode(mode: 'char' | 'deco'): void {
     this.root.querySelector('.gacha-actions')?.classList.toggle('is-deco', mode === 'deco')
     this.root.querySelector('.pull-popup')?.classList.toggle('is-deco', mode === 'deco')
+    this.root.querySelectorAll<HTMLElement>('.pull-action-row .deco-pull').forEach(el => { el.style.display = mode === 'deco' ? '' : 'none' })
+    this.root.querySelectorAll<HTMLElement>('.pull-action-row .pull-button:not(.deco-pull)').forEach(el => { el.style.display = mode === 'char' ? '' : 'none' })
     const charPanel=this.root.querySelector<HTMLElement>('.pull-showcase-char')
     const decoPanel=this.root.querySelector<HTMLElement>('.pull-showcase-deco')
     if(charPanel)charPanel.hidden=mode==='deco'
