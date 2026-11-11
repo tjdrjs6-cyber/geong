@@ -5149,3 +5149,27 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 }
 #ui .gacha-screen.is-active > .gacha-actions > .pull-mode {width:100%!important;}
 #ui .gacha-screen.is-active > .gacha-actions > .pull-popup {position:fixed!important;}
+
+/* V2.30: draw dialog as a full-stage sibling, not clipped by the bottom toolbar. */
+#ui>.pull-popup[hidden]{display:none!important}
+#ui>.pull-popup{position:absolute!important;inset:0!important;z-index:9998!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:55px 16px 28px!important;background:rgba(31,24,40,.80)!important;backdrop-filter:blur(5px);pointer-events:auto!important;}
+#ui>.pull-popup .pull-showcase{width:min(100%,430px)!important;max-height:min(48vh,360px)!important;min-height:0!important;overflow:auto!important;flex-shrink:1!important;padding:17px 12px!important;background:#fff8ed!important;border:2px solid #efc28e!important;border-bottom:0!important;border-radius:22px 22px 0 0!important;box-sizing:border-box!important;}
+#ui>.pull-popup .pull-button{width:min(100%,430px)!important;min-height:54px!important;flex:0 0 auto!important;box-sizing:border-box!important;margin:0!important;border-radius:0!important;background:#fff7e9!important;color:#755046!important;border:2px solid #efc28e!important;border-top:0!important;}
+#ui>.pull-popup .pull-button:last-child{border-radius:0 0 20px 20px!important;}
+#ui>.pull-popup .pull-popup-close{position:absolute!important;top:12px!important;right:14px!important;z-index:2!important;display:grid!important;place-items:center!important;width:42px!important;height:42px!important;min-height:42px!important;border:2px solid #f2b3a7!important;border-radius:50%!important;background:#fffaf5!important;color:#9c5552!important;font-size:29px!important;cursor:pointer!important;}
+#ui>.pull-popup:not(.is-deco) .deco-pull,#ui>.pull-popup.is-deco .pull-button:not(.deco-pull){display:none!important;}
+#ui>.pull-popup .pull-showcase-char[hidden],#ui>.pull-popup .pull-showcase-deco[hidden]{display:none!important;}
+#ui>.pull-popup .pull-showcase-characters{display:flex!important;align-items:end!important;justify-content:center!important;gap:5px!important;}
+#ui>.pull-popup .pull-showcase-characters img{width:18%!important;height:100px!important;max-width:78px!important;object-fit:contain!important;}
+#ui>.pull-popup .pull-showcase-characters img.showcase-main{width:27%!important;height:150px!important;max-width:112px!important;}
+#ui>.pull-popup .pull-showcase-decos img{max-width:70px!important;max-height:95px!important;object-fit:contain!important;}
+/* Transcendent rarity: simple orange border and orange fill, even before unlocking. */
+#ui .collection-grid .friend-card.tier-transcendent{border:2px solid #ed901c!important;background:linear-gradient(155deg,#fff1d5,#ffd49a)!important;box-shadow:inset 0 0 0 1px #ffd18a,0 2px 8px #ef9d3440!important;animation:none!important;}
+#ui .collection-grid .friend-card.tier-transcendent::after{content:none!important;display:none!important;animation:none!important;}
+#ui .collection-grid .friend-card.tier-transcendent .friend-avatar{background:#ffdfae!important;border:1px solid #f0b45c!important;}
+#ui .collection-grid .friend-card.tier-transcendent .friend-chance{color:#b7610d!important;text-shadow:none!important;}
+/* Restore consistent achievement and top-right reward chip backgrounds. */
+#ui .gacha-screen>.collection-peek .reward-chip{background:#fff7f4!important;border:2px solid #f2cad2!important;box-shadow:0 2px 7px #5b344022!important;color:#70465a!important;}
+#ui .gacha-screen>.collection-peek .achievement-lobby-tab{background:#fff7f9!important;}
+#achievement-v23-overlay{background:rgba(38,28,38,.68)!important;backdrop-filter:blur(3px);}
+#achievement-v23-overlay .achievement-v23-panel{background:#fffaf5!important;border:2px solid #e9c7c2!important;box-shadow:0 14px 50px #21131e66!important;}
