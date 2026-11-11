@@ -31,7 +31,7 @@ export const MAIL_MAX_CHARS = 30
 export const MAIL_DAILY_COINS = 100
 export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
-export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>>; discovered?: string[] }
+export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>> }
 export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
 type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
@@ -138,12 +138,15 @@ export class RemoteGachaStore {
     return WEED_HOUR_MS - (now % WEED_HOUR_MS)
   }
 
+  /** Server-verified, claimed collection bonus shared by combat previews. */
+  collectionCombatPower = 0
+
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle = this.battle
     if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
     // forge.bonus already includes the equipped accessory. Never add it twice.
-    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0)
+    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0) + this.collectionCombatPower
     const elapsed = Math.max(0, this.serverNow() - battle.since)
     let stage = battle.stage ?? 1, damage = battle.stageDamage ?? battle.damage
     const ticks = Math.min(500000, Math.floor(elapsed / BATTLE_TICK_MS))
@@ -316,6 +319,7 @@ export class RemoteGachaStore {
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
   async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
   async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
     const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
@@ -403,8 +407,8 @@ export class RemoteGachaStore {
     this.apply({ user: null })
   }
 
-  async pull(count: PullCount): Promise<PullResult[]> {
-    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count })
+  async pull(count: PullCount, free = false): Promise<PullResult[]> {
+    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free })
     this.data = result.save
     if (result.dupes) this.dupes = result.dupes
     return result.results

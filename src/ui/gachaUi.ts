@@ -32,7 +32,7 @@ import { machineMarkup } from './toonMachine'
 
 const MACHINE_SPIN_SECONDS = 1.35
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
-const tierTag = (character: Character): string => character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
+const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
 type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
@@ -100,6 +100,7 @@ export class GachaUi {
   private rpsTimer = 0
   private rpsResolving = false
   private expedition: ExpeditionState | null = null
+  private expeditionPrefetch: Promise<ExpeditionState> | null = null
   private expeditionServer = 1
   private expeditionPendingDamage = new Map<number, number>()
   private expeditionImpactTimer = 0
@@ -122,6 +123,9 @@ export class GachaUi {
 
   constructor(private readonly store: RemoteGachaStore, private readonly audio: Audio, private readonly actions: Actions) {
     this.root.innerHTML = this.template()
+    // The draw dialog must be a sibling of the lobby, not a child of its bottom toolbar.
+    const drawDialog=this.root.querySelector<HTMLElement>('.pull-popup')
+    if(drawDialog) this.root.append(drawDialog)
     this.root.addEventListener('click', event => { void this.onClick(event) })
     this.root.addEventListener('pointerdown', event => {
       const target=(event.target as HTMLElement).closest<HTMLElement>('.wild-weed-pick')
@@ -188,6 +192,7 @@ export class GachaUi {
     // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
     if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.skipLottery()
     this.screen = screen
+    if (screen !== 'lobby') { const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=true }
     if (screen !== 'users') {
       const usersCard = this.root.querySelector<HTMLElement>('.gacha-modal[data-screen="users"] .users-card')
       usersCard?.classList.remove('privacy-mode')
@@ -218,10 +223,10 @@ export class GachaUi {
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
     if (screen === 'title' && this.store.user) window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
-    if (screen === 'title') { void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
+    if (screen === 'title') { this.prefetchQuickPanels(); void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
-    if (screen === 'lobby' && !this.achievementSnapshot) { void fetch('/api/achievements',{credentials:'include'}).then(r=>r.ok?r.json():null).then(data=>{if(data)this.achievementSnapshot=data}).catch(()=>{}) }
+
     if (screen === 'battle') { void this.refreshAchievementCombatLabels(); this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
     if (screen === 'nickname') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#nickname-input')?.focus(), 50)
     if (screen === 'auth') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#auth-username')?.focus(), 50)
@@ -407,10 +412,14 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기</button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div>
-          ${DECO_PULL_OPTIONS.map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '🎀 데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-          ${PULL_OPTIONS.map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '✦ 한 번 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-        </footer>
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-showcase-caption">초월 세이렌(카레) 등장!</div><div class="pull-showcase-characters"><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>랏코(한정선)</span></div><img src="/assets/chars/rakko_limited.png" alt="랏코(한정선)"/></div><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>쿠리만쥬(콩)</span></div><img src="/assets/chars/kurimanju_bean.png" alt="쿠리만쥬(콩)"/></div><div class="pull-feature pull-feature-transcendent pull-feature-main"><div class="pull-feature-label"><strong>초월</strong><span>세이렌(카레)</span></div><img src="/assets/chars/siren_curry.png" alt="세이렌(카레)"/></div><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>풍뎅이(광폭)</span></div><img src="/assets/chars/beetle_berserk.png" alt="풍뎅이(광폭)"/></div><div class="pull-feature pull-feature-legendary "><div class="pull-feature-label"><strong>레전더리</strong><span>우사기(귤)</span></div><img src="/assets/chars/usagi_orange.png" alt="우사기(귤)"/></div></div></div><div class="pull-showcase-deco" hidden><div class="pull-showcase-caption">🎀 귀여운 데코를 만나보세요!</div><div class="pull-showcase-decos">${["d05","d10","d15","d26","d45"].map(id=>`<img src="${DECO_IMAGE_URLS[id as DecoId]}" alt="데코 아이템"/>`).join("")}</div></div>
+          <div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
+          </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
+          </div>
+        </div></footer>
+        <div class="free-note" hidden>캐릭터 뽑기 하루 10회 무료 · 남은 무료 뽑기 <b class="free-pull-remaining">10</b>회</div>
         <div class="free-note">이 게임의 모든 뽑기는 게임 속 무료 코인으로 즐길 수 있어요.</div>
         <div class="toast" aria-live="polite"></div>
       </main>
@@ -438,9 +447,8 @@ export class GachaUi {
         <div class="modal-card collection-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="collection-info-sticky"><div class="modal-kicker">YOUR LITTLE FRIENDS</div><h2 id="collection-title">캐릭터 도감</h2>
-          <p class="collection-summary">총 ${CHARACTERS.length}종 · 노멀 ${CHARACTERS.filter(c => c.tier === 'normal').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 레어 ${CHARACTERS.filter(c => c.tier === 'mermaid').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 에픽 ${CHARACTERS.filter(c => c.tier === 'rare').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 유니크 ${CHARACTERS.filter(c => c.tier === 'super').reduce((n,c) => n+c.probability,0).toFixed(2)}% · 레전더리 ${CHARACTERS.filter(c => c.tier === 'legendary').reduce((n,c) => n+c.probability,0).toFixed(2)}%</p></div>
+          <p class="collection-summary">총 ${CHARACTERS.length}종의 친구</p></div>
           <div class="collection-grid"></div>
-          <div class="duplicate-note">새 친구 등록 +${NEW_ENTRY_BONUS}코인 · 에픽·유니크 친구 +${RARE_NEW_BONUS}코인 · 중복은 코인 없음</div>
           <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
         </div>
       </section>
@@ -583,7 +591,8 @@ export class GachaUi {
       const normal=counts[selected]||0
       const fragments=this.store.data.fragments||0
       const owned=this.store.accessory.grades?.[selected]||{}
-      dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><p class="alchemy-description">같은 캐릭터의 이전 등급 키링 3개로 합성 · 성공률 100%</p><div class="alchemy-picker">${WEAPON_ACCESSORIES.map(x=>`<button type="button" class="alchemy-pick ${x.id===selected?'selected':''}" data-pick="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===selected}"><img src="${x.image}" alt=""/><span>${x.name.replace(' 키링','')}</span></button>`).join('')}</div><div class="alchemy-inventory"><div><img src="${item.image}" alt=""/><span>보유 노말 키링<strong>${normal.toLocaleString()}개</strong></span></div><div><img src="/assets/enhancement_fragment.png" alt=""/><span>보유 강화파편<strong>${fragments.toLocaleString()}개</strong></span></div></div><div class="alchemy-recipes">${ALCHEMY_GRADES.slice(1).map((g,gi)=>{const previous=ALCHEMY_GRADES[gi];const available=previous.id==='normal'?normal:(owned[previous.id]||0);const shortage=available<g.cost||fragments<g.fragments;return `<button type="button" class="alchemy-recipe ${(owned[g.id]||0)>0?'is-owned':''}" data-id="${selected}" data-grade="${g.id}" ${shortage?'disabled':''}><b style="color:${g.color}">${g.name}</b><small>${previous.name} ${g.cost}개 · 파편 ${g.fragments}개</small><strong>${shortage?'재료 부족':`합성 · 전투력 +${g.power}`}</strong></button>`}).join('')}</div><button type="button" class="myroom-equipment-done">닫기</button></div>`
+      const inventoryGrades=ALCHEMY_GRADES.map(g=>({grade:g,count:g.id==='normal'?normal:(owned[g.id]||0)}))
+      dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><p class="alchemy-description">같은 캐릭터의 이전 등급 키링 3개로 합성 · 성공률 100%</p><div class="alchemy-picker">${WEAPON_ACCESSORIES.map(x=>`<button type="button" class="alchemy-pick ${x.id===selected?'selected':''}" data-pick="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===selected}"><img src="${x.image}" alt=""/><span>${x.name.replace(' 키링','')}</span></button>`).join('')}</div><div class="alchemy-owned-title">보유 키링 · ${item.name.replace(' 키링','')}</div><div class="alchemy-owned-grades">${inventoryGrades.map(({grade,count})=>`<div class="alchemy-owned-grade" style="--alchemy-accent:${grade.color}"><span>${grade.name}</span><strong>${count.toLocaleString()}개</strong></div>`).join('')}</div><div class="alchemy-fragments"><img src="/assets/enhancement_fragment.png" alt=""/><span>보유 강화파편</span><strong>${fragments.toLocaleString()}개</strong></div><div class="alchemy-recipes">${ALCHEMY_GRADES.slice(1).map((g,gi)=>{const previous=ALCHEMY_GRADES[gi];const available=previous.id==='normal'?normal:(owned[previous.id]||0);const shortage=available<g.cost||fragments<g.fragments;return `<button type="button" class="alchemy-recipe ${shortage?'is-shortage':'is-ready'}" data-id="${selected}" data-grade="${g.id}" ${shortage?'disabled':''}><b style="color:${g.color}">${g.name}</b><small>${previous.name} ${g.cost}개 · 파편 ${g.fragments}개</small><strong>${shortage?'재료 부족':`합성 · 전투력 +${g.power}`}</strong></button>`}).join('')}</div><button type="button" class="myroom-equipment-done">닫기</button></div>`
       dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
       dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
       dialog.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.pick!;render()}))
@@ -795,13 +804,33 @@ export class GachaUi {
   }
 
 
+  private achievementPrefetch: Promise<NonNullable<typeof this.achievementSnapshot>> | null = null
+  private fetchAchievementsOnce(): Promise<NonNullable<typeof this.achievementSnapshot>> {
+    if (this.achievementSnapshot) return Promise.resolve(this.achievementSnapshot)
+    if (!this.achievementPrefetch) {
+      this.achievementPrefetch = fetch('/api/achievements', {credentials:'include',cache:'no-store'})
+        .then(async response => {if(!response.ok)throw Error('업적 정보를 불러오지 못했어요.');return await response.json() as NonNullable<typeof this.achievementSnapshot>})
+        .then(data => {this.achievementSnapshot=data;return data})
+        .finally(() => {this.achievementPrefetch=null})
+    }
+    return this.achievementPrefetch
+  }
+  private prefetchQuickPanels():void {
+    if(!this.store.user)return
+    // Share a single in-flight achievements request with the badge and modal.
+    void this.fetchAchievementsOnce().catch(()=>{})
+    // Prefetch expedition once; entry still fetches live data before applying actions.
+    if(!this.expedition && !this.expeditionPrefetch) {
+      this.expeditionPrefetch=this.store.expedition().finally(()=>{this.expeditionPrefetch=null})
+      void this.expeditionPrefetch.then(data=>{if(!this.expedition)this.expedition=data}).catch(()=>{})
+    }
+  }
+
   private async refreshAchievementReadyBadge():Promise<void> {
     const button=this.root.querySelector<HTMLElement>('.achievement-lobby-tab')
     if(!button || !this.store.user)return
     try {
-      const response=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
-      if(!response.ok)return
-      const data=await response.json() as {items?:{ids:string[];owned:string[];claimed:boolean}[]}
+      const data=await this.fetchAchievementsOnce()
       const ready=Boolean(data.items?.some(item=>!item.claimed && item.ids.every(id=>item.owned.includes(id))))
       button.classList.toggle('has-claimable-achievement',ready)
       button.setAttribute('aria-label',ready?'업적 - 수령 가능한 보상 있음':'업적')
@@ -818,6 +847,7 @@ export class GachaUi {
       const data=await res.json() as {power:number}
       const power=Math.max(0,Number(data.power)||0)
       this.collectionCombatPower=power
+      this.store.collectionCombatPower=power
       if(this.screen==='battle')this.renderBattleStatus()
       this.root.querySelectorAll<HTMLElement>('.achievement-combat-bonus').forEach(el=>{
         el.textContent=`컬렉션 영구 전투력 +${power} 적용 중`
@@ -837,11 +867,11 @@ export class GachaUi {
     const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
     if(tab==='title'){showTitle();return}
     try {
-      const data=await (async()=>{if(this.achievementSnapshot)return this.achievementSnapshot;const res=await fetch('/api/achievements',{credentials:'include',cache:'no-store'});if(!res.ok)throw Error('업적 정보를 불러오지 못했어요.');return this.achievementSnapshot=await res.json() as {items:{id:string;tier:string;name:string;ids:string[];owned:string[];coins:number;power:number;claimed:boolean}[];power:number}})()
+      const data=await this.fetchAchievementsOnce()
       panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
       panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
       panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
-      panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');const reward=await response.json() as {coins:number;power:number};await this.store.restore();this.achievementSnapshot=null;await this.openAchievements('collection');void this.refreshAchievementReadyBadge();this.showAchievementReward(reward.coins,reward.power)}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
+      panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');const reward=await response.json() as {coins:number;power:number};await this.store.restore();this.achievementSnapshot=null;await this.refreshAchievementCombatLabels();await this.openAchievements('collection');void this.refreshAchievementReadyBadge();this.showAchievementReward(reward.coins,reward.power)}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
     }catch(error){panel.innerHTML='<button class="achievement-v23-close">×</button><p>업적 정보를 불러오지 못했습니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close}
   }
 
@@ -1023,7 +1053,12 @@ export class GachaUi {
     }
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.expeditionImpactServer=this.expeditionServer;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
-    if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); return }
+    if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup){popup.hidden=false;popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true')} return }
+    if (action === 'pull-rates-toggle') { this.openPullRatesDialog(); return }
+    if (action === 'close-pull-rates') { document.querySelector<HTMLElement>('.pull-rates-dialog')?.remove(); return }
+    if (action === 'confirm-pull-yes') { this.acceptPullConfirmation(); return }
+    if (action === 'confirm-pull-no') { const dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay'); if(dialog)dialog.hidden=true; return }
+    if (action === 'close-pull-popup') { const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=true; return }
     if (action.startsWith('house-') && this.house.handle(action, button)) return
     if (action === 'user-tab' && button.dataset.nickname) { this.userTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'house' ? 'house' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderUserDetail(button.dataset.nickname); return }
     if (action === 'weed') { this.show('weed'); return }
@@ -1058,7 +1093,7 @@ export class GachaUi {
     if (action === 'mail-send' && button.dataset.nickname) { await this.sendMail(button.dataset.nickname); return }
     if (action === 'user-list') { this.renderUsers(); return }
     if (action === 'user-view' && button.dataset.nickname) { this.userTab = 'char'; this.renderUserDetail(button.dataset.nickname); return }
-    if (action === 'close') { this.show('title'); return }
+    if (action === 'close') { const reopen=this.screen==='result'; const kind=this.resultKind; this.show('title'); if(reopen){this.setPullMode(kind==='deco'?'deco':'char');const popup=this.root.querySelector<HTMLElement>('.pull-popup');if(popup)popup.hidden=false} return }
     if (action === 'result-collection') { this.show(this.resultKind === 'deco' ? 'decos' : 'collection'); return }
     if (action === 'retry') { this.actions.retry(); return }
     if (action === 'auth-login' || action === 'auth-register') { this.setAuthMode(action === 'auth-login' ? 'login' : 'register'); return }
@@ -1076,16 +1111,20 @@ export class GachaUi {
       this.openAttendancePopup()
       return
     }
-    if (action === 'pull') {
+    if (action === 'free-daily-pull' && !this.pullConfirmed) { if(this.freePullRemaining()===0){this.toast('오늘의 무료 10회 뽑기를 이미 사용했어요.');return} this.askPullConfirmation('free',10); return }
+    if (action === 'free-daily-pull') { this.pullConfirmed=false; const button10=this.root.querySelector<HTMLButtonElement>('.pull-button[data-action="pull"][data-count="10"]'); if(!button10)return; this.pullConfirmed=true; button10.dataset.forceFree='true'; button10.click(); delete button10.dataset.forceFree; this.pullConfirmed=false; return }
+    if (action === 'pull' && !this.pullConfirmed) { this.askPullConfirmation('char',Number(button.dataset.count)); return }
+    if (action === 'pull') { this.pullConfirmed=false;
       const count = Number(button.dataset.count) as PullCount
       if (!PULL_OPTIONS.some(option => option.count === count)) return
-      const cost = pullCost(count)
+      const free = button.dataset.forceFree === 'true'
+      const cost = free ? 0 : pullCost(count)
       if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
       let result: PullResult[]
-      try { result = await this.store.pull(count) } catch (error) {
+      try { result = await this.store.pull(count, free) } catch (error) {
         this.revealing = false
         this.handleError(error)
         this.renderWallet()
@@ -1098,11 +1137,13 @@ export class GachaUi {
       const duration = this.spinMachine(characterById(result[result.length - 1].id).accent)
       const sequence = ++this.revealSequence
       this.renderWallet()
+      this.renderFreePullStatus()
       this.renderResults()
       window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
       return
     }
-    if (action === 'deco-pull') {
+    if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
+    if (action === 'deco-pull') { this.pullConfirmed=false;
       const count = Number(button.dataset.count) as DecoPullCount
       if (!DECO_PULL_OPTIONS.some(option => option.count === count)) return
       if (!this.isAdmin && this.store.data.gems < decoPullCost(count)) { this.showInsufficient(decoPullCost(count)); return }
@@ -1722,7 +1763,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const body=document.createElement('p');body.textContent='상위상이 전부 품절되어 겅이복권이 초기화되었습니다.'
     const close=document.createElement('button');close.textContent='닫기';close.addEventListener('click',()=>dialog.close())
     panel.append(title,body,close);dialog.append(panel);document.body.append(dialog)
-    dialog.addEventListener('close',()=>{dialog.remove();void this.store.lotteryResetSeen(id).catch(()=>{})},{once:true})
+    dialog.addEventListener('close',()=>{
+      dialog.remove()
+      // Prevent the same notice reopening while the server acknowledgement is in flight.
+      if(this.lotteryState?.resetNoticeId===id)this.lotteryState.resetNoticeId=undefined
+      void this.store.lotteryResetSeen(id).catch(()=>{})
+    },{once:true})
     dialog.showModal()
   }
   private lotteryTopPopup(message:string):void{
@@ -2047,6 +2093,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLElement>('.fragment-value').forEach(el => { el.textContent = (this.isAdmin ? '∞' : (this.store.data.fragments ?? 0).toLocaleString('ko-KR')) })
     this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
     this.tickDiamondRecharge()
+    this.renderFreePullStatus()
     const rate = `+${this.store.hourlyRate().toFixed(2)} 코인/시간`
     this.root.querySelectorAll<HTMLElement>('.wallet-rate').forEach(node => { node.textContent = rate })
     const count = this.store.data.owned.length
@@ -2089,7 +2136,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const spinButton = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
     if (spinButton && !this.wheelSpinning) { spinButton.disabled = spun; spinButton.textContent = spun ? '다음 시간대에 다시 돌려주세요' : '룰렛 돌리기' }
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
-      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < pullCost(Number(pullButton.dataset.count) as PullCount))
+      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="deco-pull"]').forEach(pullButton => {
       pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < decoPullCost(Number(pullButton.dataset.count) as DecoPullCount))
@@ -2105,7 +2152,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   /** Collection cards; uncollected friends stay gray with a question mark. */
   private collectionCards(owned: readonly CharacterId[], interactive: boolean): string {
-    return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4}[b.tier])).map(character => {
+    return [...CHARACTERS].sort((a,b) => ({normal:0,mermaid:1,rare:2,super:3,legendary:4,transcendent:5}[a.tier] - {normal:0,mermaid:1,rare:2,super:3,legendary:4,transcendent:5}[b.tier])).map(character => {
       const has = owned.includes(character.id)
       const isFeatured = has && character.id === this.heroId()
       const isHalloweenLimited = String(character.id).startsWith('halloween_')
@@ -2122,8 +2169,79 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }).join('')
   }
 
+  private pullConfirmed=false
+  private acceptPullConfirmation():void {
+    const dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
+    if(!dialog || dialog.hidden || this.busy)return
+    const kind=dialog.dataset.kind
+    const count=Number(dialog.dataset.count)
+    dialog.hidden=true
+    const target=this.root.querySelector<HTMLButtonElement>(kind==='free'?'.free-daily-pull':`.pull-button[data-action="${kind==='deco'?'deco-pull':'pull'}"][data-count="${count}"]`)
+    if(target){this.pullConfirmed=true;target.click();this.pullConfirmed=false}
+  }
+  private askPullConfirmation(kind:'char'|'deco'|'free', count:number):void {
+    if(![1,10].includes(count))return
+    if(kind==='free' && this.freePullRemaining()!==10){this.toast('오늘의 무료 뽑기는 이미 사용했어요.');return}
+    const free=kind==='free' && this.freePullRemaining()===10
+    const cost=free?0:kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
+    if(!this.isAdmin && this.store.data.gems<cost){this.showInsufficient(cost);return}
+    let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
+    if(!dialog){
+      dialog=document.createElement('div');dialog.className='pull-confirm-overlay'
+      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><div class="pull-confirm-emoji">🎁</div><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
+      this.root.append(dialog)
+      // Handle the confirmation locally so a covered/disabled lobby cannot swallow clicks.
+      dialog.querySelector<HTMLButtonElement>('[data-action="confirm-pull-yes"]')?.addEventListener('click',event=>{event.stopPropagation();this.acceptPullConfirmation()})
+      dialog.querySelector<HTMLButtonElement>('[data-action="confirm-pull-no"]')?.addEventListener('click',event=>{event.stopPropagation();if(dialog)dialog.hidden=true})
+    }
+    dialog.dataset.kind=kind;dialog.dataset.count=String(count)
+    const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
+    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${count}회 · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
+    dialog.hidden=false
+  }
+  private openPullRatesDialog():void {
+    document.querySelector('.pull-rates-dialog')?.remove()
+    const deco=this.root.querySelector('.pull-popup')?.classList.contains('is-deco')??false
+    const dialog=document.createElement('div')
+    dialog.className='pull-rates-dialog'
+    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):CHARACTERS.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(2)}%</b></div>`).join('')}</div><footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
+    document.body.append(dialog)
+    dialog.querySelectorAll<HTMLButtonElement>('[data-action="close-pull-rates"]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();dialog.remove()}))
+    dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.remove()});dialog.querySelector<HTMLElement>('.pull-rates-list')?.addEventListener('touchmove',event=>event.stopPropagation(),{passive:true})
+  }
+  private renderPullRates(_mode:'char'|'deco'):void {
+    document.querySelector('.pull-rates-dialog')?.remove()
+  }
+  private freePullRemaining(): number {
+    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+    return this.store.data.freePullDay===day && (this.store.data.freePullUsed||0)>0 ? 0 : 10
+  }
+  private renderFreePullStatus(): void {
+    const available=this.freePullRemaining()===10
+    const badge=this.root.querySelector<HTMLElement>('.free-pull-dot')
+    if(badge){badge.hidden=!available;badge.style.display=available?'':'none'}
+    const note=this.root.querySelector<HTMLElement>('.free-note:has(.free-pull-remaining)')
+    if(note)note.hidden=true
+    this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
+      const count=Number(button.dataset.count) as PullCount
+      const small=button.querySelector('small')
+      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 코인`
+      button.classList.remove('is-free-pull')
+    })
+    const freeButton=this.root.querySelector<HTMLButtonElement>('.free-daily-pull')
+    if(freeButton){freeButton.disabled=!available;freeButton.classList.toggle('is-used',!available);const small=freeButton.querySelector('small');if(small)small.textContent=available?'오늘 1회 이용 가능':'오늘 사용 완료'}
+  }
   private setPullMode(mode: 'char' | 'deco'): void {
     this.root.querySelector('.gacha-actions')?.classList.toggle('is-deco', mode === 'deco')
+    this.root.querySelector('.pull-popup')?.classList.toggle('is-deco', mode === 'deco')
+    this.root.querySelectorAll<HTMLElement>('.pull-action-row .deco-pull').forEach(el => { el.style.display = mode === 'deco' ? '' : 'none' })
+    this.root.querySelectorAll<HTMLElement>('.pull-action-row .pull-button:not(.deco-pull)').forEach(el => { el.style.display = mode === 'char' ? '' : 'none' })
+    const charPanel=this.root.querySelector<HTMLElement>('.pull-showcase-char')
+    const decoPanel=this.root.querySelector<HTMLElement>('.pull-showcase-deco')
+    if(charPanel)charPanel.hidden=mode==='deco'
+    if(decoPanel)decoPanel.hidden=mode==='char'
+    this.renderFreePullStatus()
+    this.renderPullRates(mode)
     this.root.querySelectorAll<HTMLButtonElement>('.pull-mode-button').forEach(tab => {
       const active = tab.dataset.mode === mode
       tab.classList.toggle('is-active', active)
@@ -2380,7 +2498,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private async loadExpedition():Promise<void> {
     if(this.expeditionLoading || this.screen!=='expedition')return
     this.expeditionLoading=true
-    try {const firstLoad=this.expedition===null;this.expedition=await this.store.expedition();if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition();void this.refreshAchievementCombatLabels()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
+    if(this.expedition) this.renderExpedition()
+    try {const firstLoad=this.expedition===null;this.expedition=await (this.expeditionPrefetch || this.store.expedition());if(firstLoad){this.expeditionServer=this.expedition.mine?.serverId??1;this.startExpeditionImpactClock()}this.setExpeditionBadge(!this.expedition.mine);this.expeditionBadgeCheckedAt=Date.now();this.expeditionBadgeDay=this.expedition.day;this.renderExpedition();void this.refreshAchievementCombatLabels()} catch(e){const el=this.root.querySelector<HTMLElement>('.expedition-status');if(el)el.textContent='원정대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';this.handleError(e)} finally{this.expeditionLoading=false}
   }
   private startExpeditionImpactClock():void {
     window.clearInterval(this.expeditionImpactTimer)
@@ -2491,7 +2610,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const equipmentLabel=this.root.querySelector<HTMLElement>('.expedition-equipment-bonus')
     if(equipmentLabel)equipmentLabel.textContent=`장비 전투력 +${Math.max(0,Number(this.store.forge?.bonus)||0)} 적용 중`
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small></span></button>`).join('')}</div>`
+    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}" aria-pressed="${state.mine?.serverId===room.id && state.mine.characterId===id}" style="${state.mine?.serverId===room.id && state.mine.characterId===id?'border:2px solid #6ba883;background:#ecf9ee;box-shadow:0 0 0 2px #d2ecd8 inset;':''}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small>${state.mine?.serverId===room.id && state.mine.characterId===id?'<small style="color:#2c8653;font-weight:800">✓ 배치 중</small>':''}</span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
       if(picker.innerHTML!==html){
         const choices=picker.querySelector<HTMLElement>('.expedition-choices')
@@ -2969,7 +3088,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const friend = walker.querySelector<HTMLElement>('.weed-friend')
       if (!friend) return
       friend.classList.toggle('is-empty', !character)
-      friend.innerHTML = character ? `<img src="/assets/weed/${character.id}.png" onerror="this.onerror=null;this.src='${CHARACTER_IMAGE_URLS[character.id]}'" alt="제초 중인 ${fullName(character)}" />` : ''
+      friend.innerHTML = character ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="제초 중인 ${fullName(character)}" />` : ''
     })
     this.renderBeetle()
     this.renderWildWeed()
