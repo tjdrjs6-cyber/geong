@@ -30,7 +30,7 @@ import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
 import { DECOS, DECO_IMAGE_URLS, DECO_NEW_BONUS, DECO_PROBABILITY, DECO_PULL_OPTIONS, decoById, decoPullCost, type DecoId, type DecoPullCount, type DecoPullResult } from '../game/decos'
 import { machineMarkup } from './toonMachine'
 
-const MACHINE_SPIN_SECONDS = 1.35
+const MACHINE_SPIN_SECONDS = 0.45
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
@@ -1139,7 +1139,7 @@ export class GachaUi {
       this.renderWallet()
       this.renderFreePullStatus()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.min(350, Math.max(0, duration) * 220))
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -1164,7 +1164,7 @@ export class GachaUi {
       const sequence = ++this.revealSequence
       this.renderWallet()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.min(350, Math.max(0, duration) * 220))
       return
     }
     if (action === 'weed-pick' && button.dataset.id) {
@@ -2188,7 +2188,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
     if(!dialog){
       dialog=document.createElement('div');dialog.className='pull-confirm-overlay'
-      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><div class="pull-confirm-emoji">🎁</div><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
+      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
       this.root.append(dialog)
       // Handle the confirmation locally so a covered/disabled lobby cannot swallow clicks.
       dialog.querySelector<HTMLButtonElement>('[data-action="confirm-pull-yes"]')?.addEventListener('click',event=>{event.stopPropagation();this.acceptPullConfirmation()})
@@ -2196,7 +2196,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     dialog.dataset.kind=kind;dialog.dataset.count=String(count)
     const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
-    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${count}회 · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
+    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
     dialog.hidden=false
   }
   private openPullRatesDialog():void {
@@ -3500,7 +3500,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   /** Pops every pulled friend one at a time; tapping the pop skips to the next one. */
   private async playPops(results: RevealItem[], sequence: number): Promise<void> {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
-    const hold = results.length === 1 ? 1500 : 1050
+    const hold = results.length === 1 ? 650 : 280
     for (let index = 0; index < results.length; index += 1) {
       if (sequence !== this.revealSequence) return
       this.popReveal(results[index], index, results.length)
