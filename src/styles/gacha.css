@@ -5492,3 +5492,7 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 #ui .pull-popup.is-deco .pull-deco-event-image{display:block!important;position:relative!important;z-index:2!important;align-self:center!important;width:100%!important;max-width:100%!important;height:auto!important;max-height:calc(100% - 105px)!important;min-height:0!important;object-fit:contain!important;object-position:center bottom!important;margin:auto 0 0!important;transform:scale(2.1)!important;transform-origin:center 58%!important;opacity:.72!important;pointer-events:none!important;filter:drop-shadow(0 4px 6px #8e5b4715)!important}
 #ui .pull-popup.is-deco .pull-action-row{position:relative!important;z-index:6!important}
 @media(max-width:390px){#ui .pull-popup.is-deco .pull-showcase-deco{height:clamp(375px,109vw,490px)!important;padding:12px!important}}
+
+/* V2.47: both event illustrations reduced to 60% of their V2.46 display scale */
+#ui .pull-popup:not(.is-deco) .pull-event-hero-image{transform:scale(1.8)!important}
+#ui .pull-popup.is-deco .pull-deco-event-image{transform:scale(1.26)!important}
