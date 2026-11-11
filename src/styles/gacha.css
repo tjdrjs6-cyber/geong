@@ -5575,3 +5575,63 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 .weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick .weed-speed-label {
   font-size:10px !important; padding:3px 4px !important;
 }
+
+
+/* V2.55: restore alchemy owned-grade presentation and compact responsive layout */
+.myroom-equipment-dialog:has(.alchemy-panel){
+  width:min(94vw,520px)!important;
+  max-width:520px!important;
+  max-height:min(90dvh,760px)!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+.myroom-equipment-dialog .alchemy-panel{
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  max-height:min(90dvh,760px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  padding:20px 14px 22px!important;
+  text-align:center;
+}
+.alchemy-panel .alchemy-picker{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;margin:10px 0 14px!important}
+.alchemy-panel .alchemy-pick{min-height:78px!important;padding:6px 2px!important;box-sizing:border-box!important}
+.alchemy-panel .alchemy-pick img{width:36px!important;height:36px!important;object-fit:contain!important}
+.alchemy-panel .alchemy-pick span{font-size:11px!important;line-height:1.25!important;overflow-wrap:anywhere!important}
+.alchemy-panel .alchemy-owned-title{margin:12px 0 8px!important;font-size:14px!important;font-weight:800!important;line-height:1.4!important;color:#5d464b!important}
+.alchemy-panel .alchemy-owned-grades{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:0 0 12px!important;
+  padding:0!important;
+  width:100%!important;
+}
+.alchemy-panel .alchemy-owned-grade{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:center!important;
+  min-width:0!important;
+  min-height:54px!important;
+  box-sizing:border-box!important;
+  padding:7px 3px!important;
+  border:1px solid color-mix(in srgb,var(--alchemy-accent) 35%,#eadfe1)!important;
+  border-radius:11px!important;
+  background:color-mix(in srgb,var(--alchemy-accent) 9%,#fff)!important;
+  gap:3px!important;
+  text-align:center!important;
+}
+.alchemy-panel .alchemy-owned-grade span{display:block!important;font-size:11px!important;font-weight:700!important;line-height:1.25!important;white-space:nowrap!important;color:#63545a!important}
+.alchemy-panel .alchemy-owned-grade strong{display:block!important;font-size:15px!important;line-height:1.2!important;color:#42343b!important}
+.alchemy-panel .alchemy-fragments{display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:36px!important;padding:7px 10px!important;margin:0 0 12px!important;background:#fff3d9!important;border:1px solid #efdcb6!important;border-radius:10px!important;font-size:12px!important}
+.alchemy-panel .alchemy-fragments img{width:22px!important;height:22px!important;object-fit:contain!important}
+.alchemy-panel .alchemy-fragments strong{font-size:14px!important;color:#855b28!important}
+.alchemy-panel .alchemy-recipes{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:8px 0 14px!important}
+.alchemy-panel .alchemy-recipe{min-width:0!important;min-height:78px!important;padding:10px 6px!important;box-sizing:border-box!important;align-items:center!important;justify-content:center!important;text-align:center!important;white-space:normal!important}
+.alchemy-panel .alchemy-recipe b{font-size:14px!important}
+.alchemy-panel .alchemy-recipe small{font-size:10px!important;line-height:1.4!important;overflow-wrap:anywhere!important}
+.alchemy-panel .alchemy-recipe strong{font-size:11px!important;line-height:1.35!important}
+.alchemy-panel .myroom-equipment-done{margin-top:4px!important}
+@media(max-width:360px){.myroom-equipment-dialog .alchemy-panel{padding-left:10px!important;padding-right:10px!important}.alchemy-panel .alchemy-picker{gap:4px!important}.alchemy-panel .alchemy-owned-grades{gap:5px!important}}
