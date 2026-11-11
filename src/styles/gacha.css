@@ -5449,3 +5449,23 @@ body>.pull-rates-dialog .pull-rate-normal,#ui>.pull-rates-dialog .pull-rate-norm
 #ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature-main .pull-feature-label{background:#fff0d4!important;border:1px solid #e8b772!important;color:#9c4b19!important}
 #ui .pull-popup:not(.is-deco) .pull-action-row{margin-top:10px!important}
 @media(max-width:390px){#ui .pull-popup:not(.is-deco) .pull-showcase-characters{height:400px!important}#ui .pull-popup:not(.is-deco) .pull-showcase-characters .pull-feature-main img{height:305px!important}#ui .pull-popup:not(.is-deco) .pull-event-copy{width:48%!important}}
+
+
+/* V2.43 — 도감과 같은 은은한 등급별 확률표 카드 */
+body>.pull-rates-dialog .pull-rate-row,
+#ui>.pull-rates-dialog .pull-rate-row {
+  border-width:1px!important;
+  box-shadow:none!important;
+  border-radius:14px!important;
+  padding:9px 11px!important;
+  margin:5px 0!important;
+}
+body>.pull-rates-dialog .pull-rate-transcendent,#ui>.pull-rates-dialog .pull-rate-transcendent{background:#fff3e4!important;border-color:#d9a05c!important}
+body>.pull-rates-dialog .pull-rate-legendary,#ui>.pull-rates-dialog .pull-rate-legendary{background:#fffbeb!important;border-color:#d4b25c!important}
+body>.pull-rates-dialog .pull-rate-super,#ui>.pull-rates-dialog .pull-rate-super{background:#f7f1fb!important;border-color:#c9a6df!important}
+body>.pull-rates-dialog .pull-rate-rare,#ui>.pull-rates-dialog .pull-rate-rare{background:#fff0f0!important;border-color:#e3b0b0!important}
+body>.pull-rates-dialog .pull-rate-mermaid,#ui>.pull-rates-dialog .pull-rate-mermaid{background:#eff7ff!important;border-color:#b4d2eb!important}
+body>.pull-rates-dialog .pull-rate-normal,#ui>.pull-rates-dialog .pull-rate-normal{background:#fffdf9!important;border-color:#e7d8c9!important}
+body>.pull-rates-dialog .pull-rate-row span,#ui>.pull-rates-dialog .pull-rate-row span{color:#54443e!important;font-weight:700!important}
+body>.pull-rates-dialog .pull-rate-row small,#ui>.pull-rates-dialog .pull-rate-row small{color:#947d72!important;font-weight:600!important}
+body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b{color:#604a43!important;font-weight:800!important}
