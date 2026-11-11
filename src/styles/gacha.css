@@ -23,3 +23,35 @@
 .pull-mode-button{position:relative}
 .free-pull-dot:not([hidden]){position:absolute;right:3px;top:1px;width:10px;height:10px;border-radius:50%;background:#f32938;border:2px solid white;box-shadow:0 0 0 1px #dc3040}
 .pull-showcase [hidden]{display:none!important}
+
+
+/* V2.25 emergency repair: auth/boot screen styles that were absent from the UI stylesheet. */
+#ui { position:fixed; inset:0; width:100%; height:100dvh; overflow:hidden; isolation:isolate; font-family:'Gowun Dodum',sans-serif; color:#563c39; }
+#ui *, #ui *::before, #ui *::after { box-sizing:border-box; }
+#ui .gacha-boot, #ui .gacha-modal { position:absolute; inset:0; }
+#ui .gacha-boot { display:none; z-index:80; background:linear-gradient(160deg,#fff5e9,#ffe0d6); flex-direction:column; justify-content:center; align-items:center; gap:14px; text-align:center; }
+#ui .gacha-boot.is-active { display:flex; }
+#ui .gacha-boot h1 { font-size:34px; color:#9d584d; margin:0; }
+#ui .gacha-boot p { margin:0; font-weight:700; }
+#ui .boot-capsule { width:90px; height:90px; display:grid; place-items:center; background:white; border-radius:50%; box-shadow:0 5px 18px #ba847344; }
+#ui .boot-capsule img { width:70px; height:70px; object-fit:contain; }
+#ui .boot-track { width:min(270px,75vw); height:13px; background:white; border-radius:20px; overflow:hidden; border:2px solid #eab4a1; }
+#ui .boot-fill { display:block; height:100%; width:20%; background:#fa9a78; transition:width .2s; }
+#ui .boot-retry.is-hidden, #ui .auth-confirm-wrap.is-hidden { display:none!important; }
+#ui .gacha-modal { display:none; z-index:90; background:linear-gradient(155deg,#fff8ef,#ffe7df); padding:22px 16px; overflow-y:auto; align-items:center; justify-content:center; }
+#ui .gacha-modal.is-active { display:flex; }
+#ui .gacha-modal .modal-card { width:min(100%,400px); margin:auto; background:#fffefa; border:2px solid #f4c7b9; border-radius:24px; padding:25px 22px; box-shadow:0 12px 40px #ac79613d; }
+#ui .modal-kicker { font-size:12px; letter-spacing:.15em; color:#b98474; font-weight:900; }
+#ui .auth-card h2 { font-size:27px; margin:6px 0 8px; color:#995c52; }
+#ui .auth-sub { font-size:13px; line-height:1.7; margin:0 0 20px; }
+#ui .auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+#ui .auth-tab { background:#fff1e9; border:1px solid #edc6b9; border-radius:12px; padding:11px; font-weight:800; color:#9c7469; }
+#ui .auth-tab.is-active { background:#f49b82; color:white; border-color:#e98b71; }
+#ui .auth-form, #ui .nickname-form { display:flex; flex-direction:column; gap:9px; }
+#ui .auth-form label, #ui .nickname-form label { font-size:13px; font-weight:800; }
+#ui .auth-form input, #ui .nickname-form input { width:100%; min-width:0; height:45px; padding:0 12px; border:1px solid #eac7ba; background:white; color:#543e3a; border-radius:10px; font-size:14px; }
+#ui .auth-confirm-wrap:not(.is-hidden) { display:flex; flex-direction:column; gap:9px; }
+#ui .auth-error { min-height:0; color:#cf4e50; margin:0; font-size:12px; }
+#ui .modal-primary { width:100%; min-height:46px; border:0; border-radius:12px; background:linear-gradient(135deg,#ffb48b,#f48d83); color:white; font-size:15px; font-weight:900; cursor:pointer; }
+#ui .auth-note { font-size:11px; color:#957c72; line-height:1.6; margin:16px 0 0; }
+@media(max-height:550px){#ui .gacha-modal { justify-content:flex-start; }}
