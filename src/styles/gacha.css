@@ -5140,3 +5140,13 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 .alchemy-panel .alchemy-recipe.is-shortage strong{color:#888}
 .alchemy-panel .alchemy-recipe.is-ready{background:#fff8fa;border-color:#e9cad7;opacity:1}
 .alchemy-panel .alchemy-recipe.is-ready strong{color:#568c6b}
+
+
+/* 2026-11-11: deployed artwork sizes only. Keep catalog and collection portraits unchanged.
+   CSS scale is independent of existing transform/flip/attack animations. */
+#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]),
+#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img[src*="/weed/anoko.png"] { scale:1.7!important; transform-origin:center bottom!important; }
+#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/siren.png"],[src$="/dekatsuyo.png"],[src$="/siren.webp"],[src$="/dekatsuyo.webp"]),
+#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src*="/weed/siren.png"],[src*="/weed/dekatsuyo.png"]) { scale:1.2!important; transform-origin:center bottom!important; }
+#ui :is(.battle-field,.weed-field,.expedition-field,.house-lot,.house-scene,.house-stage,.house-room) :is(.bf-friend,.bf-friend-body,.weed-friend,.exp-friend,.house-friend,.house-character) { overflow:visible!important; }
+#ui :is(.battle-field,.weed-field,.expedition-field,.house-lot,.house-scene,.house-stage,.house-room) img:is([src$="/anoko.png"],[src$="/siren.png"],[src$="/dekatsuyo.png"]) { object-fit:contain!important; }
