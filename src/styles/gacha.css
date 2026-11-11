@@ -5191,3 +5191,31 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui>.pull-popup .pull-popup-close{position:absolute!important;top:max(14px,env(safe-area-inset-top,0px))!important;right:16px!important;width:48px!important;height:48px!important;box-shadow:0 3px 10px #3b1e2033!important;}
 #ui .free-pull-dot[hidden]{display:none!important;}
 @media(max-height:680px){#ui>.pull-popup .pull-showcase{min-height:300px!important;padding-top:16px!important;padding-bottom:10px!important;}#ui>.pull-popup .pull-showcase-characters{min-height:180px!important;}#ui>.pull-popup .pull-showcase-characters img.showcase-main{height:180px!important;}#ui>.pull-popup .pull-button{min-height:58px!important;}}
+
+/* V2.32 — polished tall draw dialog and clear account-based free status */
+#ui>.pull-popup{padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))!important;justify-content:center!important;overflow-y:auto!important}
+#ui>.pull-popup .pull-showcase{min-height:min(62dvh,630px)!important;max-height:none!important;width:min(100%,480px)!important;padding:26px 15px 18px!important;background:linear-gradient(160deg,#fff9f0,#fff0df 55%,#ffe7dc)!important;border:2px solid #e9bb90!important;box-shadow:0 14px 34px #2416272b!important}
+#ui>.pull-popup .pull-popup-heading{font-size:14px;color:#b47e63;text-align:center;margin-bottom:12px;letter-spacing:.02em;font-weight:700}
+#ui>.pull-popup .pull-showcase-caption{font-size:clamp(19px,5vw,25px)!important;color:#a35a40!important;margin-bottom:20px!important}
+#ui>.pull-popup .pull-showcase-characters{min-height:clamp(245px,35dvh,390px)!important;align-items:center!important;gap:5px!important}
+#ui>.pull-popup .pull-showcase-characters img{width:17%!important;height:clamp(130px,21dvh,215px)!important;object-fit:contain!important}
+#ui>.pull-popup .pull-showcase-characters img.showcase-main{width:30%!important;height:clamp(220px,34dvh,350px)!important}
+#ui>.pull-popup .pull-showcase-decos{min-height:clamp(245px,35dvh,390px)!important}
+#ui>.pull-popup .pull-button{min-height:68px!important;width:min(100%,480px)!important}
+#ui>.pull-popup .pull-rates{width:min(100%,480px);background:#fff7ec;border:2px solid #e9bb90;border-top:0;border-radius:0 0 24px 24px;padding:10px 16px 14px;box-sizing:border-box;text-align:center}
+#ui>.pull-popup .pull-rates-toggle{background:none;border:0;color:#a36b4f;font-weight:800;font-size:14px;padding:8px;cursor:pointer}
+#ui>.pull-popup .pull-rates-content{max-height:220px;overflow:auto;text-align:left;font-size:12px;color:#765a4b}
+#ui>.pull-popup .pull-rates-content[hidden]{display:none!important}
+#ui>.pull-popup .pull-rates-content>div{display:flex;justify-content:space-between;padding:5px 3px;border-bottom:1px solid #ecd9c6;gap:10px}
+#ui>.pull-popup .pull-rates-content>div b{white-space:nowrap}
+#ui .free-pull-dot[hidden]{display:none!important}
+#ui>.pull-confirm-overlay[hidden]{display:none!important}
+#ui>.pull-confirm-overlay{position:fixed;inset:0;z-index:10050;background:#20172ab8;display:grid;place-items:center;padding:22px}
+#ui>.pull-confirm-overlay .pull-confirm-card{width:min(100%,360px);background:#fff8ed;border:3px solid #e8b98c;border-radius:25px;padding:25px 20px;text-align:center;box-shadow:0 15px 55px #0004}
+#ui>.pull-confirm-overlay .pull-confirm-emoji{font-size:38px}
+#ui>.pull-confirm-overlay h3{font-size:20px;color:#87533f;margin:12px 0}
+#ui>.pull-confirm-overlay p{color:#ab8068;margin-bottom:20px}
+#ui>.pull-confirm-overlay .pull-confirm-buttons{display:flex;gap:10px}
+#ui>.pull-confirm-overlay .pull-confirm-buttons button{flex:1;border:2px solid #e7c7a5;border-radius:14px;background:#fff;min-height:48px;color:#885640;font-weight:800}
+#ui>.pull-confirm-overlay .pull-confirm-buttons button:last-child{background:#ffda9d;border-color:#e6ae6a}
+@media(max-height:730px){#ui>.pull-popup .pull-showcase{min-height:45dvh!important;padding-top:15px!important}#ui>.pull-popup .pull-showcase-characters{min-height:180px!important}#ui>.pull-popup .pull-showcase-characters img.showcase-main{height:200px!important}#ui>.pull-popup .pull-button{min-height:58px!important}}
