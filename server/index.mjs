@@ -2025,7 +2025,7 @@ const routes = {
     const outcome = await withSave(account.id, state => {
       const day = checkInDay()
       const used = state.freePullDay === day ? state.freePullUsed || 0 : 0
-      if (free && (!Number.isInteger(count) || ![1,10].includes(count) || used + count > 10)) return {ok:false,error:'free_pull_limit'}
+      if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
       const cost = count === 10 ? 90 : 10
       const source = free ? {...state, gems:state.gems + cost} : account.is_admin ? {...state,gems:1_000_000_000} : state
       let result = pull(source, count, n => randomInt(n))
