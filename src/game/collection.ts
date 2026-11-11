@@ -1,6 +1,7 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
+  { id: 'pepero_chiikawa', name: '치이카와', variant: '빼빼로', probability: 0, tier: 'normal', weedBonus: 0, power: 2, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'chiikawa', name: '치이카와', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'hachiware', name: '하치와레', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
   { id: 'usagi', name: '우사기', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
