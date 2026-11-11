@@ -2675,7 +2675,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 /* v0.30: show claw-machine currency errors in front of the claw modal, not behind it. */
 .claw-screen.is-active .claw-card { position:relative; isolation:isolate; }
 .claw-screen.is-active .claw-toast {
-  position:sticky!important; top:8px!important; bottom:auto!important; left:auto!important;
+  position:sticky!important; top:15px!important; bottom:auto!important; left:auto!important;
   display:block; width:max-content; max-width:calc(100% - 16px); margin:0 auto -4px;
   z-index:999!important; box-sizing:border-box; white-space:normal!important;
   overflow:visible!important; text-overflow:clip!important; text-align:center;
@@ -5153,4 +5153,4 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 
 /* 2026-11-11: deployed Shimajiro +25%, Anoko slightly lower; portraits untouched. */
 #ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/shimajiro.png"],[src$="/shimajiro.webp"]) {scale:1.25!important;transform-origin:center bottom!important;object-fit:contain!important;}
-#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]) {position:relative;top:8px!important;}
+#ui :is(.battle-field,.weed-field,.expedition-field,.expedition-screen,.house-lot,.house-scene,.house-stage,.house-room,.gacha-lobby,.lobby-scene) img:is([src$="/anoko.png"],[src$="/anoko.webp"]) {position:relative;top:15px!important;}
