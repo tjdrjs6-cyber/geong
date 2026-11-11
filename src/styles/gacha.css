@@ -5719,3 +5719,31 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick b { display:block!important; max-width:100%!important; font-size:11px!important; line-height:1.2!important; overflow:hidden!important; text-overflow:ellipsis!important; white-space:nowrap!important; }
 #ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick em, #ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick small { font-size:9px!important; line-height:1.15!important; }
 @media(max-width:360px){#ui .gacha-modal .global-chat-compose > button.modal-primary,#ui .gacha-modal .suggest-row > button.modal-primary{flex-basis:72px!important;width:72px!important;min-width:72px!important;max-width:72px!important}}
+
+/* V2.68: four profile actions equal sized and aligned */
+.gacha-modal .profile-modal-card .profile-actions {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+  align-items:stretch !important;
+}
+.gacha-modal .profile-modal-card .profile-actions > button:not([hidden]) {
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:42px !important;
+  min-height:42px !important;
+  max-height:42px !important;
+  margin:0 !important;
+  padding:0 8px !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  text-align:center !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+}
+.gacha-modal .profile-modal-card .profile-actions > button[hidden] {display:none !important;}
+.gacha-modal .profile-modal-card .profile-actions .profile-mail {position:relative !important;}
+.gacha-modal .profile-modal-card .profile-actions .profile-mail .mail-badge {position:absolute !important;right:4px !important;top:3px !important;}

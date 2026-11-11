@@ -557,7 +557,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">MY PROFILE</div><h2 id="featured-title">내 프로필</h2>
           <div class="profile-card"><span class="profile-big"><img alt="" /></span><b class="profile-big-name"></b><small class="profile-stats"></small></div>
-          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">📮 우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">✉ 우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">💌 건의함</button><button class="modal-secondary" data-action="privacy">🔒 공개 설정</button></div>
+          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">건의함</button><button class="modal-secondary" data-action="privacy">공개 설정</button></div>
           <h3 class="profile-sub">대표 사진 바꾸기</h3>
           <p class="collection-summary">내가 뽑은 친구 중에서 골라요. 대표 사진은 가챠 무대와 유저 목록에 보여요.</p>
           <div class="collection-grid featured-grid" role="list"></div>
