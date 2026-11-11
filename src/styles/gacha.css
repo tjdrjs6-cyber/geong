@@ -5527,3 +5527,6 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 }
 #ui>.pull-popup .pull-rates-toggle:focus-visible{outline:3px solid #429c87!important;outline-offset:3px!important}
 @media(max-width:380px){#ui>.pull-popup .pull-rates-toggle{left:18px!important;min-width:80px!important;padding:8px 10px!important;font-size:13px!important}}
+
+/* V2.53: keep each character's weed-speed bonus legible in the picker. */
+.weed-screen .weed-picker .weed-pick .weed-speed-label { display:block; max-width:100%; box-sizing:border-box; font-size:10px; font-weight:700; line-height:1.45; padding:2px 5px; white-space:normal; overflow-wrap:anywhere; text-align:center; background:#fff1cf; color:#80500d; }
