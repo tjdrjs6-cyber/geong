@@ -5219,3 +5219,23 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui>.pull-confirm-overlay .pull-confirm-buttons button{flex:1;border:2px solid #e7c7a5;border-radius:14px;background:#fff;min-height:48px;color:#885640;font-weight:800}
 #ui>.pull-confirm-overlay .pull-confirm-buttons button:last-child{background:#ffda9d;border-color:#e6ae6a}
 @media(max-height:730px){#ui>.pull-popup .pull-showcase{min-height:45dvh!important;padding-top:15px!important}#ui>.pull-popup .pull-showcase-characters{min-height:180px!important}#ui>.pull-popup .pull-showcase-characters img.showcase-main{height:200px!important}#ui>.pull-popup .pull-button{min-height:58px!important}}
+
+/* V2.33: large featured character and accessible dialogs */
+#ui>.pull-popup .pull-showcase{position:relative!important;padding-top:66px!important;min-height:min(69dvh,680px)!important;overflow:visible!important}
+#ui>.pull-popup .pull-showcase-caption{margin-bottom:12px!important}
+#ui>.pull-popup .pull-showcase-characters{min-height:clamp(280px,40dvh,420px)!important;gap:1px!important;align-items:end!important;overflow:visible!important}
+#ui>.pull-popup .pull-showcase-characters img{width:15%!important;height:clamp(115px,18dvh,190px)!important;max-width:none!important;flex-shrink:1!important;object-fit:contain!important}
+#ui>.pull-popup .pull-showcase-characters img.showcase-main{width:40%!important;height:clamp(270px,41dvh,420px)!important;max-width:none!important;flex-shrink:0!important;filter:drop-shadow(0 8px 12px #e8a36399)!important}
+#ui>.pull-popup .pull-rates-toggle{position:absolute!important;top:22px!important;right:max(18px,calc((100% - 460px)/2 + 12px))!important;z-index:10!important;background:#fffaf3!important;border:2px solid #dcae83!important;border-radius:10px!important;padding:9px 13px!important;color:#87563e!important;font-weight:800!important;font-size:13px!important;box-shadow:0 3px 8px #5c39231a!important}
+#ui>.pull-popup .pull-popup-close{z-index:12!important}
+#ui>.pull-confirm-overlay{z-index:2147483000!important;pointer-events:auto!important;touch-action:manipulation!important}
+#ui>.pull-confirm-overlay .pull-confirm-card{position:relative!important;z-index:1!important;pointer-events:auto!important}
+#ui>.pull-confirm-overlay button{pointer-events:auto!important;cursor:pointer!important;touch-action:manipulation!important}
+#ui>.pull-rates-dialog{position:fixed!important;inset:0!important;z-index:2147483001!important;display:grid!important;place-items:center!important;padding:22px!important;background:#231a2cbb!important;backdrop-filter:blur(4px)!important}
+#ui>.pull-rates-dialog .pull-rates-card{width:min(100%,450px)!important;max-height:min(80dvh,720px)!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:#fff8ed!important;border:3px solid #e4b887!important;border-radius:23px!important;box-shadow:0 20px 60px #0005!important}
+#ui>.pull-rates-dialog header{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid #ecd3b5;color:#86543d;font-size:18px}
+#ui>.pull-rates-dialog header button{width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid #dfb48a;color:#965d46;font-size:25px;cursor:pointer}
+#ui>.pull-rates-dialog .pull-rates-list{overflow:auto;padding:8px 17px 20px}
+#ui>.pull-rates-dialog .pull-rates-list>div{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid #efdfce;color:#785442;font-size:13px}
+#ui>.pull-rates-dialog .pull-rates-list b{white-space:nowrap;color:#a05c34}
+@media(max-width:390px){#ui>.pull-popup .pull-showcase-characters img.showcase-main{width:39%!important}#ui>.pull-popup .pull-showcase-characters img{width:15%!important}}
