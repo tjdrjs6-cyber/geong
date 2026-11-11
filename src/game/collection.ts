@@ -44,11 +44,11 @@ export const CHARACTERS = [
   { id: 'pajama_chiikawa', name: '치이카와', variant: '파자마', probability: 4.69, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'pajama_hachiware', name: '하치와레', variant: '파자마', probability: 4.7, tier: 'normal', weedBonus: 0, power: 6, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'pajama_usagi', name: '우사기', variant: '파자마', probability: 4.7, tier: 'normal', weedBonus: 0, power: 7, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'staff_chiikawa', name: '치이카와', variant: '토벌봉', probability: 0.75, tier: 'rare', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'staff_hachiware', name: '하치와레', variant: '토벌봉', probability: 0.75, tier: 'rare', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'staff_usagi', name: '우사기', variant: '토벌봉', probability: 0.75, tier: 'rare', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'angel_momonga', name: '모몽가', variant: '천사', probability: 0.2, tier: 'super', weedBonus: 0, power: 20, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'devil_momonga', name: '모몽가', variant: '악마', probability: 0.2, tier: 'super', weedBonus: 0, power: 20, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'staff_chiikawa', name: '치이카와', variant: '토벌봉', probability: 0.75, tier: 'normal', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'staff_hachiware', name: '하치와레', variant: '토벌봉', probability: 0.75, tier: 'normal', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'staff_usagi', name: '우사기', variant: '토벌봉', probability: 0.75, tier: 'normal', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'angel_momonga', name: '모몽가', variant: '천사', probability: 0.2, tier: 'normal', weedBonus: 0, power: 20, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'devil_momonga', name: '모몽가', variant: '악마', probability: 0.2, tier: 'normal', weedBonus: 0, power: 20, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'halloween_chiikawa', name: '치이카와', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
   { id: 'halloween_hachiware', name: '하치와레', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
   { id: 'siren_curry', name: '세이렌', variant: '카레', probability: 0.01, tier: 'transcendent', weedBonus: 70, power: 70, color: '#fff0d8', accent: '#ff8500' },
@@ -62,7 +62,7 @@ export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
 export const GACHA_SAVE_KEY = 'chiikawa-gacha.save.v1'
 export const PULL_COST = 10
-export const TEN_PULL_COST = 90
+export const TEN_PULL_COST = 100
 /** Pull sizes and prices: 1회 10, 3회 30, 5회 50, 10회 90 (10회 discount). */
 export const PULL_OPTIONS = [
   { count: 1, cost: PULL_COST },
@@ -182,7 +182,7 @@ export class GachaStore {
     let gems = this.data.gems - cost
     const owned = new Set(this.data.owned)
     const results: PullResult[] = []
-    for (let i = 0; i < count; i += 1) {
+    for (let i = 0; i < (count === 10 ? 11 : count); i += 1) {
       const id = drawCharacter(random)
       const duplicate = owned.has(id)
       const bonus = duplicate ? DUPLICATE_BONUS : newEntryBonus(id)

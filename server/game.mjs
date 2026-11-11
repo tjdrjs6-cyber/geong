@@ -9,7 +9,7 @@ export const RARE_IDS = ['siren_curry', 'staff_chiikawa', 'staff_hachiware', 'st
 export const TOTAL_WEIGHT = 100000
 export const STARTING_COINS = 100
 export const PULL_COST = 10
-export const TEN_PULL_COST = 90
+export const TEN_PULL_COST = 100
 export const PULL_COSTS = { 1: PULL_COST, 3: 30, 5: 50, 10: TEN_PULL_COST }
 export const DAILY_GIFT = 10
 export const NEW_ENTRY_BONUS = 10
@@ -46,14 +46,14 @@ export function normalizeOwned(value) {
 }
 
 /** randomInt(n) must return an integer in [0, n); it is called with TOTAL_WEIGHT. */
-export function pull(state, count, randomInt) {
+export function pull(state, count, randomInt, bonusDraw = true) {
   if (!Object.hasOwn(PULL_COSTS, count)) return { ok: false, error: 'invalid_count' }
   const cost = PULL_COSTS[count]
   if (state.gems < cost) return { ok: false, error: 'not_enough_coins' }
   let gems = state.gems - cost
   const owned = new Set(normalizeOwned(state.owned))
   const results = []
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < (count === 10 && bonusDraw ? 11 : count); i += 1) {
     const id = characterForRoll(randomInt(TOTAL_WEIGHT))
     const duplicate = owned.has(id)
     const bonus = duplicate ? DUPLICATE_BONUS : newEntryBonus(id)
@@ -158,7 +158,7 @@ export function pullDecos(gems, decos, count, randomInt) {
   const next = { ...normalizeDecos(decos) }
   let balance = gems - cost
   const results = []
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < (count === 10 ? 11 : count); i += 1) {
     const id = DECO_IDS[randomInt(DECO_IDS.length)]
     const duplicate = (next[id] ?? 0) > 0
     const bonus = duplicate ? 0 : DECO_NEW_BONUS
