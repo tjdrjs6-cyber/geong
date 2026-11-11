@@ -1261,10 +1261,14 @@ export class GachaUi {
     if (action === 'battle-pick' && button.dataset.id) {
       const id = button.dataset.id as CharacterId
       if (this.weedBusy(id)) { this.toast(ERROR_TEXT.busy_weed); return }
+      const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id
+      const members = [this.store.battle?.id, this.store.battle?.secondId, this.store.battle?.thirdId].filter(Boolean)
+      if (!wasDeployed && members.length >= 3) {
+        this.toast('토벌장에는 최대 3명까지만 배치할 수 있어요. 초과 배치는 불가능합니다.')
+        return
+      }
       this.busy = true
       try {
-        const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id
-        const members = [this.store.battle?.id,this.store.battle?.secondId,this.store.battle?.thirdId].filter(Boolean)
         if (wasDeployed && members.length === 1) {
           if (!await this.confirmBattleUndeploy()) return
         }
