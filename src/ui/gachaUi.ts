@@ -2998,7 +2998,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const friend = walker.querySelector<HTMLElement>('.weed-friend')
       if (!friend) return
       friend.classList.toggle('is-empty', !character)
-      friend.innerHTML = character ? `<img src="/assets/weed/${character.id}.png" onerror="this.onerror=null;this.src='${CHARACTER_IMAGE_URLS[character.id]}'" alt="제초 중인 ${fullName(character)}" />` : ''
+      friend.innerHTML = character ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="제초 중인 ${fullName(character)}" />` : ''
     })
     this.renderBeetle()
     this.renderWildWeed()
