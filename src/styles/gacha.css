@@ -5649,3 +5649,33 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 .pepero-market-card button{background:#ffe28a;border:1px solid #a97c3d;border-radius:12px;padding:8px;font-weight:800;color:#684520}
 .pepero-market-card button:disabled{opacity:.6}
 #ui .pepero-sale-dot:not([hidden]){display:block!important;position:absolute!important;right:3px!important;top:2px!important;width:11px!important;height:11px!important;background:#f13e53!important;border:2px solid white!important;border-radius:50%!important;z-index:12!important;pointer-events:none}
+
+/* V2.63: top-right catalog, achievements, attendance, roulette and lottery: 60% width, flush right. */
+#ui .gacha-screen > .collection-peek.collection-peek,
+#ui .gacha-screen > .top-rewards {
+  width:clamp(62px,17.4vw,82px)!important;
+  max-width:82px!important;
+  min-width:0!important;
+  right:0!important;
+  left:auto!important;
+  box-sizing:border-box!important;
+}
+#ui .gacha-screen > .collection-peek .reward-chip,
+#ui .gacha-screen > .top-rewards .reward-chip {
+  width:100%!important;
+  min-width:0!important;
+  padding-left:3px!important;
+  padding-right:3px!important;
+  justify-content:center!important;
+  gap:2px!important;
+}
+#ui .gacha-screen > .collection-peek .reward-chip b,
+#ui .gacha-screen > .top-rewards .reward-chip b {
+  font-size:10px!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+}
+#ui .gacha-screen > .collection-peek .reward-icon {
+  width:15px!important;min-width:15px!important;flex-basis:15px!important;
+}
+#ui .gacha-screen > .collection-peek .reward-icon img {width:15px!important;height:15px!important;}
