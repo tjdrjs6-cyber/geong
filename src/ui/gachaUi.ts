@@ -30,7 +30,7 @@ import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
 import { DECOS, DECO_IMAGE_URLS, DECO_NEW_BONUS, DECO_PROBABILITY, DECO_PULL_OPTIONS, decoById, decoPullCost, type DecoId, type DecoPullCount, type DecoPullResult } from '../game/decos'
 import { machineMarkup } from './toonMachine'
 
-const MACHINE_SPIN_SECONDS = 0.45
+const MACHINE_SPIN_SECONDS = 1.6
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
@@ -1139,7 +1139,7 @@ export class GachaUi {
       this.renderWallet()
       this.renderFreePullStatus()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.min(350, Math.max(0, duration) * 220))
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(900, duration * 800))
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -1164,7 +1164,7 @@ export class GachaUi {
       const sequence = ++this.revealSequence
       this.renderWallet()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.min(350, Math.max(0, duration) * 220))
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(900, duration * 800))
       return
     }
     if (action === 'weed-pick' && button.dataset.id) {
@@ -2204,7 +2204,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const deco=this.root.querySelector('.pull-popup')?.classList.contains('is-deco')??false
     const dialog=document.createElement('div')
     dialog.className='pull-rates-dialog'
-    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):CHARACTERS.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(2)}%</b></div>`).join('')}</div><footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
+    const tierOrder=['transcendent','legendary','super','rare','mermaid','normal'] as const
+    const tierNames:Record<string,string>={transcendent:'초월',legendary:'레전더리',super:'유니크',rare:'에픽',mermaid:'레어',normal:'노멀'}
+    const gradeSummary=deco?'':`<div class="pull-rates-summary"><strong>전체 등급 뽑기 확률</strong><div class="pull-rates-grade-grid">${tierOrder.map(tier=>{const chance=CHARACTERS.filter(c=>c.tier===tier&&c.probability>0).reduce((sum,c)=>sum+c.probability,0);return `<span class="pull-grade-total pull-grade-${tier}"><b>${tierNames[tier]}</b> ${chance.toFixed(2)}%</span>`}).join('')}</div></div>`
+    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):CHARACTERS.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="eager" style="display:block!important;visibility:visible!important;opacity:1!important;width:52px!important;height:52px!important;object-fit:contain!important;flex:0 0 52px!important" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(2)}%</b></div>`).join('')}</div>${gradeSummary}<footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
     document.body.append(dialog)
     dialog.querySelectorAll<HTMLButtonElement>('[data-action="close-pull-rates"]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();dialog.remove()}))
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.remove()});dialog.querySelector<HTMLElement>('.pull-rates-list')?.addEventListener('touchmove',event=>event.stopPropagation(),{passive:true})
@@ -3500,7 +3503,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   /** Pops every pulled friend one at a time; tapping the pop skips to the next one. */
   private async playPops(results: RevealItem[], sequence: number): Promise<void> {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
-    const hold = results.length === 1 ? 650 : 280
+    const hold = results.length === 1 ? 1000 : 500
     for (let index = 0; index < results.length; index += 1) {
       if (sequence !== this.revealSequence) return
       this.popReveal(results[index], index, results.length)
