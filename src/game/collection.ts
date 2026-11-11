@@ -1,7 +1,6 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
-  { id: 'pepero_chiikawa', name: '치이카와', variant: '빼빼로', probability: 0, tier: 'normal', weedBonus: 0, power: 2, color: '#fff7ed', accent: '#ec9eae' },
   { id: 'chiikawa', name: '치이카와', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'hachiware', name: '하치와레', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },
   { id: 'usagi', name: '우사기', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 7, color: '#fff6d8', accent: '#e8c35a' },
@@ -45,9 +44,9 @@ export const CHARACTERS = [
   { id: 'pajama_chiikawa', name: '치이카와', variant: '파자마', probability: 4.69, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'pajama_hachiware', name: '하치와레', variant: '파자마', probability: 4.7, tier: 'normal', weedBonus: 0, power: 6, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'pajama_usagi', name: '우사기', variant: '파자마', probability: 4.7, tier: 'normal', weedBonus: 0, power: 7, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'staff_chiikawa', name: '치이카와', variant: '토벌봉', probability: 0.75, tier: 'normal', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'staff_hachiware', name: '하치와레', variant: '토벌봉', probability: 0.75, tier: 'normal', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
-  { id: 'staff_usagi', name: '우사기', variant: '토벌봉', probability: 0.75, tier: 'normal', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'staff_chiikawa', name: '치이카와', variant: '토벌봉', probability: 0.75, tier: 'rare', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'staff_hachiware', name: '하치와레', variant: '토벌봉', probability: 0.75, tier: 'rare', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
+  { id: 'staff_usagi', name: '우사기', variant: '토벌봉', probability: 0.75, tier: 'rare', weedBonus: 0, power: 27, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'angel_momonga', name: '모몽가', variant: '천사', probability: 0.2, tier: 'super', weedBonus: 52, power: 20, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'devil_momonga', name: '모몽가', variant: '악마', probability: 0.2, tier: 'super', weedBonus: 35, power: 42, color: '#fff4ed', accent: '#e9a68c' },
   { id: 'halloween_chiikawa', name: '치이카와', variant: '할로윈', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#fff0ed', accent: '#d44a4a' },
