@@ -5527,3 +5527,223 @@ body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b
 }
 #ui>.pull-popup .pull-rates-toggle:focus-visible{outline:3px solid #429c87!important;outline-offset:3px!important}
 @media(max-width:380px){#ui>.pull-popup .pull-rates-toggle{left:18px!important;min-width:80px!important;padding:8px 10px!important;font-size:13px!important}}
+
+/* V2.53: keep each character's weed-speed bonus legible in the picker. */
+.weed-screen .weed-picker .weed-pick .weed-speed-label { display:block; max-width:100%; box-sizing:border-box; font-size:10px; font-weight:700; line-height:1.45; padding:2px 5px; white-space:normal; overflow-wrap:anywhere; text-align:center; background:#fff1cf; color:#80500d; }
+
+/* V2.54: weed-picker cards grow vertically to show full names and bonus.
+   Override the older fixed 82/86px mobile card rules without affecting house/battle cards. */
+.weed-screen .weed-panel:not(.house-panel) .weed-picker {
+  grid-auto-rows:minmax(132px,auto) !important;
+  align-content:start;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding-bottom:12px !important;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick {
+  height:auto !important;
+  min-height:132px !important;
+  box-sizing:border-box;
+  padding:8px 5px 10px !important;
+  gap:4px !important;
+  justify-content:flex-start;
+  overflow:visible !important;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick img {
+  width:48px !important; height:48px !important;
+  flex:0 0 48px; object-fit:contain;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick span {
+  display:block !important;
+  max-width:100% !important;
+  min-height:16px;
+  font-size:11px !important;
+  line-height:1.3 !important;
+  font-weight:700;
+  text-align:center;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick em {
+  max-width:100%; height:auto !important; line-height:1.3;
+  white-space:normal !important; overflow:visible !important;
+  text-align:center; overflow-wrap:anywhere;
+}
+.weed-screen .weed-panel:not(.house-panel) .weed-picker .weed-pick .weed-speed-label {
+  font-size:10px !important; padding:3px 4px !important;
+}
+
+
+/* V2.55: restore alchemy owned-grade presentation and compact responsive layout */
+.myroom-equipment-dialog:has(.alchemy-panel){
+  width:min(94vw,520px)!important;
+  max-width:520px!important;
+  max-height:min(90dvh,760px)!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+.myroom-equipment-dialog .alchemy-panel{
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  max-height:min(90dvh,760px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  padding:20px 14px 22px!important;
+  text-align:center;
+}
+.alchemy-panel .alchemy-picker{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;margin:10px 0 14px!important}
+.alchemy-panel .alchemy-pick{min-height:78px!important;padding:6px 2px!important;box-sizing:border-box!important}
+.alchemy-panel .alchemy-pick img{width:36px!important;height:36px!important;object-fit:contain!important}
+.alchemy-panel .alchemy-pick span{font-size:11px!important;line-height:1.25!important;overflow-wrap:anywhere!important}
+.alchemy-panel .alchemy-owned-title{margin:12px 0 8px!important;font-size:14px!important;font-weight:800!important;line-height:1.4!important;color:#5d464b!important}
+.alchemy-panel .alchemy-owned-grades{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:0 0 12px!important;
+  padding:0!important;
+  width:100%!important;
+}
+.alchemy-panel .alchemy-owned-grade{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:center!important;
+  min-width:0!important;
+  min-height:54px!important;
+  box-sizing:border-box!important;
+  padding:7px 3px!important;
+  border:1px solid color-mix(in srgb,var(--alchemy-accent) 35%,#eadfe1)!important;
+  border-radius:11px!important;
+  background:color-mix(in srgb,var(--alchemy-accent) 9%,#fff)!important;
+  gap:3px!important;
+  text-align:center!important;
+}
+.alchemy-panel .alchemy-owned-grade span{display:block!important;font-size:11px!important;font-weight:700!important;line-height:1.25!important;white-space:nowrap!important;color:#63545a!important}
+.alchemy-panel .alchemy-owned-grade strong{display:block!important;font-size:15px!important;line-height:1.2!important;color:#42343b!important}
+.alchemy-panel .alchemy-fragments{display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:36px!important;padding:7px 10px!important;margin:0 0 12px!important;background:#fff3d9!important;border:1px solid #efdcb6!important;border-radius:10px!important;font-size:12px!important}
+.alchemy-panel .alchemy-fragments img{width:22px!important;height:22px!important;object-fit:contain!important}
+.alchemy-panel .alchemy-fragments strong{font-size:14px!important;color:#855b28!important}
+.alchemy-panel .alchemy-recipes{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:8px 0 14px!important}
+.alchemy-panel .alchemy-recipe{min-width:0!important;min-height:78px!important;padding:10px 6px!important;box-sizing:border-box!important;align-items:center!important;justify-content:center!important;text-align:center!important;white-space:normal!important}
+.alchemy-panel .alchemy-recipe b{font-size:14px!important}
+.alchemy-panel .alchemy-recipe small{font-size:10px!important;line-height:1.4!important;overflow-wrap:anywhere!important}
+.alchemy-panel .alchemy-recipe strong{font-size:11px!important;line-height:1.35!important}
+.alchemy-panel .myroom-equipment-done{margin-top:4px!important}
+@media(max-width:360px){.myroom-equipment-dialog .alchemy-panel{padding-left:10px!important;padding-right:10px!important}.alchemy-panel .alchemy-picker{gap:4px!important}.alchemy-panel .alchemy-owned-grades{gap:5px!important}}
+
+/* V2.58: deployed character orientation and scale; keep enlarged artwork visible */
+.bf-friend-body,.expedition-combatant{overflow:visible!important}
+.bf-friend-body img,.expedition-combatant .expedition-fighter{transform-origin:center bottom!important}
+
+/* V2.59 safe limited market addition */
+.pepero-market-card{display:flex;gap:12px;align-items:center;margin:10px 4px;padding:12px;border:2px solid #f3c0ca;border-radius:16px;background:#fff8f4;color:#5b3930}
+.pepero-market-card>img{width:92px;height:110px;object-fit:contain;flex-shrink:0}
+.pepero-market-card>div{min-width:0;display:flex;flex-direction:column;gap:6px}
+.pepero-market-card strong{font-size:15px}.pepero-market-card em{color:#e44f73;font-size:11px;font-style:normal}
+.pepero-market-card small{font-size:11px;line-height:1.4}
+.pepero-market-card button{background:#ffe28a;border:1px solid #a97c3d;border-radius:12px;padding:8px;font-weight:800;color:#684520}
+.pepero-market-card button:disabled{opacity:.6}
+#ui .pepero-sale-dot:not([hidden]){display:block!important;position:absolute!important;right:3px!important;top:2px!important;width:11px!important;height:11px!important;background:#f13e53!important;border:2px solid white!important;border-radius:50%!important;z-index:12!important;pointer-events:none}
+
+/* V2.63: top-right catalog, achievements, attendance, roulette and lottery: 60% width, flush right. */
+#ui .gacha-screen > .collection-peek.collection-peek,
+#ui .gacha-screen > .top-rewards {
+  width:clamp(62px,17.4vw,82px)!important;
+  max-width:82px!important;
+  min-width:0!important;
+  right:0!important;
+  left:auto!important;
+  box-sizing:border-box!important;
+}
+#ui .gacha-screen > .collection-peek .reward-chip,
+#ui .gacha-screen > .top-rewards .reward-chip {
+  width:100%!important;
+  min-width:0!important;
+  padding-left:3px!important;
+  padding-right:3px!important;
+  justify-content:center!important;
+  gap:2px!important;
+}
+#ui .gacha-screen > .collection-peek .reward-chip b,
+#ui .gacha-screen > .top-rewards .reward-chip b {
+  font-size:10px!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+}
+#ui .gacha-screen > .collection-peek .reward-icon {
+  width:15px!important;min-width:15px!important;flex-basis:15px!important;
+}
+#ui .gacha-screen > .collection-peek .reward-icon img {width:15px!important;height:15px!important;}
+
+/* V2.66: readable chat and suggestion composer on narrow screens. */
+#ui .global-chat-compose,#ui .suggest-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:stretch!important;gap:8px!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
+#ui .global-chat-compose .global-chat-input,#ui .suggest-row .suggest-input{display:block!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;min-height:46px!important;flex:none!important;padding:10px 12px!important;font-size:14px!important;color:#4c3941!important;background:#fff!important;border:1px solid #edc7cf!important;border-radius:13px!important}
+#ui .global-chat-compose .modal-primary,#ui .suggest-row .modal-primary{box-sizing:border-box!important;width:auto!important;min-width:74px!important;max-width:110px!important;flex:none!important;white-space:nowrap!important;padding:9px 14px!important;margin:0!important}
+#ui .global-chat-messages{overflow-x:hidden!important}
+#ui .global-chat-message{min-width:0!important}
+#ui .global-chat-text{overflow-wrap:anywhere!important;word-break:break-word!important}
+/* Rates summary: compact, even-width grade tiles and consistent percentages. */
+body>.pull-rates-dialog .pull-rates-summary{flex:0 0 auto!important;padding:12px 14px 10px!important;margin:0!important;background:#fffaf2!important;border-top:1px solid #ead6bd!important;box-sizing:border-box!important}
+body>.pull-rates-dialog .pull-rates-summary>strong{display:block!important;font-size:13px!important;color:#76513b!important;margin:0 0 9px!important;text-align:center!important}
+body>.pull-rates-dialog .pull-rates-grade-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;width:100%!important}
+body>.pull-rates-dialog .pull-grade-total{display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:3px!important;min-width:0!important;padding:8px 3px!important;border:1px solid #ead8c6!important;border-radius:10px!important;background:#fff!important;color:#75574b!important;font-size:12px!important;line-height:1.25!important;text-align:center!important;white-space:nowrap!important;box-sizing:border-box!important}
+body>.pull-rates-dialog .pull-grade-total b{font-size:11px!important;font-weight:800!important}
+body>.pull-rates-dialog .pull-grade-transcendent{background:#fff0e2!important}body>.pull-rates-dialog .pull-grade-legendary{background:#fff6d9!important}body>.pull-rates-dialog .pull-grade-super{background:#f2e9ff!important}body>.pull-rates-dialog .pull-grade-rare{background:#eaf2ff!important}body>.pull-rates-dialog .pull-grade-mermaid{background:#e8f8ff!important}body>.pull-rates-dialog .pull-grade-normal{background:#f7f7f7!important}
+@media(max-width:360px){#ui .global-chat-compose .modal-primary,#ui .suggest-row .modal-primary{min-width:64px!important;padding:9px!important}body>.pull-rates-dialog .pull-rates-grade-grid{gap:4px!important}}
+
+/* V2.67: actual dialogs are mounted in document.body, not under #ui. */
+body > .pull-rates-dialog .pull-rates-summary { flex:0 0 auto!important; box-sizing:border-box!important; padding:11px 14px!important; margin:0!important; border-top:1px solid #ead6bd!important; background:#fffaf2!important; }
+body > .pull-rates-dialog .pull-rates-summary > strong { display:block!important; margin:0 0 8px!important; font-size:12px!important; line-height:1.3!important; text-align:center!important; color:#76513b!important; }
+body > .pull-rates-dialog .pull-rates-grade-grid { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:6px!important; width:100%!important; }
+body > .pull-rates-dialog .pull-grade-total { display:flex!important; flex-direction:column!important; align-items:center!important; justify-content:center!important; gap:3px!important; min-width:0!important; box-sizing:border-box!important; padding:7px 2px!important; border:1px solid #ead8c6!important; border-radius:10px!important; background:#fff!important; font-size:12px!important; line-height:1.25!important; color:#75574b!important; white-space:nowrap!important; text-align:center!important; }
+body > .pull-rates-dialog .pull-grade-total b { font-size:11px!important; font-weight:800!important; }
+body > .pull-rates-dialog .pull-grade-transcendent { background:#fff0e2!important; }
+body > .pull-rates-dialog .pull-grade-legendary { background:#fff6d9!important; }
+body > .pull-rates-dialog .pull-grade-super { background:#f2e9ff!important; }
+body > .pull-rates-dialog .pull-grade-rare { background:#eaf2ff!important; }
+body > .pull-rates-dialog .pull-grade-mermaid { background:#e8f8ff!important; }
+body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
+/* Fixed, legible composer fields; buttons cannot steal the input width. */
+#ui .gacha-modal .global-chat-compose, #ui .gacha-modal .suggest-row { display:flex!important; flex-direction:row!important; flex-wrap:nowrap!important; gap:8px!important; width:100%!important; min-width:0!important; }
+#ui .gacha-modal .global-chat-compose > input.global-chat-input, #ui .gacha-modal .suggest-row > input.suggest-input { display:block!important; flex:1 1 0%!important; width:1px!important; min-width:0!important; max-width:none!important; height:46px!important; box-sizing:border-box!important; padding:10px 12px!important; font-size:14px!important; color:#4c3941!important; background:#fff!important; border:1px solid #edc7cf!important; border-radius:12px!important; opacity:1!important; visibility:visible!important; pointer-events:auto!important; user-select:text!important; -webkit-user-select:text!important; }
+#ui .gacha-modal .global-chat-compose > button.modal-primary, #ui .gacha-modal .suggest-row > button.modal-primary { display:block!important; flex:0 0 84px!important; width:84px!important; min-width:84px!important; max-width:84px!important; box-sizing:border-box!important; padding:8px!important; margin:0!important; white-space:nowrap!important; }
+/* Profile cards: equal dimensions and evenly spaced columns on all devices. */
+#ui .gacha-modal .profile-modal-card .featured-grid { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important; grid-auto-rows:112px!important; gap:7px!important; align-content:start!important; overflow-y:auto!important; overflow-x:hidden!important; }
+#ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick { box-sizing:border-box!important; width:100%!important; min-width:0!important; height:112px!important; min-height:112px!important; max-height:112px!important; padding:6px 3px!important; gap:2px!important; overflow:hidden!important; justify-content:center!important; border-radius:12px!important; }
+#ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick img { display:block!important; flex:0 0 57px!important; width:57px!important; height:57px!important; max-width:100%!important; object-fit:contain!important; }
+#ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick b { display:block!important; max-width:100%!important; font-size:11px!important; line-height:1.2!important; overflow:hidden!important; text-overflow:ellipsis!important; white-space:nowrap!important; }
+#ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick em, #ui .gacha-modal .profile-modal-card .featured-grid > .featured-pick small { font-size:9px!important; line-height:1.15!important; }
+@media(max-width:360px){#ui .gacha-modal .global-chat-compose > button.modal-primary,#ui .gacha-modal .suggest-row > button.modal-primary{flex-basis:72px!important;width:72px!important;min-width:72px!important;max-width:72px!important}}
+
+/* V2.68: four profile actions equal sized and aligned */
+.gacha-modal .profile-modal-card .profile-actions {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+  align-items:stretch !important;
+}
+.gacha-modal .profile-modal-card .profile-actions > button:not([hidden]) {
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:42px !important;
+  min-height:42px !important;
+  max-height:42px !important;
+  margin:0 !important;
+  padding:0 8px !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  text-align:center !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+}
+.gacha-modal .profile-modal-card .profile-actions > button[hidden] {display:none !important;}
+.gacha-modal .profile-modal-card .profile-actions .profile-mail {position:relative !important;}
+.gacha-modal .profile-modal-card .profile-actions .profile-mail .mail-badge {position:absolute !important;right:4px !important;top:3px !important;}

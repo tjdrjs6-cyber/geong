@@ -55,6 +55,8 @@ export const ERROR_TEXT: Record<string, string> = {
   house_friends_full: '친구는 최대 3명까지 데려올 수 있어요.',
   invalid_house: '배치를 저장하지 못했어요. 다시 시도해 주세요.',
   not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',
+  limited_sale_ended: '한정 판매가 종료되었습니다.',
+  limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
   not_enough_diamonds: '다이아가 부족해요. 매시간 5개씩 최대 20개까지 충전돼요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
@@ -215,6 +217,10 @@ export class RemoteGachaStore {
   async sellWildWeed(count:number,type:'normal'|'golden'='normal'): Promise<void> {
     const result=await request<{weed:WildWeed;save:GachaSave}>('wild-weed/sell',{count,type})
     this.wildWeed=result.weed;this.data=result.save
+  }
+  async buyPeperoChiikawa(): Promise<void> {
+    const result=await request<{save:GachaSave}>('shop/pepero',{})
+    this.data=result.save
   }
   async buyShopFragments(quantity: 1 | 10): Promise<void> {
     const result=await request<{save:GachaSave}>('shop/buy',{quantity})

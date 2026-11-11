@@ -1288,6 +1288,23 @@ const routes = {
     send(res,200,{...result,save:await getSave(account.id)})
   },
 
+  'POST /api/shop/pepero': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await readJson(req)
+    if(checkInDay()>'2026-11-18')return send(res,409,{error:'limited_sale_ended'})
+    const result=await inTransaction(async conn=>{
+      const [rows]=await conn.query('SELECT gems,owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(!rows.length)return {error:'login_required'}
+      const owned=normalizeOwned(parseJson(rows[0].owned))
+      if(owned.includes('pepero_chiikawa'))return {error:'limited_already_owned'}
+      if(Number(rows[0].gems)<1 && !rpsAdmin(account))return {error:'not_enough_coins'}
+      await conn.query('UPDATE gm_saves SET gems=gems-?,owned=? WHERE account_id=?',[rpsAdmin(account)?0:1,JSON.stringify([...owned,'pepero_chiikawa']),account.id])
+      return {ok:true}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,{save:await getSave(account.id)})
+  },
   'POST /api/shop/buy': async (_req,res) => {
     send(res,410,{error:'shop_purchase_discontinued'})
   },
