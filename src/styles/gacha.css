@@ -5469,3 +5469,11 @@ body>.pull-rates-dialog .pull-rate-normal,#ui>.pull-rates-dialog .pull-rate-norm
 body>.pull-rates-dialog .pull-rate-row span,#ui>.pull-rates-dialog .pull-rate-row span{color:#54443e!important;font-weight:700!important}
 body>.pull-rates-dialog .pull-rate-row small,#ui>.pull-rates-dialog .pull-rate-row small{color:#947d72!important;font-weight:600!important}
 body>.pull-rates-dialog .pull-rate-row b,#ui>.pull-rates-dialog .pull-rate-row b{color:#604a43!important;font-weight:800!important}
+
+/* V2.44: single full-width supplied event artwork; no duplicate character labels */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char{display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:stretch!important;min-height:0!important;height:clamp(410px,111vw,590px)!important;padding:clamp(14px,4vw,24px)!important;overflow:hidden!important;box-sizing:border-box!important}
+#ui .pull-popup:not(.is-deco) .pull-event-copy{position:relative!important;left:auto!important;top:auto!important;width:100%!important;max-width:100%!important;flex:0 0 auto!important;z-index:3!important;gap:6px!important;padding:0!important}
+#ui .pull-popup:not(.is-deco) .pull-event-copy h2{font-size:clamp(21px,5.4vw,30px)!important}
+#ui .pull-popup:not(.is-deco) .pull-event-info{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;gap:4px 12px!important;width:fit-content!important;padding:7px 10px!important}
+#ui .pull-popup:not(.is-deco) .pull-event-hero-image{display:block!important;position:relative!important;z-index:2!important;align-self:center!important;width:100%!important;max-width:100%!important;min-height:0!important;height:auto!important;max-height:calc(100% - 116px)!important;object-fit:contain!important;object-position:center bottom!important;margin:auto 0 0!important;filter:drop-shadow(0 7px 10px #8e5b4730)!important}
+@media(max-width:390px){#ui .pull-popup:not(.is-deco) .pull-showcase-char{height:clamp(375px,109vw,490px)!important;padding:12px!important}#ui .pull-popup:not(.is-deco) .pull-event-hero-image{max-height:calc(100% - 105px)!important}}
