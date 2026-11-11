@@ -1139,7 +1139,7 @@ export class GachaUi {
       this.renderWallet()
       this.renderFreePullStatus()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(900, duration * 800))
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, 180)
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -1164,7 +1164,7 @@ export class GachaUi {
       const sequence = ++this.revealSequence
       this.renderWallet()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(900, duration * 800))
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, 180)
       return
     }
     if (action === 'weed-pick' && button.dataset.id) {
