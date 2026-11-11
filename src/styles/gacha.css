@@ -5173,3 +5173,21 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 #ui .gacha-screen>.collection-peek .achievement-lobby-tab{background:#fff7f9!important;}
 #achievement-v23-overlay{background:rgba(38,28,38,.68)!important;backdrop-filter:blur(3px);}
 #achievement-v23-overlay .achievement-v23-panel{background:#fffaf5!important;border:2px solid #e9c7c2!important;box-shadow:0 14px 50px #21131e66!important;}
+
+/* V2.31: tall, mobile-friendly draw dialogs; unclipped character/deco gallery */
+#ui>.pull-popup{padding:18px 14px max(22px,env(safe-area-inset-bottom,0px))!important;justify-content:center!important;gap:0!important;}
+#ui>.pull-popup .pull-showcase{width:min(100%,460px)!important;max-height:none!important;min-height:min(58vh,550px)!important;overflow:visible!important;padding:28px 14px 22px!important;border:3px solid #edc38c!important;border-bottom:0!important;border-radius:28px 28px 0 0!important;background:linear-gradient(180deg,#fffaf0 0%,#fff1da 100%)!important;box-shadow:0 -8px 32px #24162725!important;display:flex!important;align-items:stretch!important;justify-content:center!important;flex-direction:column!important;}
+#ui>.pull-popup .pull-showcase-caption{text-align:center!important;font-size:clamp(17px,4.3vw,23px)!important;line-height:1.4!important;color:#a75a36!important;margin:0 0 24px!important;font-weight:900!important;}
+#ui>.pull-popup .pull-showcase-char,#ui>.pull-popup .pull-showcase-deco{width:100%!important;}
+#ui>.pull-popup .pull-showcase-characters{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:1px!important;min-height:260px!important;overflow:visible!important;}
+#ui>.pull-popup .pull-showcase-characters img{width:17%!important;height:clamp(110px,17vh,170px)!important;max-width:none!important;object-fit:contain!important;flex-shrink:1!important;filter:drop-shadow(0 4px 3px #ad755344)!important;}
+#ui>.pull-popup .pull-showcase-characters img.showcase-main{width:31%!important;height:clamp(200px,30vh,280px)!important;max-width:none!important;filter:drop-shadow(0 0 11px #f5a03d88)!important;animation:none!important;}
+#ui>.pull-popup .pull-showcase-decos{display:flex!important;justify-content:space-around!important;align-items:center!important;gap:4px!important;min-height:260px!important;flex-wrap:wrap!important;}
+#ui>.pull-popup .pull-showcase-decos img{width:30%!important;height:125px!important;max-width:130px!important;max-height:none!important;object-fit:contain!important;filter:drop-shadow(0 4px 3px #ad755344)!important;}
+#ui>.pull-popup .pull-button{width:min(100%,460px)!important;min-height:74px!important;padding:12px 20px!important;justify-content:center!important;background:linear-gradient(180deg,#fffaf1,#ffe9c9)!important;border-left:3px solid #edc38c!important;border-right:3px solid #edc38c!important;border-bottom:2px solid #edc38c!important;font-size:18px!important;}
+#ui>.pull-popup .pull-button b{font-size:19px!important;color:#875340!important;}
+#ui>.pull-popup .pull-button small{font-size:13px!important;color:#a77c66!important;}
+#ui>.pull-popup .pull-button.is-free-pull{background:linear-gradient(180deg,#fff9e8,#ffe4a7)!important;}
+#ui>.pull-popup .pull-popup-close{position:absolute!important;top:max(14px,env(safe-area-inset-top,0px))!important;right:16px!important;width:48px!important;height:48px!important;box-shadow:0 3px 10px #3b1e2033!important;}
+#ui .free-pull-dot[hidden]{display:none!important;}
+@media(max-height:680px){#ui>.pull-popup .pull-showcase{min-height:300px!important;padding-top:16px!important;padding-bottom:10px!important;}#ui>.pull-popup .pull-showcase-characters{min-height:180px!important;}#ui>.pull-popup .pull-showcase-characters img.showcase-main{height:180px!important;}#ui>.pull-popup .pull-button{min-height:58px!important;}}

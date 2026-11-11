@@ -2084,6 +2084,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLElement>('.fragment-value').forEach(el => { el.textContent = (this.isAdmin ? '∞' : (this.store.data.fragments ?? 0).toLocaleString('ko-KR')) })
     this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
     this.tickDiamondRecharge()
+    this.renderFreePullStatus()
     const rate = `+${this.store.hourlyRate().toFixed(2)} 코인/시간`
     this.root.querySelectorAll<HTMLElement>('.wallet-rate').forEach(node => { node.textContent = rate })
     const count = this.store.data.owned.length
@@ -2164,15 +2165,16 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     return Math.max(0,10-(this.store.data.freePullDay===day?(this.store.data.freePullUsed||0):0))
   }
   private renderFreePullStatus(): void {
-    const remaining=this.freePullRemaining()
-    const badge=this.root.querySelector<HTMLElement>('.free-pull-dot')
-    if(badge)badge.hidden=remaining===0
-    const counter=this.root.querySelector<HTMLElement>('.free-pull-remaining')
-    if(counter)counter.textContent=String(remaining)
-    this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
-      const count=Number(button.dataset.count)
-      const small=button.querySelector('small')
-      if(small)small.textContent=remaining>=count?'무료 · '+remaining+'회 남음':pullCost(count)+' 코인'
+    const remaining = this.freePullRemaining()
+    const badge = this.root.querySelector<HTMLElement>('.free-pull-dot')
+    if (badge) { badge.hidden = remaining === 0; badge.style.display = remaining === 0 ? 'none' : '' }
+    const counter = this.root.querySelector<HTMLElement>('.free-pull-remaining')
+    if (counter) counter.textContent = String(remaining)
+    this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button => {
+      const count = Number(button.dataset.count) as PullCount
+      const small = button.querySelector('small')
+      if (small) small.textContent = remaining >= count ? `무료 · ${remaining}회 남음` : `${pullCost(count).toLocaleString('ko-KR')} 코인`
+      button.classList.toggle('is-free-pull', remaining >= count)
     })
   }
   private setPullMode(mode: 'char' | 'deco'): void {
