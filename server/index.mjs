@@ -937,6 +937,8 @@ async function expeditionBackgroundTick() {
   if (!ready || expeditionWorkerBusy) return
   expeditionWorkerBusy = true
   try {
+    // Prepare the achievement table before opening a transaction/row lock.
+    await ensureAchievementTable()
     const now = Date.now()
     const {day} = expeditionWindow(now)
     const [rooms] = await pool.query(
@@ -984,6 +986,7 @@ async function expeditionBadge(accountId) {
 }
 async function expeditionSnapshot(accountId) {
   const now=Date.now(), {day,start,next}=expeditionWindow(now)
+  await ensureAchievementTable()
   const conn=await pool.getConnection()
   try {
     await conn.beginTransaction()
@@ -1003,6 +1006,7 @@ async function expeditionSnapshot(accountId) {
   } catch(e){await conn.rollback();throw e} finally {conn.release()}
 }
 async function expeditionJoin(accountId,serverId,characterId) {
+  await ensureAchievementTable()
   const now=Date.now(),{day,start}=expeditionWindow(now)
   const conn=await pool.getConnection()
   try {
