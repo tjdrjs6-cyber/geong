@@ -2344,12 +2344,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const isFeatured = has && character.id === this.heroId()
       const isHalloweenLimited = String(character.id).startsWith('halloween_')
       const isPeperoLimited = character.id === 'pepero_chiikawa'
+      const isRilakkumaLimited = ['rilakkuma','korilakkuma','chairoikoguma','rilakkuma_chiikawa','korilakkuma_kani'].includes(character.id)
       const footer = has && interactive
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''} tier-${character.tier === 'mermaid' ? 'rare' : character.tier === 'rare' ? 'epic' : character.tier === 'super' ? 'unique' : character.tier}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="eager" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
-        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited || isPeperoLimited ? '<div class="halloween-limited-label">한정판</div>' : ''}
+        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited || isPeperoLimited || isRilakkumaLimited ? '<div class="halloween-limited-label">한정판</div>' : ''}
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}
