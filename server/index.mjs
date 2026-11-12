@@ -1148,6 +1148,7 @@ async function achievementPower(accountId,conn=pool){
 }
 
 // Rilakkuma event coins are separate from regular gems; all counters and claims live on the server.
+const EVENT_SHOP = {rilakkuma:150,korilakkuma:150,chairoikoguma:150,rilakkuma_chiikawa:350,korilakkuma_kani:350}
 const EVENT_REWARDS = {attendance:10,weed:20,expedition:20,claw:20,chat:10,lottery:20}
 const EVENT_TARGETS = {attendance:1,weed:10,expedition:1,claw:10,chat:1,lottery:1}
 const EVENT_START = '2026-11-12'
@@ -1166,8 +1167,11 @@ async function safeEventProgress(accountId,mission,count=1){
 async function eventView(accountId){
   const [balances]=await pool.query('SELECT balance,welcome_claimed FROM gm_rilakkuma_event WHERE account_id=?',[accountId])
   const [rows]=await pool.query('SELECT mission,progress,claimed FROM gm_rilakkuma_missions WHERE account_id=? AND day=?',[accountId,eventDay()])
+  const [saves]=await pool.query('SELECT owned FROM gm_saves WHERE account_id=?',[accountId])
+  const eventOwned=normalizeOwned(parseJson(saves[0]?.owned))
   const progress=Object.fromEntries(rows.map(r=>[r.mission,{progress:Number(r.progress),claimed:!!r.claimed}]))
   return {active:eventActive(),day:eventDay(),end:EVENT_END,balance:Number(balances[0]?.balance||0),welcomeClaimed:!!balances[0]?.welcome_claimed,
+    shop:Object.entries(EVENT_SHOP).map(([id,price])=>({id,price,owned:eventOwned.includes(id)})),
     missions:Object.entries(EVENT_REWARDS).map(([id,reward])=>({id,reward,target:EVENT_TARGETS[id],progress:Math.min(EVENT_TARGETS[id],progress[id]?.progress||0),claimed:progress[id]?.claimed||false}))}
 }
 
@@ -1182,6 +1186,27 @@ const routes = {
       await safeEventProgress(account.id,'attendance',1)
     }
     send(res,200,await eventView(account.id))
+  },
+  'POST /api/rilakkuma-event/exchange': async(req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {characterId}=await readJson(req)
+    if(!eventActive())return send(res,409,{error:'event_ended'})
+    if(typeof characterId!=='string'||!Object.hasOwn(EVENT_SHOP,characterId))return send(res,400,{error:'invalid_character'})
+    const result=await inTransaction(async conn=>{
+      const [balances]=await conn.query('SELECT balance FROM gm_rilakkuma_event WHERE account_id=? FOR UPDATE',[account.id])
+      const [saves]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(!balances.length||!saves.length)return {error:'login_required'}
+      const owned=normalizeOwned(parseJson(saves[0].owned))
+      if(owned.includes(characterId))return {error:'already_owned'}
+      const price=EVENT_SHOP[characterId]
+      if(Number(balances[0].balance)<price)return {error:'insufficient_event_coins'}
+      await conn.query('UPDATE gm_rilakkuma_event SET balance=balance-? WHERE account_id=?',[price,account.id])
+      await conn.query('UPDATE gm_saves SET owned=? WHERE account_id=?',[JSON.stringify([...owned,characterId]),account.id])
+      return {ok:true}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,{...(await eventView(account.id)),save:await getSave(account.id)})
   },
   'POST /api/rilakkuma-event/claim': async(req,res)=>{
     const account=await currentAccount(req)
