@@ -5748,9 +5748,11 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 .gacha-modal .profile-modal-card .profile-actions .profile-mail {position:relative !important;}
 .gacha-modal .profile-modal-card .profile-actions .profile-mail .mail-badge {position:absolute !important;right:4px !important;top:3px !important;}
 
-/* Auto claw controls */
-.claw-auto-controls { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin:10px 0; }
-.claw-auto-start,.claw-auto-stop { border:1px solid #e6b6a7; border-radius:14px; padding:10px 14px; font-weight:700; cursor:pointer; background:#ffe6c4; color:#6c4336; }
-.claw-auto-stop { background:#ffb4a5; }
-.claw-auto-start[hidden],.claw-auto-stop[hidden] { display:none!important; }
-.claw-auto-status { width:100%; text-align:center; font-size:12px; color:#785c53; }
+/* V2.73: separate manual bonus and diamond cost into clear rows */
+.gacha-modal.claw-screen .claw-play-group{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:0}
+.gacha-modal.claw-screen .claw-play-group .claw-play{box-sizing:border-box!important;width:120px!important;min-width:120px!important;height:98px!important;min-height:98px!important;padding:13px 8px 8px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;line-height:1.15!important;white-space:normal!important;overflow:visible!important}
+.gacha-modal.claw-screen .claw-play-group .claw-play-label{font-size:17px!important;line-height:20px!important;margin:0!important}
+.gacha-modal.claw-screen .claw-play-group .claw-manual-bonus{display:block!important;font-size:9px!important;font-weight:800!important;line-height:12px!important;letter-spacing:-.3px!important;text-align:center!important;color:#e35a7a!important;white-space:nowrap!important}
+.gacha-modal.claw-screen .claw-play-group .claw-play-cost{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:3px!important;margin:0!important;padding:0!important;font-size:11px!important;line-height:15px!important;white-space:nowrap!important}
+.gacha-modal.claw-screen .claw-play-group .claw-play-cost .diamond-icon{display:inline-block!important;position:static!important;width:14px!important;height:14px!important;min-width:14px!important;object-fit:contain!important;vertical-align:middle!important;margin:0!important}
+@media(max-width:380px){.gacha-modal.claw-screen .claw-play-group .claw-play{width:112px!important;min-width:112px!important}.gacha-modal.claw-screen .claw-play-group .claw-manual-bonus{font-size:8.5px!important}}
