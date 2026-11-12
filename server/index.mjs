@@ -2110,8 +2110,8 @@ const routes = {
       let chanceProduct = 1
       for (let step = 1; step <= segments; step++) {
         const remainingBand = segments - step + 1
-        // Manual play earns +5 percentage points per travel interval; auto keeps original rates.
-        const probability = Math.min(1, bandChances[Math.min(remainingBand, 8)] + (mode === 'manual' ? .05 : 0))
+        // Manual play uses the original interval rates; auto play is 5 percentage points lower per interval.
+        const probability = Math.max(0, bandChances[Math.min(remainingBand, 8)] - (mode === 'auto' ? .05 : 0))
         chanceProduct *= probability
         if (won && randomInt(1000000) >= Math.round(probability * 1000000)) {
           won = false
