@@ -1764,30 +1764,123 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         // The server is authoritative for both the diamond debit and the success roll.
         const target = this.clawToys[Math.floor(Math.random() * this.clawToys.length)]
         if (!target) break
+        const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+        const toy = this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${target.id}"]`)
+        const msg = this.root.querySelector<HTMLElement>('.claw-message')
+        const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms))
         this.clawX = target.x
         this.clawY = Math.max(10, target.y - 8)
-        const arm = this.root.querySelector<HTMLElement>('.claw-arm')
         if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
         this.updateClawPosition()
-        await new Promise(resolve => window.setTimeout(resolve, 180))
+        await sleep(180)
+        arm?.classList.add('is-dropping')
+        await sleep(120)
         this.setClawClosed(true)
-        // Each iteration performs exactly one paid server draw; cancellation waits for it.
+        arm?.classList.remove('is-dropping')
+        // Server remains authoritative for the cost, success roll and drop segment.
         const result = await this.store.playClaw(true, target.x, target.y, 'auto')
         this.clawAutoCount++
         this.renderWallet()
-        const msg = this.root.querySelector<HTMLElement>('.claw-message')
+        const machine = this.root.querySelector<HTMLElement>('.claw-machine')
+        const chute = this.root.querySelector<HTMLElement>('.claw-chute')
+        let exitX = 88, exitY = 3
+        if (machine && chute) {
+          const m = machine.getBoundingClientRect(), c = chute.getBoundingClientRect()
+          if (m.width && m.height) {
+            exitX = Math.max(10, Math.min(90, (c.left + c.width / 2 - m.left) / m.width * 100))
+            exitY = Math.max(3, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100 - 12))
+          }
+        }
+        const startX = this.clawX, startY = this.clawY
+        const steps = Math.max(1, result.segments)
+        const endStep = result.won ? steps : Math.max(1, result.dropAt)
+        const gripOffset = arm && machine && machine.getBoundingClientRect().height
+          ? arm.getBoundingClientRect().height * .29 / machine.getBoundingClientRect().height * 100 : 7
+        if (toy) {
+          toy.style.transition = 'none'
+          toy.style.left = `${startX}%`
+          toy.style.top = `${startY + gripOffset}%`
+          void toy.offsetWidth
+          toy.classList.add('is-lifted')
+        }
+        if (msg) msg.textContent = '자동뽑기 진행 중…'
+        // Same pick-up, transport and drop cues as manual play, at a faster pace.
+        for (let step = 1; step <= endStep; step++) {
+          const fraction = result.won ? step / steps : Math.min(.86, step / steps)
+          const x = startX + (exitX - startX) * fraction
+          const y = startY + (exitY - startY) * fraction
+          this.clawX = x; this.clawY = y
+          if (arm) arm.style.transition = 'left .12s linear, top .12s linear'
+          this.updateClawPosition()
+          if (toy) {
+            toy.style.transition = 'left .12s linear, top .12s linear'
+            toy.style.left = `${x}%`; toy.style.top = `${y + gripOffset}%`
+          }
+          await sleep(140)
+        }
         if (result.won && result.prize) {
           const item = accessoryInfo(result.prize)
-          if (msg) msg.textContent = item ? `자동뽑기 성공! ${item.name} 획득` : '자동뽑기 성공!'
+          this.setClawClosed(false)
+          toy?.classList.add('is-dropped')
+          if (msg) msg.textContent = item ? `${item.name} 획득!` : '키링 획득!'
           this.randomizeClawToy(target.id)
           this.renderClaw()
-          if (msg) msg.textContent = item ? `자동뽑기 성공! ${item.name} 획득` : '자동뽑기 성공!'
-        } else if (msg) msg.textContent = '자동뽑기 실패 · 다음 뽑기를 준비합니다.'
-        this.setClawClosed(false)
+          // Await dismissal; no new diamond is spent while the prize popup is open.
+          if (item) {
+            const popup = document.createElement('dialog')
+            popup.className = 'myroom-equipment-dialog'
+            popup.innerHTML = `<div class="myroom-equipment-panel accessory-win-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
+            document.body.appendChild(popup)
+            await new Promise<void>(resolve => {
+              popup.addEventListener('close', () => { popup.remove(); resolve() }, {once:true})
+              popup.querySelector('button')?.addEventListener('click', () => popup.close())
+              popup.showModal()
+            })
+          }
+        } else {
+          // Preserve the missed doll's new position, and show the manual miss sticker.
+          const fraction = Math.min(.86, endStep / steps)
+          const releaseX = startX + (exitX - startX) * fraction
+          const releaseY = startY + (exitY - startY) * fraction + gripOffset
+          let landedX = Math.max(10, Math.min(90, releaseX + (Math.random() - .5) * 6))
+          let landedY = Math.max(18, Math.min(69, releaseY + 4 + Math.random() * 4))
+          if (machine && chute && toy) {
+            const mb = machine.getBoundingClientRect(), cb = chute.getBoundingClientRect(), tb = toy.getBoundingClientRect()
+            const minX = (cb.left - tb.width / 2 - 9 - mb.left) / mb.width * 100
+            const maxX = (cb.right + tb.width / 2 + 9 - mb.left) / mb.width * 100
+            const minY = (cb.top - tb.height / 2 - 9 - mb.top) / mb.height * 100
+            const maxY = (cb.bottom + tb.height / 2 + 9 - mb.top) / mb.height * 100
+            if (landedX > minX && landedX < maxX && landedY > minY && landedY < maxY) {
+              const candidates = [{x:landedX,y:maxY+1},{x:minX-1,y:landedY},{x:maxX+1,y:landedY},{x:landedX,y:minY-1}]
+                .filter(pt => pt.x >= 10 && pt.x <= 90 && pt.y >= 18 && pt.y <= 69)
+              const nearest = candidates.sort((a,b) => Math.hypot(a.x-landedX,a.y-landedY)-Math.hypot(b.x-landedX,b.y-landedY))[0]
+              if (nearest) { landedX = nearest.x; landedY = nearest.y }
+            }
+          }
+          target.x = landedX; target.y = landedY
+          this.saveClawToys()
+          if (toy) {
+            toy.classList.remove('is-lifted', 'is-dropped')
+            toy.style.transition = 'none'
+            toy.style.left = `${landedX}%`; toy.style.top = `${landedY}%`
+          }
+          const sticker = this.root.querySelector<HTMLElement>('.claw-missed-sticker')
+          if (sticker) {
+            sticker.style.left = `${Math.max(10,Math.min(90,(releaseX+landedX)/2))}%`
+            sticker.style.top = `${Math.max(10,Math.min(90,(releaseY+landedY)/2))}%`
+            sticker.classList.remove('is-visible'); void sticker.offsetWidth
+            sticker.classList.add('is-visible')
+            window.setTimeout(() => sticker.classList.remove('is-visible'), 850)
+          }
+          if (msg) msg.textContent = '놓쳤어요! 다음 뽑기를 준비합니다.'
+          this.setClawClosed(false)
+          await sleep(480)
+        }
         this.resetClawToExit()
+        if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
         this.updateClawPosition()
         this.updateClawAutoUi()
-        await new Promise(resolve => window.setTimeout(resolve, 240))
+        await sleep(180)
       }
     } catch (error) {
       this.clawAutoCancel = true
