@@ -89,6 +89,9 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
+  private clawAutoRunning = false
+  private clawAutoCancel = false
+  private clawAutoCount = 0
   private lotteryState: {remaining:number[];total:number;price:number;resetNoticeId?:number;winners?:{nickname:string;grade:string}[]}|null=null
   private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
   private lotteryRevealed=0
@@ -521,7 +524,7 @@ export class GachaUi {
             <div class="claw-toys"></div><img class="claw-missed-sticker" src="/assets/claw/claw_missed.png" alt="놓쳤다!" aria-hidden="true" /><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
           <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1개</small></button></div>
-          <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
+          <div class="claw-auto-controls"><button type="button" class="claw-auto-start" data-action="claw-auto-start">자동뽑기 시작 · 1회당 다이아 1개</button><button type="button" class="claw-auto-stop" data-action="claw-auto-stop" hidden>진행 취소 (현재 뽑기 후 종료)</button><span class="claw-auto-status" aria-live="polite"></span></div><p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
       <section class="gacha-modal forge-screen" data-screen="forge" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="forge-title">
@@ -1045,6 +1048,8 @@ export class GachaUi {
       return
     }
     if (action === 'claw') { this.show('claw'); return }
+    if (action === 'claw-auto-stop') { this.clawAutoCancel = true; this.updateClawAutoUi(); return }
+    if (action === 'claw-auto-start') { void this.runClawAuto(); return }
     if (action?.startsWith('claw-')) {
       if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
       await this.handleClaw(action); return
@@ -1508,7 +1513,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private async handleClaw(action: string): Promise<void> {
-    if (this.clawBusy) return
+    if (this.clawBusy || this.clawAutoRunning) return
     if (['claw-up', 'claw-down', 'claw-left', 'claw-right'].includes(action)) { this.moveClaw(action); return }
     if (action === 'claw-refresh') {
       this.clawBusy = true
@@ -1542,7 +1547,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const aligned = this.clawTouchesToy()
       const toy = this.clawTargetId ? this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${this.clawTargetId}"]`) : null
       const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
-      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50)
+      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50, 'manual')
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
@@ -1730,6 +1735,74 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.clawTargetId = null
       this.clawBusy=false
       if(btn) btn.disabled=false
+    }
+  }
+
+  private updateClawAutoUi(): void {
+    const start = this.root.querySelector<HTMLButtonElement>('.claw-auto-start')
+    const stop = this.root.querySelector<HTMLButtonElement>('.claw-auto-stop')
+    const status = this.root.querySelector<HTMLElement>('.claw-auto-status')
+    if (start) { start.hidden = this.clawAutoRunning; start.disabled = this.clawBusy }
+    if (stop) { stop.hidden = !this.clawAutoRunning; stop.disabled = this.clawAutoCancel; stop.textContent = this.clawAutoCancel ? '현재 뽑기 완료 후 종료 중…' : '진행 취소 (현재 뽑기 후 종료)' }
+    if (status) status.textContent = this.clawAutoRunning ? `자동뽑기 ${this.clawAutoCount}회 진행${this.clawAutoCancel ? ' · 종료 대기' : ''}` : ''
+  }
+
+  private async runClawAuto(): Promise<void> {
+    if (this.clawBusy || this.clawAutoRunning) return
+    this.stopClawHold()
+    this.clawAutoRunning = true
+    this.clawAutoCancel = false
+    this.clawAutoCount = 0
+    this.clawBusy = true
+    const play = this.root.querySelector<HTMLButtonElement>('.claw-play')
+    const refresh = this.root.querySelector<HTMLButtonElement>('.claw-refresh')
+    if (play) play.disabled = true
+    if (refresh) refresh.disabled = true
+    this.updateClawAutoUi()
+    try {
+      while (!this.clawAutoCancel && this.screen === 'claw') {
+        // The server is authoritative for both the diamond debit and the success roll.
+        const target = this.clawToys[Math.floor(Math.random() * this.clawToys.length)]
+        if (!target) break
+        this.clawX = target.x
+        this.clawY = Math.max(10, target.y - 8)
+        const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+        if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
+        this.updateClawPosition()
+        await new Promise(resolve => window.setTimeout(resolve, 180))
+        this.setClawClosed(true)
+        // Each iteration performs exactly one paid server draw; cancellation waits for it.
+        const result = await this.store.playClaw(true, target.x, target.y, 'auto')
+        this.clawAutoCount++
+        this.renderWallet()
+        const msg = this.root.querySelector<HTMLElement>('.claw-message')
+        if (result.won && result.prize) {
+          const item = accessoryInfo(result.prize)
+          if (msg) msg.textContent = item ? `자동뽑기 성공! ${item.name} 획득` : '자동뽑기 성공!'
+          this.randomizeClawToy(target.id)
+          this.renderClaw()
+          if (msg) msg.textContent = item ? `자동뽑기 성공! ${item.name} 획득` : '자동뽑기 성공!'
+        } else if (msg) msg.textContent = '자동뽑기 실패 · 다음 뽑기를 준비합니다.'
+        this.setClawClosed(false)
+        this.resetClawToExit()
+        this.updateClawPosition()
+        this.updateClawAutoUi()
+        await new Promise(resolve => window.setTimeout(resolve, 240))
+      }
+    } catch (error) {
+      this.clawAutoCancel = true
+      this.handleError(error)
+    } finally {
+      this.clawAutoRunning = false
+      this.clawBusy = false
+      this.setClawClosed(false)
+      this.resetClawToExit()
+      this.updateClawPosition()
+      if (play) play.disabled = false
+      if (refresh) refresh.disabled = false
+      this.updateClawAutoUi()
+      const msg = this.root.querySelector<HTMLElement>('.claw-message')
+      if (msg) msg.textContent = `자동뽑기 종료 · 총 ${this.clawAutoCount}회 진행`
     }
   }
 

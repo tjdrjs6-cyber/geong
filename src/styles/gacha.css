@@ -5747,3 +5747,10 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 .gacha-modal .profile-modal-card .profile-actions > button[hidden] {display:none !important;}
 .gacha-modal .profile-modal-card .profile-actions .profile-mail {position:relative !important;}
 .gacha-modal .profile-modal-card .profile-actions .profile-mail .mail-badge {position:absolute !important;right:4px !important;top:3px !important;}
+
+/* Auto claw controls */
+.claw-auto-controls { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin:10px 0; }
+.claw-auto-start,.claw-auto-stop { border:1px solid #e6b6a7; border-radius:14px; padding:10px 14px; font-weight:700; cursor:pointer; background:#ffe6c4; color:#6c4336; }
+.claw-auto-stop { background:#ffb4a5; }
+.claw-auto-start[hidden],.claw-auto-stop[hidden] { display:none!important; }
+.claw-auto-status { width:100%; text-align:center; font-size:12px; color:#785c53; }
