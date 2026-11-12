@@ -34,6 +34,19 @@ async function prepareDatabase() {
     connectionLimit: 5,
     waitForConnections: true,
   })
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_rilakkuma_event (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    balance INT UNSIGNED NOT NULL DEFAULT 0,
+    welcome_claimed TINYINT(1) NOT NULL DEFAULT 0
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_rilakkuma_missions (
+    account_id BIGINT UNSIGNED NOT NULL,
+    day CHAR(10) NOT NULL,
+    mission VARCHAR(20) NOT NULL,
+    progress INT UNSIGNED NOT NULL DEFAULT 0,
+    claimed TINYINT(1) NOT NULL DEFAULT 0,
+    PRIMARY KEY(account_id, day, mission)
+  )`)
   // Additive, repeatable migration; existing accounts and saves are preserved.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_lottery_pool (
     id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
@@ -1134,7 +1147,62 @@ async function achievementPower(accountId,conn=pool){
  return ACHIEVEMENTS.reduce((sum,a)=>sum+(ids.has(a.id)?a.power:0),0)
 }
 
+// Rilakkuma event coins are separate from regular gems; all counters and claims live on the server.
+const EVENT_REWARDS = {attendance:10,weed:20,expedition:20,claw:20,chat:10,lottery:20}
+const EVENT_TARGETS = {attendance:1,weed:10,expedition:1,claw:10,chat:1,lottery:1}
+const EVENT_START = '2026-11-12'
+const EVENT_END = '2026-11-22'
+function eventDay(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now()-9*60*60*1000))}
+function eventActive(){const d=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());return d>=EVENT_START&&d<=EVENT_END}
+async function eventProgress(accountId,mission,count=1){
+  if(!eventActive()||!EVENT_REWARDS[mission]||count<=0)return
+  await pool.query(`INSERT INTO gm_rilakkuma_missions (account_id,day,mission,progress) VALUES (?,?,?,?)
+    ON DUPLICATE KEY UPDATE progress=LEAST(VALUES(progress)+progress,?)`,
+    [accountId,eventDay(),mission,count,EVENT_TARGETS[mission]])
+}
+async function safeEventProgress(accountId,mission,count=1){
+  try{await eventProgress(accountId,mission,count)}catch(e){console.error('event mission progress',e)}
+}
+async function eventView(accountId){
+  const [balances]=await pool.query('SELECT balance,welcome_claimed FROM gm_rilakkuma_event WHERE account_id=?',[accountId])
+  const [rows]=await pool.query('SELECT mission,progress,claimed FROM gm_rilakkuma_missions WHERE account_id=? AND day=?',[accountId,eventDay()])
+  const progress=Object.fromEntries(rows.map(r=>[r.mission,{progress:Number(r.progress),claimed:!!r.claimed}]))
+  return {active:eventActive(),day:eventDay(),end:EVENT_END,balance:Number(balances[0]?.balance||0),welcomeClaimed:!!balances[0]?.welcome_claimed,
+    missions:Object.entries(EVENT_REWARDS).map(([id,reward])=>({id,reward,target:EVENT_TARGETS[id],progress:Math.min(EVENT_TARGETS[id],progress[id]?.progress||0),claimed:progress[id]?.claimed||false}))}
+}
+
 const routes = {
+  'GET /api/rilakkuma-event': async (req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    if(eventActive()){
+      // Atomic once-per-account welcome bonus. The 50 coins are event coins, not regular gems.
+      await pool.query(`INSERT INTO gm_rilakkuma_event(account_id,balance,welcome_claimed) VALUES(?,50,1)
+        ON DUPLICATE KEY UPDATE balance=balance+IF(welcome_claimed=0,50,0),welcome_claimed=1`,[account.id])
+      await safeEventProgress(account.id,'attendance',1)
+    }
+    send(res,200,await eventView(account.id))
+  },
+  'POST /api/rilakkuma-event/claim': async(req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {mission}=await readJson(req)
+    if(!eventActive())return send(res,409,{error:'event_ended'})
+    if(!Object.hasOwn(EVENT_REWARDS,mission))return send(res,400,{error:'invalid_mission'})
+    const conn=await pool.getConnection()
+    try{
+      await conn.beginTransaction()
+      const [rows]=await conn.query('SELECT progress,claimed FROM gm_rilakkuma_missions WHERE account_id=? AND day=? AND mission=? FOR UPDATE',[account.id,eventDay(),mission])
+      if(!rows.length||rows[0].claimed||Number(rows[0].progress)<EVENT_TARGETS[mission]){
+        await conn.rollback();return send(res,409,{error:'not_claimable'})
+      }
+      await conn.query('UPDATE gm_rilakkuma_missions SET claimed=1 WHERE account_id=? AND day=? AND mission=?',[account.id,eventDay(),mission])
+      await conn.query('UPDATE gm_rilakkuma_event SET balance=balance+? WHERE account_id=?',[EVENT_REWARDS[mission],account.id])
+      await conn.commit()
+      send(res,200,await eventView(account.id))
+    }catch(e){await conn.rollback().catch(()=>{});throw e}finally{conn.release()}
+  },
+
   'GET /api/achievements': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -1249,6 +1317,7 @@ const routes = {
       if(outcome.error)await conn.rollback();else await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     if(outcome.error)return send(res,400,outcome)
+    await safeEventProgress(account.id,'lottery',count)
     send(res,200,{...outcome,save:await getSave(account.id),accessory:await getAccessory(account.id)})
   },
   'POST /api/wild-weed/state': async (req,res) => {
@@ -1273,6 +1342,7 @@ const routes = {
       return {weed:{...weed,weeds:weed.weeds.filter(w=>w.id!==picked.id),visible:weed.weeds.length>1,count:weed.count+1}}
     })
     if(result.error)return send(res,409,result)
+    await safeEventProgress(account.id,'weed')
     send(res,200,result)
   },
   'POST /api/wild-weed/sell': async (req,res) => {
@@ -1553,6 +1623,7 @@ const routes = {
     if(![1,2,3].includes(serverId)||typeof characterId!=='string'||!CHARACTER_IDS.includes(characterId))return send(res,400,{error:'not_owned'})
     const error=await retryDbContention(()=>expeditionJoin(account.id,serverId,characterId))
     if(error)return send(res,409,{error})
+    await safeEventProgress(account.id,'expedition')
     send(res,200,await retryDbContention(()=>expeditionSnapshot(account.id)))
   },
   'GET /api/global-chat': async (req, res) => {
@@ -1595,6 +1666,7 @@ const routes = {
       await conn.query('UPDATE gm_global_chat_cooldown SET last_sent_ms = ? WHERE account_id = ?', [now, account.id])
       await conn.query('INSERT INTO gm_global_chat (account_id, message, created_ms) VALUES (?, ?, ?)', [account.id, message, now])
       await conn.commit()
+      await safeEventProgress(account.id,'chat')
       send(res, 200, { ok: true, nextAt: now + 10000, now })
     } catch (error) { await conn.rollback().catch(() => {}); throw error }
     finally { conn.release() }
@@ -2128,6 +2200,7 @@ const routes = {
         await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,prize,'normal'])
       }
       await conn.commit()
+      await safeEventProgress(account.id,'claw')
       send(res, 200, { won, chance, dropAt, segments, prize, bonus, save: await getSave(account.id), decos: await getDecos(account.id), accessory: await getAccessory(account.id) })
     } catch (error) {
       await conn.rollback().catch(() => {})

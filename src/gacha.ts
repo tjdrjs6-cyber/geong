@@ -1,5 +1,6 @@
 import './styles/main.css'
 import './styles/gacha.css'
+import { installRilakkumaEvent } from './ui/rilakkumaEvent'
 import { Audio } from './engine/audio'
 import { SaveStore } from './engine/save'
 import { CHARACTERS } from './game/collection'
@@ -43,6 +44,7 @@ function keepPageAtTop(): void {
   soon()
 }
 keepPageAtTop()
+installRilakkumaEvent()
 
 /** Warm the image cache while the account request is running. Keep this bounded so boot
  * does not wait for the entire collection and does not flood mobile connections. */
@@ -96,6 +98,7 @@ async function boot(): Promise<void> {
       ui.setBootProgress(0.6)
       let user = null
       try { user = await collection.restore() } catch { user = null }
+      if (user) void fetch('/api/rilakkuma-event', {credentials:'same-origin'}).catch(() => {})
       // Include the selected representative character before displaying the lobby.
       // Backgrounds and the hero must be ready; other collection art stays lazy.
       const hero = collection.featured && collection.data.owned.includes(collection.featured)
