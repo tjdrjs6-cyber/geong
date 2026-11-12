@@ -89,6 +89,9 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
+  private clawAutoRunning = false
+  private clawAutoCancel = false
+  private clawAutoCount = 0
   private lotteryState: {remaining:number[];total:number;price:number;resetNoticeId?:number;winners?:{nickname:string;grade:string}[]}|null=null
   private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
   private lotteryRevealed=0
@@ -520,8 +523,8 @@ export class GachaUi {
             <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw_open.png" alt="" /></div>
             <div class="claw-toys"></div><img class="claw-missed-sticker" src="/assets/claw/claw_missed.png" alt="놓쳤다!" aria-hidden="true" /><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
-          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1개</small></button></div>
-          <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
+          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><div class="claw-play-group"><button class="claw-play" data-action="claw-play"><span class="claw-play-label">뽑기!</span><span class="claw-manual-bonus">수동뽑기 시 5% 확률 UP</span><small class="claw-play-cost"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> <span>1개</span></small></button></div></div>
+          <div class="claw-auto-controls"><button type="button" class="claw-auto-start" data-action="claw-auto-start">자동뽑기 시작 · 1회당 다이아 1개</button><button type="button" class="claw-auto-stop" data-action="claw-auto-stop" hidden>진행 취소 (현재 뽑기 후 종료)</button><span class="claw-auto-status" aria-live="polite"></span></div><p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
       <section class="gacha-modal forge-screen" data-screen="forge" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="forge-title">
@@ -1045,6 +1048,8 @@ export class GachaUi {
       return
     }
     if (action === 'claw') { this.show('claw'); return }
+    if (action === 'claw-auto-stop') { this.clawAutoCancel = true; this.updateClawAutoUi(); return }
+    if (action === 'claw-auto-start') { void this.runClawAuto(); return }
     if (action?.startsWith('claw-')) {
       if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
       await this.handleClaw(action); return
@@ -1508,7 +1513,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private async handleClaw(action: string): Promise<void> {
-    if (this.clawBusy) return
+    if (this.clawBusy || this.clawAutoRunning) return
     if (['claw-up', 'claw-down', 'claw-left', 'claw-right'].includes(action)) { this.moveClaw(action); return }
     if (action === 'claw-refresh') {
       this.clawBusy = true
@@ -1542,7 +1547,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const aligned = this.clawTouchesToy()
       const toy = this.clawTargetId ? this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${this.clawTargetId}"]`) : null
       const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
-      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50)
+      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50, 'manual')
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
@@ -1730,6 +1735,167 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.clawTargetId = null
       this.clawBusy=false
       if(btn) btn.disabled=false
+    }
+  }
+
+  private updateClawAutoUi(): void {
+    const start = this.root.querySelector<HTMLButtonElement>('.claw-auto-start')
+    const stop = this.root.querySelector<HTMLButtonElement>('.claw-auto-stop')
+    const status = this.root.querySelector<HTMLElement>('.claw-auto-status')
+    if (start) { start.hidden = this.clawAutoRunning; start.disabled = this.clawBusy }
+    if (stop) { stop.hidden = !this.clawAutoRunning; stop.disabled = this.clawAutoCancel; stop.textContent = this.clawAutoCancel ? '현재 뽑기 완료 후 종료 중…' : '진행 취소 (현재 뽑기 후 종료)' }
+    if (status) status.textContent = this.clawAutoRunning ? `자동뽑기 ${this.clawAutoCount}회 진행${this.clawAutoCancel ? ' · 종료 대기' : ''}` : ''
+  }
+
+  private async runClawAuto(): Promise<void> {
+    if (this.clawBusy || this.clawAutoRunning) return
+    this.stopClawHold()
+    this.clawAutoRunning = true
+    this.clawAutoCancel = false
+    this.clawAutoCount = 0
+    this.clawBusy = true
+    const play = this.root.querySelector<HTMLButtonElement>('.claw-play')
+    const refresh = this.root.querySelector<HTMLButtonElement>('.claw-refresh')
+    if (play) play.disabled = true
+    if (refresh) refresh.disabled = true
+    this.updateClawAutoUi()
+    try {
+      while (!this.clawAutoCancel && this.screen === 'claw') {
+        // The server is authoritative for both the diamond debit and the success roll.
+        const target = this.clawToys[Math.floor(Math.random() * this.clawToys.length)]
+        if (!target) break
+        const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+        const toy = this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${target.id}"]`)
+        const msg = this.root.querySelector<HTMLElement>('.claw-message')
+        const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms))
+        this.clawX = target.x
+        this.clawY = Math.max(10, target.y - 8)
+        if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
+        this.updateClawPosition()
+        await sleep(180)
+        arm?.classList.add('is-dropping')
+        await sleep(120)
+        this.setClawClosed(true)
+        arm?.classList.remove('is-dropping')
+        // Server remains authoritative for the cost, success roll and drop segment.
+        const result = await this.store.playClaw(true, target.x, target.y, 'auto')
+        this.clawAutoCount++
+        this.renderWallet()
+        const machine = this.root.querySelector<HTMLElement>('.claw-machine')
+        const chute = this.root.querySelector<HTMLElement>('.claw-chute')
+        let exitX = 88, exitY = 3
+        if (machine && chute) {
+          const m = machine.getBoundingClientRect(), c = chute.getBoundingClientRect()
+          if (m.width && m.height) {
+            exitX = Math.max(10, Math.min(90, (c.left + c.width / 2 - m.left) / m.width * 100))
+            exitY = Math.max(3, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100 - 12))
+          }
+        }
+        const startX = this.clawX, startY = this.clawY
+        const steps = Math.max(1, result.segments)
+        const endStep = result.won ? steps : Math.max(1, result.dropAt)
+        const gripOffset = arm && machine && machine.getBoundingClientRect().height
+          ? arm.getBoundingClientRect().height * .29 / machine.getBoundingClientRect().height * 100 : 7
+        if (toy) {
+          toy.style.transition = 'none'
+          toy.style.left = `${startX}%`
+          toy.style.top = `${startY + gripOffset}%`
+          void toy.offsetWidth
+          toy.classList.add('is-lifted')
+        }
+        if (msg) msg.textContent = '자동뽑기 진행 중…'
+        // Same pick-up, transport and drop cues as manual play, at a faster pace.
+        for (let step = 1; step <= endStep; step++) {
+          const fraction = result.won ? step / steps : Math.min(.86, step / steps)
+          const x = startX + (exitX - startX) * fraction
+          const y = startY + (exitY - startY) * fraction
+          this.clawX = x; this.clawY = y
+          if (arm) arm.style.transition = 'left .12s linear, top .12s linear'
+          this.updateClawPosition()
+          if (toy) {
+            toy.style.transition = 'left .12s linear, top .12s linear'
+            toy.style.left = `${x}%`; toy.style.top = `${y + gripOffset}%`
+          }
+          await sleep(140)
+        }
+        if (result.won && result.prize) {
+          const item = accessoryInfo(result.prize)
+          this.setClawClosed(false)
+          toy?.classList.add('is-dropped')
+          if (msg) msg.textContent = item ? `${item.name} 획득!` : '키링 획득!'
+          this.randomizeClawToy(target.id)
+          this.renderClaw()
+          // Await dismissal; no new diamond is spent while the prize popup is open.
+          if (item) {
+            const popup = document.createElement('dialog')
+            popup.className = 'myroom-equipment-dialog'
+            popup.innerHTML = `<div class="myroom-equipment-panel accessory-win-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
+            document.body.appendChild(popup)
+            await new Promise<void>(resolve => {
+              popup.addEventListener('close', () => { popup.remove(); resolve() }, {once:true})
+              popup.querySelector('button')?.addEventListener('click', () => popup.close())
+              popup.showModal()
+            })
+          }
+        } else {
+          // Preserve the missed doll's new position, and show the manual miss sticker.
+          const fraction = Math.min(.86, endStep / steps)
+          const releaseX = startX + (exitX - startX) * fraction
+          const releaseY = startY + (exitY - startY) * fraction + gripOffset
+          let landedX = Math.max(10, Math.min(90, releaseX + (Math.random() - .5) * 6))
+          let landedY = Math.max(18, Math.min(69, releaseY + 4 + Math.random() * 4))
+          if (machine && chute && toy) {
+            const mb = machine.getBoundingClientRect(), cb = chute.getBoundingClientRect(), tb = toy.getBoundingClientRect()
+            const minX = (cb.left - tb.width / 2 - 9 - mb.left) / mb.width * 100
+            const maxX = (cb.right + tb.width / 2 + 9 - mb.left) / mb.width * 100
+            const minY = (cb.top - tb.height / 2 - 9 - mb.top) / mb.height * 100
+            const maxY = (cb.bottom + tb.height / 2 + 9 - mb.top) / mb.height * 100
+            if (landedX > minX && landedX < maxX && landedY > minY && landedY < maxY) {
+              const candidates = [{x:landedX,y:maxY+1},{x:minX-1,y:landedY},{x:maxX+1,y:landedY},{x:landedX,y:minY-1}]
+                .filter(pt => pt.x >= 10 && pt.x <= 90 && pt.y >= 18 && pt.y <= 69)
+              const nearest = candidates.sort((a,b) => Math.hypot(a.x-landedX,a.y-landedY)-Math.hypot(b.x-landedX,b.y-landedY))[0]
+              if (nearest) { landedX = nearest.x; landedY = nearest.y }
+            }
+          }
+          target.x = landedX; target.y = landedY
+          this.saveClawToys()
+          if (toy) {
+            toy.classList.remove('is-lifted', 'is-dropped')
+            toy.style.transition = 'none'
+            toy.style.left = `${landedX}%`; toy.style.top = `${landedY}%`
+          }
+          const sticker = this.root.querySelector<HTMLElement>('.claw-missed-sticker')
+          if (sticker) {
+            sticker.style.left = `${Math.max(10,Math.min(90,(releaseX+landedX)/2))}%`
+            sticker.style.top = `${Math.max(10,Math.min(90,(releaseY+landedY)/2))}%`
+            sticker.classList.remove('is-visible'); void sticker.offsetWidth
+            sticker.classList.add('is-visible')
+            window.setTimeout(() => sticker.classList.remove('is-visible'), 850)
+          }
+          if (msg) msg.textContent = '놓쳤어요! 다음 뽑기를 준비합니다.'
+          this.setClawClosed(false)
+          await sleep(480)
+        }
+        this.resetClawToExit()
+        if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
+        this.updateClawPosition()
+        this.updateClawAutoUi()
+        await sleep(180)
+      }
+    } catch (error) {
+      this.clawAutoCancel = true
+      this.handleError(error)
+    } finally {
+      this.clawAutoRunning = false
+      this.clawBusy = false
+      this.setClawClosed(false)
+      this.resetClawToExit()
+      this.updateClawPosition()
+      if (play) play.disabled = false
+      if (refresh) refresh.disabled = false
+      this.updateClawAutoUi()
+      const msg = this.root.querySelector<HTMLElement>('.claw-message')
+      if (msg) msg.textContent = `자동뽑기 종료 · 총 ${this.clawAutoCount}회 진행`
     }
   }
 
@@ -2178,12 +2344,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const isFeatured = has && character.id === this.heroId()
       const isHalloweenLimited = String(character.id).startsWith('halloween_')
       const isPeperoLimited = character.id === 'pepero_chiikawa'
+      const isRilakkumaLimited = ['rilakkuma','korilakkuma','chairoikoguma','rilakkuma_chiikawa','korilakkuma_kani'].includes(character.id)
       const footer = has && interactive
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''} tier-${character.tier === 'mermaid' ? 'rare' : character.tier === 'rare' ? 'epic' : character.tier === 'super' ? 'unique' : character.tier}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="eager" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
-        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited || isPeperoLimited ? '<div class="halloween-limited-label">한정판</div>' : ''}
+        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited || isPeperoLimited || isRilakkumaLimited ? '<div class="halloween-limited-label">한정판</div>' : ''}
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}

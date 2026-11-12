@@ -5747,3 +5747,93 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 .gacha-modal .profile-modal-card .profile-actions > button[hidden] {display:none !important;}
 .gacha-modal .profile-modal-card .profile-actions .profile-mail {position:relative !important;}
 .gacha-modal .profile-modal-card .profile-actions .profile-mail .mail-badge {position:absolute !important;right:4px !important;top:3px !important;}
+
+/* V2.73: separate manual bonus and diamond cost into clear rows */
+.gacha-modal.claw-screen .claw-play-group{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:0}
+.gacha-modal.claw-screen .claw-play-group .claw-play{box-sizing:border-box!important;width:120px!important;min-width:120px!important;height:98px!important;min-height:98px!important;padding:13px 8px 8px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;line-height:1.15!important;white-space:normal!important;overflow:visible!important}
+.gacha-modal.claw-screen .claw-play-group .claw-play-label{font-size:17px!important;line-height:20px!important;margin:0!important}
+.gacha-modal.claw-screen .claw-play-group .claw-manual-bonus{display:block!important;font-size:9px!important;font-weight:800!important;line-height:12px!important;letter-spacing:-.3px!important;text-align:center!important;color:#e35a7a!important;white-space:nowrap!important}
+.gacha-modal.claw-screen .claw-play-group .claw-play-cost{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:3px!important;margin:0!important;padding:0!important;font-size:11px!important;line-height:15px!important;white-space:nowrap!important}
+.gacha-modal.claw-screen .claw-play-group .claw-play-cost .diamond-icon{display:inline-block!important;position:static!important;width:14px!important;height:14px!important;min-width:14px!important;object-fit:contain!important;vertical-align:middle!important;margin:0!important}
+@media(max-width:380px){.gacha-modal.claw-screen .claw-play-group .claw-play{width:112px!important;min-width:112px!important}.gacha-modal.claw-screen .claw-play-group .claw-manual-bonus{font-size:8.5px!important}}
+
+
+/* V2.75: auto claw controls - compact kawaii action panel */
+.gacha-modal.claw-screen .claw-auto-controls{
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:7px!important;
+  width:min(100%,320px)!important;
+  margin:12px auto 7px!important;
+  padding:11px 12px 10px!important;
+  background:linear-gradient(180deg,#fff9f5 0%,#fff0e8 100%)!important;
+  border:1.5px solid #efc9c1!important;
+  border-radius:19px!important;
+  box-shadow:0 3px 0 #f4d8d0,0 5px 14px rgba(129,73,79,.08)!important;
+}
+.gacha-modal.claw-screen .claw-auto-controls button{
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:46px!important;
+  height:auto!important;
+  padding:10px 12px!important;
+  margin:0!important;
+  border-radius:14px!important;
+  font-size:14px!important;
+  line-height:1.35!important;
+  font-weight:800!important;
+  letter-spacing:-.3px!important;
+  text-align:center!important;
+  white-space:normal!important;
+  word-break:keep-all!important;
+  cursor:pointer!important;
+  transition:filter .12s ease,transform .12s ease!important;
+}
+.gacha-modal.claw-screen .claw-auto-start{
+  background:linear-gradient(180deg,#ffb5ad,#f58e96)!important;
+  border:1.5px solid #e9828b!important;
+  box-shadow:0 3px 0 #d77d85!important;
+  color:#fff!important;
+  text-shadow:0 1px 1px rgba(137,54,70,.25)!important;
+}
+.gacha-modal.claw-screen .claw-auto-start::before{content:'✦';font-size:17px;color:#fff5bf}
+.gacha-modal.claw-screen .claw-auto-stop{
+  background:linear-gradient(180deg,#fff,#ffe7e3)!important;
+  border:1.5px solid #e9a7aa!important;
+  color:#b65b68!important;
+  box-shadow:0 3px 0 #f0c6c6!important;
+}
+.gacha-modal.claw-screen .claw-auto-stop::before{content:'■';font-size:11px}
+.gacha-modal.claw-screen .claw-auto-controls button[hidden]{display:none!important}
+.gacha-modal.claw-screen .claw-auto-controls button:disabled{opacity:.62!important;cursor:default!important}
+.gacha-modal.claw-screen .claw-auto-controls button:not(:disabled):active{transform:translateY(2px)!important;box-shadow:none!important}
+.gacha-modal.claw-screen .claw-auto-status{
+  display:block!important;
+  width:100%!important;
+  text-align:center!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  color:#a67a78!important;
+  line-height:1.45!important;
+}
+.gacha-modal.claw-screen .claw-auto-status:empty{display:none!important}
+.gacha-modal.claw-screen .claw-message{
+  width:min(100%,320px)!important;
+  margin:9px auto 4px!important;
+  text-align:center!important;
+  font-size:11px!important;
+  line-height:1.5!important;
+  color:#9a7470!important;
+  overflow-wrap:anywhere!important;
+}
+@media(max-width:380px){
+ .gacha-modal.claw-screen .claw-auto-controls{width:calc(100% - 10px)!important;padding:9px!important}
+ .gacha-modal.claw-screen .claw-auto-controls button{font-size:12px!important;min-height:43px!important}
+}

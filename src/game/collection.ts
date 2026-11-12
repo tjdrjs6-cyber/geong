@@ -1,6 +1,11 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
+  { id: 'rilakkuma', name: '리락쿠마', variant: '', probability: 0, tier: 'rare', weedBonus: 45, power: 25, color: '#f9e5cb', accent: '#b98343' },
+  { id: 'korilakkuma', name: '코리락쿠마', variant: '', probability: 0, tier: 'rare', weedBonus: 45, power: 25, color: '#fff4e7', accent: '#dca7a7' },
+  { id: 'chairoikoguma', name: '차이로이코구마', variant: '', probability: 0, tier: 'rare', weedBonus: 45, power: 25, color: '#f1dfd5', accent: '#a77860' },
+  { id: 'rilakkuma_chiikawa', name: '리락쿠마', variant: '치이카와', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#f5e1c9', accent: '#b98450' },
+  { id: 'korilakkuma_kani', name: '코리락쿠마', variant: '카니', probability: 0, tier: 'legendary', weedBonus: 0, power: 50, color: '#ffe6eb', accent: '#d98eaa' },
   { id: 'pepero_chiikawa', name: '치이카와', variant: '빼빼로', probability: 0, tier: 'normal', weedBonus: 0, power: 2, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'chiikawa', name: '치이카와', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 4, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'hachiware', name: '하치와레', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 6, color: '#e6f3ff', accent: '#6ea5d8' },

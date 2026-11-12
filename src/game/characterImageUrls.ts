@@ -1,6 +1,11 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art. New PNGs should use a centered square transparent canvas with minimal padding to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
+  rilakkuma: '/assets/chars/rilakkuma.png',
+  korilakkuma: '/assets/chars/korilakkuma.png',
+  chairoikoguma: '/assets/chars/chairoikoguma.png',
+  rilakkuma_chiikawa: '/assets/chars/rilakkuma_chiikawa.png',
+  korilakkuma_kani: '/assets/chars/korilakkuma_kani.png',
   pepero_chiikawa: '/assets/chars/pepero_chiikawa.png',
   pajama_chiikawa: '/assets/chars/pajama_chiikawa.png',
   pajama_hachiware: '/assets/chars/pajama_hachiware.png',
