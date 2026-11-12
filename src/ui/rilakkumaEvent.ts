@@ -1,8 +1,10 @@
 import '../styles/rilakkumaEvent.css'
+import { CHARACTERS } from '../game/collection'
 
 type Mission = {id:string;reward:number;target:number;progress:number;claimed:boolean}
 type EventState = {active:boolean;day:string;end:string;balance:number;welcomeClaimed:boolean;missions:Mission[];shop:{id:string;price:number;owned:boolean}[]}
 const shopNames:Record<string,string>={rilakkuma:'리락쿠마',korilakkuma:'코리락쿠마',chairoikoguma:'차이로이코구마',rilakkuma_chiikawa:'리락쿠마(치이카와)',korilakkuma_kani:'코리락쿠마(카니)'}
+const eventStats = new Map(CHARACTERS.map(c => [c.id, { weedBonus: c.weedBonus, power: c.power }]))
 const labels:Record<string,string>={attendance:'오늘 출석',weed:'제초장 잡초 10개 수거',expedition:'원정대 캐릭터 1회 배치',claw:'인형뽑기 10회 (자동 포함)',chat:'전체채팅 1회 작성',lottery:'겅이복권 1회 이용'}
 async function api(path:string,body?:object):Promise<EventState>{
   const res=await fetch(path,{credentials:'same-origin',cache:'no-store',...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})})
@@ -14,7 +16,7 @@ export function installRilakkumaEvent():void{
   const overlay=document.createElement('div');overlay.className='ril-event-overlay';overlay.hidden=true
   const panel=document.createElement('section');panel.className='ril-event-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','리락쿠마 이벤트 미션')
   overlay.append(panel);document.body.append(overlay)
-  const place=()=>{const expedition=document.querySelector('.expedition-entry');if(expedition && btn.parentElement!==expedition)expedition.appendChild(btn)}
+  const place=()=>{const expedition=document.querySelector('.expedition-entry');if(expedition?.parentElement)expedition.insertAdjacentElement('afterend',btn)}
   place()
   new MutationObserver(()=>{if(!btn.isConnected)place()}).observe(document.body,{childList:true,subtree:true})
   let busy=false
@@ -28,7 +30,7 @@ export function installRilakkumaEvent():void{
       <div class="ril-event-balance">보유 이벤트 코인 <strong><img src="/assets/rilakkuma_event_coin.png" alt=""/> ${state.balance.toLocaleString('ko-KR')}개</strong></div>
       <p class="ril-event-hint">첫 접속 보너스 50개 자동 지급 · 일일 최대 100개 · 한국시간 09시 초기화</p>
       <div class="ril-event-missions">${state.missions.map(m=>`<div class="ril-event-mission"><div class="ril-event-copy"><b>${esc(labels[m.id]||m.id)}</b><span>${m.progress}/${m.target} 달성 · 보상 ${m.reward}개</span></div><button type="button" data-claim="${esc(m.id)}" ${!state.active||m.claimed||m.progress<m.target?'disabled':''}>${m.claimed?'수령 완료':m.progress>=m.target?'보상 수령':'진행 중'}</button></div>`).join('')}</div>
-      <section class="ril-event-shop"><h3>리락쿠마 한정 교환소</h3><p>이벤트 코인으로 각 캐릭터를 한 번씩 교환할 수 있어요.</p><div class="ril-event-shop-grid">${(state.shop||[]).map(c=>`<article class="ril-event-shop-item"><img src="/assets/chars/${esc(c.id)}.png" alt=""/><b>${esc(shopNames[c.id]||c.id)}</b><small>${c.price===150?'에픽':'레전더리'} · 한정판</small><button type="button" data-exchange="${esc(c.id)}" ${!state.active||c.owned||state.balance<c.price?'disabled':''}>${c.owned?'교환 완료':`${c.price}코인 교환`}</button></article>`).join('')}</div></section>
+      <section class="ril-event-shop"><h3>리락쿠마 한정 교환소</h3><p>이벤트 코인으로 각 캐릭터를 한 번씩 교환할 수 있어요.</p><div class="ril-event-shop-grid">${(state.shop||[]).map(c=>`<article class="ril-event-shop-item ${c.price===150?'ril-event-tier-epic':'ril-event-tier-legendary'}"><img src="/assets/chars/${esc(c.id)}.png" alt=""/><b>${esc(shopNames[c.id]||c.id)}</b><small class="ril-event-tier-label">${c.price===150?'에픽':'레전더리'} · 한정판</small><div class="ril-event-stats"><span>제초속도 +${eventStats.get(c.id)?.weedBonus ?? 0}%</span><span>전투력 ${eventStats.get(c.id)?.power ?? 0}</span></div><button type="button" data-exchange="${esc(c.id)}" ${!state.active||c.owned||state.balance<c.price?'disabled':''}>${c.owned?'교환 완료':`${c.price}코인 교환`}</button></article>`).join('')}</div></section>
       <footer>${state.active?'11월 22일 23:59까지 참여할 수 있어요.':'이벤트가 종료되었습니다.'}</footer>`
     panel.querySelectorAll<HTMLButtonElement>('[data-exchange]').forEach(b=>b.addEventListener('click',async()=>{
       if(busy)return
