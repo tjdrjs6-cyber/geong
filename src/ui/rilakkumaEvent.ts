@@ -16,7 +16,7 @@ export function installRilakkumaEvent():void{
   const overlay=document.createElement('div');overlay.className='ril-event-overlay';overlay.hidden=true
   const panel=document.createElement('section');panel.className='ril-event-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','리락쿠마 이벤트 미션')
   overlay.append(panel);document.body.append(overlay)
-  const place=()=>{const expedition=document.querySelector('.expedition-entry');if(expedition?.parentElement)expedition.insertAdjacentElement('afterend',btn)}
+  const place=()=>{const expedition=document.querySelector('.expedition-entry');if(expedition && btn.parentElement!==expedition)expedition.appendChild(btn)}
   place()
   new MutationObserver(()=>{if(!btn.isConnected)place()}).observe(document.body,{childList:true,subtree:true})
   let busy=false
