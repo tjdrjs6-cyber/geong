@@ -1,6 +1,7 @@
+import { skillTick } from './battleSkills.mjs'
 const BATTLE_STAGE_HPS = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000];
 const battleStageHp = (stage: number): number => BATTLE_STAGE_HPS[stage - 1] ?? (180000 + Math.max(0, stage - 40) * 4000);
-import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
+import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
@@ -156,7 +157,7 @@ export class RemoteGachaStore {
     for (let i = 0; i < ticks; i++) {
       tickAt += BATTLE_TICK_MS
       if (tickAt - stageSince >= (battle.stageLimitMs ?? 1800000)) { stage = Math.max(1,stage-1); stageSince = tickAt; damage = 0; break }
-      damage += power
+      damage += skillTick([battle.id,battle.secondId,battle.thirdId].filter((id): id is CharacterId => Boolean(id)).map(id=>({id,tier:characterById(id).tier,power:battlePower(id)})),(this.forge?.bonus ?? 0)+this.collectionCombatPower,tickAt).damage
       if (damage >= battleStageHp(stage)) { kills++; if (stage % 10 !== 9) stage++; stageSince = tickAt; damage = 0 }
     }
     const maxHp = battleStageHp(stage)

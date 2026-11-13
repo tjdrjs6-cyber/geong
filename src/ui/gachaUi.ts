@@ -1,3 +1,4 @@
+import { skillInfo, skillTick } from '../game/battleSkills.mjs'
 const BATTLE_STAGE_REWARDS: [number, number][] = [[1,0],[1,0],[2,0],[2,0],[3,0],[3,1],[4,1],[4,1],[5,1],[5,1],[6,2],[6,2],[7,2],[7,2],[8,2],[8,3],[9,3],[9,3],[10,3],[10,3],[11,4],[11,4],[12,4],[12,4],[13,4],[13,5],[14,5],[14,5],[15,5],[15,5],[16,6],[16,6],[17,6],[17,6],[18,6],[18,7],[19,7],[19,7],[20,7],[20,7]];
 const stageRewards = (stage: number): [number, number] => BATTLE_STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0,stage - 40), 7];
 const WEAPON_ACCESSORIES = [
@@ -1315,6 +1316,11 @@ export class GachaUi {
       this.renderWallet()
       return
     }
+    if (action === 'skill-detail' && button?.dataset.id) {
+      const character = CHARACTERS.find(c=>c.id===button.dataset.id)
+      if(character) this.showSkillDetail(character)
+      return
+    }
     if (action === 'choose' && button?.dataset.id) {
       const id = button.dataset.id as CharacterId
       if (!this.store.data.owned.includes(id) || id === this.heroId()) return
@@ -2356,9 +2362,25 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited || isPeperoLimited || isRilakkumaLimited ? '<div class="halloween-limited-label">한정판</div>' : ''}
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
+        <button type="button" class="friend-skill-link" data-action="skill-detail" data-id="${character.id}" aria-label="${fullName(character)} 고유 스킬 보기">✦ 고유 스킬</button>
         ${footer}
       </article>`
     }).join('')
+  }
+
+  private showSkillDetail(character: Character): void {
+    const skill=skillInfo(character.id,character.tier)
+    const owned=this.store.data.owned.includes(character.id)
+    const overlay=document.createElement('div')
+    overlay.className='battle-skill-overlay'
+    overlay.setAttribute('role','presentation')
+    overlay.innerHTML=`<section class="battle-skill-dialog" role="dialog" aria-modal="true" aria-label="캐릭터 고유 스킬"><button type="button" class="battle-skill-close" aria-label="닫기">×</button><div class="battle-skill-portrait"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /></div><h3>${fullName(character)}</h3><p>${tierTag(character)} · 전투력 ${battlePower(character.id)} · 제초 보너스 +${character.weedBonus}%</p><div class="battle-skill-effect"><strong>✦ ${skill.name}</strong><span>${skill.description}</span><small>${skill.kind==='support'?'지원형':'공격형'} · 3초마다 기본 공격 · 스킬 자동 발동</small></div><p class="battle-skill-owned">${owned?'✓ 도감 등록 완료':'미보유 · 스킬 미리보기'}</p></section>`
+    const close=()=>overlay.remove()
+    overlay.addEventListener('click',e=>{if(e.target===overlay||(e.target as HTMLElement).closest('.battle-skill-close'))close()})
+    const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){close();window.removeEventListener('keydown',escape)}}
+    window.addEventListener('keydown',escape,{once:true})
+    document.body.append(overlay)
+    overlay.querySelector<HTMLButtonElement>('.battle-skill-close')?.focus()
   }
 
   private pullConfirmed=false
@@ -3303,7 +3325,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
+            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button><button type="button" class="battle-picker-skill" data-action="skill-detail" data-id="${character.id}">✦ 스킬</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
@@ -3333,6 +3355,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       // Weapon power remains included in server and UI damage calculations.
     }
     this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter) && !this.battleStageChanging)
+    if(battleField && !battleField.querySelector('.battle-skill-flash'))battleField.insertAdjacentHTML('beforeend','<span class="battle-skill-flash" aria-live="off"></span>')
     this.battleAnimationKey = ''
     this.renderBattleStatus()
   }
@@ -3518,7 +3541,14 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (fighter && !this.battleStageChanging && view.kills === 0 && this.lastEnemyHp >= 0 && view.hp < this.lastEnemyHp) {
       const hit = this.root.querySelector<HTMLElement>('.bf-hit')
       const enemy = this.root.querySelector<HTMLElement>('.bf-enemy')
-      if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
+      const tickAt=this.store.serverNow()-(BATTLE_TICK_MS-view.nextIn)
+      const deployed=[this.store.battle?.id,this.store.battle?.secondId,this.store.battle?.thirdId].filter((id):id is CharacterId=>Boolean(id))
+      const skill=skillTick(deployed.map(id=>({id,tier:characterById(id).tier,power:battlePower(id)})),(this.store.forge?.bonus??0)+this.collectionCombatPower,tickAt)
+      const special=skill.active[0]
+      if (hit) { hit.textContent = `-${skill.damage}`; hit.classList.toggle('is-skill-hit',Boolean(special)); hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
+      const skillLabel=field?.querySelector<HTMLElement>('.battle-skill-flash')
+      if(skillLabel){skillLabel.textContent=special?`✦ ${special.name}`:'';skillLabel.classList.remove('is-showing');if(special){void skillLabel.offsetWidth;skillLabel.classList.add('is-showing')}}
+      if(special){field?.classList.remove('battle-skill-impact');void field?.offsetWidth;field?.classList.add('battle-skill-impact')}
       if (enemy) { enemy.classList.remove('is-hit'); void enemy.offsetWidth; enemy.classList.add('is-hit') }
       field?.classList.remove('battle-impact'); void field?.offsetWidth; field?.classList.add('battle-impact')
     }
