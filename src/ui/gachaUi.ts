@@ -1133,12 +1133,15 @@ export class GachaUi {
       return
     }
     if (action === 'free-daily-pull' && !this.pullConfirmed) { if(this.freePullRemaining()===0){this.toast('오늘의 무료 10회 뽑기를 이미 사용했어요.');return} this.askPullConfirmation('free',10); return }
-    if (action === 'free-daily-pull') { this.pullConfirmed=false; const button10=this.root.querySelector<HTMLButtonElement>('.pull-button[data-action="pull"][data-count="10"]'); if(!button10)return; this.pullConfirmed=true; button10.dataset.forceFree='true'; button10.click(); delete button10.dataset.forceFree; this.pullConfirmed=false; return }
+    if (action === 'free-daily-pull') {
+      this.pullConfirmed=false
+      if (this.freePullRemaining() !== 10) { this.toast('오늘의 무료 10회 뽑기를 이미 사용했어요.'); return }
+    }
     if (action === 'pull' && !this.pullConfirmed) { this.askPullConfirmation('char',Number(button.dataset.count)); return }
-    if (action === 'pull') { this.pullConfirmed=false;
-      const count = Number(button.dataset.count) as PullCount
+    if (action === 'pull' || action === 'free-daily-pull') { this.pullConfirmed=false;
+      const count = (action === 'free-daily-pull' ? 10 : Number(button.dataset.count)) as PullCount
       if (!PULL_OPTIONS.some(option => option.count === count)) return
-      const free = button.dataset.forceFree === 'true'
+      const free = action === 'free-daily-pull'
       const cost = free ? 0 : pullCost(count)
       if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
       this.busy = true
