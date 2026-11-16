@@ -5880,3 +5880,42 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .attendance-popup-inner{overflow-x:hidden;max-width:100%;box-sizing:border-box}
 #ui .attendance-popup-inner .attendance-reward b{overflow-wrap:anywhere;word-break:keep-all;max-width:100%}
 #ui .claw-balance-count .claw-ticket-value{font-size:clamp(17px,4vw,25px)}
+
+
+/* 2026-11-17: user-provided portrait art. Only the backgrounds are changed. */
+#ui .gacha-screen, #ui .gacha-screen.is-active {
+  background-color:#c7ecb3!important;
+  background-image:url('/geong_main_music_garden.webp')!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+}
+#ui .gacha-boot, #ui .gacha-boot.is-active {
+  background-color:#a9c9f7!important;
+  background-image:url('/geong_loading_christmas.webp')!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+}
+/* One second per visible strike: override old 3-second animation shorthands. */
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-friend-body {
+  animation-name:battle-strike-return-v173!important;
+  animation-duration:1s!important;
+  animation-timing-function:cubic-bezier(.35,0,.3,1)!important;
+  animation-delay:var(--battle-cycle-offset,0s)!important;
+  animation-iteration-count:infinite!important;
+  animation-play-state:running!important;
+}
+#ui .battle-field.is-fighting:not(.is-stage-changing) > .battle-weapon-strike {
+  animation-name:battle-strike-return-v173!important;
+  animation-duration:1s!important;
+  animation-timing-function:cubic-bezier(.35,0,.3,1)!important;
+  animation-delay:var(--battle-cycle-offset,0s)!important;
+  animation-iteration-count:infinite!important;
+  animation-play-state:running!important;
+}
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-spark {animation-duration:1s!important}
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-enemy-body {animation-duration:1.6s,1s!important}
+#ui .battle-field.is-stage-changing .bf-friend-body,
+#ui .battle-field.is-stage-changing > .battle-weapon-strike,
+#ui .battle-field.is-stage-changing .bf-spark {animation-play-state:paused!important}
