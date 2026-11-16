@@ -168,13 +168,13 @@ export class RemoteGachaStore {
     return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:Math.max(0,60000-elapsed)}
   }
 
-  /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
+  /** Exact passive coins per minute, matching server settlement. */
   weedHourlyRate(): number {
     const members = this.weed?.members ?? []
     if (!members.length) return 0
     const bonus = Math.min(2.5, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
     const multiplier = this.weed?.beetle ? 2 : 1
-    return Math.floor(30 * bonus * multiplier * 0.02) * 0.85 + Math.floor(300 * bonus * multiplier * 0.02) * 0.15
+    return Math.floor(10 * bonus * multiplier)
   }
   hourlyRate(): number { return this.weedHourlyRate() }
   /** Server credits weeding + battle coins without opening those screens. */

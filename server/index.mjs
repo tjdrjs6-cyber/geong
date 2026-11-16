@@ -621,12 +621,12 @@ async function suggestions(account) {
 }
 const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1,1,1,1,1,1]
-const FORGE_COSTS = [{"coins": 20, "fragments": 0}, {"coins": 40, "fragments": 0}, {"coins": 60, "fragments": 0}, {"coins": 80, "fragments": 0}, {"coins": 100, "fragments": 0}, {"coins": 120, "fragments": 5}, {"coins": 140, "fragments": 5}, {"coins": 160, "fragments": 5}, {"coins": 180, "fragments": 5}, {"coins": 200, "fragments": 5}, {"coins": 250, "fragments": 10}, {"coins": 290, "fragments": 10}, {"coins": 330, "fragments": 10}, {"coins": 365, "fragments": 10}, {"coins": 400, "fragments": 10}, {"coins": 450, "fragments": 20}, {"coins": 510, "fragments": 20}, {"coins": 570, "fragments": 20}, {"coins": 635, "fragments": 20}, {"coins": 700, "fragments": 20}, {"coins": 800, "fragments": 30}, {"coins": 900, "fragments": 30}, {"coins": 1000, "fragments": 30}, {"coins": 1100, "fragments": 30}, {"coins": 1200, "fragments": 30}, {"coins": 1300, "fragments": 50}, {"coins": 1450, "fragments": 50}, {"coins": 1600, "fragments": 50}, {"coins": 1800, "fragments": 50}, {"coins": 2000, "fragments": 50}]
+const FORGE_COSTS = [{"coins":200,"fragments":0},{"coins":400,"fragments":0},{"coins":600,"fragments":0},{"coins":800,"fragments":0},{"coins":1000,"fragments":0},{"coins":1200,"fragments":5},{"coins":1400,"fragments":5},{"coins":1600,"fragments":5},{"coins":1800,"fragments":5},{"coins":2000,"fragments":5},{"coins":2500,"fragments":10},{"coins":2900,"fragments":10},{"coins":3300,"fragments":10},{"coins":3650,"fragments":10},{"coins":4000,"fragments":10},{"coins":4500,"fragments":20},{"coins":5100,"fragments":20},{"coins":5700,"fragments":20},{"coins":6350,"fragments":20},{"coins":7000,"fragments":20},{"coins":8000,"fragments":30},{"coins":9000,"fragments":30},{"coins":10000,"fragments":30},{"coins":11000,"fragments":30},{"coins":12000,"fragments":30},{"coins":13000,"fragments":50},{"coins":14500,"fragments":50},{"coins":16000,"fragments":50},{"coins":18000,"fragments":50},{"coins":20000,"fragments":50}]
 const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885'
 const FORGE_POWER = [10, 16, 22, 28, 34, 40, 50, 60, 70, 80, 90, 104, 118, 132, 146, 160, 178, 196, 214, 232, 250, 272, 294, 316, 338, 360, 388, 416, 444, 472, 500]
 const forgeBonus = level => FORGE_POWER[Math.max(0, Math.min(30, Number(level) || 0))]
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
-const ACCESSORY_GRADES = {rare:{cost:3,coins:500,fragments:500,power:30},epic:{cost:3,coins:2000,fragments:2000,power:80},unique:{cost:3,coins:6000,fragments:6000,power:160},legendary:{cost:3,coins:20000,fragments:20000,power:300},transcendent:{cost:3,coins:60000,fragments:300000,power:500}}
+const ACCESSORY_GRADES = {rare:{cost:3,coins:2500,fragments:500,power:30},epic:{cost:3,coins:10000,fragments:2000,power:80},unique:{cost:3,coins:30000,fragments:6000,power:160},legendary:{cost:3,coins:100000,fragments:20000,power:300},transcendent:{cost:3,coins:300000,fragments:300000,power:500}}
 const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.power || 10) : 0
 async function getAccessory(accountId, conn=pool) {
   const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=?',[accountId])
@@ -854,15 +854,14 @@ async function updateWeed(accountId, op = {}) {
       // hours before a newly joined member was assigned.
       const fromSlot = Math.max(...members.map(m => Math.floor(m.since / WEED_HOUR_MS)))
       const toSlot = Math.floor(now / WEED_HOUR_MS)
-      // Each elapsed minute yields one normal/golden weed. Deterministic by account and minute to prevent rerolling.
+      // Shared field income: 10 coins/minute with one or more characters.
+      // Character bonuses are additive (capped at +150%); beetle doubles income.
+      // Apply only completed minute slots to avoid rounding/drift between settlements.
       const startMinute=Math.max(Math.floor(now/60000)-480,Math.floor(Math.max(...members.map(m=>m.since))/60000))
       const endMinute=Math.floor(now/60000)
       const bonus=Math.min(2.5,1+members.reduce((v,m)=>v+(WEED_BONUS[m.id]||0)/100,0))
-      for(let minute=startMinute;minute<endMinute;minute++){
-        const hash=createHash('sha256').update(`${accountId}:weed:${minute}`).digest()
-        const golden=hash.readUInt32BE(0)%100<15
-        earned+=Math.floor((golden?300:30)*bonus*weedCoinMultiplier(beetle)*0.02)
-      }
+      const perMinute=Math.floor(10*bonus*weedCoinMultiplier(beetle))
+      earned+=Math.max(0,endMinute-startMinute)*perMinute
     }
     members = members.map(m => ({ id: m.id, since: Math.floor(now / 60000) * 60000 }))
     if (op.add) { members.push({ id: op.add, since: Math.floor(now / 60000) * 60000 }); if (op.add === BEETLE_ID) beetle = false }
