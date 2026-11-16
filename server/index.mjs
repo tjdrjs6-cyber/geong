@@ -392,8 +392,7 @@ async function grantAdminCollection(accountId) {
     const current = rows[0] ? normalizeDecos(typeof rows[0].items === 'string' ? JSON.parse(rows[0].items) : rows[0].items) : {}
     const complete = { ...current }
     for (const id of DECO_IDS) complete[id] = Math.max(1, complete[id] || 0)
-    await conn.query('UPDATE gm_saves SET diamonds=? WHERE account_id=?', [state.diamonds,account.id])
-      await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [accountId, JSON.stringify(complete)])
+    await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [accountId, JSON.stringify(complete)])
     await conn.commit()
   } catch (error) {
     await conn.rollback().catch(() => {})
@@ -2259,7 +2258,6 @@ const routes = {
       if (!outcome.ok) { await conn.rollback(); return send(res, 400, { error: outcome.error==='not_enough_coins'?'not_enough_diamonds':outcome.error }) }
       if (!account.is_admin) { const cost = {1:100,3:300,5:500,10:1000}[count]; state.diamonds -= cost; state.gems += outcome.gems - (state.diamonds); /* new collection bonuses are coins */ }
       await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems)', [account.id, state.gems, JSON.stringify(state.owned), state.lastDaily])
-      await conn.query('UPDATE gm_saves SET diamonds=? WHERE account_id=?', [state.diamonds,account.id])
       await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(outcome.decos)])
       await conn.commit()
       send(res, 200, { save: state, decos: outcome.decos, results: outcome.results })
