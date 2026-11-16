@@ -715,55 +715,44 @@ async function updateBattle(accountId, nextCharacter) {
     let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
       const power = !battle.id ? 0 : Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
-      // Each minute represents 60 one-second attacks. At most 8 hours accrue between settlements.
-      const elapsed = !battle.id ? 0 : Math.max(0, now - battle.since)
-      const capped = Math.min(elapsed, BATTLE_OFFLINE_CAP_MS)
-      const cycles = Math.floor(capped / STAGE_LIMIT_MS)
-      for (let i = 0; i < cycles; i++) {
-        if (!power) break
+      // Settle each completed stage exactly once, using the persisted stage clock.
+      // A 1.5s transition prevents the next enemy from receiving damage during the clear overlay.
+      let cursor = Math.max(Number(battle.stageSince || battle.since), now - BATTLE_OFFLINE_CAP_MS)
+      let processed = 0
+      while (power > 0 && cursor <= now && processed++ < MAX_BATTLE_STAGE + 1) {
         const current = Math.max(1, Math.min(MAX_BATTLE_STAGE, battle.stage))
-        const previousBest = battle.maxClearedStage || 0
-        const success = power * 60 >= stageHp(current)
-        // On a failed challenge, farm the highest cleared stage rather than minting
-        // rewards from an undefeated monster.
-        const rewardStage = success ? current : Math.max(0, battle.maxClearedStage || 0)
-        if (!success && !rewardStage) { if (!battle.retryStage) failedStage = current; battle.retryStage = current; continue }
-        const reward = stageReward(rewardStage)
-        if (randomInt(400) < 3) ticketsEarned++
+        const killMs = Math.ceil(stageHp(current) / power) * 1000
+        if (killMs > STAGE_LIMIT_MS) {
+          if (now - cursor >= STAGE_LIMIT_MS) {
+            if (!battle.retryStage) failedStage = current
+            battle.retryStage = current
+            const fallback = battle.maxClearedStage || current
+            battle.stage = fallback
+            cursor += STAGE_LIMIT_MS + 1500
+            continue
+          }
+          break
+        }
+        if (now - cursor < killMs) break
+        const reward = stageReward(current)
+        const ticket = randomInt(400) < 3 ? 1 : 0
+        ticketsEarned += ticket
         diamondsEarned += reward.diamonds
         earned += reward.fragments
-        if (success) {
-          battle.maxClearedStage = Math.max(previousBest, current)
-          // Completed stages are farmed; only first clears advance automatically.
-          if (current < MAX_BATTLE_STAGE) battle.stage = current + 1
-        } else {
-          if (!battle.retryStage && current > previousBest) {
-            failedStage = current
-            battle.retryStage = current
-          }
-          // Immediately switch to the highest completed stage for farming.
-          if (previousBest > 0) battle.stage = previousBest
-        }
+        cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket})
+        battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
+        battle.retryStage = 0
+        if (current < MAX_BATTLE_STAGE) battle.stage = current + 1
+        cursor += killMs + 1500
+        if (current === MAX_BATTLE_STAGE) break
       }
-      // A successful first-clear advances immediately, without waiting for the
-      // remaining reward minute. Rewards are still minted only on full-minute cycles.
-      // The per-stage clock is independent of the reward settlement clock.
-      const stageElapsed = Math.max(0, now - (battle.stageSince || battle.since))
-      if (power > 0 && stageElapsed < STAGE_LIMIT_MS && power * Math.floor(stageElapsed / 1000) >= stageHp(battle.stage)) {
-        battle.maxClearedStage = battle.stage
-        if (battle.stage < MAX_BATTLE_STAGE) battle.stage++
-        battle.stageSince = now + 1500 // No damage accrues until the clear animation ends.
-        battle.stageDamage = 0
-      }
-      // Do not bank time beyond the offline cap. Preserve sub-minute remainder only.
-      battle.since = elapsed > BATTLE_OFFLINE_CAP_MS ? now : now - (capped % STAGE_LIMIT_MS)
-      if (cycles && stageElapsed >= STAGE_LIMIT_MS) battle.stageSince = battle.since
+      battle.stageSince = cursor
+      battle.since = cursor
+      battle.stageLimitMs = STAGE_LIMIT_MS
       battle.stageDamage = 0
       battle.damage = 0
       battle.stageLimitMs = STAGE_LIMIT_MS
       battle.bossReady = false
-      // Keep the failed challenge available for a manual retry.
-      if (cycles) cleared = [{ stage: Math.max(1, battle.stage - 1), diamonds: diamondsEarned, fragments: earned, coins: 0 }]
     }
     if (nextCharacter) {
       if (!battle || !battle.id) {

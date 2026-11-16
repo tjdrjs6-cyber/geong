@@ -258,7 +258,7 @@ export class GachaUi {
     const popup = document.createElement('dialog')
     popup.id = 'attendance-popup'
     popup.setAttribute('aria-label', '출석체크 보상')
-    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?`<img class="attendance-currency-icon" src="/assets/${[1,3,5].includes(i+1)?'coin':'diamond'}.png" alt="${[1,3,5].includes(i+1)?'코인':'다이아'}"/>`:'🎁'}</span><b>${i<5?['3,000코인','다이아 1,000개','5,000코인','다이아 2,000개','10,000코인'][i]:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
+    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?`<img class="attendance-currency-icon" width="26" height="26" src="/assets/${[1,3,5].includes(i+1)?'coin':'diamond'}.png" alt="${[1,3,5].includes(i+1)?'코인':'다이아'}"/>`:'🎁'}</span><b>${i<5?['3,000코인','다이아 1,000개','5,000코인','다이아 2,000개','10,000코인'][i]:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
     document.body.appendChild(popup)
     popup.querySelector('.attendance-close')?.addEventListener('click', () => popup.close())
     popup.addEventListener('click', event => { if (event.target === popup) popup.close() })
@@ -517,15 +517,15 @@ export class GachaUi {
           <div class="toast claw-toast" aria-live="assertive"></div>
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <h2 id="claw-title"><img class="claw-title-usagi" src="/assets/chars/chiikawa_face_claw.png" alt="치이카와" /> 키링뽑기</h2>
-          <p class="claw-desc"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1회 1다이아 · 성공하면 무기 액세서리 랜덤 1개가 지급!</p>
-          <div class="claw-balance" aria-label="보유 다이아"><span class="claw-balance-title">보유 다이아</span><span class="claw-balance-count"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><span class="claw-balance-times">×</span><strong class="diamond-value">0</strong><span class="claw-balance-unit">개</span></span></div><p class="claw-balance-help">집게를 인형 위로 이동해 잡아보세요!</p>
-          <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · <img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 2개</button>
+          <p class="claw-desc">🎟️ 1회 쿠폰 1개 · 성공하면 무기 액세서리 랜덤 1개가 지급!</p>
+          <div class="claw-balance" aria-label="보유 인형뽑기 쿠폰"><span class="claw-balance-title">보유 인형뽑기 쿠폰</span><span class="claw-balance-count">🎟️ <strong class="claw-ticket-value">20 / 20</strong></span></div><p class="claw-balance-help">매시간 정각 +5개 · 최대 20개 · 집게를 인형 위로 이동해 잡아보세요!</p>
+          <button class="claw-refresh" data-action="claw-refresh">🔄 인형 위치 새로고침 · 무료</button>
           <div class="claw-machine" aria-label="집게를 이동하고 뽑기 버튼을 누르세요">
             <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw_open.png" alt="" /></div>
             <div class="claw-toys"></div><img class="claw-missed-sticker" src="/assets/claw/claw_missed.png" alt="놓쳤다!" aria-hidden="true" /><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
-          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><div class="claw-play-group"><button class="claw-play" data-action="claw-play"><span class="claw-play-label">뽑기!</span><span class="claw-manual-bonus">수동뽑기 시 5% 확률 UP</span><small class="claw-play-cost"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> <span>1개</span></small></button></div></div>
-          <div class="claw-auto-controls"><button type="button" class="claw-auto-start" data-action="claw-auto-start">자동뽑기 시작 · 1회당 다이아 1개</button><button type="button" class="claw-auto-stop" data-action="claw-auto-stop" hidden>진행 취소 (현재 뽑기 후 종료)</button><span class="claw-auto-status" aria-live="polite"></span></div><p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
+          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><div class="claw-play-group"><button class="claw-play" data-action="claw-play"><span class="claw-play-label">뽑기!</span><span class="claw-manual-bonus">수동뽑기 시 5% 확률 UP</span><small class="claw-play-cost">🎟️ <span>쿠폰 1개</span></small></button></div></div>
+          <div class="claw-auto-controls"><button type="button" class="claw-auto-start" data-action="claw-auto-start">자동뽑기 시작 · 1회당 쿠폰 1개</button><button type="button" class="claw-auto-stop" data-action="claw-auto-stop" hidden>진행 취소 (현재 뽑기 후 종료)</button><span class="claw-auto-status" aria-live="polite"></span></div><p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
       <section class="gacha-modal forge-screen" data-screen="forge" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="forge-title">
@@ -1464,8 +1464,18 @@ export class GachaUi {
     // Moving to stale this.clawX/Y caused a phantom empty-claw grab after reward.
   }
 
+  private renderClawTickets(): void {
+    const save = this.store.data as typeof this.store.data & {clawTickets?:number;clawLastHour?:number}
+    const hour = Math.floor(Date.now() / 3600000)
+    const lastHour = save.clawLastHour || hour
+    const tickets = Math.min(20, (save.clawTickets ?? 20) + Math.max(0, hour-lastHour)*5)
+    const display = this.root.querySelector<HTMLElement>('.claw-ticket-value')
+    if (display) display.textContent = this.isAdmin ? '∞' : `${tickets} / 20`
+  }
+
   private renderClaw(): void {
     this.renderWallet()
+    this.renderClawTickets()
     if (!this.clawToys.length) this.randomizeClawToy()
     const toys = this.root.querySelector<HTMLElement>('.claw-toys')
     if (toys) toys.innerHTML = this.clawToys.map(toy =>
@@ -1530,9 +1540,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         this.resetClawToExit()
         this.renderClaw()
         this.renderWallet()
-        this.toast('다이아 2개를 사용해 인형 위치를 새로 배치했어요!')
+        this.toast('인형 위치를 무료로 새로 배치했어요!')
         const clawMessage = this.root.querySelector<HTMLElement>('.claw-message')
-        if (clawMessage) clawMessage.textContent = '다이아 2개를 사용해 인형 위치를 새로 배치했어요!'
+        if (clawMessage) clawMessage.textContent = '인형 위치를 무료로 새로 배치했어요!'
       } catch(error) { this.handleError(error) }
       finally {this.clawBusy=false;if(refresh)refresh.disabled=false}
       return
@@ -1554,6 +1564,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
       const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50, 'manual')
       this.renderWallet()
+      this.renderClawTickets()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
       await new Promise(resolve => window.setTimeout(resolve, 320))
@@ -1766,7 +1777,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.updateClawAutoUi()
     try {
       while (!this.clawAutoCancel && this.screen === 'claw') {
-        // The server is authoritative for both the diamond debit and the success roll.
+        // The server is authoritative for both the coupon debit and the success roll.
         const target = this.clawToys[Math.floor(Math.random() * this.clawToys.length)]
         if (!target) break
         const arm = this.root.querySelector<HTMLElement>('.claw-arm')
@@ -1786,6 +1797,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         const result = await this.store.playClaw(true, target.x, target.y, 'auto')
         this.clawAutoCount++
         this.renderWallet()
+        this.renderClawTickets()
         const machine = this.root.querySelector<HTMLElement>('.claw-machine')
         const chute = this.root.querySelector<HTMLElement>('.claw-chute')
         let exitX = 88, exitY = 3
@@ -3411,13 +3423,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.root.querySelector('.battle-field')?.classList.remove('is-stage-changing')
     },2000)
   }
-  private showBattleClearRewards(items:{stage:number;coins:number;diamonds?:number;fragments:number}[]):void {
+  private showBattleClearRewards(items:{stage:number;coins:number;diamonds?:number;fragments:number;tickets?:number}[]):void {
     if(!items.length)return
     const item=items[items.length-1]
     const label=`${Math.floor((item.stage-1)/10)+1}-${(item.stage-1)%10+1}`
     const popup=this.root.querySelector<HTMLElement>('.battle-reward-popup')
     if(!popup)return
-    popup.innerHTML=`<div class="battle-reward-popup-title">60초 자동 토벌 보상 정산</div><div class="battle-reward-popup-items"><span><img src="/assets/diamond.png" alt="다이아"/> 다이아 ${((item as typeof item & {diamonds?:number}).diamonds ?? 0).toLocaleString('ko-KR')}개</span><span><img src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 ${item.fragments.toLocaleString('ko-KR')}개</span></div>`
+    popup.innerHTML=`<div class="battle-reward-popup-title">${label} 스테이지 클리어 보상 지급</div><div class="battle-reward-popup-items"><span><img src="/assets/diamond.png" alt="다이아"/> 다이아 ${((item as typeof item & {diamonds?:number}).diamonds ?? 0).toLocaleString('ko-KR')}개</span><span><img src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 ${item.fragments.toLocaleString('ko-KR')}개</span>${item.tickets ? `<span>🎟️ 겅이복권 ${item.tickets}장</span>` : ''}</div>`
     popup.hidden=false
     popup.classList.remove('is-visible')
     // Restart the visible reward animation without reflow-heavy measurements.
@@ -3468,7 +3480,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
     if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`
     const rewardCaption = this.root.querySelector<HTMLElement>('.battle-stage-rewards .battle-reward-caption')
-    if (rewardCaption) rewardCaption.textContent = `${stageLabel} 60초 토벌 보상`
+    if (rewardCaption) rewardCaption.textContent = `${stageLabel} 스테이지 클리어 보상`
     const coins = this.root.querySelector<HTMLElement>('.battle-stage-coins')
     if (coins) coins.textContent = String(stageRewards(view.stage)[0])
     const fragments = this.root.querySelector<HTMLElement>('.battle-stage-fragments')

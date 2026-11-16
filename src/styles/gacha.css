@@ -5871,3 +5871,12 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .roulette-odds li span{flex:none;font-size:11px;font-weight:800}
 #ui .roulette-spin{width:100%;min-height:46px}
 @media(max-width:360px){#ui .roulette-wrap{width:min(220px,66vw)}#ui .roulette-odds li{padding:7px 6px}}
+
+/* Attendance icon size must override generic modal img/span styles. */
+#ui .attendance-popup-inner .attendance-reward-grid{width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
+#ui .attendance-popup-inner .attendance-reward{min-width:0;overflow:hidden;box-sizing:border-box}
+#ui .attendance-popup-inner .attendance-reward span{display:flex;align-items:center;justify-content:center;width:34px;height:34px;max-width:100%;flex:none}
+#ui .attendance-popup-inner .attendance-reward img.attendance-currency-icon{display:block!important;position:static!important;width:26px!important;height:26px!important;min-width:0!important;max-width:26px!important;max-height:26px!important;object-fit:contain!important;margin:0!important;transform:none!important}
+#ui .attendance-popup-inner{overflow-x:hidden;max-width:100%;box-sizing:border-box}
+#ui .attendance-popup-inner .attendance-reward b{overflow-wrap:anywhere;word-break:keep-all;max-width:100%}
+#ui .claw-balance-count .claw-ticket-value{font-size:clamp(17px,4vw,25px)}

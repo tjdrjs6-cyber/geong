@@ -69,6 +69,7 @@ export const ERROR_TEXT: Record<string, string> = {
   limited_sale_ended: '한정 판매가 종료되었습니다.',
   limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
   not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
+  not_enough_claw_tickets: '인형뽑기 쿠폰이 부족합니다. 다음 정각에 5개 충전됩니다.',
   not_enough_tickets: '겅이복권이 부족해요. 토벌장 처치 시 0.5% 확률로 획득해요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
@@ -203,7 +204,7 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/test-clear', {}))
   }
 
-  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;fragments:number}[];failedStage:number}> {
+  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;diamonds:number;fragments:number;tickets?:number}[];failedStage:number}> {
     const result=await request<BattleResult>('battle/claim', {})
     const earned=this.applyBattle(result)
     return {earned,cleared:result.cleared??[],failedStage:result.failedStage??0}
