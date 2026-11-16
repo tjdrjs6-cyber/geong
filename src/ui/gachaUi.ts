@@ -3379,7 +3379,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelector('.bf-enemy')?.classList.add('is-stage-changing')
     this.root.querySelector('.battle-field')?.classList.add('is-stage-changing')
     const title=this.root.querySelector<HTMLElement>('.battle-transition-title')
-    if(title)title.textContent='STAGE CLEAR!'
+    if(title)title.textContent=`${Math.floor((previous - 1) / 10) + 1}-${((previous - 1) % 10) + 1} STAGE CLEAR!`
     layer.classList.remove('is-visible')
     layer.classList.add('is-visible')
     layer.setAttribute('aria-hidden', 'false')
@@ -3389,7 +3389,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.battleStageChanging = false
       this.root.querySelector('.bf-enemy')?.classList.remove('is-stage-changing')
       this.root.querySelector('.battle-field')?.classList.remove('is-stage-changing')
-    }, 2000)
+    }, 1500)
   }
 
   private showBattleFailure(stage:number):void {
@@ -3461,7 +3461,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private renderBattleStatus(): void {
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
     const view = this.store.battleView()
-    if (view.kills > 0 || view.remaining <= 0) void this.syncBattle()
+    if ((view.kills > 0 || view.hp <= 0 || view.remaining <= 0) && !this.battleStageChanging) void this.syncBattle()
     const stageLabel = `${Math.floor((view.stage - 1) / 10) + 1}-${((view.stage - 1) % 10) + 1}`
     const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
     if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`

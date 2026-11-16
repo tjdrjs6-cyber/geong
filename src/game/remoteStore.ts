@@ -1,5 +1,15 @@
-const BATTLE_ZONES = [[1200,180,5000],[4000,400,12000],[9000,700,24000],[18000,1100,42000],[32000,1500,65000],[50000,1800,90000],[72000,2100,120000],[95000,2400,145000],[120000,2700,170000],[145000,3000,195000]];
-const battleStageHp = (stage: number): number => { const n=Math.max(1,Math.min(100,stage))-1;const zone=Math.floor(n/10);const [base,step,boss]=BATTLE_ZONES[zone];const multiplier=zone<3?.63:zone<6?.54:zone<9?.495:.45;return Math.floor((n%10===9?boss:base+step*(n%10))*multiplier) };
+const BATTLE_HP_ANCHORS: [number, number][] = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000]];
+const battleStageHp = (stage: number): number => {
+  const s = Math.max(1, Math.min(100, stage));
+  for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
+    const [end, endHp] = BATTLE_HP_ANCHORS[i];
+    if (s <= end) {
+      const [start, startHp] = BATTLE_HP_ANCHORS[i - 1];
+      return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
+    }
+  }
+  return 165000;
+};
 
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
