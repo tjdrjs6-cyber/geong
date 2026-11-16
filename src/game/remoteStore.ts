@@ -172,7 +172,7 @@ export class RemoteGachaStore {
   weedHourlyRate(): number {
     const members = this.weed?.members ?? []
     if (!members.length) return 0
-    const bonus = Math.min(2.5, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
+    const bonus = Math.max(0, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
     const multiplier = this.weed?.beetle ? 2 : 1
     return Math.floor(10 * bonus * multiplier)
   }

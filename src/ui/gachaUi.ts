@@ -231,7 +231,7 @@ export class GachaUi {
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
 
-    if (screen === 'battle') { void this.refreshAchievementCombatLabels(); this.lastEnemyHp = -1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
+    if (screen === 'battle') { void this.refreshAchievementCombatLabels(); this.lastEnemyHp = -1; this.lastDisplayedBattleStage = this.store.battle?.stage ?? 1; this.renderBattle(); this.weedTimer = window.setInterval(() => this.renderBattleStatus(), 100) }
     if (screen === 'nickname') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#nickname-input')?.focus(), 50)
     if (screen === 'auth') window.setTimeout(() => this.root.querySelector<HTMLInputElement>('#auth-username')?.focus(), 50)
   }
@@ -332,7 +332,7 @@ export class GachaUi {
         <div class="weed-panel">
           <div class="field-info-sticky">
           <p class="weed-status"></p>
-          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 60초 보상까지</small></span><span><b class="weed-rate">0.00</b><small>분당 예상 코인 · 자동 지급</small></span></div>
+          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 60초 보상까지</small></span><span><b class="weed-rate">0</b><small>분당 예상 코인 · 자동 지급</small></span></div>
           <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 60초마다 일반 잡초 85%, 황금 잡초 15% 확률로 98% 조정된 코인을 자동 획득해요. 제초 보너스에 따라 지급 코인이 증가하고 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
           </div>
           <div class="weed-beetle-slot" hidden></div>
@@ -3355,7 +3355,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         if (this.screen === 'battle') this.showBattleClearRewards(result.cleared)
       }
       if(result.failedStage && this.screen==='battle')this.showBattleFailure(result.failedStage)
-    } catch { /* Retried on the next tick. */ } finally { this.battleSyncing = false }
+    } catch (error) { console.error('Battle stage settlement failed:', error) } finally { this.battleSyncing = false }
     this.renderWallet()
     if (this.screen === 'battle') this.renderBattleStatus()
   }
@@ -3561,7 +3561,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 총 제초 보너스 +${members.reduce((sum, c) => sum + c.weedBonus, 0)}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
       : (this.store.data.owned.length ? `아래에서 제초할 친구를 골라 주세요. (최대 ${WEED_MAX}명)` : '친구를 뽑으면 제초를 맡길 수 있어요.')
     const rateNode = this.root.querySelector<HTMLElement>('.weed-rate')
-    if (rateNode) rateNode.textContent = (members.length ? 0.85*Math.floor(30*Math.min(2.5,1+members.reduce((sum,c)=>sum+c.weedBonus,0)/100)*(this.store.weed?.beetle?2:1)*0.02)+0.15*Math.floor(300*Math.min(2.5,1+members.reduce((sum,c)=>sum+c.weedBonus,0)/100)*(this.store.weed?.beetle?2:1)*0.02) : 0).toFixed(2)
+    if (rateNode) rateNode.textContent = String(this.store.weedHourlyRate())
     // Coins are credited automatically; settle right away once one is ready while watching.
     if (this.store.pendingWeedCoins() > 0 && !this.settling) { this.settling = true; void this.tickSettle().finally(() => { this.settling = false }) }
     const next = this.root.querySelector<HTMLElement>('.weed-next')

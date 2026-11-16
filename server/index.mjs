@@ -735,7 +735,7 @@ async function updateBattle(accountId, nextCharacter) {
         if (success) {
           battle.maxClearedStage = Math.max(previousBest, current)
           // Completed stages are farmed; only first clears advance automatically.
-          if (current > previousBest && current < MAX_BATTLE_STAGE) battle.stage = current + 1
+          if (current < MAX_BATTLE_STAGE) battle.stage = current + 1
         } else {
           if (!battle.retryStage && current > previousBest) {
             failedStage = current
@@ -749,8 +749,7 @@ async function updateBattle(accountId, nextCharacter) {
       // remaining reward minute. Rewards are still minted only on full-minute cycles.
       // The per-stage clock is independent of the reward settlement clock.
       const stageElapsed = Math.max(0, now - (battle.stageSince || battle.since))
-      if (power > 0 && stageElapsed < STAGE_LIMIT_MS && battle.stage > (battle.maxClearedStage || 0)
-          && power * Math.floor(stageElapsed / 1000) >= stageHp(battle.stage)) {
+      if (power > 0 && stageElapsed < STAGE_LIMIT_MS && power * Math.floor(stageElapsed / 1000) >= stageHp(battle.stage)) {
         battle.maxClearedStage = battle.stage
         if (battle.stage < MAX_BATTLE_STAGE) battle.stage++
         battle.stageSince = now
@@ -859,7 +858,7 @@ async function updateWeed(accountId, op = {}) {
       // Apply only completed minute slots to avoid rounding/drift between settlements.
       const startMinute=Math.max(Math.floor(now/60000)-480,Math.floor(Math.max(...members.map(m=>m.since))/60000))
       const endMinute=Math.floor(now/60000)
-      const bonus=Math.min(2.5,1+members.reduce((v,m)=>v+(WEED_BONUS[m.id]||0)/100,0))
+      const bonus=Math.max(0,1+members.reduce((v,m)=>v+(WEED_BONUS[m.id]||0)/100,0))
       const perMinute=Math.floor(10*bonus*weedCoinMultiplier(beetle))
       earned+=Math.max(0,endMinute-startMinute)*perMinute
     }
