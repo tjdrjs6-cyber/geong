@@ -1,1 +1,1 @@
-이전 패치 적용 후 src/ui/gachaUi.ts 파일을 동일 경로에 덮어쓰기. 보스 도전 가능 시 다음 스테이지 도전 버튼 숨김.
+staging server startup hotfix. Contains server/index.mjs from latest HP scaling patch; no undefined state reference in grantAdminCollection. Apply after all previous patches. Confirm Railway deployment commit and fresh logs.
