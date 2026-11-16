@@ -1,5 +1,6 @@
-const BATTLE_STAGE_REWARDS: [number, number][] = [[1,0],[1,0],[2,0],[2,0],[3,0],[3,1],[4,1],[4,1],[5,1],[5,1],[6,2],[6,2],[7,2],[7,2],[8,2],[8,3],[9,3],[9,3],[10,3],[10,3],[11,4],[11,4],[12,4],[12,4],[13,4],[13,5],[14,5],[14,5],[15,5],[15,5],[16,6],[16,6],[17,6],[17,6],[18,6],[18,7],[19,7],[19,7],[20,7],[20,7]];
-const stageRewards = (stage: number): [number, number] => BATTLE_STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0,stage - 40), 7];
+const BATTLE_DIAMONDS=[1,1,2,2,3,3,4,4,5,5];
+const BATTLE_FRAGMENTS=[1,2,2,3,4,5,6,7,8,10];
+const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(9,Math.floor((Math.max(1,stage)-1)/10));return [BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]};
 const WEAPON_ACCESSORIES = [
   {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
   {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},
@@ -30,7 +31,7 @@ import { HouseView, houseLotMarkup, houseVisitMarkup } from './houseView'
 import { DECOS, DECO_IMAGE_URLS, DECO_NEW_BONUS, DECO_PROBABILITY, DECO_PULL_OPTIONS, decoById, decoPullCost, type DecoId, type DecoPullCount, type DecoPullResult } from '../game/decos'
 import { machineMarkup } from './toonMachine'
 
-const MACHINE_SPIN_SECONDS = 1.35
+const MACHINE_SPIN_SECONDS = 1.6
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
@@ -89,6 +90,9 @@ export class GachaUi {
   private clawToysOwner = ''
   private clawTargetId: string | null = null
   private clawBusy = false
+  private clawAutoRunning = false
+  private clawAutoCancel = false
+  private clawAutoCount = 0
   private lotteryState: {remaining:number[];total:number;price:number;resetNoticeId?:number;winners?:{nickname:string;grade:string}[]}|null=null
   private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
   private lotteryRevealed=0
@@ -340,7 +344,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 뒤로가기</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
-          <div class="battle-stage-rewards" aria-live="polite"><div class="battle-reward-caption">1-1 클리어 보상</div><div class="battle-reward-combined"><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/coin.png" alt=""/><b class="battle-stage-coins">1</b><small>코인</small></span><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/><b class="battle-stage-fragments">0</b><small>강화파편</small></span></div></div>
+          <div class="battle-stage-rewards" aria-live="polite"><div class="battle-reward-caption">60초 자동 토벌 보상</div><div class="battle-reward-combined"><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/diamond.png" alt=""/><b class="battle-stage-coins">1</b><small>다이아</small></span><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/><b class="battle-stage-fragments">0</b><small>강화파편</small></span></div></div>
           <div class="battle-stage-center"><div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-actions"><button type="button" class="battle-retry-challenge" data-action="battle-retry-challenge" hidden>다음 스테이지 도전하기</button><button type="button" class="battle-boss-challenge" data-action="battle-boss-challenge" hidden>⚔ 보스 도전하기</button></div></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span class="battle-transition-title">STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
@@ -386,12 +390,12 @@ export class GachaUi {
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>겅이복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
         <div class="rps-scene lottery-scene">
-          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
+          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 겅이복권 <strong class="lottery-balance-value">0</strong></div></div>
           <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 겅이복권 초기화 (운영자 전용)</button>
           <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
-          <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price" style="font-size:1.2rem;line-height:1.5">가격 100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
+          <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price" style="font-size:1.2rem;line-height:1.5">가격 겅이복권 1개</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -402,7 +406,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip roulette-chip" data-action="roulette"><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><img class="expedition-weapon" src="/assets/decos/d01.png" alt=""/>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
+        <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -412,9 +416,9 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /></div><div class="pull-showcase-deco" hidden><div class="pull-showcase-caption">🎀 귀여운 데코를 만나보세요!</div><div class="pull-showcase-decos">${["d05","d10","d15","d26","d45"].map(id=>`<img src="${DECO_IMAGE_URLS[id as DecoId]}" alt="데코 아이템"/>`).join("")}</div></div>
-          <div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 ${option.count}회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
-          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `${option.count}회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 할인' : ''}</small></span></button>`).join('')}
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · DECO PICK UP</span><h2>데코 뽑기 등장!</h2><div class="pull-event-info"><b>데코 · 꾸미기 아이템</b><span>확률 보기에서 획득 확률 확인</span></div></div><img class="pull-deco-event-image" src="/assets/gacha/deco_event.png" alt="데코 뽑기 일러스트" /></div>
+          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 10+1회`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
+          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
           </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
           </div>
@@ -520,8 +524,8 @@ export class GachaUi {
             <div class="claw-arm"><img class="claw-graphic" src="/assets/claw/claw_open.png" alt="" /></div>
             <div class="claw-toys"></div><img class="claw-missed-sticker" src="/assets/claw/claw_missed.png" alt="놓쳤다!" aria-hidden="true" /><div class="claw-chute" aria-label="출구"></div><div class="claw-prize"></div>
           </div>
-          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><button class="claw-play" data-action="claw-play"><img class="claw-play-face" src="/assets/chars/chiikawa_face_claw.png" alt="" /><span class="claw-play-label">뽑기!</span><small><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> 1개</small></button></div>
-          <p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
+          <div class="claw-controls"><div class="claw-arrows"><button data-action="claw-up" aria-label="위">▲</button><div><button data-action="claw-left" aria-label="왼쪽">◀</button><button data-action="claw-down" aria-label="아래">▼</button><button data-action="claw-right" aria-label="오른쪽">▶</button></div></div><div class="claw-play-group"><button class="claw-play" data-action="claw-play"><span class="claw-play-label">뽑기!</span><span class="claw-manual-bonus">수동뽑기 시 5% 확률 UP</span><small class="claw-play-cost"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/> <span>1개</span></small></button></div></div>
+          <div class="claw-auto-controls"><button type="button" class="claw-auto-start" data-action="claw-auto-start">자동뽑기 시작 · 1회당 다이아 1개</button><button type="button" class="claw-auto-stop" data-action="claw-auto-stop" hidden>진행 취소 (현재 뽑기 후 종료)</button><span class="claw-auto-status" aria-live="polite"></span></div><p class="claw-message" aria-live="polite">집게를 움직인 후 뽑기 버튼을 눌러주세요.</p>
         </div>
       </section>
       <section class="gacha-modal forge-screen" data-screen="forge" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="forge-title">
@@ -557,7 +561,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">MY PROFILE</div><h2 id="featured-title">내 프로필</h2>
           <div class="profile-card"><span class="profile-big"><img alt="" /></span><b class="profile-big-name"></b><small class="profile-stats"></small></div>
-          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">📮 우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">✉ 우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">💌 건의함</button><button class="modal-secondary" data-action="privacy">🔒 공개 설정</button></div>
+          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">건의함</button><button class="modal-secondary" data-action="privacy">공개 설정</button></div>
           <h3 class="profile-sub">대표 사진 바꾸기</h3>
           <p class="collection-summary">내가 뽑은 친구 중에서 골라요. 대표 사진은 가챠 무대와 유저 목록에 보여요.</p>
           <div class="collection-grid featured-grid" role="list"></div>
@@ -730,6 +734,13 @@ export class GachaUi {
     } finally { overlay.remove() }
   }
 
+  private peperoSaleActive(): boolean {
+    return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()) <= '2026-11-18'
+  }
+  private refreshPeperoDots(): void {
+    const show=this.peperoSaleActive() && !this.store.data.owned.includes('pepero_chiikawa')
+    this.root.querySelectorAll<HTMLElement>('.pepero-sale-dot').forEach(dot=>{dot.hidden=!show})
+  }
   private renderShop(): void {
     const screen = this.root.querySelector<HTMLElement>('.shop-screen')
     if (!screen) return
@@ -745,7 +756,9 @@ export class GachaUi {
     if (bulkFixed) { bulkFixed.hidden = true; bulkFixed.innerHTML = '' }
     const balance = `<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems ?? 0).toLocaleString('ko-KR')}</div>`
     if (this.shopTab !== 'sell') {
-      items.innerHTML = balance + '<div class="shop-empty-note">현재 구매 가능한 상품이 없어요.</div>'
+      const owned=this.store.data.owned.includes('pepero_chiikawa')
+      const active=this.peperoSaleActive()
+      items.innerHTML=balance+`<div class="pepero-market-card"><img src="/assets/chars/pepero_chiikawa.png" alt="치이카와 빼빼로"/><div><strong>치이카와(빼빼로) <em>한정판</em></strong><small>노말 · 전투력 2 · 제초속도 증가 없음</small><small>2026년 11월 18일까지 판매 · 계정당 1회</small><button type="button" data-action="buy-pepero" ${owned||!active?'disabled':''}>${owned?'구매 완료':active?'1코인 구매':'판매 종료'}</button></div></div>`
       return
     }
     if (this.shopSellTab === 'inventory') {
@@ -947,6 +960,13 @@ export class GachaUi {
     if (action === 'lottery-all') {await this.chooseLotteryCount();return}
     if (action === 'lottery-buy') {await this.buyLottery();return}
     if (action === 'lottery-skip') {this.skipLottery();return}
+    if (action === 'buy-pepero') {
+      if(this.busy || !this.peperoSaleActive() || this.store.data.owned.includes('pepero_chiikawa'))return
+      this.busy=true
+      try {await this.store.buyPeperoChiikawa();this.renderShop();this.renderWallet();this.renderCollection();this.refreshPeperoDots();this.showShopDialog('구매완료!')}
+      catch(e){this.handleError(e)}finally{this.busy=false}
+      return
+    }
     if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');void this.loadWildWeed();this.renderShop();return}
     if (action === 'shop-tab' && button?.dataset.tab) { this.shopTab = button.dataset.tab === 'buy' ? 'buy' : 'sell'; this.hideShopDialog(); this.renderShop(); return }
     if (action === 'shop-sell-category' && button?.dataset.tab) { const list = this.root.querySelector<HTMLElement>('.shop-screen .shop-items'); if (list) list.scrollTop = 0; this.shopSellTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'inventory' ? 'inventory' : 'char'; this.renderShop(); return }
@@ -1029,6 +1049,8 @@ export class GachaUi {
       return
     }
     if (action === 'claw') { this.show('claw'); return }
+    if (action === 'claw-auto-stop') { this.clawAutoCancel = true; this.updateClawAutoUi(); return }
+    if (action === 'claw-auto-start') { void this.runClawAuto(); return }
     if (action?.startsWith('claw-')) {
       if (action in { 'claw-up': 1, 'claw-down': 1, 'claw-left': 1, 'claw-right': 1 } && this.clawIgnoreClick) { this.clawIgnoreClick = false; return }
       await this.handleClaw(action); return
@@ -1112,14 +1134,17 @@ export class GachaUi {
       return
     }
     if (action === 'free-daily-pull' && !this.pullConfirmed) { if(this.freePullRemaining()===0){this.toast('오늘의 무료 10회 뽑기를 이미 사용했어요.');return} this.askPullConfirmation('free',10); return }
-    if (action === 'free-daily-pull') { this.pullConfirmed=false; const button10=this.root.querySelector<HTMLButtonElement>('.pull-button[data-action="pull"][data-count="10"]'); if(!button10)return; this.pullConfirmed=true; button10.dataset.forceFree='true'; button10.click(); delete button10.dataset.forceFree; this.pullConfirmed=false; return }
+    if (action === 'free-daily-pull') {
+      this.pullConfirmed=false
+      if (this.freePullRemaining() !== 10) { this.toast('오늘의 무료 10회 뽑기를 이미 사용했어요.'); return }
+    }
     if (action === 'pull' && !this.pullConfirmed) { this.askPullConfirmation('char',Number(button.dataset.count)); return }
-    if (action === 'pull') { this.pullConfirmed=false;
-      const count = Number(button.dataset.count) as PullCount
+    if (action === 'pull' || action === 'free-daily-pull') { this.pullConfirmed=false;
+      const count = (action === 'free-daily-pull' ? 10 : Number(button.dataset.count)) as PullCount
       if (!PULL_OPTIONS.some(option => option.count === count)) return
-      const free = button.dataset.forceFree === 'true'
+      const free = action === 'free-daily-pull'
       const cost = free ? 0 : pullCost(count)
-      if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
+      if (!this.isAdmin && (this.store.data.diamonds??0) < cost) { this.toast('다이아가 부족합니다.'); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
@@ -1139,14 +1164,14 @@ export class GachaUi {
       this.renderWallet()
       this.renderFreePullStatus()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, 180)
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
     if (action === 'deco-pull') { this.pullConfirmed=false;
       const count = Number(button.dataset.count) as DecoPullCount
       if (!DECO_PULL_OPTIONS.some(option => option.count === count)) return
-      if (!this.isAdmin && this.store.data.gems < decoPullCost(count)) { this.showInsufficient(decoPullCost(count)); return }
+      if (!this.isAdmin && (this.store.data.diamonds??0) < decoPullCost(count)) { this.toast('다이아가 부족합니다.'); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
@@ -1164,7 +1189,7 @@ export class GachaUi {
       const sequence = ++this.revealSequence
       this.renderWallet()
       this.renderResults()
-      window.setTimeout(() => { void this.playPops(this.results, sequence) }, Math.max(0.5, duration) * 1000 + 160)
+      window.setTimeout(() => { void this.playPops(this.results, sequence) }, 180)
       return
     }
     if (action === 'weed-pick' && button.dataset.id) {
@@ -1245,10 +1270,14 @@ export class GachaUi {
     if (action === 'battle-pick' && button.dataset.id) {
       const id = button.dataset.id as CharacterId
       if (this.weedBusy(id)) { this.toast(ERROR_TEXT.busy_weed); return }
+      const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id
+      const members = [this.store.battle?.id, this.store.battle?.secondId, this.store.battle?.thirdId].filter(Boolean)
+      if (!wasDeployed && members.length >= 3) {
+        this.toast('토벌장에는 최대 3명까지만 배치할 수 있어요. 초과 배치는 불가능합니다.')
+        return
+      }
       this.busy = true
       try {
-        const wasDeployed = this.store.battle?.id === id || this.store.battle?.secondId === id || this.store.battle?.thirdId === id
-        const members = [this.store.battle?.id,this.store.battle?.secondId,this.store.battle?.thirdId].filter(Boolean)
         if (wasDeployed && members.length === 1) {
           if (!await this.confirmBattleUndeploy()) return
         }
@@ -1287,6 +1316,7 @@ export class GachaUi {
       this.renderWallet()
       return
     }
+
     if (action === 'choose' && button?.dataset.id) {
       const id = button.dataset.id as CharacterId
       if (!this.store.data.owned.includes(id) || id === this.heroId()) return
@@ -1488,7 +1518,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private async handleClaw(action: string): Promise<void> {
-    if (this.clawBusy) return
+    if (this.clawBusy || this.clawAutoRunning) return
     if (['claw-up', 'claw-down', 'claw-left', 'claw-right'].includes(action)) { this.moveClaw(action); return }
     if (action === 'claw-refresh') {
       this.clawBusy = true
@@ -1522,7 +1552,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const aligned = this.clawTouchesToy()
       const toy = this.clawTargetId ? this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${this.clawTargetId}"]`) : null
       const originalToy = this.clawToys.find(item => item.id === this.clawTargetId)
-      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50)
+      const result = await this.store.playClaw(aligned, originalToy?.x ?? 50, originalToy?.y ?? 50, 'manual')
       this.renderWallet()
       if (msg) msg.textContent = aligned ? '집게가 인형을 잡고 들어 올립니다…' : '집게가 허공을 잡았어요! 인형에 닿도록 이동해주세요.'
       arm?.classList.add('is-dropping')
@@ -1713,6 +1743,167 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
   }
 
+  private updateClawAutoUi(): void {
+    const start = this.root.querySelector<HTMLButtonElement>('.claw-auto-start')
+    const stop = this.root.querySelector<HTMLButtonElement>('.claw-auto-stop')
+    const status = this.root.querySelector<HTMLElement>('.claw-auto-status')
+    if (start) { start.hidden = this.clawAutoRunning; start.disabled = this.clawBusy }
+    if (stop) { stop.hidden = !this.clawAutoRunning; stop.disabled = this.clawAutoCancel; stop.textContent = this.clawAutoCancel ? '현재 뽑기 완료 후 종료 중…' : '진행 취소 (현재 뽑기 후 종료)' }
+    if (status) status.textContent = this.clawAutoRunning ? `자동뽑기 ${this.clawAutoCount}회 진행${this.clawAutoCancel ? ' · 종료 대기' : ''}` : ''
+  }
+
+  private async runClawAuto(): Promise<void> {
+    if (this.clawBusy || this.clawAutoRunning) return
+    this.stopClawHold()
+    this.clawAutoRunning = true
+    this.clawAutoCancel = false
+    this.clawAutoCount = 0
+    this.clawBusy = true
+    const play = this.root.querySelector<HTMLButtonElement>('.claw-play')
+    const refresh = this.root.querySelector<HTMLButtonElement>('.claw-refresh')
+    if (play) play.disabled = true
+    if (refresh) refresh.disabled = true
+    this.updateClawAutoUi()
+    try {
+      while (!this.clawAutoCancel && this.screen === 'claw') {
+        // The server is authoritative for both the diamond debit and the success roll.
+        const target = this.clawToys[Math.floor(Math.random() * this.clawToys.length)]
+        if (!target) break
+        const arm = this.root.querySelector<HTMLElement>('.claw-arm')
+        const toy = this.root.querySelector<HTMLElement>(`.claw-single-toy[data-toy-id="${target.id}"]`)
+        const msg = this.root.querySelector<HTMLElement>('.claw-message')
+        const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms))
+        this.clawX = target.x
+        this.clawY = Math.max(10, target.y - 8)
+        if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
+        this.updateClawPosition()
+        await sleep(180)
+        arm?.classList.add('is-dropping')
+        await sleep(120)
+        this.setClawClosed(true)
+        arm?.classList.remove('is-dropping')
+        // Server remains authoritative for the cost, success roll and drop segment.
+        const result = await this.store.playClaw(true, target.x, target.y, 'auto')
+        this.clawAutoCount++
+        this.renderWallet()
+        const machine = this.root.querySelector<HTMLElement>('.claw-machine')
+        const chute = this.root.querySelector<HTMLElement>('.claw-chute')
+        let exitX = 88, exitY = 3
+        if (machine && chute) {
+          const m = machine.getBoundingClientRect(), c = chute.getBoundingClientRect()
+          if (m.width && m.height) {
+            exitX = Math.max(10, Math.min(90, (c.left + c.width / 2 - m.left) / m.width * 100))
+            exitY = Math.max(3, Math.min(90, (c.top + c.height / 2 - m.top) / m.height * 100 - 12))
+          }
+        }
+        const startX = this.clawX, startY = this.clawY
+        const steps = Math.max(1, result.segments)
+        const endStep = result.won ? steps : Math.max(1, result.dropAt)
+        const gripOffset = arm && machine && machine.getBoundingClientRect().height
+          ? arm.getBoundingClientRect().height * .29 / machine.getBoundingClientRect().height * 100 : 7
+        if (toy) {
+          toy.style.transition = 'none'
+          toy.style.left = `${startX}%`
+          toy.style.top = `${startY + gripOffset}%`
+          void toy.offsetWidth
+          toy.classList.add('is-lifted')
+        }
+        if (msg) msg.textContent = '자동뽑기 진행 중…'
+        // Same pick-up, transport and drop cues as manual play, at a faster pace.
+        for (let step = 1; step <= endStep; step++) {
+          const fraction = result.won ? step / steps : Math.min(.86, step / steps)
+          const x = startX + (exitX - startX) * fraction
+          const y = startY + (exitY - startY) * fraction
+          this.clawX = x; this.clawY = y
+          if (arm) arm.style.transition = 'left .12s linear, top .12s linear'
+          this.updateClawPosition()
+          if (toy) {
+            toy.style.transition = 'left .12s linear, top .12s linear'
+            toy.style.left = `${x}%`; toy.style.top = `${y + gripOffset}%`
+          }
+          await sleep(140)
+        }
+        if (result.won && result.prize) {
+          const item = accessoryInfo(result.prize)
+          this.setClawClosed(false)
+          toy?.classList.add('is-dropped')
+          if (msg) msg.textContent = item ? `${item.name} 획득!` : '키링 획득!'
+          this.randomizeClawToy(target.id)
+          this.renderClaw()
+          // Await dismissal; no new diamond is spent while the prize popup is open.
+          if (item) {
+            const popup = document.createElement('dialog')
+            popup.className = 'myroom-equipment-dialog'
+            popup.innerHTML = `<div class="myroom-equipment-panel accessory-win-panel"><h2>무기 액세서리 획득!</h2><div class="accessory-item"><img src="${item.image}" alt="${item.name}"/><div><b>${item.name}</b><small>노말 등급</small><strong>장착 시 전투력 +1</strong></div></div><button class="myroom-equipment-done">확인</button></div>`
+            document.body.appendChild(popup)
+            await new Promise<void>(resolve => {
+              popup.addEventListener('close', () => { popup.remove(); resolve() }, {once:true})
+              popup.querySelector('button')?.addEventListener('click', () => popup.close())
+              popup.showModal()
+            })
+          }
+        } else {
+          // Preserve the missed doll's new position, and show the manual miss sticker.
+          const fraction = Math.min(.86, endStep / steps)
+          const releaseX = startX + (exitX - startX) * fraction
+          const releaseY = startY + (exitY - startY) * fraction + gripOffset
+          let landedX = Math.max(10, Math.min(90, releaseX + (Math.random() - .5) * 6))
+          let landedY = Math.max(18, Math.min(69, releaseY + 4 + Math.random() * 4))
+          if (machine && chute && toy) {
+            const mb = machine.getBoundingClientRect(), cb = chute.getBoundingClientRect(), tb = toy.getBoundingClientRect()
+            const minX = (cb.left - tb.width / 2 - 9 - mb.left) / mb.width * 100
+            const maxX = (cb.right + tb.width / 2 + 9 - mb.left) / mb.width * 100
+            const minY = (cb.top - tb.height / 2 - 9 - mb.top) / mb.height * 100
+            const maxY = (cb.bottom + tb.height / 2 + 9 - mb.top) / mb.height * 100
+            if (landedX > minX && landedX < maxX && landedY > minY && landedY < maxY) {
+              const candidates = [{x:landedX,y:maxY+1},{x:minX-1,y:landedY},{x:maxX+1,y:landedY},{x:landedX,y:minY-1}]
+                .filter(pt => pt.x >= 10 && pt.x <= 90 && pt.y >= 18 && pt.y <= 69)
+              const nearest = candidates.sort((a,b) => Math.hypot(a.x-landedX,a.y-landedY)-Math.hypot(b.x-landedX,b.y-landedY))[0]
+              if (nearest) { landedX = nearest.x; landedY = nearest.y }
+            }
+          }
+          target.x = landedX; target.y = landedY
+          this.saveClawToys()
+          if (toy) {
+            toy.classList.remove('is-lifted', 'is-dropped')
+            toy.style.transition = 'none'
+            toy.style.left = `${landedX}%`; toy.style.top = `${landedY}%`
+          }
+          const sticker = this.root.querySelector<HTMLElement>('.claw-missed-sticker')
+          if (sticker) {
+            sticker.style.left = `${Math.max(10,Math.min(90,(releaseX+landedX)/2))}%`
+            sticker.style.top = `${Math.max(10,Math.min(90,(releaseY+landedY)/2))}%`
+            sticker.classList.remove('is-visible'); void sticker.offsetWidth
+            sticker.classList.add('is-visible')
+            window.setTimeout(() => sticker.classList.remove('is-visible'), 850)
+          }
+          if (msg) msg.textContent = '놓쳤어요! 다음 뽑기를 준비합니다.'
+          this.setClawClosed(false)
+          await sleep(480)
+        }
+        this.resetClawToExit()
+        if (arm) arm.style.transition = 'left .16s linear, top .16s linear'
+        this.updateClawPosition()
+        this.updateClawAutoUi()
+        await sleep(180)
+      }
+    } catch (error) {
+      this.clawAutoCancel = true
+      this.handleError(error)
+    } finally {
+      this.clawAutoRunning = false
+      this.clawBusy = false
+      this.setClawClosed(false)
+      this.resetClawToExit()
+      this.updateClawPosition()
+      if (play) play.disabled = false
+      if (refresh) refresh.disabled = false
+      this.updateClawAutoUi()
+      const msg = this.root.querySelector<HTMLElement>('.claw-message')
+      if (msg) msg.textContent = `자동뽑기 종료 · 총 ${this.clawAutoCount}회 진행`
+    }
+  }
+
   private setHouseCoinDot(available: boolean): void {
     const dot = this.root.querySelector<HTMLElement>('.house-coin-dot')
     if (dot) dot.hidden = !available
@@ -1732,7 +1923,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private updateLotteryPrice():void{
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1)
     const price=this.root.querySelector<HTMLElement>('.lottery-price')
-    if(price)price.textContent=`가격 ${(Math.max(0,count)*100).toLocaleString('ko-KR')}코인`
+    if(price)price.textContent=`필요 겅이복권 ${Math.max(0,count).toLocaleString('ko-KR')}개`
   }
   private lotteryAccessoryName(accessoryId:string):string{
     const names:Record<string,string>={chiikawa:'치이카와',hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'}
@@ -1743,7 +1934,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const state=this.lotteryState;if(!state)return
     const status=this.root.querySelector<HTMLElement>('.lottery-status')
     if(status)status.textContent=`전체 100장 · 남은 복권 ${state.total}장`
-    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=this.store.data.gems.toLocaleString('ko-KR')
+    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=(this.store.data.lotteryTickets??0).toLocaleString('ko-KR')
     const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=!['test','tjdrjs885'].includes(this.store.user?.username?.toLowerCase()||'')
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
     const ids=['halloween_chiikawa','halloween_hachiware','halloween_usagi'] as const
@@ -1838,7 +2029,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(this.lotteryBusy||!this.lotteryState||this.lotteryResults.length)return
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
     if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.toast('구매 수량을 확인해주세요.');return}
-    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n총 금액: ${(count*100).toLocaleString('ko-KR')}코인\n\n구매하시겠습니까?`)
+    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
     if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
     this.lotteryBusy=true
     try{
@@ -1850,7 +2041,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.removeAttribute('hidden')
       const list=this.root.querySelector<HTMLElement>('.lottery-results');if(list)list.innerHTML=''
       this.showLotteryTicket()
-    }catch(e){if(e instanceof RequestError&&e.code==='not_enough_coins')this.lotteryTopPopup('코인이 부족합니다. 복권 1장당 100코인이 필요합니다.');else this.handleError(e)}
+    }catch(e){if(e instanceof RequestError&&e.code==='not_enough_tickets')this.lotteryTopPopup('겅이복권이 부족합니다. 토벌장에서 획득할 수 있습니다.');else this.handleError(e)}
     finally{this.lotteryBusy=false;this.renderLottery()}
   }
   private showLotteryTicket():void{
@@ -2088,6 +2279,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private renderWallet(): void {
+    this.refreshPeperoDots()
     this.refreshEquipmentAndKeyringDots()
     this.root.querySelectorAll<HTMLElement>('.wallet-value').forEach(balance => { balance.textContent = this.isAdmin ? '∞' : this.store.data.gems.toLocaleString('ko-KR') })
     this.root.querySelectorAll<HTMLElement>('.fragment-value').forEach(el => { el.textContent = (this.isAdmin ? '∞' : (this.store.data.fragments ?? 0).toLocaleString('ko-KR')) })
@@ -2136,10 +2328,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const spinButton = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
     if (spinButton && !this.wheelSpinning) { spinButton.disabled = spun; spinButton.textContent = spun ? '다음 시간대에 다시 돌려주세요' : '룰렛 돌리기' }
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
-      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
+      pullButton.disabled = this.revealing || (!this.isAdmin && (this.store.data.diamonds??0) < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="deco-pull"]').forEach(pullButton => {
-      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < decoPullCost(Number(pullButton.dataset.count) as DecoPullCount))
+      pullButton.disabled = this.revealing || (!this.isAdmin && (this.store.data.diamonds??0) < decoPullCost(Number(pullButton.dataset.count) as DecoPullCount))
     })
     const decoCount = this.root.querySelector<HTMLElement>('.deco-count')
     if (decoCount) decoCount.textContent = `${Object.keys(this.store.decos).length} / ${DECOS.length}`
@@ -2156,18 +2348,21 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const has = owned.includes(character.id)
       const isFeatured = has && character.id === this.heroId()
       const isHalloweenLimited = String(character.id).startsWith('halloween_')
+      const isPeperoLimited = character.id === 'pepero_chiikawa'
+      const isRilakkumaLimited = ['rilakkuma','korilakkuma','chairoikoguma','rilakkuma_chiikawa','korilakkuma_kani'].includes(character.id)
       const footer = has && interactive
         ? isFeatured ? `<button class="friend-select is-selected" disabled aria-disabled="true">✓ 대표 설정됨</button>` : `<button class="friend-select" data-action="choose" data-id="${character.id}">대표로 세우기</button>`
         : `<span class="friend-lock">${has ? '도감 등록' : '미발견'}</span>`
       return `<article class="friend-card ${has ? 'is-owned' : 'is-locked'}${character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary' ? ' is-rare' : ''}${character.tier === 'super' ? ' is-super' : ''}${character.tier === 'legendary' ? ' is-legendary' : ''}${character.tier === 'mermaid' ? ' is-mermaid' : ''} tier-${character.tier === 'mermaid' ? 'rare' : character.tier === 'rare' ? 'epic' : character.tier === 'super' ? 'unique' : character.tier}" style="--friend:${character.color};--accent:${character.accent}">
         <div class="friend-avatar">${has ? `<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" loading="eager" />` : '<span class="friend-unknown" aria-label="아직 모르는 친구">?</span>'}</div>
-        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited ? '<div class="halloween-limited-label">🎃 한정판 · 뽑기 획득 불가</div>' : ''}
+        <div class="friend-chance">${tierTag(character)}</div>${isHalloweenLimited || isPeperoLimited || isRilakkumaLimited ? '<div class="halloween-limited-label">한정판</div>' : ''}
         <b>${has ? character.name : '???'}</b><div class="friend-variant-slot">${character.variant ? `<em class="friend-variant">${character.variant}</em>` : ''}</div><div class="friend-bonus-slot">${bonusTag(character) ? `<em class="friend-bonus">${bonusTag(character)}</em>` : ''}</div>
         <small>${has ? '도감에 등록됐어요' : '아직 만나지 못했어요'}</small>
         ${footer}
       </article>`
     }).join('')
   }
+
 
   private pullConfirmed=false
   private acceptPullConfirmation():void {
@@ -2184,11 +2379,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(kind==='free' && this.freePullRemaining()!==10){this.toast('오늘의 무료 뽑기는 이미 사용했어요.');return}
     const free=kind==='free' && this.freePullRemaining()===10
     const cost=free?0:kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
-    if(!this.isAdmin && this.store.data.gems<cost){this.showInsufficient(cost);return}
+    if(!this.isAdmin && (this.store.data.diamonds??0)<cost){this.toast('다이아가 부족합니다.');return}
     let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
     if(!dialog){
       dialog=document.createElement('div');dialog.className='pull-confirm-overlay'
-      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><div class="pull-confirm-emoji">🎁</div><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
+      dialog.innerHTML='<div class="pull-confirm-card" role="alertdialog" aria-modal="true"><h3>뽑기를 하시겠습니까?</h3><p class="pull-confirm-detail"></p><div class="pull-confirm-buttons"><button type="button" data-action="confirm-pull-no">취소</button><button type="button" data-action="confirm-pull-yes">뽑기</button></div></div>'
       this.root.append(dialog)
       // Handle the confirmation locally so a covered/disabled lobby cannot swallow clicks.
       dialog.querySelector<HTMLButtonElement>('[data-action="confirm-pull-yes"]')?.addEventListener('click',event=>{event.stopPropagation();this.acceptPullConfirmation()})
@@ -2196,7 +2391,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     dialog.dataset.kind=kind;dialog.dataset.count=String(count)
     const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
-    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${count}회 · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
+    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'다이아'}`
     dialog.hidden=false
   }
   private openPullRatesDialog():void {
@@ -2204,7 +2399,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const deco=this.root.querySelector('.pull-popup')?.classList.contains('is-deco')??false
     const dialog=document.createElement('div')
     dialog.className='pull-rates-dialog'
-    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):CHARACTERS.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="lazy"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(2)}%</b></div>`).join('')}</div><footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
+    const tierOrder=['transcendent','legendary','super','rare','mermaid','normal'] as const
+    const tierNames:Record<string,string>={transcendent:'초월',legendary:'레전더리',super:'유니크',rare:'에픽',mermaid:'레어',normal:'노멀'}
+    const gradeSummary=deco?'':`<div class="pull-rates-summary"><strong>전체 등급 뽑기 확률</strong><div class="pull-rates-grade-grid">${tierOrder.map(tier=>{const chance=CHARACTERS.filter(c=>c.tier===tier&&c.probability>0).reduce((sum,c)=>sum+c.probability,0);return `<span class="pull-grade-total pull-grade-${tier}"><b>${tierNames[tier]}</b> ${chance.toFixed(2)}%</span>`}).join('')}</div></div>`
+    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):CHARACTERS.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="eager" style="display:block!important;visibility:visible!important;opacity:1!important;width:52px!important;height:52px!important;object-fit:contain!important;flex:0 0 52px!important" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(2)}%</b></div>`).join('')}</div>${gradeSummary}<footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
     document.body.append(dialog)
     dialog.querySelectorAll<HTMLButtonElement>('[data-action="close-pull-rates"]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();dialog.remove()}))
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.remove()});dialog.querySelector<HTMLElement>('.pull-rates-list')?.addEventListener('touchmove',event=>event.stopPropagation(),{passive:true})
@@ -2225,7 +2423,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
       const count=Number(button.dataset.count) as PullCount
       const small=button.querySelector('small')
-      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 코인`
+      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 다이아`
       button.classList.remove('is-free-pull')
     })
     const freeButton=this.root.querySelector<HTMLButtonElement>('.free-daily-pull')
@@ -2583,7 +2781,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     // Position the first shots only after the expedition panel is laid out.
     // The original immediate measurement could read zero/stale coordinates on entry.
     if(party && boss && hp>0){
@@ -2610,7 +2808,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const equipmentLabel=this.root.querySelector<HTMLElement>('.expedition-equipment-bonus')
     if(equipmentLabel)equipmentLabel.textContent=`장비 전투력 +${Math.max(0,Number(this.store.forge?.bonus)||0)} 적용 중`
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
-    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${this.store.data.owned.map(id=>`<button data-action="exp-join" data-id="${id}" aria-pressed="${state.mine?.serverId===room.id && state.mine.characterId===id}" style="${state.mine?.serverId===room.id && state.mine.characterId===id?'border:2px solid #6ba883;background:#ecf9ee;box-shadow:0 0 0 2px #d2ecd8 inset;':''}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small>${state.mine?.serverId===room.id && state.mine.characterId===id?'<small style="color:#2c8653;font-weight:800">✓ 배치 중</small>':''}</span></button>`).join('')}</div>`
+    if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${[...this.store.data.owned].sort((a,b)=>battlePower(b)-battlePower(a)).map(id=>`<button data-action="exp-join" data-id="${id}" aria-pressed="${state.mine?.serverId===room.id && state.mine.characterId===id}" style="${state.mine?.serverId===room.id && state.mine.characterId===id?'border:2px solid #6ba883;background:#ecf9ee;box-shadow:0 0 0 2px #d2ecd8 inset;':''}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small>${state.mine?.serverId===room.id && state.mine.characterId===id?'<small style="color:#2c8653;font-weight:800">✓ 배치 중</small>':''}</span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
       if(picker.innerHTML!==html){
         const choices=picker.querySelector<HTMLElement>('.expedition-choices')
@@ -3071,11 +3269,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
   private renderWeed(): void {
     const picker = this.root.querySelector<HTMLElement>('.weed-picker')
-    const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
+    const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).sort((a, b) => battlePower(b.id) - battlePower(a.id)).sort((a, b) => battlePower(b.id) - battlePower(a.id)).sort((a, b) => b.weedBonus - a.weedBonus)
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${this.store.isWeeding(character.id) ? ' is-active' : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-busy' : ''}" role="listitem" data-action="weed-pick" data-id="${character.id}" aria-pressed="${this.store.isWeeding(character.id)}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}${character.weedBonus ? `<em class="is-bonus">+${character.weedBonus}%</em>` : ''}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? '<em class="is-busy-tag">토벌 중</em>' : ''}${character.id === 'beetle' && this.store.weed?.beetle ? '<em class="is-bonus">도우미</em>' : ''}</button>`).join('')
+            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span>${character.variant ? `<em>${character.variant}</em>` : ''}${`<em class="is-bonus weed-speed-label">제초속도 +${character.weedBonus}%</em>`}${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? '<em class="is-busy-tag">토벌 중</em>' : ''}${character.id === 'beetle' && this.store.weed?.beetle ? '<em class="is-bonus">도우미</em>' : ''}</button>`).join('')
         : '<p class="users-empty">아직 뽑은 친구가 없어요. 가챠에서 친구를 먼저 뽑아 주세요!</p>'
     }
     const members = this.store.weed?.members ?? []
@@ -3095,11 +3293,16 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.renderWeedStatus()
   }
 
+  private deploymentTransform(id: string): string {
+    const size = id === 'anoko' ? 1.5 : id === 'shimajiro' ? 1.15 : 1
+    return `transform:translateY(${id === 'anoko' ? '14px' : '0'}) scale(${this.battleFlipCharacter(id) ? -size : size},${size})!important;transform-origin:center bottom;`
+  }
+
   private battleFlipCharacter(id:string):boolean { return ['m_shisa','m_rakko','shimajiro','staff_chiikawa','staff_hachiware'].includes(id) }
 
   private renderBattle(): void {
     const picker = this.root.querySelector<HTMLElement>('.battle-picker')
-    const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
+    const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).sort((a, b) => battlePower(b.id) - battlePower(a.id))
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id}">
@@ -3113,19 +3316,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (thirdUnit) {
       thirdUnit.classList.toggle('is-empty', !third)
       const body = thirdUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = third ? `<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
+      if (body) body.innerHTML = third ? `<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(third.id)}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
     }
     const secondUnit = this.root.querySelector<HTMLElement>('.bf-friend-second')
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = second ? `<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
+      if (body) body.innerHTML = second ? `<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(second.id)}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second):not(.bf-friend-third)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = fighter ? `<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(fighter.id)}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {
@@ -3133,6 +3336,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       // Weapon power remains included in server and UI damage calculations.
     }
     this.root.querySelector('.battle-field')?.classList.toggle('is-fighting', Boolean(fighter) && !this.battleStageChanging)
+    if(battleField && !battleField.querySelector('.battle-skill-flash'))battleField.insertAdjacentHTML('beforeend','<span class="battle-skill-flash" aria-live="off"></span>')
     this.battleAnimationKey = ''
     this.renderBattleStatus()
   }
@@ -3261,7 +3465,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
     if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`
     const rewardCaption = this.root.querySelector<HTMLElement>('.battle-stage-rewards .battle-reward-caption')
-    if (rewardCaption) rewardCaption.textContent = `${stageLabel} 클리어 보상`
+    if (rewardCaption) rewardCaption.textContent = `${stageLabel} 60초 토벌 보상`
     const coins = this.root.querySelector<HTMLElement>('.battle-stage-coins')
     if (coins) coins.textContent = String(stageRewards(view.stage)[0])
     const fragments = this.root.querySelector<HTMLElement>('.battle-stage-fragments')
@@ -3291,8 +3495,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const challenge = this.root.querySelector<HTMLButtonElement>('.battle-boss-challenge')
     // Boss challenge has priority when a failed boss sends the player back to stage 9.
     const bossAvailable = Boolean(fighter && view.stage % 10 === 9 && this.store.battle?.bossReady)
-    if (challenge) challenge.hidden = !bossAvailable
-    if (retry) retry.hidden = bossAvailable || !fighter || this.store.battle?.retryStage !== view.stage + 1
+    if (challenge) challenge.hidden = true
+    if (retry) retry.hidden = true
     const time5 = this.root.querySelector<HTMLButtonElement>('.battle-test-time5')
     if (time5) time5.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !fighter
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
@@ -3305,7 +3509,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}%`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')
     if (fill) fill.style.transform = `scaleX(${view.hp / view.maxHp})`
-    // Match the weapon and character attack cycles to the same 3-second server tick.
+    // Match the weapon and character attack cycles to the one-second server tick.
     const field = this.root.querySelector<HTMLElement>('.battle-field')
     // Set animation phase once per battle assignment, not on every 100ms UI refresh.
     // Updating animation-delay continuously restarts CSS animations on some browsers.
@@ -3318,7 +3522,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (fighter && !this.battleStageChanging && view.kills === 0 && this.lastEnemyHp >= 0 && view.hp < this.lastEnemyHp) {
       const hit = this.root.querySelector<HTMLElement>('.bf-hit')
       const enemy = this.root.querySelector<HTMLElement>('.bf-enemy')
-      if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
+      if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-skill-hit'); hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
       if (enemy) { enemy.classList.remove('is-hit'); void enemy.offsetWidth; enemy.classList.add('is-hit') }
       field?.classList.remove('battle-impact'); void field?.offsetWidth; field?.classList.add('battle-impact')
     }
@@ -3500,7 +3704,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   /** Pops every pulled friend one at a time; tapping the pop skips to the next one. */
   private async playPops(results: RevealItem[], sequence: number): Promise<void> {
     const node = this.root.querySelector<HTMLElement>('.pop-reveal')
-    const hold = results.length === 1 ? 1500 : 1050
+    const hold = results.length === 1 ? 1000 : 500
     for (let index = 0; index < results.length; index += 1) {
       if (sequence !== this.revealSequence) return
       this.popReveal(results[index], index, results.length)
