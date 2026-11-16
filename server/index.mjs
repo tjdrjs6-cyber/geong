@@ -752,7 +752,7 @@ async function updateBattle(accountId, nextCharacter) {
       if (power > 0 && stageElapsed < STAGE_LIMIT_MS && power * Math.floor(stageElapsed / 1000) >= stageHp(battle.stage)) {
         battle.maxClearedStage = battle.stage
         if (battle.stage < MAX_BATTLE_STAGE) battle.stage++
-        battle.stageSince = now
+        battle.stageSince = now + 1500 // No damage accrues until the clear animation ends.
         battle.stageDamage = 0
       }
       // Do not bank time beyond the offline cap. Preserve sub-minute remainder only.

@@ -258,7 +258,7 @@ export class GachaUi {
     const popup = document.createElement('dialog')
     popup.id = 'attendance-popup'
     popup.setAttribute('aria-label', '출석체크 보상')
-    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?`<span>${[1,3,5].includes(i+1)?'🪙':'💎'}</span>`:'🎁'}</span><b>${i<5?['3,000코인','다이아 1,000개','5,000코인','다이아 2,000개','10,000코인'][i]:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
+    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?`<img class="attendance-currency-icon" src="/assets/${[1,3,5].includes(i+1)?'coin':'diamond'}.png" alt="${[1,3,5].includes(i+1)?'코인':'다이아'}"/>`:'🎁'}</span><b>${i<5?['3,000코인','다이아 1,000개','5,000코인','다이아 2,000개','10,000코인'][i]:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
     document.body.appendChild(popup)
     popup.querySelector('.attendance-close')?.addEventListener('click', () => popup.close())
     popup.addEventListener('click', event => { if (event.target === popup) popup.close() })
@@ -3411,13 +3411,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.root.querySelector('.battle-field')?.classList.remove('is-stage-changing')
     },2000)
   }
-  private showBattleClearRewards(items:{stage:number;coins:number;fragments:number}[]):void {
+  private showBattleClearRewards(items:{stage:number;coins:number;diamonds?:number;fragments:number}[]):void {
     if(!items.length)return
     const item=items[items.length-1]
     const label=`${Math.floor((item.stage-1)/10)+1}-${(item.stage-1)%10+1}`
     const popup=this.root.querySelector<HTMLElement>('.battle-reward-popup')
     if(!popup)return
-    popup.innerHTML=`<div class="battle-reward-popup-title">${label} 스테이지 클리어!</div><div class="battle-reward-popup-items"><span><img src="/assets/coin.png" alt=""/> ${item.coins}코인 획득</span><span><img src="/assets/enhancement_fragment.png" alt=""/> 강화파편 ${item.fragments}개 획득</span></div>`
+    popup.innerHTML=`<div class="battle-reward-popup-title">60초 자동 토벌 보상 정산</div><div class="battle-reward-popup-items"><span><img src="/assets/diamond.png" alt="다이아"/> 다이아 ${((item as typeof item & {diamonds?:number}).diamonds ?? 0).toLocaleString('ko-KR')}개</span><span><img src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 ${item.fragments.toLocaleString('ko-KR')}개</span></div>`
     popup.hidden=false
     popup.classList.remove('is-visible')
     // Restart the visible reward animation without reflow-heavy measurements.
@@ -3509,9 +3509,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const testReset = this.root.querySelector<HTMLButtonElement>('.battle-test-reset')
     if (testReset) testReset.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !this.store.battle
     const enemyHp = this.root.querySelector<HTMLElement>('.bf-enemy-hp')
-    if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}%`
+    if (enemyHp) enemyHp.textContent = `${(this.battleStageChanging ? view.maxHp : view.hp).toLocaleString()} / ${view.maxHp.toLocaleString()} · ${this.battleStageChanging ? '100.0' : (view.hp / view.maxHp * 100).toFixed(1)}%`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')
-    if (fill) fill.style.transform = `scaleX(${view.hp / view.maxHp})`
+    if (fill) fill.style.transform = `scaleX(${this.battleStageChanging ? 1 : view.hp / view.maxHp})`
     // Match the weapon and character attack cycles to the one-second server tick.
     const field = this.root.querySelector<HTMLElement>('.battle-field')
     // Set animation phase once per battle assignment, not on every 100ms UI refresh.
@@ -3869,8 +3869,8 @@ function rouletteWheel(): string {
     const mid = (start + end) / 2
     const small = end - start < 30
     const [lx, ly] = point(mid, small ? 80 : 64).split(' ')
-    return `<path d="M0 0 L${point(start, r)} A${r} ${r} 0 ${large} 1 ${point(end, r)} Z" fill="${ROULETTE_COLORS[i]}" stroke="#3a2e2f" stroke-width="2.5"/>`
-      + `<text x="${lx}" y="${ly}" transform="rotate(${mid.toFixed(1)} ${lx} ${ly})" text-anchor="middle" dominant-baseline="middle" font-size="${small ? 11 : 17}" font-weight="800" fill="#3a2e2f">${ROULETTE_PRIZES[i].diamonds ? '◆' : ''}${ROULETTE_PRIZES[i].diamonds || ROULETTE_PRIZES[i].coins}</text>`
+    return `<path d="M0 0 L${point(start, r)} A${r} ${r} 0 ${large} 1 ${point(end, r)} Z" fill="${ROULETTE_COLORS[i]}" stroke="#fffaf0" stroke-width="2.5"/>`
+      + `<g transform="translate(${lx} ${ly})"><text y="-4" text-anchor="middle" font-size="${small ? 9 : 11}" font-weight="900" fill="#694b42">${ROULETTE_PRIZES[i].diamonds ? '◆' : '●'} ${ROULETTE_PRIZES[i].diamonds || ROULETTE_PRIZES[i].coins}</text><text y="9" text-anchor="middle" font-size="9" font-weight="700" fill="#80645b">${ROULETTE_PRIZES[i].diamonds ? '다이아' : '코인'}</text></g>`
   }).join('')
   return `<svg class="roulette-svg" viewBox="-108 -108 216 216" role="img" aria-label="코인 및 다이아 룰렛"><g class="roulette-wheel">${slices}<circle r="${r}" fill="none" stroke="#3a2e2f" stroke-width="4"/></g><circle r="16" fill="#fff" stroke="#3a2e2f" stroke-width="3"/><text y="1" text-anchor="middle" dominant-baseline="middle" font-size="13">✿</text></svg>`
 }
