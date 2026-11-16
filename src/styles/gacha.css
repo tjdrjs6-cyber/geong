@@ -5920,22 +5920,19 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .battle-field.is-stage-changing > .battle-weapon-strike,
 #ui .battle-field.is-stage-changing .bf-spark {animation-play-state:paused!important}
 
-/* v1.75: synchronize all deployed fighters with the one-second battle tick.
-   The hit pose occurs at the tick boundary, when server-derived HP updates. */
-@keyframes battle-squad-contact-v175 {
-  0% { transform:translate(var(--strike-hit-x,0%),var(--strike-hit-y,0%)) rotate(var(--strike-hit-r,0deg)); }
-  18% { transform:translate(var(--strike-start-x,-24%),var(--strike-start-y,0%)) rotate(var(--strike-start-r,-9deg)); }
-  65% { transform:translate(var(--strike-start-x,-24%),var(--strike-start-y,0%)) rotate(var(--strike-start-r,-9deg)); }
-  100% { transform:translate(var(--strike-hit-x,0%),var(--strike-hit-y,0%)) rotate(var(--strike-hit-r,0deg)); }
-}
-#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-friend-body,
-#ui .battle-field.is-fighting:not(.is-stage-changing) > .battle-weapon-strike {
-  animation-name:battle-squad-contact-v175!important;
-  animation-duration:1s!important;
-  animation-timing-function:linear!important;
-  animation-delay:var(--battle-cycle-offset,0s)!important;
-  animation-iteration-count:infinite!important;
-  animation-play-state:running!important;
-}
-#ui .battle-field.is-stage-changing .bf-friend-body,
-#ui .battle-field.is-stage-changing > .battle-weapon-strike { animation-play-state:paused!important; }
+/* Research laboratory – pastel fantasy modal */
+.research-overlay[hidden]{display:none!important}
+.research-overlay{position:fixed;inset:0;z-index:99999;background:rgba(40,32,61,.54);display:grid;place-items:center;padding:18px;overflow:auto}
+.research-card{position:relative;box-sizing:border-box;width:min(100%,430px);padding:28px 22px 25px;border:3px solid #d9b7f4;border-radius:28px;background:radial-gradient(circle at 50% 0%,#fff 0%,#faf2ff 52%,#eaf8ff 100%);box-shadow:0 16px 55px #39245c55, inset 0 0 0 4px #ffffffa6;text-align:center;color:#54446e;font-family:inherit}
+.research-close{position:absolute;top:12px;right:14px;border:0;background:#fff;border-radius:50%;width:34px;height:34px;font-size:24px;color:#8e6ca7;cursor:pointer}
+.research-sparkles{letter-spacing:24px;color:#dba7ff;font-size:23px}
+.research-illustration{font-size:64px;margin:4px auto 0;filter:drop-shadow(0 8px 5px #ab90d144)}
+.research-illustration span{font-size:32px;vertical-align:top}
+.research-card h2{font-size:28px;color:#8355b5;margin:0 0 3px}
+.research-subtitle{margin:0 0 16px;color:#9b7bb7;font-weight:700}
+.research-level{font-size:29px;font-weight:900;color:#7150a0}.research-level small{font-size:16px;color:#b49cc9}
+.research-track{height:14px;background:#e4d7ed;border-radius:30px;overflow:hidden;margin:10px 0 12px}.research-track span{display:block;height:100%;background:linear-gradient(90deg,#9ed5ff,#c7a1f5,#ffb8d7);border-radius:30px;transition:width .25s}
+.research-bonus{font-size:19px;font-weight:800;margin:10px 0}.research-bonus strong{color:#ad68d6;font-size:26px}.research-hint{font-size:12px;color:#9b87aa}
+.research-cost{display:flex;flex-direction:column;gap:6px;background:#ffffffb8;border:2px solid #e7d6f4;border-radius:18px;padding:14px;margin:17px 0 12px}.research-cost span{font-weight:800}.research-cost strong{font-size:15px}
+.research-upgrade{width:100%;border:0;border-radius:16px;padding:15px;background:linear-gradient(100deg,#a88bf4,#eaa2d0);color:white;font-size:16px;font-weight:900;box-shadow:0 5px 0 #a57cc1;cursor:pointer}.research-upgrade:disabled{opacity:.55;cursor:wait}
+.research-max{font-size:17px;color:#a066c1;font-weight:800}.research-feedback{color:#c34f77;font-size:13px;min-height:18px}
