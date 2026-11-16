@@ -62,18 +62,18 @@ export const CHARACTERS = [
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number; freePullDay?: string; freePullUsed?: number }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; fragments?: number; lotteryTickets?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number; freePullDay?: string; freePullUsed?: number }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
 export const GACHA_SAVE_KEY = 'chiikawa-gacha.save.v1'
-export const PULL_COST = 10
-export const TEN_PULL_COST = 100
+export const PULL_COST = 50
+export const TEN_PULL_COST = 500
 /** Pull sizes and prices: 1회 10, 3회 30, 5회 50, 10회 90 (10회 discount). */
 export const PULL_OPTIONS = [
   { count: 1, cost: PULL_COST },
-  { count: 3, cost: 30 },
-  { count: 5, cost: 50 },
+  { count: 3, cost: 150 },
+  { count: 5, cost: 250 },
   { count: 10, cost: TEN_PULL_COST },
 ] as const
 export type PullCount = (typeof PULL_OPTIONS)[number]['count']
@@ -96,10 +96,10 @@ export function newEntryBonus(id: CharacterId): number {
   return rewards[tier] ?? 10
 }
 /** Weeding: 1 coin per hour, sped up by the friend's weeding bonus (+10% or +20%). */
-export const WEED_HOUR_MS = 60 * 60 * 1000
+export const WEED_HOUR_MS = 60 * 1000
 export function weedIntervalMs(_id: CharacterId): number { return WEED_HOUR_MS }
 export function weedCoinsPerHour(id: CharacterId): number {
-  return 2 * (1 + characterById(id).weedBonus / 100)
+  return 4230 * (1 + characterById(id).weedBonus / 100)
 }
 
 export function weedEarnedBetweenSlots(id: CharacterId, fromSlot: number, toSlot: number): number {

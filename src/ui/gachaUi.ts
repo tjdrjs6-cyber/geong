@@ -390,12 +390,12 @@ export class GachaUi {
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>겅이복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
         <div class="rps-scene lottery-scene">
-          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 코인 <strong class="lottery-balance-value">0</strong></div></div>
+          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/coin.png" alt="코인"/> 보유 겅이복권 <strong class="lottery-balance-value">0</strong></div></div>
           <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 겅이복권 초기화 (운영자 전용)</button>
           <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
           <div class="lottery-results"></div>
-          <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price" style="font-size:1.2rem;line-height:1.5">가격 100코인</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
+          <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price" style="font-size:1.2rem;line-height:1.5">가격 겅이복권 1개</p><button data-action="lottery-buy">복권 구매 · 뜯기</button></div>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -417,8 +417,8 @@ export class GachaUi {
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
           <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · DECO PICK UP</span><h2>데코 뽑기 등장!</h2><div class="pull-event-info"><b>데코 · 꾸미기 아이템</b><span>확률 보기에서 획득 확률 확인</span></div></div><img class="pull-deco-event-image" src="/assets/gacha/deco_event.png" alt="데코 뽑기 일러스트" /></div>
-          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/coin.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 코인 <strong class="wallet-value">${STARTING_COINS}</strong></div><div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 10+1회`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
-          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 코인${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
+          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 10+1회`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
+          ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
           </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
           </div>
@@ -1144,7 +1144,7 @@ export class GachaUi {
       if (!PULL_OPTIONS.some(option => option.count === count)) return
       const free = action === 'free-daily-pull'
       const cost = free ? 0 : pullCost(count)
-      if (!this.isAdmin && this.store.data.gems < cost) { this.showInsufficient(cost); return }
+      if (!this.isAdmin && (this.store.data.diamonds??0) < cost) { this.toast('다이아가 부족합니다.'); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
@@ -1171,7 +1171,7 @@ export class GachaUi {
     if (action === 'deco-pull') { this.pullConfirmed=false;
       const count = Number(button.dataset.count) as DecoPullCount
       if (!DECO_PULL_OPTIONS.some(option => option.count === count)) return
-      if (!this.isAdmin && this.store.data.gems < decoPullCost(count)) { this.showInsufficient(decoPullCost(count)); return }
+      if (!this.isAdmin && (this.store.data.diamonds??0) < decoPullCost(count)) { this.toast('다이아가 부족합니다.'); return }
       this.busy = true
       this.revealing = true
       this.renderWallet()
@@ -1923,7 +1923,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private updateLotteryPrice():void{
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1)
     const price=this.root.querySelector<HTMLElement>('.lottery-price')
-    if(price)price.textContent=`가격 ${(Math.max(0,count)*100).toLocaleString('ko-KR')}코인`
+    if(price)price.textContent=`필요 겅이복권 ${Math.max(0,count).toLocaleString('ko-KR')}개`
   }
   private lotteryAccessoryName(accessoryId:string):string{
     const names:Record<string,string>={chiikawa:'치이카와',hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'}
@@ -1934,7 +1934,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const state=this.lotteryState;if(!state)return
     const status=this.root.querySelector<HTMLElement>('.lottery-status')
     if(status)status.textContent=`전체 100장 · 남은 복권 ${state.total}장`
-    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=this.store.data.gems.toLocaleString('ko-KR')
+    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=(this.store.data.lotteryTickets??0).toLocaleString('ko-KR')
     const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=!['test','tjdrjs885'].includes(this.store.user?.username?.toLowerCase()||'')
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
     const ids=['halloween_chiikawa','halloween_hachiware','halloween_usagi'] as const
@@ -2029,7 +2029,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(this.lotteryBusy||!this.lotteryState||this.lotteryResults.length)return
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
     if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.toast('구매 수량을 확인해주세요.');return}
-    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n총 금액: ${(count*100).toLocaleString('ko-KR')}코인\n\n구매하시겠습니까?`)
+    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
     if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
     this.lotteryBusy=true
     try{
@@ -2041,7 +2041,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.removeAttribute('hidden')
       const list=this.root.querySelector<HTMLElement>('.lottery-results');if(list)list.innerHTML=''
       this.showLotteryTicket()
-    }catch(e){if(e instanceof RequestError&&e.code==='not_enough_coins')this.lotteryTopPopup('코인이 부족합니다. 복권 1장당 100코인이 필요합니다.');else this.handleError(e)}
+    }catch(e){if(e instanceof RequestError&&e.code==='not_enough_tickets')this.lotteryTopPopup('겅이복권이 부족합니다. 토벌장에서 획득할 수 있습니다.');else this.handleError(e)}
     finally{this.lotteryBusy=false;this.renderLottery()}
   }
   private showLotteryTicket():void{
@@ -2328,10 +2328,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const spinButton = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
     if (spinButton && !this.wheelSpinning) { spinButton.disabled = spun; spinButton.textContent = spun ? '다음 시간대에 다시 돌려주세요' : '룰렛 돌리기' }
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
-      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
+      pullButton.disabled = this.revealing || (!this.isAdmin && (this.store.data.diamonds??0) < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="deco-pull"]').forEach(pullButton => {
-      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < decoPullCost(Number(pullButton.dataset.count) as DecoPullCount))
+      pullButton.disabled = this.revealing || (!this.isAdmin && (this.store.data.diamonds??0) < decoPullCost(Number(pullButton.dataset.count) as DecoPullCount))
     })
     const decoCount = this.root.querySelector<HTMLElement>('.deco-count')
     if (decoCount) decoCount.textContent = `${Object.keys(this.store.decos).length} / ${DECOS.length}`
@@ -2379,7 +2379,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(kind==='free' && this.freePullRemaining()!==10){this.toast('오늘의 무료 뽑기는 이미 사용했어요.');return}
     const free=kind==='free' && this.freePullRemaining()===10
     const cost=free?0:kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
-    if(!this.isAdmin && this.store.data.gems<cost){this.showInsufficient(cost);return}
+    if(!this.isAdmin && (this.store.data.diamonds??0)<cost){this.toast('다이아가 부족합니다.');return}
     let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
     if(!dialog){
       dialog=document.createElement('div');dialog.className='pull-confirm-overlay'
@@ -2391,7 +2391,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     dialog.dataset.kind=kind;dialog.dataset.count=String(count)
     const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
-    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'코인'}`
+    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'다이아'}`
     dialog.hidden=false
   }
   private openPullRatesDialog():void {
@@ -2423,7 +2423,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
       const count=Number(button.dataset.count) as PullCount
       const small=button.querySelector('small')
-      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 코인`
+      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 다이아`
       button.classList.remove('is-free-pull')
     })
     const freeButton=this.root.querySelector<HTMLButtonElement>('.free-daily-pull')

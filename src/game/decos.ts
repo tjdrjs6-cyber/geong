@@ -39,10 +39,10 @@ export const decoById = (id: DecoId): Deco => DECOS.find(deco => deco.id === id)
 /** All items are drawn uniformly, without rounded percentage weights. */
 export const DECO_PROBABILITY = 100 / DECOS.length
 export const DECO_PULL_OPTIONS = [
-  { count: 1, cost: 20 },
-  { count: 3, cost: 60 },
-  { count: 5, cost: 100 },
-  { count: 10, cost: 200 },
+  { count: 1, cost: 100 },
+  { count: 3, cost: 300 },
+  { count: 5, cost: 500 },
+  { count: 10, cost: 1000 },
 ] as const
 export type DecoPullCount = (typeof DECO_PULL_OPTIONS)[number]['count']
 export const decoPullCost = (count: DecoPullCount): number => DECO_PULL_OPTIONS.find(option => option.count === count)!.cost

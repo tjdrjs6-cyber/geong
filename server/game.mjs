@@ -106,18 +106,23 @@ export function validateNickname(nickname) {
 }
 
 /** Weeding pays 1 coin per interval (1 hour, shorter with a speed bonus); partial intervals carry over. */
-export const WEED_HOUR_MS = 60 * 60 * 1000
-export const WEED_COINS_PER_HOUR = 2
+export const WEED_HOUR_MS = 60 * 1000
+export const WEED_COINS_PER_HOUR = 30
 export const weedCoinsPerHour = id => WEED_COINS_PER_HOUR * (1 + (WEED_BONUS[id] ?? 0) / 100)
 export const weedIntervalMs = id => WEED_HOUR_MS
 /** One shared 2-coin base for the entire field; bonuses add together. */
 export const weedFieldRate = ids => ids.length ? WEED_COINS_PER_HOUR * (1 + ids.reduce((sum, id) => sum + (WEED_BONUS[id] ?? 0), 0) / 100) : 0
+// 60-second auto-weeding: 85% ordinary (30 coins), 15% golden (300 coins).
+// A fixed slot schedule avoids unpersisted RNG rerolls when users reconnect.
+const weedSlotCoins = slot => (((slot % 20 + 20) % 20) < 3 ? 300 : 30)
 export const weedFieldEarnedBetweenSlots = (ids, fromSlot, toSlot) => {
   if (!ids.length || toSlot <= fromSlot) return 0
-  const units = 200 + 2 * ids.reduce((sum, id) => sum + (WEED_BONUS[id] ?? 0), 0)
-  return Math.max(0, Math.floor(toSlot * units / 100 + 1e-7) - Math.floor(fromSlot * units / 100 + 1e-7))
+  const bonus = Math.max(0, ids.reduce((sum,id)=>sum+(WEED_BONUS[id]??0),0))
+  let coins = 0
+  for(let slot=Math.max(fromSlot,toSlot-480);slot<toSlot;slot++) coins += Math.floor(weedSlotCoins(slot)*(1+bonus/100))
+  return coins
 }
-export const weedEarnedBetweenSlots = (id, fromSlot, toSlot) => Math.max(0, Math.floor(toSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7) - Math.floor(fromSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7))
+export const weedEarnedBetweenSlots = (id, fromSlot, toSlot) => weedFieldEarnedBetweenSlots([id],fromSlot,toSlot)
 export function settleWeed(since, now, interval = WEED_HOUR_MS) {
   if (!Number.isFinite(since) || now <= since) return { coins: 0, since: Math.min(since, now) }
   const steps = Math.floor((now - since) / interval)
