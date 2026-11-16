@@ -1,5 +1,6 @@
-const BATTLE_STAGE_REWARDS: [number, number][] = [[1,0],[1,0],[2,0],[2,0],[3,0],[3,1],[4,1],[4,1],[5,1],[5,1],[6,2],[6,2],[7,2],[7,2],[8,2],[8,3],[9,3],[9,3],[10,3],[10,3],[11,4],[11,4],[12,4],[12,4],[13,4],[13,5],[14,5],[14,5],[15,5],[15,5],[16,6],[16,6],[17,6],[17,6],[18,6],[18,7],[19,7],[19,7],[20,7],[20,7]];
-const stageRewards = (stage: number): [number, number] => BATTLE_STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0,stage - 40), 7];
+const BATTLE_DIAMONDS=[1,1,2,2,3,3,4,4,5,5];
+const BATTLE_FRAGMENTS=[1,2,2,3,4,5,6,7,8,10];
+const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(9,Math.floor((Math.max(1,stage)-1)/10));return [BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]};
 const WEAPON_ACCESSORIES = [
   {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
   {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},
@@ -343,7 +344,7 @@ export class GachaUi {
         <header class="weed-header">
           <button class="weed-back" data-action="close">← 뒤로가기</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
-          <div class="battle-stage-rewards" aria-live="polite"><div class="battle-reward-caption">1-1 클리어 보상</div><div class="battle-reward-combined"><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/coin.png" alt=""/><b class="battle-stage-coins">1</b><small>코인</small></span><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/><b class="battle-stage-fragments">0</b><small>강화파편</small></span></div></div>
+          <div class="battle-stage-rewards" aria-live="polite"><div class="battle-reward-caption">60초 자동 토벌 보상</div><div class="battle-reward-combined"><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/diamond.png" alt=""/><b class="battle-stage-coins">1</b><small>다이아</small></span><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/><b class="battle-stage-fragments">0</b><small>강화파편</small></span></div></div>
           <div class="battle-stage-center"><div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-actions"><button type="button" class="battle-retry-challenge" data-action="battle-retry-challenge" hidden>다음 스테이지 도전하기</button><button type="button" class="battle-boss-challenge" data-action="battle-boss-challenge" hidden>⚔ 보스 도전하기</button></div></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span class="battle-transition-title">STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
@@ -1315,6 +1316,7 @@ export class GachaUi {
       this.renderWallet()
       return
     }
+
     if (action === 'choose' && button?.dataset.id) {
       const id = button.dataset.id as CharacterId
       if (!this.store.data.owned.includes(id) || id === this.heroId()) return
@@ -2360,6 +2362,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       </article>`
     }).join('')
   }
+
 
   private pullConfirmed=false
   private acceptPullConfirmation():void {
@@ -3462,7 +3465,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
     if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`
     const rewardCaption = this.root.querySelector<HTMLElement>('.battle-stage-rewards .battle-reward-caption')
-    if (rewardCaption) rewardCaption.textContent = `${stageLabel} 클리어 보상`
+    if (rewardCaption) rewardCaption.textContent = `${stageLabel} 60초 토벌 보상`
     const coins = this.root.querySelector<HTMLElement>('.battle-stage-coins')
     if (coins) coins.textContent = String(stageRewards(view.stage)[0])
     const fragments = this.root.querySelector<HTMLElement>('.battle-stage-fragments')
@@ -3492,8 +3495,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const challenge = this.root.querySelector<HTMLButtonElement>('.battle-boss-challenge')
     // Boss challenge has priority when a failed boss sends the player back to stage 9.
     const bossAvailable = Boolean(fighter && view.stage % 10 === 9 && this.store.battle?.bossReady)
-    if (challenge) challenge.hidden = !bossAvailable
-    if (retry) retry.hidden = bossAvailable || !fighter || this.store.battle?.retryStage !== view.stage + 1
+    if (challenge) challenge.hidden = true
+    if (retry) retry.hidden = true
     const time5 = this.root.querySelector<HTMLButtonElement>('.battle-test-time5')
     if (time5) time5.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !fighter
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
@@ -3506,7 +3509,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (enemyHp) enemyHp.textContent = `${view.hp.toLocaleString()} / ${view.maxHp.toLocaleString()} · ${(view.hp / view.maxHp * 100).toFixed(1)}%`
     const fill = this.root.querySelector<HTMLElement>('.bf-enemy-fill')
     if (fill) fill.style.transform = `scaleX(${view.hp / view.maxHp})`
-    // Match the weapon and character attack cycles to the same 3-second server tick.
+    // Match the weapon and character attack cycles to the one-second server tick.
     const field = this.root.querySelector<HTMLElement>('.battle-field')
     // Set animation phase once per battle assignment, not on every 100ms UI refresh.
     // Updating animation-delay continuously restarts CSS animations on some browsers.
@@ -3519,8 +3522,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (fighter && !this.battleStageChanging && view.kills === 0 && this.lastEnemyHp >= 0 && view.hp < this.lastEnemyHp) {
       const hit = this.root.querySelector<HTMLElement>('.bf-hit')
       const enemy = this.root.querySelector<HTMLElement>('.bf-enemy')
-      const deployed=[this.store.battle?.id,this.store.battle?.secondId,this.store.battle?.thirdId].filter((id):id is CharacterId=>Boolean(id))
-      if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-skill-hit','is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
+      if (hit) { hit.textContent = `-${view.power}`; hit.classList.remove('is-skill-hit'); hit.classList.remove('is-showing'); void hit.offsetWidth; hit.classList.add('is-showing') }
       if (enemy) { enemy.classList.remove('is-hit'); void enemy.offsetWidth; enemy.classList.add('is-hit') }
       field?.classList.remove('battle-impact'); void field?.offsetWidth; field?.classList.add('battle-impact')
     }

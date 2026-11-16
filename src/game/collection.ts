@@ -208,7 +208,7 @@ export class GachaStore {
 
 /** Hunting ground: the enemy has 100 HP and takes the friend's battle power as damage every 5 minutes. */
 export const ENEMY_HP = 30_000
-export const BATTLE_TICK_MS = 3_000
+export const BATTLE_TICK_MS = 1_000
 /** Battle power per friend (mirrors server/game.mjs POWER). */
 export const battlePower = (id: CharacterId): number => CHARACTERS.find(item => item.id === id)?.power ?? 0
 

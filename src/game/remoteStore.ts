@@ -1,5 +1,5 @@
-const BATTLE_STAGE_HPS = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000];
-const battleStageHp = (stage: number): number => BATTLE_STAGE_HPS[stage - 1] ?? (180000 + Math.max(0, stage - 40) * 4000);
+const BATTLE_ZONES = [[1200,180,5000],[4000,400,12000],[9000,700,24000],[18000,1100,42000],[32000,1500,65000],[50000,1800,90000],[72000,2100,120000],[95000,2400,145000],[120000,2700,170000],[145000,3000,195000]];
+const battleStageHp = (stage: number): number => { const n=Math.max(1,Math.min(100,stage))-1;const [base,step,boss]=BATTLE_ZONES[Math.floor(n/10)];return n%10===9?boss:base+step*(n%10) };
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
@@ -145,22 +145,15 @@ export class RemoteGachaStore {
 
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
-    const battle = this.battle
-    if (!battle) return { kills: 0, hp: 4000, maxHp: 4000, nextIn: BATTLE_TICK_MS, power: 0, stage: 1, remaining: 1800000 }
-    // forge.bonus already includes the equipped accessory. Never add it twice.
-    const power = battlePower(battle.id) + (battle.secondId ? battlePower(battle.secondId) : 0) + (battle.thirdId ? battlePower(battle.thirdId) : 0) + (this.forge?.bonus ?? 0) + this.collectionCombatPower
-    const elapsed = Math.max(0, this.serverNow() - battle.since)
-    let stage = battle.stage ?? 1, damage = battle.stageDamage ?? battle.damage
-    const ticks = Math.min(500000, Math.floor(elapsed / BATTLE_TICK_MS))
-    let tickAt = battle.since, stageSince = battle.stageSince ?? battle.since, kills = 0
-    for (let i = 0; i < ticks; i++) {
-      tickAt += BATTLE_TICK_MS
-      if (tickAt - stageSince >= (battle.stageLimitMs ?? 1800000)) { stage = Math.max(1,stage-1); stageSince = tickAt; damage = 0; break }
-      damage += power
-      if (damage >= battleStageHp(stage)) { kills++; if (stage % 10 !== 9) stage++; stageSince = tickAt; damage = 0 }
-    }
-    const maxHp = battleStageHp(stage)
-    return { kills, hp: Math.max(0, maxHp - damage), maxHp, nextIn: BATTLE_TICK_MS - (elapsed % BATTLE_TICK_MS), power, stage, remaining: Math.max(0, (battle.stageLimitMs ?? 1800000) - (this.serverNow() - stageSince)) }
+    const battle=this.battle
+    if (!battle) return { kills:0,hp:1200,maxHp:1200,nextIn:BATTLE_TICK_MS,power:0,stage:1,remaining:60000 }
+    const power=battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower
+    const elapsed=Math.max(0,this.serverNow()-battle.since)
+    const seconds=Math.min(59,Math.floor((elapsed%60000)/BATTLE_TICK_MS))
+    const stage=Math.min(100,battle.stage??1)
+    const maxHp=battleStageHp(stage)
+    const damage=Math.min(maxHp,Math.max(0,power)*seconds)
+    return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:60000-(elapsed%60000)}
   }
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */

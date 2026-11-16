@@ -112,6 +112,7 @@ async function prepareDatabase() {
   for (const column of ["third_id VARCHAR(32) NOT NULL DEFAULT ''", "stage INT NOT NULL DEFAULT 1", "stage_since BIGINT NOT NULL DEFAULT 0", "stage_damage BIGINT NOT NULL DEFAULT 0", "stage_limit_ms BIGINT NOT NULL DEFAULT 1800000", "boss_ready TINYINT NOT NULL DEFAULT 0", "retry_stage INT NOT NULL DEFAULT 0"]) {
     try { await pool.query(`ALTER TABLE gm_battle ADD COLUMN ${column}`) } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   }
+  try { await pool.query("ALTER TABLE gm_battle ADD COLUMN max_cleared_stage INT NOT NULL DEFAULT 0") } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   // Keep stage progression when the last battle character is removed.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_saved_progress (
     account_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
@@ -119,6 +120,7 @@ async function prepareDatabase() {
     boss_ready TINYINT NOT NULL DEFAULT 0,
     retry_stage INT NOT NULL DEFAULT 0
   )`)
+  try { await pool.query("ALTER TABLE gm_battle_saved_progress ADD COLUMN max_cleared_stage INT NOT NULL DEFAULT 0") } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_expedition_boss (
     raid_day VARCHAR(10) NOT NULL, server_id TINYINT UNSIGNED NOT NULL,
     hp BIGINT NOT NULL DEFAULT 4000000, last_tick BIGINT NOT NULL,
@@ -330,7 +332,7 @@ async function prepareDatabase() {
       const now = Date.now()
       await resetConn.query(`UPDATE gm_battle SET
         stage=1, stage_since=?, since_ms=?, stage_damage=0, damage=0,
-        stage_limit_ms=1800000, boss_ready=0, retry_stage=0`, [now, now])
+        stage_limit_ms=60000, boss_ready=0, retry_stage=0`, [now, now])
       console.log('[api] one-time battle stage reset applied to all existing users')
     }
     await resetConn.commit()
@@ -669,18 +671,34 @@ async function getWeed(accountId) {
 }
 
 // Each tenth encounter is a boss. Stage numbers 1..9 represent 1-1..1-9, 10 = 1-10 boss.
-const STAGE_LIMIT_MS = 30 * 60 * 1000
-const STAGE_HP = [4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000, 84000, 88000, 92000, 99000, 102000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 132000, 136000, 140000, 144000, 148000, 152000, 156000, 160000, 164000, 168000, 180000]
-function stageHp(stage) { return STAGE_HP[stage - 1] ?? (180000 + Math.max(0,stage - 40) * 4000) }
-const STAGE_REWARDS = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 3], [17, 3], [18, 3], [19, 3], [20, 3], [16, 4], [16, 4], [17, 4], [17, 4], [18, 4], [18, 5], [19, 5], [19, 5], [20, 5], [21, 5], [22, 6], [23, 6], [24, 6], [25, 6], [26, 6], [27, 7], [28, 7], [29, 7], [30, 7], [31, 7]]
-function stageReward(stage) { const [coins, fragments] = STAGE_REWARDS[stage - 1] ?? [31 + Math.max(0, stage - 40), 7]; return {coins, fragments} }
+const STAGE_LIMIT_MS = 60_000
+const BATTLE_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
+const STAGE_ZONES = [
+  [1200,180,5000], [4000,400,12000], [9000,700,24000],
+  [18000,1100,42000], [32000,1500,65000], [50000,1800,90000],
+  [72000,2100,120000], [95000,2400,145000], [120000,2700,170000],
+  [145000,3000,195000]
+]
+const ZONE_DIAMONDS = [1,1,2,2,3,3,4,4,5,5]
+const ZONE_FRAGMENTS = [1,2,2,3,4,5,6,7,8,10]
+const BOSS_DIAMONDS = [10,20,30,40,50,60,70,80,90,100]
+const BOSS_FRAGMENTS = [20,50,100,200,400,500,600,700,800,1000]
+function stageHp(stage) {
+  const n = Math.max(1, Math.min(100, Number(stage) || 1)) - 1
+  const [base,step,boss] = STAGE_ZONES[Math.floor(n / 10)]
+  return n % 10 === 9 ? boss : base + step * (n % 10)
+}
+function stageReward(stage) {
+  const zone = Math.min(9, Math.floor((Math.max(1, stage) - 1) / 10))
+  return { diamonds: ZONE_DIAMONDS[zone], fragments: ZONE_FRAGMENTS[zone], coins: 0 }
+}
 function battleRow(row) {
   if (!row) return null
   return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
     since: Number(row.since_ms), damage: Number(row.damage), stage: Math.max(1, Number(row.stage) || 1),
-    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0, stageLimitMs: Number(row.stage_limit_ms) || STAGE_LIMIT_MS, bossReady: Boolean(row.boss_ready), retryStage: Number(row.retry_stage) || 0 }
+    stageSince: Number(row.stage_since) || Number(row.since_ms), stageDamage: Number(row.stage_damage) || 0, stageLimitMs: STAGE_LIMIT_MS, bossReady: Boolean(row.boss_ready), retryStage: Number(row.retry_stage) || 0, maxClearedStage: Number(row.max_cleared_stage) || 0 }
 }
-const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage FROM gm_battle WHERE account_id = ?'
+const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage FROM gm_battle WHERE account_id = ?'
 async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
   return battleRow(rows[0])
@@ -702,57 +720,51 @@ async function updateBattle(accountId, nextCharacter) {
     const [forgeRows] = await conn.query('SELECT level FROM gm_forge WHERE account_id = ?', [accountId])
     const accessory = await getAccessory(accountId, conn)
     const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory) + await achievementPower(accountId,conn)
-    let earned = 0, coinsEarned = 0, cleared = [], failedStage = 0
+    let earned = 0, diamondsEarned = 0, coinsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
       const power = !battle.id ? 0 : Math.max(0, (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus)
-      // Process individual attack ticks, respecting the 30-minute deadline for each stage.
-      const ticks = !battle.id ? 0 : Math.min(500000, Math.max(0, Math.floor((now - battle.since) / 3000)))
-      let tickAt = battle.since
-      for (let i = 0; i < ticks; i++) {
-        tickAt += 3000
-        if (tickAt - battle.stageSince >= battle.stageLimitMs) {
-          failedStage = battle.stage
-          battle.retryStage = failedStage > 1 ? failedStage : 0
-          battle.stage = Math.max(1, battle.stage - 1)
-          battle.bossReady = false
-          battle.stageSince = now; battle.stageDamage = 0
-          battle.stageLimitMs = STAGE_LIMIT_MS
-          battle.since = now
-          break
-        }
-        battle.stageDamage += power
-        if (battle.stageDamage >= stageHp(battle.stage)) {
-          const repeatBeforeBoss = battle.stage % 10 === 9
-          const reward = stageReward(battle.stage)
-          coinsEarned += reward.coins; earned += reward.fragments
-          cleared.push({stage:battle.stage,coins:reward.coins,fragments:reward.fragments})
-          if (repeatBeforeBoss) battle.bossReady = true
-          if (!repeatBeforeBoss && !battle.retryStage) {
-            battle.stage++; battle.bossReady = false
+      // Each minute represents 60 one-second attacks. At most 8 hours accrue between settlements.
+      const elapsed = !battle.id ? 0 : Math.max(0, now - battle.since)
+      const capped = Math.min(elapsed, BATTLE_OFFLINE_CAP_MS)
+      const cycles = Math.floor(capped / STAGE_LIMIT_MS)
+      for (let i = 0; i < cycles; i++) {
+        if (!power) break
+        const current = Math.max(1, Math.min(100, battle.stage))
+        const success = power * 60 >= stageHp(current)
+        // On a failed challenge, farm the highest cleared stage rather than minting
+        // rewards from an undefeated monster.
+        const rewardStage = success ? current : Math.max(1, current - 1)
+        if (!success && current === 1) { failedStage = 1; continue }
+        const reward = stageReward(rewardStage)
+        diamondsEarned += reward.diamonds
+        earned += reward.fragments
+        if (success) {
+          if (current % 10 === 0 && current > (battle.maxClearedStage || 0)) {
+            const zone = Math.floor((current - 1) / 10)
+            diamondsEarned += BOSS_DIAMONDS[zone]
+            earned += BOSS_FRAGMENTS[zone]
           }
-          // A failed stage must be explicitly re-entered using the challenge button.
-          // Clearing the previous stage never clears retryStage or advances automatically.
-          battle.stageSince = tickAt; battle.stageDamage = 0
-        }
+          battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
+          if (current < 100) battle.stage = current + 1
+        } else failedStage = current
       }
-      if (!failedStage) battle.since = tickAt
-      if (battle.id && !failedStage && now - battle.stageSince >= battle.stageLimitMs) {
-        failedStage = battle.stage
-        battle.retryStage = failedStage > 1 ? failedStage : 0
-        battle.stage = Math.max(1, battle.stage - 1)
-        battle.bossReady = false
-        battle.stageSince = now; battle.stageDamage = 0; battle.since = now
-        battle.stageLimitMs = STAGE_LIMIT_MS
-      }
-      battle.damage = battle.stageDamage
+      // Do not bank time beyond the offline cap. Preserve sub-minute remainder only.
+      battle.since = elapsed > BATTLE_OFFLINE_CAP_MS ? now : now - (capped % STAGE_LIMIT_MS)
+      battle.stageSince = battle.since
+      battle.stageDamage = 0
+      battle.damage = 0
+      battle.stageLimitMs = STAGE_LIMIT_MS
+      battle.bossReady = false
+      battle.retryStage = 0
+      if (cycles) cleared = [{ stage: Math.max(1, battle.stage - 1), diamonds: diamondsEarned, fragments: earned, coins: 0 }]
     }
     if (nextCharacter) {
       if (!battle || !battle.id) {
-        const [saved] = await conn.query('SELECT stage, boss_ready, retry_stage FROM gm_battle_saved_progress WHERE account_id = ? FOR UPDATE', [accountId])
+        const [saved] = await conn.query('SELECT stage, boss_ready, retry_stage, max_cleared_stage FROM gm_battle_saved_progress WHERE account_id = ? FOR UPDATE', [accountId])
         battle = { id: nextCharacter, secondId: null, thirdId: null, since: now, damage: 0,
           stage: Math.max(1, Number(saved[0]?.stage) || 1), stageSince: now, stageDamage: 0,
           stageLimitMs: STAGE_LIMIT_MS, bossReady: Boolean(saved[0]?.boss_ready),
-          retryStage: Number(saved[0]?.retry_stage) || 0 }
+          retryStage: Number(saved[0]?.retry_stage) || 0, maxClearedStage: Number(saved[0]?.max_cleared_stage) || 0 }
       }
       else {
         const members = [battle.id, battle.secondId, battle.thirdId].filter(Boolean)
@@ -762,10 +774,10 @@ async function updateBattle(accountId, nextCharacter) {
         if (members.length) [battle.id, battle.secondId, battle.thirdId] = [members[0], members[1] || null, members[2] || null]
         else {
           // Save the current stage before removing the last assigned character.
-          await conn.query(`INSERT INTO gm_battle_saved_progress (account_id, stage, boss_ready, retry_stage)
-            VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE stage=VALUES(stage),
-            boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage)`,
-            [accountId, battle.stage, battle.bossReady ? 1 : 0, battle.retryStage || 0])
+          await conn.query(`INSERT INTO gm_battle_saved_progress (account_id, stage, boss_ready, retry_stage, max_cleared_stage)
+            VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE stage=VALUES(stage),
+            boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage), max_cleared_stage=VALUES(max_cleared_stage)`,
+            [accountId, battle.stage, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
           // Keep the battle row and its stage, but stop combat immediately.
           // Removing the final member resets only the current attempt.
           battle.id = ''; battle.secondId = null; battle.thirdId = null
@@ -775,15 +787,15 @@ async function updateBattle(accountId, nextCharacter) {
         }
       }
     }
-    if (earned || coinsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, gems = gems + ? WHERE account_id = ?', [earned, coinsEarned, accountId])
+    if (earned || diamondsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, diamonds = diamonds + ? WHERE account_id = ?', [earned, diamondsEarned, accountId])
     state.fragments = (state.fragments ?? 0) + earned
-    state.gems = (state.gems ?? 0) + coinsEarned
+    state.diamonds = (state.diamonds ?? 0) + diamondsEarned
     if (!battle) await conn.query('DELETE FROM gm_battle WHERE account_id = ?', [accountId])
-    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage)`,
-      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0])
+    else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage), max_cleared_stage=VALUES(max_cleared_stage)`,
+      [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
     await conn.commit()
-    return { save: state, battle, earned, coinsEarned, cleared, failedStage, now }
+    return { save: state, battle, earned, coinsEarned, diamondsEarned, cleared, failedStage, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
 }
 
