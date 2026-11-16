@@ -198,6 +198,8 @@ async function prepareDatabase() {
   try { await pool.query('ALTER TABLE gm_saves ADD COLUMN diamonds BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_saves ADD COLUMN fragments BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_saves ADD COLUMN lottery_tickets BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_saves ADD COLUMN claw_tickets INT UNSIGNED NOT NULL DEFAULT 20') } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_saves ADD COLUMN claw_last_hour BIGINT NOT NULL DEFAULT 0') } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_saves ADD COLUMN pending_random_boxes INT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query("ALTER TABLE gm_saves ADD COLUMN attendance_week VARCHAR(10) NOT NULL DEFAULT ''") } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_saves ADD COLUMN attendance_count INT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
@@ -471,7 +473,7 @@ function recordFailure(key) {
 
 function saveView(row) {
   const owned = typeof row.owned === 'string' ? JSON.parse(row.owned) : row.owned
-  return { version: 1, gems: Number(row.gems), diamonds: Number(row.diamonds ?? 0), lotteryTickets: Number(row.lottery_tickets ?? 0), fragments: Number(row.fragments ?? 0), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '', pendingRandomBoxes: Number(row.pending_random_boxes ?? 0), attendanceWeek: row.attendance_week || '', attendanceCount: Number(row.attendance_count ?? 0), freePullDay: row.free_pull_day || '', freePullUsed: Number(row.free_pull_used ?? 0) }
+  return { version: 1, gems: Number(row.gems), diamonds: Number(row.diamonds ?? 0), lotteryTickets: Number(row.lottery_tickets ?? 0), fragments: Number(row.fragments ?? 0), owned: normalizeOwned(owned), lastDaily: row.last_daily || '', lastRoulette: row.last_roulette || '', pendingRandomBoxes: Number(row.pending_random_boxes ?? 0), attendanceWeek: row.attendance_week || '', attendanceCount: Number(row.attendance_count ?? 0), freePullDay: row.free_pull_day || '', freePullUsed: Number(row.free_pull_used ?? 0), clawTickets: Math.min(20, Number(row.claw_tickets ?? 20) + Math.max(0, Math.floor(Date.now()/3600000)-Number(row.claw_last_hour || Math.floor(Date.now()/3600000)))*5), clawLastHour: Number(row.claw_last_hour ?? 0) }
 }
 
 // Test environment only: replenish the dedicated test account on login and requests.
@@ -508,7 +510,7 @@ async function withSave(accountId, change) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [rows] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [rows] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const outcome = change(state)
     if (outcome.ok) {
@@ -542,7 +544,7 @@ async function rechargeDiamonds(_accountId) { /* 3.0: diamonds are earned only f
 
 async function getSave(accountId) {
   await rechargeDiamonds(accountId)
-  const [rows] = await pool.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used FROM gm_saves WHERE account_id = ?', [accountId])
+  const [rows] = await pool.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ?', [accountId])
   const save = rows[0] ? saveView(rows[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
   const [testRows] = await pool.query('SELECT username FROM gm_accounts WHERE id=?',[accountId])
   if(process.env.TEST_SERVER==='true' && String(testRows[0]?.username).toLowerCase()==='test') save.owned=[...CHARACTER_IDS]
@@ -624,7 +626,7 @@ const forgeGuaranteed = account => account.username === 'test' || account.userna
 const FORGE_POWER = [10, 16, 22, 28, 34, 40, 50, 60, 70, 80, 90, 104, 118, 132, 146, 160, 178, 196, 214, 232, 250, 272, 294, 316, 338, 360, 388, 416, 444, 472, 500]
 const forgeBonus = level => FORGE_POWER[Math.max(0, Math.min(30, Number(level) || 0))]
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
-const ACCESSORY_GRADES = {rare:{cost:3,fragments:30,power:30},epic:{cost:3,fragments:50,power:80},unique:{cost:3,fragments:150,power:160},legendary:{cost:3,fragments:300,power:300},transcendent:{cost:3,fragments:500,power:500}}
+const ACCESSORY_GRADES = {rare:{cost:3,coins:500,fragments:500,power:30},epic:{cost:3,coins:2000,fragments:2000,power:80},unique:{cost:3,coins:6000,fragments:6000,power:160},legendary:{cost:3,coins:20000,fragments:20000,power:300},transcendent:{cost:3,coins:60000,fragments:300000,power:500}}
 const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.power || 10) : 0
 async function getAccessory(accountId, conn=pool) {
   const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=?',[accountId])
@@ -657,24 +659,20 @@ async function getWeed(accountId) {
 // Each tenth encounter is a boss. Stage numbers 1..9 represent 1-1..1-9, 10 = 1-10 boss.
 const STAGE_LIMIT_MS = 60_000
 const BATTLE_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
-const STAGE_ZONES = [
-  [1200,180,5000], [4000,400,12000], [9000,700,24000],
-  [18000,1100,42000], [32000,1500,65000], [50000,1800,90000],
-  [72000,2100,120000], [95000,2400,145000], [120000,2700,170000],
-  [145000,3000,195000]
-]
-const ZONE_DIAMONDS = [1,1,2,2,3,3,4,4,5,5]
-const ZONE_FRAGMENTS = [1,2,2,3,4,5,6,7,8,10]
-const BOSS_DIAMONDS = [10,20,30,40,50,60,70,80,90,100]
-const BOSS_FRAGMENTS = [20,50,100,200,400,500,600,700,800,1000]
+// Geong Market 3.0: 30 zones, 300 stages; all rewards are integers.
+const MAX_BATTLE_STAGE = 300
 function stageHp(stage) {
-  const n = Math.max(1, Math.min(100, Number(stage) || 1)) - 1
-  const [base,step,boss] = STAGE_ZONES[Math.floor(n / 10)]
-  return n % 10 === 9 ? boss : base + step * (n % 10)
+  const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
+  const zone = Math.floor(n / 10), sub = n % 10 + 1
+  return sub === 10 ? 5000 + zone * 8000 : 1200 + zone * 6500 + (sub - 1) * (180 + (zone + 1) * 30)
 }
 function stageReward(stage) {
-  const zone = Math.min(9, Math.floor((Math.max(1, stage) - 1) / 10))
-  return { diamonds: ZONE_DIAMONDS[zone], fragments: ZONE_FRAGMENTS[zone], coins: 0 }
+  const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
+  const zone = Math.floor(n / 10), sub = n % 10 + 1
+  // Diamonds capped at 5/min; fragments increase on every substage.
+  const diamonds = Math.min(5, 1 + Math.floor(zone / 5) + (sub === 10 && zone >= 5 && zone < 25 ? 1 : 0))
+  const fragments = 2 + Math.ceil(zone * 2 / 3) + (sub - 1) + (sub === 10 ? 1 : 0)
+  return { diamonds, fragments, coins: 0 }
 }
 function battleRow(row) {
   if (!row) return null
@@ -691,7 +689,7 @@ async function updateBattle(accountId, nextCharacter) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], fragments: 0 }
     const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [accountId])
     const now = Date.now()
@@ -713,25 +711,29 @@ async function updateBattle(accountId, nextCharacter) {
       const cycles = Math.floor(capped / STAGE_LIMIT_MS)
       for (let i = 0; i < cycles; i++) {
         if (!power) break
-        const current = Math.max(1, Math.min(100, battle.stage))
+        const current = Math.max(1, Math.min(MAX_BATTLE_STAGE, battle.stage))
+        const previousBest = battle.maxClearedStage || 0
         const success = power * 60 >= stageHp(current)
         // On a failed challenge, farm the highest cleared stage rather than minting
         // rewards from an undefeated monster.
         const rewardStage = success ? current : Math.max(0, battle.maxClearedStage || 0)
-        if (!success && !rewardStage) { failedStage = current; continue }
+        if (!success && !rewardStage) { if (!battle.retryStage) failedStage = current; battle.retryStage = current; continue }
         const reward = stageReward(rewardStage)
         if (randomInt(200) === 0) ticketsEarned++
         diamondsEarned += reward.diamonds
         earned += reward.fragments
         if (success) {
-          if (current % 10 === 0 && current > (battle.maxClearedStage || 0)) {
-            const zone = Math.floor((current - 1) / 10)
-            diamondsEarned += BOSS_DIAMONDS[zone]
-            earned += BOSS_FRAGMENTS[zone]
+          battle.maxClearedStage = Math.max(previousBest, current)
+          // Completed stages are farmed; only first clears advance automatically.
+          if (current > previousBest && current < MAX_BATTLE_STAGE) battle.stage = current + 1
+        } else {
+          if (!battle.retryStage && current > previousBest) {
+            failedStage = current
+            battle.retryStage = current
           }
-          battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
-          if (current < 100) battle.stage = current + 1
-        } else failedStage = current
+          // Immediately switch to the highest completed stage for farming.
+          if (previousBest > 0) battle.stage = previousBest
+        }
       }
       // Do not bank time beyond the offline cap. Preserve sub-minute remainder only.
       battle.since = elapsed > BATTLE_OFFLINE_CAP_MS ? now : now - (capped % STAGE_LIMIT_MS)
@@ -740,7 +742,7 @@ async function updateBattle(accountId, nextCharacter) {
       battle.damage = 0
       battle.stageLimitMs = STAGE_LIMIT_MS
       battle.bossReady = false
-      battle.retryStage = 0
+      // Keep the failed challenge available for a manual retry.
       if (cycles) cleared = [{ stage: Math.max(1, battle.stage - 1), diamonds: diamondsEarned, fragments: earned, coins: 0 }]
     }
     if (nextCharacter) {
@@ -808,7 +810,7 @@ async function updateWeed(accountId, op = {}) {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
-    const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
+    const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
     const current = await readWeed(conn, accountId, true)
     const now = Date.now()
@@ -1134,13 +1136,13 @@ async function ensureLotteryNoticeTables(){
 
 // V2.3: collection achievements. Only server-verified owned characters qualify.
 const ACHIEVEMENTS = [
- {id:'normal',tier:'노말',name:'기본캐릭터 수집',ids:['chiikawa','hachiware','usagi','momonga','kurimanju','kani','shisa','rakko'],coins:20,power:0},
- {id:'mermaid',tier:'레어',name:'인어의섬 수집',ids:['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_kani','m_shisa','m_rakko'],coins:30,power:0},
- {id:'staff',tier:'에픽',name:'토벌시리즈 수집',ids:['staff_chiikawa','staff_hachiware','staff_usagi'],coins:30,power:1},
- {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:30,power:2},
- {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:30,power:2},
- {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:30,power:2},
- {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:50,power:3}
+ {id:'normal',tier:'노말',name:'기본캐릭터 수집',ids:['chiikawa','hachiware','usagi','momonga','kurimanju','kani','shisa','rakko'],coins:20,power:10},
+ {id:'mermaid',tier:'레어',name:'인어의섬 수집',ids:['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_kani','m_shisa','m_rakko'],coins:30,power:20},
+ {id:'staff',tier:'에픽',name:'토벌시리즈 수집',ids:['staff_chiikawa','staff_hachiware','staff_usagi'],coins:30,power:30},
+ {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:30,power:40},
+ {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:30,power:40},
+ {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:30,power:50},
+ {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:50,power:60}
 ]
 let achievementTableReady=null
 async function ensureAchievementTable(){
@@ -1453,7 +1455,7 @@ const routes = {
     const result=await inTransaction(async conn=>{
       await conn.query('INSERT IGNORE INTO gm_weapon_accessories(account_id) VALUES(?)',[account.id])
       const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=? FOR UPDATE',[account.id])
-      const [saves]=await conn.query('SELECT fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      const [saves]=await conn.query('SELECT fragments,gems FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
       const isTest=process.env.TEST_SERVER==='true' && account.username.toLowerCase()==='test'
       // Each synthesis consumes three copies of the immediately preceding grade.
       // No prerequisite ownership or already-owned restriction: only available materials matter.
@@ -1465,7 +1467,8 @@ const routes = {
         const [previousRows]=await conn.query('SELECT quantity FROM gm_accessory_grades WHERE account_id=? AND accessory_id=? AND grade=? FOR UPDATE',[account.id,id,previous])
         if(!isTest && Number(previousRows[0]?.quantity||0)<required)return {error:'not_enough_keyrings'}
       }
-      if(Number(saves[0]?.fragments||0)<recipe.fragments)return {error:'not_enough_fragments'}
+      if(!isTest && Number(saves[0]?.fragments||0)<recipe.fragments)return {error:'not_enough_fragments'}
+      if(!isTest && Number(saves[0]?.gems||0)<recipe.coins)return {error:'not_enough_coins'}
       if(!isTest){
         if(previous==='normal')await conn.query(`UPDATE gm_weapon_accessories SET ${id}=${id}-? WHERE account_id=?`,[required,account.id])
         else await conn.query('UPDATE gm_accessory_grades SET quantity=quantity-? WHERE account_id=? AND accessory_id=? AND grade=?',[required,account.id,id,previous])
@@ -1475,7 +1478,7 @@ const routes = {
           if(Number(remaining)<=0)await conn.query("UPDATE gm_weapon_accessories SET equipped='',equipped_grade='normal' WHERE account_id=?",[account.id])
         }
       }
-      await conn.query('UPDATE gm_saves SET fragments=fragments-? WHERE account_id=?',[recipe.fragments,account.id])
+      await conn.query('UPDATE gm_saves SET fragments=fragments-?,gems=gems-? WHERE account_id=?',[isTest?0:recipe.fragments,isTest?0:recipe.coins,account.id])
       await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,id,grade])
       await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,id,grade])
       return {success:true}
@@ -1516,7 +1519,9 @@ const routes = {
       if (!rows.length) {await conn.rollback();return send(res,409,{error:'forge_no_weapon'})}
       const level=Number(rows[0].level)
       if(level>=30){await conn.rollback();return send(res,409,{error:'forge_max'})}
-      const {fragments,coins}=FORGE_COSTS[level]
+      const {coins}=FORGE_COSTS[level]
+      const targetLevel=level+1
+      const fragments=targetLevel<=5?0:targetLevel<=10?20:targetLevel<=15?60:targetLevel<=20?150:targetLevel===21?300:targetLevel===22?350:targetLevel===23?400:targetLevel<=25?500:targetLevel<=27?600:targetLevel<=29?750:1000
       if(!saves.length || (!rpsAdmin(account) && Number(saves[0].fragments)<fragments)){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
       if(!rpsAdmin(account) && Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
       // Settle battle damage with the OLD bonus before raising weapon level.
@@ -2153,7 +2158,7 @@ const routes = {
       const day = checkInDay()
       const used = state.freePullDay === day ? state.freePullUsed || 0 : 0
       if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
-      const cost = count === 10 ? 100 : 10
+      const cost = count === 10 ? 1000 : count * 100
       const source = free ? {...state, gems:state.gems + cost} : account.is_admin ? {...state,gems:1_000_000_000} : {...state,gems:state.diamonds ?? 0}
       let result = pull(source, count, n => randomInt(n), !free)
       if (result.ok && free) result = {...result,state:{...result.state, gems:state.gems,diamonds:state.diamonds,freePullDay:day,freePullUsed:used+count}}
@@ -2172,21 +2177,9 @@ const routes = {
   },
   'POST /api/claw/refresh': async (req, res) => {
     const account = await currentAccount(req)
-    if (!account) return send(res, 401, { error: 'login_required' })
-    await rechargeDiamonds(account.id)
-    const conn = await pool.getConnection()
-    try {
-      await conn.beginTransaction()
-      const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
-      if (!rows.length || (!account.is_admin && Number(rows[0].diamonds) < 2)) {
-        await conn.rollback()
-        return send(res, 400, { error: 'not_enough_diamonds' })
-      }
-      if (!account.is_admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 2 WHERE account_id = ?', [account.id])
-      await conn.commit()
-      return send(res, 200, { save: await getSave(account.id) })
-    } catch (error) { await conn.rollback().catch(() => {}); throw error }
-    finally { conn.release() }
+    if (!account) return send(res, 401, {error:'login_required'})
+    await readJson(req)
+    send(res, 200, {save: await getSave(account.id)})
   },
   'POST /api/claw/play': async (req, res) => {
     const account = await currentAccount(req)
@@ -2199,10 +2192,13 @@ const routes = {
       const { aligned } = body
       const mode = body.mode === 'auto' ? 'auto' : 'manual'
       const admin = Boolean(account.is_admin)
-      const [rows] = await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
-      if (!rows.length || (!admin && Number(rows[0].diamonds) < 1)) {
+      const [rows] = await conn.query('SELECT claw_tickets,claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const hour = Math.floor(Date.now()/3600000)
+      const previousHour = Number(rows[0]?.claw_last_hour || hour)
+      const available = Math.min(20, Number(rows[0]?.claw_tickets ?? 20) + Math.max(0,hour-previousHour)*5)
+      if (!rows.length || (!admin && available < 1)) {
         await conn.rollback()
-        return send(res, 400, { error: 'not_enough_diamonds' })
+        return send(res, 400, { error: 'not_enough_claw_tickets' })
       }
       // Always grab when aligned; grip may release at each distance interval.
       const x = Math.max(0, Math.min(100, Number(body.x) || 0))
@@ -2228,7 +2224,7 @@ const routes = {
       // chance is the full-trip probability, not an individual interval's.
       const chance = aligned === true ? Math.round(chanceProduct * 10000) / 100 : 0
       const prize = won ? ACCESSORY_IDS[randomInt(ACCESSORY_IDS.length)] : null
-      if (!admin) await conn.query('UPDATE gm_saves SET diamonds = diamonds - 1 WHERE account_id = ?', [account.id])
+      await conn.query('UPDATE gm_saves SET claw_tickets=?,claw_last_hour=? WHERE account_id=?', [admin?available:available-1,hour,account.id])
       let bonus = 0
       if (prize) {
         await conn.query(`INSERT INTO gm_weapon_accessories(account_id,${prize}) VALUES(?,1) ON DUPLICATE KEY UPDATE ${prize}=${prize}+1`,[account.id])
@@ -2249,7 +2245,7 @@ const routes = {
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
-      const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
       const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
       const decos = rows[0] ? normalizeDecos(parseJson(rows[0].items)) : {}

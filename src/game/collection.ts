@@ -62,18 +62,18 @@ export const CHARACTERS = [
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; diamonds?: number; lotteryTickets?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number; freePullDay?: string; freePullUsed?: number }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; lotteryTickets?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number; freePullDay?: string; freePullUsed?: number; clawTickets?: number }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
 export const GACHA_SAVE_KEY = 'chiikawa-gacha.save.v1'
-export const PULL_COST = 50
-export const TEN_PULL_COST = 500
+export const PULL_COST = 100
+export const TEN_PULL_COST = 1000
 /** Pull sizes and prices: 1회 10, 3회 30, 5회 50, 10회 90 (10회 discount). */
 export const PULL_OPTIONS = [
   { count: 1, cost: PULL_COST },
-  { count: 3, cost: 150 },
-  { count: 5, cost: 250 },
+  { count: 3, cost: 300 },
+  { count: 5, cost: 500 },
   { count: 10, cost: TEN_PULL_COST },
 ] as const
 export type PullCount = (typeof PULL_OPTIONS)[number]['count']
