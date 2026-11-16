@@ -676,14 +676,15 @@ function stageHp(stage) {
 }
 
 
+// Use the same existing per-zone rewards as the battle HUD (no substage bonuses).
+const BATTLE_REWARD_DIAMONDS = [1,1,2,2,3,3,4,4,5,5]
+const BATTLE_REWARD_FRAGMENTS = [1,2,2,3,4,5,6,7,8,10]
 function stageReward(stage) {
   const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
-  const zone = Math.floor(n / 10), sub = n % 10 + 1
-  // Diamonds capped at 5/min; fragments increase on every substage.
-  const diamonds = Math.min(5, 1 + Math.floor(zone / 5) + (sub === 10 && zone >= 5 && zone < 25 ? 1 : 0))
-  const fragments = 2 + Math.ceil(zone * 2 / 3) + (sub - 1) + (sub === 10 ? 1 : 0)
-  return { diamonds, fragments, coins: 0 }
+  const zone = Math.min(9, Math.floor(n / 10))
+  return { diamonds: BATTLE_REWARD_DIAMONDS[zone], fragments: BATTLE_REWARD_FRAGMENTS[zone], coins: 0 }
 }
+
 function battleRow(row) {
   if (!row) return null
   return { id: row.character_id, secondId: row.second_id || null, thirdId: row.third_id || null,
