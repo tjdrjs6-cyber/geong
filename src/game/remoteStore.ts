@@ -57,8 +57,8 @@ export const ERROR_TEXT: Record<string, string> = {
   not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',
   limited_sale_ended: '한정 판매가 종료되었습니다.',
   limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
-  not_enough_diamonds: '다이아가 부족합니다. 토벌장에서 획득할 수 있어요!',
-  not_enough_tickets: '겅이복권이 부족합니다. 토벌장에서 획득할 수 있어요!',
+  not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
+  not_enough_tickets: '겅이복권이 부족해요. 토벌장 처치 시 0.5% 확률로 획득해요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
   mail_empty: '편지 내용이나 보낼 코인을 적어 주세요.',
@@ -131,7 +131,7 @@ export class RemoteGachaStore {
   pendingWeedCoins(): number {
     if (!this.weed) return 0
     const now = this.serverNow()
-    return this.weed.members.reduce((sum, m) => sum + weedEarnedBetweenSlots(m.id, Math.floor(m.since / WEED_HOUR_MS), Math.floor(now / WEED_HOUR_MS)), 0) * (this.weed.beetle ? 2 : 1)
+    return this.weed.members.length && Math.floor(now / 60000) > Math.floor(Math.max(...this.weed.members.map(m=>m.since)) / 60000) ? 1 : 0
   }
 
   /** Milliseconds until the next weeding coin. */
@@ -159,13 +159,12 @@ export class RemoteGachaStore {
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
   weedHourlyRate(): number {
-    return ((this.weed?.members.length ?? 0) ? 2 * (1 + (this.weed?.members ?? []).reduce((sum, m) => sum + (weedCoinsPerHour(m.id) / 2 - 1), 0)) : 0) * (this.weed?.beetle ? 2 : 1)
+    const members = this.weed?.members ?? []
+    if (!members.length) return 0
+    const bonus = Math.min(2.5, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
+    return 4230 * bonus * (this.weed?.beetle ? 2 : 1)
   }
-  hourlyRate(): number {
-    const hour = 3_600_000
-    const weed = ((this.weed?.members.length ?? 0) ? 2 * (1 + (this.weed?.members ?? []).reduce((sum, m) => sum + (weedCoinsPerHour(m.id) / 2 - 1), 0)) : 0) * (this.weed?.beetle ? 2 : 1)
-    return weed
-  }
+  hourlyRate(): number { return this.weedHourlyRate() }
   /** Server credits weeding + battle coins without opening those screens. */
   async autoSettle(): Promise<number> {
     const result = await request<{ earned: number; save: GachaSave; weed: WeedState | null; battle: BattleState | null; now: number }>('settle', {})
@@ -318,11 +317,11 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
-  async lottery():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
   async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
-  async lotteryReset():Promise<{remaining:number[];total:number;price:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
-  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
-    const result=await request<{remaining:number[];total:number;price:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
+  async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
+  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
+    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
     this.data=result.save
     this.accessory=result.accessory
     return result

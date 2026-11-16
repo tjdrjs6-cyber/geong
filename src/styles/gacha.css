@@ -5855,3 +5855,7 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 @keyframes battle-skill-shake{0%,100%{filter:none;transform:translateX(0)}20%,60%{filter:brightness(1.65) sepia(.6);transform:translateX(5px)}40%,80%{transform:translateX(-5px)}}
 @media(max-width:480px){.battle-skill-dialog{padding:18px 14px}.friend-skill-link{font-size:10px;padding:4px 2px}}
 @media(prefers-reduced-motion:reduce){.battle-skill-flash.is-showing,.battle-field.battle-skill-impact .bf-enemy{animation:none}}
+
+/* Patch 4: combat visuals run on the same one-second cycle as server damage. */
+#ui .battle-field.is-fighting .bf-friend-body,#ui .battle-field.is-fighting > .battle-weapon-strike,#ui .battle-field.is-fighting .bf-spark,#ui .battle-field.is-fighting .bf-enemy-body{animation-duration:1s!important}
+#ui .battle-field .battle-weapon-strike,#ui .battle-field .bf-friend{animation-duration:1s!important}

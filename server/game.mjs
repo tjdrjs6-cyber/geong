@@ -8,9 +8,9 @@ export const WEED_BONUS = {rilakkuma: 45, korilakkuma: 45, chairoikoguma: 45, ri
 export const RARE_IDS = ['siren_curry', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
 export const TOTAL_WEIGHT = 100000
 export const STARTING_COINS = 100
-export const PULL_COST = 10
-export const TEN_PULL_COST = 100
-export const PULL_COSTS = { 1: PULL_COST, 3: 30, 5: 50, 10: TEN_PULL_COST }
+export const PULL_COST = 50
+export const TEN_PULL_COST = 500
+export const PULL_COSTS = { 1: PULL_COST, 3: 150, 5: 250, 10: TEN_PULL_COST }
 export const DAILY_GIFT = 10
 export const NEW_ENTRY_BONUS = 10
 export const DUPLICATE_BONUS = 0
@@ -107,22 +107,17 @@ export function validateNickname(nickname) {
 
 /** Weeding pays 1 coin per interval (1 hour, shorter with a speed bonus); partial intervals carry over. */
 export const WEED_HOUR_MS = 60 * 1000
-export const WEED_COINS_PER_HOUR = 30
+export const WEED_COINS_PER_HOUR = 4230
 export const weedCoinsPerHour = id => WEED_COINS_PER_HOUR * (1 + (WEED_BONUS[id] ?? 0) / 100)
 export const weedIntervalMs = id => WEED_HOUR_MS
 /** One shared 2-coin base for the entire field; bonuses add together. */
 export const weedFieldRate = ids => ids.length ? WEED_COINS_PER_HOUR * (1 + ids.reduce((sum, id) => sum + (WEED_BONUS[id] ?? 0), 0) / 100) : 0
-// 60-second auto-weeding: 85% ordinary (30 coins), 15% golden (300 coins).
-// A fixed slot schedule avoids unpersisted RNG rerolls when users reconnect.
-const weedSlotCoins = slot => (((slot % 20 + 20) % 20) < 3 ? 300 : 30)
 export const weedFieldEarnedBetweenSlots = (ids, fromSlot, toSlot) => {
   if (!ids.length || toSlot <= fromSlot) return 0
-  const bonus = Math.max(0, ids.reduce((sum,id)=>sum+(WEED_BONUS[id]??0),0))
-  let coins = 0
-  for(let slot=Math.max(fromSlot,toSlot-480);slot<toSlot;slot++) coins += Math.floor(weedSlotCoins(slot)*(1+bonus/100))
-  return coins
+  const units = 200 + 2 * ids.reduce((sum, id) => sum + (WEED_BONUS[id] ?? 0), 0)
+  return Math.max(0, Math.floor(toSlot * units / 100 + 1e-7) - Math.floor(fromSlot * units / 100 + 1e-7))
 }
-export const weedEarnedBetweenSlots = (id, fromSlot, toSlot) => weedFieldEarnedBetweenSlots([id],fromSlot,toSlot)
+export const weedEarnedBetweenSlots = (id, fromSlot, toSlot) => Math.max(0, Math.floor(toSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7) - Math.floor(fromSlot * (200 + 2 * (WEED_BONUS[id] ?? 0)) / 100 + 1e-7))
 export function settleWeed(since, now, interval = WEED_HOUR_MS) {
   if (!Number.isFinite(since) || now <= since) return { coins: 0, since: Math.min(since, now) }
   const steps = Math.floor((now - since) / interval)
@@ -131,10 +126,10 @@ export function settleWeed(since, now, interval = WEED_HOUR_MS) {
 
 /** Hunting ground: the enemy has 100 HP and takes the friend's power as damage every 5 minutes. */
 export const ENEMY_HP = 30_000
-export const BATTLE_TICK_MS = 3_000
+export const BATTLE_TICK_MS = 1_000
 export const BATTLE_DIAMOND_CHANCE = 1
 /** Battle power per friend. */
-export const POWER = {rilakkuma: 25, korilakkuma: 25, chairoikoguma: 25, rilakkuma_chiikawa: 50, korilakkuma_kani: 50, pepero_chiikawa: 2, chiikawa: 4, hachiware: 6, usagi: 7, momonga: 3, kurimanju: 2, shisa: 2, kani: 2, goblin: 1, rakko: 10, armor1: 15, armor2: 15, armor3: 15, m_chiikawa: 6, m_hachiware: 8, m_usagi: 9, m_momonga: 5, m_kurimanju: 3, m_shisa: 3, m_kani: 3, m_rakko: 15, hanip: 2, duip: 2, siren: 20, shimajiro: 30, anoko: 25, dekatsuyo: 28, c_curry: 5, h_curry: 5, u_curry: 5, ginger_chiikawa: 10, beetle: 1, ginger_hachiware: 10, ginger_usagi: 10, beetle_berserk: 50, kurimanju_bean: 10, rakko_limited: 50, honey: 13, ode: 25, ode_prison: 40, usagi_orange: 15, halloween_chiikawa: 50, halloween_hachiware: 50, halloween_usagi: 50, pajama_chiikawa: 4, pajama_hachiware: 6, pajama_usagi: 7, staff_chiikawa: 27, staff_hachiware: 27, staff_usagi: 27, devil_momonga: 42, angel_momonga: 20}
+export const POWER = {rilakkuma: 195, korilakkuma: 195, chairoikoguma: 195, rilakkuma_chiikawa: 530, korilakkuma_kani: 530, pepero_chiikawa: 8, chiikawa: 20, hachiware: 20, usagi: 20, momonga: 10, kurimanju: 8, shisa: 9, kani: 10, goblin: 5, rakko: 35, armor1: 40, armor2: 42, armor3: 45, m_chiikawa: 65, m_hachiware: 65, m_usagi: 65, m_momonga: 40, m_kurimanju: 35, m_shisa: 38, m_kani: 42, m_rakko: 95, hanip: 30, duip: 32, honey: 85, siren: 125, shimajiro: 170, anoko: 150, dekatsuyo: 165, ode: 135, staff_chiikawa: 170, staff_hachiware: 170, staff_usagi: 170, c_curry: 240, h_curry: 240, u_curry: 240, ginger_chiikawa: 260, ginger_hachiware: 260, ginger_usagi: 260, ode_prison: 340, beetle: 100, angel_momonga: 280, devil_momonga: 370, kurimanju_bean: 390, beetle_berserk: 490, rakko_limited: 510, usagi_orange: 430, halloween_chiikawa: 550, halloween_hachiware: 550, halloween_usagi: 550, pajama_chiikawa: 30, pajama_hachiware: 30, pajama_usagi: 30, siren_curry: 800}
 /** Settles elapsed attacks: returns defeated enemies (1 coin each), the leftover damage and the new tick anchor. */
 export function settleBattle(since, damage, now, power) {
   const ticks = Math.max(0, Math.floor((now - since) / BATTLE_TICK_MS))
@@ -145,7 +140,7 @@ export function settleBattle(since, damage, now, power) {
 
 /** 데코 뽑기: decorations with equal chance; 20 coins each, 10 pulls for 180. */
 export const DECO_IDS = ["d001", "d002", "d003", "d004", "d005", "d006", "d007", "d008", "d009", "d010", "d011", "d012", "d013", "d014", "d015", "d016", "d017", "d018", "d019", "d020", "d021", "d022", "d023", "d024", "d025", "d026", "d027", "d028", "d029", "d030", "d031"]
-export const DECO_PULL_COSTS = { 1: 20, 3: 60, 5: 100, 10: 200 }
+export const DECO_PULL_COSTS = { 1: 100, 3: 300, 5: 500, 10: 1000 }
 export const DECO_NEW_BONUS = 10
 const VALID_DECO = new Set(DECO_IDS)
 export function normalizeDecos(value) {
