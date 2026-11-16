@@ -8,9 +8,9 @@ export const WEED_BONUS = {rilakkuma: 45, korilakkuma: 45, chairoikoguma: 45, ri
 export const RARE_IDS = ['siren_curry', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
 export const TOTAL_WEIGHT = 100000
 export const STARTING_COINS = 100
-export const PULL_COST = 100
-export const TEN_PULL_COST = 1000
-export const PULL_COSTS = { 1: PULL_COST, 3: 300, 5: 500, 10: TEN_PULL_COST }
+export const PULL_COST = 50
+export const TEN_PULL_COST = 500
+export const PULL_COSTS = { 1: PULL_COST, 3: 150, 5: 250, 10: TEN_PULL_COST }
 export const DAILY_GIFT = 10
 export const NEW_ENTRY_BONUS = 10
 export const DUPLICATE_BONUS = 0
@@ -140,7 +140,7 @@ export function settleBattle(since, damage, now, power) {
 
 /** 데코 뽑기: decorations with equal chance; 20 coins each, 10 pulls for 180. */
 export const DECO_IDS = ["d001", "d002", "d003", "d004", "d005", "d006", "d007", "d008", "d009", "d010", "d011", "d012", "d013", "d014", "d015", "d016", "d017", "d018", "d019", "d020", "d021", "d022", "d023", "d024", "d025", "d026", "d027", "d028", "d029", "d030", "d031"]
-export const DECO_PULL_COSTS = { 1: 200, 3: 600, 5: 1000, 10: 2000 }
+export const DECO_PULL_COSTS = { 1: 100, 3: 300, 5: 500, 10: 1000 }
 export const DECO_NEW_BONUS = 10
 const VALID_DECO = new Set(DECO_IDS)
 export function normalizeDecos(value) {

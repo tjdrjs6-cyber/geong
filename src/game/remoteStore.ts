@@ -1,4 +1,5 @@
-const battleStageHp = (stage: number): number => { const n=Math.max(1,Math.min(300,stage))-1; const z=Math.floor(n/10), sub=n%10+1; return sub===10?5000+z*8000:1200+z*6500+(sub-1)*(180+(z+1)*30) };
+const BATTLE_ZONES = [[1200,180,5000],[4000,400,12000],[9000,700,24000],[18000,1100,42000],[32000,1500,65000],[50000,1800,90000],[72000,2100,120000],[95000,2400,145000],[120000,2700,170000],[145000,3000,195000]];
+const battleStageHp = (stage: number): number => { const n=Math.max(1,Math.min(100,stage))-1;const [base,step,boss]=BATTLE_ZONES[Math.floor(n/10)];return n%10===9?boss:base+step*(n%10) };
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
@@ -57,7 +58,6 @@ export const ERROR_TEXT: Record<string, string> = {
   limited_sale_ended: '한정 판매가 종료되었습니다.',
   limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
   not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
-  not_enough_claw_tickets: '키링뽑기 티켓이 부족해요. 매 정각 5개씩, 최대 20개 충전됩니다.',
   not_enough_tickets: '겅이복권이 부족해요. 토벌장 처치 시 0.5% 확률로 획득해요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
@@ -151,7 +151,7 @@ export class RemoteGachaStore {
     const power=battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower
     const elapsed=Math.max(0,this.serverNow()-battle.since)
     const seconds=Math.min(59,Math.floor((elapsed%60000)/BATTLE_TICK_MS))
-    const stage=Math.min(300,battle.stage??1)
+    const stage=Math.min(100,battle.stage??1)
     const maxHp=battleStageHp(stage)
     const damage=Math.min(maxHp,Math.max(0,power)*seconds)
     return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:60000-(elapsed%60000)}
