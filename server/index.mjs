@@ -1,5 +1,4 @@
 import http from 'node:http'
-import { skillTick } from '../src/game/battleSkills.mjs'
 import { readFile, stat } from 'node:fs/promises'
 import { resolve, extname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -721,7 +720,7 @@ async function updateBattle(accountId, nextCharacter) {
           battle.since = now
           break
         }
-        battle.stageDamage += skillTick([battle.id,battle.secondId,battle.thirdId].filter(Boolean).map(id=>({id,tier:SKILL_TIERS[id]||'normal',power:POWER[id]??10})),weaponBonus,tickAt).damage
+        battle.stageDamage += power
         if (battle.stageDamage >= stageHp(battle.stage)) {
           const repeatBeforeBoss = battle.stage % 10 === 9
           const reward = stageReward(battle.stage)
