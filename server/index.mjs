@@ -319,6 +319,7 @@ async function prepareDatabase() {
     const [admins] = await pool.query('SELECT id FROM gm_accounts WHERE username = ? AND is_admin = 1', [adminUsername])
     for (const admin of admins) await grantAdminCollection(admin.id)
   }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_idle_migrations (account_id BIGINT UNSIGNED NOT NULL, revision VARCHAR(100) NOT NULL, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(account_id,revision))`)
   // One-time global battle progression reset; keep assigned characters and balances.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_reset_migrations (
     migration_key VARCHAR(100) NOT NULL PRIMARY KEY,
@@ -485,6 +486,7 @@ async function replenishTestAccount(accountId, username) {
 }
 
 async function startSession(res, accountId, username, nickname, save, admin = false) {
+  await ensureIdleBattle(accountId)
   const replenished = await replenishTestAccount(accountId, username)
   if (replenished) save = await getSave(accountId)
   const token = randomBytes(32).toString('base64url')
@@ -696,6 +698,43 @@ async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
   return battleRow(rows[0])
 }
+// Battle revamp: reset each account once on its FIRST login after deployment.
+// Subsequent visits settle elapsed time even if the battle page was never opened.
+const IDLE_BATTLE_REVISION = 'idle_battle_stage_reset_20261117_v1'
+async function ensureIdleBattle(accountId) {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    // The marker prevents resetting a player's progress on every login/redeploy.
+    const [markers] = await conn.query('SELECT 1 FROM gm_battle_idle_migrations WHERE account_id=? AND revision=? FOR UPDATE', [accountId, IDLE_BATTLE_REVISION])
+    const firstVisit = markers.length === 0
+    const now = Date.now()
+    if (firstVisit) {
+      await conn.query('INSERT IGNORE INTO gm_battle_idle_migrations (account_id, revision) VALUES (?,?)', [accountId, IDLE_BATTLE_REVISION])
+      await conn.query(`UPDATE gm_battle SET stage=1,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=?,boss_ready=0,retry_stage=0,max_cleared_stage=0 WHERE account_id=?`, [now,now,STAGE_LIMIT_MS,accountId])
+      await conn.query('DELETE FROM gm_battle_saved_progress WHERE account_id=?', [accountId])
+    }
+    const [battles] = await conn.query(BATTLE_SELECT+' FOR UPDATE', [accountId])
+    const existing = battleRow(battles[0])
+    // Existing assigned parties continue unattended. Empty parties get one owned, available character.
+    if (!existing?.id) {
+      const [saves] = await conn.query('SELECT owned FROM gm_saves WHERE account_id=?', [accountId])
+      const owned = saves.length ? normalizeOwned(parseJson(saves[0].owned)) : []
+      const [weeds] = await conn.query('SELECT character_id FROM gm_weed_slots WHERE account_id=?', [accountId])
+      const weedIds = new Set(weeds.map(r=>r.character_id))
+      const candidate = owned.find(id=>CHARACTER_IDS.includes(id) && !weedIds.has(id))
+      if (candidate) {
+        await conn.query(`INSERT INTO gm_battle (account_id,character_id,second_id,third_id,since_ms,damage,stage,stage_since,stage_damage,stage_limit_ms,boss_ready,retry_stage,max_cleared_stage)
+          VALUES (?,?,'','',?,0,1,?,0,?,0,0,0)
+          ON DUPLICATE KEY UPDATE character_id=VALUES(character_id),second_id='',third_id='',since_ms=VALUES(since_ms),damage=0,stage=IF(?,1,stage),stage_since=VALUES(stage_since),stage_damage=0,stage_limit_ms=VALUES(stage_limit_ms),boss_ready=0,retry_stage=0,max_cleared_stage=IF(?,0,max_cleared_stage)`,
+          [accountId,candidate,now,now,STAGE_LIMIT_MS,firstVisit?1:0,firstVisit?1:0])
+      }
+    }
+    await conn.commit()
+  } catch(error) { await conn.rollback().catch(()=>{}); throw error }
+  finally { conn.release() }
+}
+
 async function updateBattle(accountId, nextCharacter) {
   const conn = await pool.getConnection()
   try {
@@ -1811,6 +1850,7 @@ const routes = {
     const account = await currentAccount(req)
     if (!account) return send(res, 200, { user: null })
     if (account.is_admin || account.username === 'test' || account.username === 'tjdrjs885') await grantAdminCollection(account.id)
+    await ensureIdleBattle(account.id)
     const autoEarned = await autoSettle(account.id)
     send(res, 200, { autoEarned, user: { username: account.username, nickname: account.nickname || null, admin: Boolean(account.is_admin) }, ...(await accountState(account.id)) })
   },
