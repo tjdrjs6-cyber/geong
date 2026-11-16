@@ -210,7 +210,7 @@ export class GachaUi {
     })
     this.root.dataset.activeScreen = screen
     window.clearInterval(this.expeditionTimer)
-    if (screen === 'expedition') {this.expeditionPendingDamage.clear();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),3000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
+    if (screen === 'expedition') {this.expeditionPendingDamage.clear();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),1000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
     window.clearInterval(this.rpsTimer)
     window.clearInterval(this.lotteryTimer)
     if(screen==='rps'){void this.openLottery();window.clearInterval(this.lotteryRefreshing);this.lotteryRefreshing=window.setInterval(()=>{if(this.screen==='rps'&&!this.lotteryResults.length)void this.refreshLotteryLive()},5000)}else{window.clearInterval(this.lotteryRefreshing)}
@@ -332,8 +332,8 @@ export class GachaUi {
         <div class="weed-panel">
           <div class="field-info-sticky">
           <p class="weed-status"></p>
-          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 60초 보상까지</small></span><span><b class="weed-rate">0.00</b><small>제초 코인/시간 · 자동 지급</small></span></div>
-          <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 60초마다 일반 잡초 85%(30코인), 황금 잡초 15%(300코인) 보상을 자동 획득해요. 제초 보너스에 따라 지급 코인이 증가하고 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
+          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 60초 보상까지</small></span><span><b class="weed-rate">0.00</b><small>분당 예상 코인 · 자동 지급</small></span></div>
+          <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 60초마다 일반 잡초 85%, 황금 잡초 15% 확률로 98% 조정된 코인을 자동 획득해요. 제초 보너스에 따라 지급 코인이 증가하고 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
           </div>
           <div class="weed-beetle-slot" hidden></div>
           <div class="weed-picker" role="list" aria-label="제초할 친구 고르기"></div>
@@ -881,7 +881,7 @@ export class GachaUi {
     if(tab==='title'){showTitle();return}
     try {
       const data=await this.fetchAchievementsOnce()
-      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?' · 영구 전투력 +'+item.power:'')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
+      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')+'" alt=""/><small>'+esc(CHARACTERS.find(c=>c.id===id)?.name||id)+(CHARACTERS.find(c=>c.id===id)?.variant?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+item.coins+'코인'+(item.power?'영구 전투력 +'+item.power:'수집 완료')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
       panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
       panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
       panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');const reward=await response.json() as {coins:number;power:number};await this.store.restore();this.achievementSnapshot=null;await this.refreshAchievementCombatLabels();await this.openAchievements('collection');void this.refreshAchievementReadyBadge();this.showAchievementReward(reward.coins,reward.power)}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
@@ -892,7 +892,7 @@ export class GachaUi {
     document.getElementById('achievement-reward-popup')?.remove()
     const overlay=document.createElement('div')
     overlay.id='achievement-reward-popup'
-    overlay.innerHTML=`<div class="achievement-reward-dialog" role="dialog" aria-modal="true" aria-label="컬렉션 보상"><h2>컬렉션 보상 획득!</h2><p>코인 <b>${Math.max(0,Number(coins)||0)}개</b> 획득!</p>${power>0?`<p>영구 전투력 <b>+${Math.max(0,Number(power)||0)}</b> 획득!</p>`:''}<button type="button">닫기</button></div>`
+    overlay.innerHTML=`<div class="achievement-reward-dialog" role="dialog" aria-modal="true" aria-label="컬렉션 보상"><h2>컬렉션 보상 획득!</h2>${power>0?`<p>영구 전투력 <b>+${Math.max(0,Number(power)||0)}</b> 획득!</p>`:''}<button type="button">닫기</button></div>`
     overlay.querySelector('button')?.addEventListener('click',()=>overlay.remove())
     document.body.append(overlay)
   }
@@ -2703,7 +2703,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private startExpeditionImpactClock():void {
     window.clearInterval(this.expeditionImpactTimer)
     this.expeditionImpactServer=this.expeditionServer
-    // Fighters launch at 0s; projectile reaches the boss at 1s of each 3s cycle.
+    // One attack cycle per second; impacts follow server-authoritative damage.
     const contact=()=>{
       if(this.screen!=='expedition')return
       const room=this.expedition?.servers.find(r=>r.id===this.expeditionServer)
@@ -2729,7 +2729,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     window.setTimeout(()=>{
       if(this.screen!=='expedition')return
       contact()
-      this.expeditionImpactTimer=window.setInterval(contact,3000)
+      this.expeditionImpactTimer=window.setInterval(contact,1000)
     },1000)
   }
 
@@ -3559,7 +3559,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 총 제초 보너스 +${members.reduce((sum, c) => sum + c.weedBonus, 0)}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
       : (this.store.data.owned.length ? `아래에서 제초할 친구를 골라 주세요. (최대 ${WEED_MAX}명)` : '친구를 뽑으면 제초를 맡길 수 있어요.')
     const rateNode = this.root.querySelector<HTMLElement>('.weed-rate')
-    if (rateNode) rateNode.textContent = (members.length ? 4230 * Math.min(2.5,1+members.reduce((sum,c)=>sum+c.weedBonus,0)/100) * (this.store.weed?.beetle?2:1) : 0).toFixed(0)
+    if (rateNode) rateNode.textContent = (members.length ? 0.85*Math.floor(30*Math.min(2.5,1+members.reduce((sum,c)=>sum+c.weedBonus,0)/100)*(this.store.weed?.beetle?2:1)*0.02)+0.15*Math.floor(300*Math.min(2.5,1+members.reduce((sum,c)=>sum+c.weedBonus,0)/100)*(this.store.weed?.beetle?2:1)*0.02) : 0).toFixed(2)
     // Coins are credited automatically; settle right away once one is ready while watching.
     if (this.store.pendingWeedCoins() > 0 && !this.settling) { this.settling = true; void this.tickSettle().finally(() => { this.settling = false }) }
     const next = this.root.querySelector<HTMLElement>('.weed-next')

@@ -660,12 +660,17 @@ async function getWeed(accountId) {
 const STAGE_LIMIT_MS = 60_000
 const BATTLE_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
 // Geong Market 3.0: 30 zones, 300 stages; all rewards are integers.
-const MAX_BATTLE_STAGE = 300
+const MAX_BATTLE_STAGE = 100
+// Unified 100-stage HP table; proposed reduction followed by an additional 10% reduction.
+const BATTLE_ZONES = [[1200,180,5000],[4000,400,12000],[9000,700,24000],[18000,1100,42000],[32000,1500,65000],[50000,1800,90000],[72000,2100,120000],[95000,2400,145000],[120000,2700,170000],[145000,3000,195000]]
 function stageHp(stage) {
-  const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
-  const zone = Math.floor(n / 10), sub = n % 10 + 1
-  return sub === 10 ? 5000 + zone * 9000 : 1200 + zone * 7000 + (sub - 1) * (300 + (zone + 1) * 110)
+  const n=Math.max(1,Math.min(100,Number(stage)||1))-1
+  const zone=Math.floor(n/10), sub=n%10
+  const [base,step,boss]=BATTLE_ZONES[zone]
+  const multiplier=zone<3?0.63:zone<6?0.54:zone<9?0.495:0.45
+  return Math.floor((sub===9?boss:base+step*sub)*multiplier)
 }
+
 function stageReward(stage) {
   const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
   const zone = Math.floor(n / 10), sub = n % 10 + 1
@@ -850,7 +855,7 @@ async function updateWeed(accountId, op = {}) {
       for(let minute=startMinute;minute<endMinute;minute++){
         const hash=createHash('sha256').update(`${accountId}:weed:${minute}`).digest()
         const golden=hash.readUInt32BE(0)%100<15
-        earned+=Math.floor((golden?300:30)*bonus)*weedCoinMultiplier(beetle)
+        earned+=Math.floor((golden?300:30)*bonus*weedCoinMultiplier(beetle)*0.02)
       }
     }
     members = members.map(m => ({ id: m.id, since: Math.floor(now / 60000) * 60000 }))
@@ -908,8 +913,8 @@ async function ensureGlobalChatTables() {
 
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
 const EXP_HP = 4000000
-const EXP_TICK = 3000
-const expeditionMaxHp = stage => stage === 1 ? 4000000 : stage === 2 ? 10000000 : 20000000
+const EXP_TICK = 1000
+const expeditionMaxHp = stage => stage === 1 ? 300000000 : stage === 2 ? 600000000 : 900000000
 function expeditionWindow(now = Date.now()) {
   const kst = new Date(now + 9 * 3600000)
   const midnight = Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate()) - 9*3600000
@@ -1147,13 +1152,13 @@ async function ensureLotteryNoticeTables(){
 
 // V2.3: collection achievements. Only server-verified owned characters qualify.
 const ACHIEVEMENTS = [
- {id:'normal',tier:'노말',name:'기본캐릭터 수집',ids:['chiikawa','hachiware','usagi','momonga','kurimanju','kani','shisa','rakko'],coins:20,power:10},
- {id:'mermaid',tier:'레어',name:'인어의섬 수집',ids:['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_kani','m_shisa','m_rakko'],coins:30,power:20},
- {id:'staff',tier:'에픽',name:'토벌시리즈 수집',ids:['staff_chiikawa','staff_hachiware','staff_usagi'],coins:30,power:30},
- {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:30,power:40},
- {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:30,power:40},
- {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:30,power:50},
- {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:50,power:60}
+ {id:'normal',tier:'노말',name:'기본캐릭터 수집',ids:['chiikawa','hachiware','usagi','momonga','kurimanju','kani','shisa','rakko'],coins:0,power:10},
+ {id:'mermaid',tier:'레어',name:'인어의섬 수집',ids:['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_kani','m_shisa','m_rakko'],coins:0,power:20},
+ {id:'staff',tier:'에픽',name:'토벌시리즈 수집',ids:['staff_chiikawa','staff_hachiware','staff_usagi'],coins:0,power:30},
+ {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:0,power:40},
+ {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:0,power:40},
+ {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:0,power:50},
+ {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:0,power:60}
 ]
 let achievementTableReady=null
 async function ensureAchievementTable(){
