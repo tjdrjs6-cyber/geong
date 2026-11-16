@@ -450,11 +450,11 @@ export class RemoteGachaStore {
   }
 
   /** One spin per 12-hour Korea time window. Returns the winning slot, or null when today's spin was already used. */
-  async spinRoulette(): Promise<{ index: number; prize: number } | null> {
+  async spinRoulette(): Promise<{ index: number; prize: number; currency: 'coins' | 'diamonds' } | null> {
     try {
-      const result = await request<{ index: number; prize: number; save: GachaSave }>('roulette', {})
+      const result = await request<{ index: number; prize: number; currency: 'coins' | 'diamonds'; save: GachaSave }>('roulette', {})
       this.data = result.save
-      return { index: result.index, prize: result.prize }
+      return { index: result.index, prize: result.prize, currency: result.currency }
     } catch (error) {
       if (error instanceof RequestError && error.message === 'already_spun') {
         this.data = { ...this.data, lastRoulette: `${new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}` }
@@ -463,10 +463,10 @@ export class RemoteGachaStore {
       throw error
     }
   }
-  async claimDaily(): Promise<{ claimed: boolean; coins: number; boxes: number }> {
-    const result = await request<{ claimed: boolean; coins: number; boxes: number; save: GachaSave }>('daily', {})
+  async claimDaily(): Promise<{ claimed: boolean; coins: number; diamonds: number; boxes: number }> {
+    const result = await request<{ claimed: boolean; coins: number; diamonds: number; boxes: number; save: GachaSave }>('daily', {})
     this.data = result.save
-    return { claimed: result.claimed, coins: result.coins ?? 0, boxes: result.boxes ?? 0 }
+    return { claimed: result.claimed, coins: result.coins ?? 0, diamonds: result.diamonds ?? 0, boxes: result.boxes ?? 0 }
   }
 
   private apply(payload: AccountPayload): void {

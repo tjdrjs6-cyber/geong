@@ -258,7 +258,7 @@ export class GachaUi {
     const popup = document.createElement('dialog')
     popup.id = 'attendance-popup'
     popup.setAttribute('aria-label', '출석체크 보상')
-    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?'<img class="attendance-coin-image" src="/assets/coin.png" alt="코인"/>':'🎁'}</span><b>${i<5?`${(i+1)*10}코인`:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
+    popup.innerHTML = `<div class="attendance-popup-inner"><button type="button" class="attendance-close" aria-label="닫기">×</button><h2><img class="attendance-kani-title" src="/assets/attendance_kani.png" alt="카니"/> 출석 체크</h2><p>매주 월요일 초기화 · 누적 출석 ${count}일</p><div class="attendance-reward-grid">${Array.from({length:7},(_,i)=>`<div class="attendance-reward ${i<count?'received':''} ${i+1===next&&!claimed?'upcoming':''}"><small>${i+1}일차</small><span>${i<5?`<span>${[1,3,5].includes(i+1)?'🪙':'💎'}</span>`:'🎁'}</span><b>${i<5?['3,000코인','다이아 1,000개','5,000코인','다이아 2,000개','10,000코인'][i]:'랜덤박스 1개'}</b>${i<count?'<em>수령 완료</em>':''}</div>`).join('')}</div><button type="button" class="attendance-claim" ${claimed?'disabled':''}>${claimed?'오늘 출석 완료':'출석 보상 받기'}</button></div>`
     document.body.appendChild(popup)
     popup.querySelector('.attendance-close')?.addEventListener('click', () => popup.close())
     popup.addEventListener('click', event => { if (event.target === popup) popup.close() })
@@ -271,7 +271,7 @@ export class GachaUi {
         if (reward.claimed) {
           this.audio.play('pickup')
           popup.close()
-          this.toast(reward.boxes ? '출석 완료! 랜덤박스 1개를 받았어요.' : `출석 완료! ${reward.coins}코인을 받았어요.`)
+          this.toast(reward.boxes ? '출석 완료! 랜덤박스 1개를 받았어요.' : reward.diamonds ? `출석 완료! 다이아 ${reward.diamonds.toLocaleString('ko-KR')}개를 받았어요.` : `출석 완료! ${reward.coins.toLocaleString('ko-KR')}코인을 받았어요.`)
         } else { popup.close(); this.toast('오늘은 이미 출석했어요.') }
       } catch (error) { this.handleError(error) } finally { this.busy = false; this.renderWallet() }
     })
@@ -462,7 +462,7 @@ export class GachaUi {
           <div class="modal-kicker">DAILY ROULETTE</div><h2 id="roulette-title">오늘의 룰렛</h2>
           <p class="collection-summary">한국 시간 오전·오후 각 1회, 하루 최대 2회 돌릴 수 있어요.</p>
           <div class="roulette-wrap"><i class="roulette-pointer" aria-hidden="true"></i>${rouletteWheel()}</div>
-          <ul class="roulette-odds">${ROULETTE_PRIZES.map(p => `<li><b>${p.coins}코인</b><span>${p.percent}%</span></li>`).join('')}</ul>
+          <ul class="roulette-odds">${ROULETTE_PRIZES.map(p => `<li><b>${p.diamonds ? `💎 ${p.diamonds.toLocaleString('ko-KR')}다이아` : `${p.coins.toLocaleString('ko-KR')}코인`}</b><span>${p.percent}%</span></li>`).join('')}</ul>
           <button class="modal-primary roulette-spin" data-action="roulette-spin">룰렛 돌리기</button><div class="roulette-pop-reward" role="status" aria-live="polite" hidden></div>
         </div>
       </section>
@@ -2424,7 +2424,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('.pull-button[data-action="pull"]').forEach(button=>{
       const count=Number(button.dataset.count) as PullCount
       const small=button.querySelector('small')
-      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 코인`
+      if(small)small.textContent=`${pullCost(count).toLocaleString('ko-KR')} 다이아`
       button.classList.remove('is-free-pull')
     })
     const freeButton=this.root.querySelector<HTMLButtonElement>('.free-daily-pull')
@@ -2964,7 +2964,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       : '<small class="storage-keep">중복 없음</small>'
     if (this.storageTab === 'inventory') {
       if (summary) summary.textContent = '보유한 기타 아이템입니다. 판매는 장터에서 이용해 주세요.'
-      grid.innerHTML = `<article class="storage-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권" style="width:60px;height:60px;object-fit:contain"/><b>겅이복권</b><small>보유 ${(this.store.data.lotteryTickets ?? 0).toLocaleString('ko-KR')}개 · 토벌장 0.5% 획득</small></article>` + ([['잡초',this.store.wildWeed?.count??0,5,'/field_wild_weed.png'],['황금잡초',this.store.wildWeed?.goldenCount??0,50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([name,count,price,img])=>`<article class="storage-item"><img src="${img}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count}개 · 개당 ${price}코인</small></article>`).join('')
+      grid.innerHTML = `<article class="storage-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권" style="width:60px;height:60px;object-fit:contain"/><b>겅이복권</b><small>보유 ${(this.store.data.lotteryTickets ?? 0).toLocaleString('ko-KR')}개 · 토벌장 0.75% 획득</small></article>` + ([['잡초',this.store.wildWeed?.count??0,5,'/field_wild_weed.png'],['황금잡초',this.store.wildWeed?.goldenCount??0,50,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([name,count,price,img])=>`<article class="storage-item"><img src="${img}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count}개 · 개당 ${price}코인</small></article>`).join('')
     } else if (this.storageTab === 'accessory') {
       const counts = this.store.accessory.counts || {}
       const cards = WEAPON_ACCESSORIES.flatMap(item => ALCHEMY_GRADES.map(grade => {
@@ -3773,7 +3773,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.audio.play('pickup')
       
       if (rewardMessage) {
-        rewardMessage.textContent = `🎉 ${result.prize}코인 획득!!`
+        rewardMessage.textContent = `🎉 ${result.prize.toLocaleString('ko-KR')}${result.currency === 'diamonds' ? '다이아' : '코인'} 획득!!`
         rewardMessage.hidden = false
         rewardMessage.classList.remove('pop-in')
         void rewardMessage.offsetWidth
@@ -3856,7 +3856,7 @@ const ROULETTE_SLICES: Array<[number, number]> = (() => {
   let at = 0
   return ROULETTE_PRIZES.map(prize => { const start = at; at += prize.percent * 3.6; return [start, at] as [number, number] })
 })()
-const ROULETTE_COLORS = ['#ffe3ea', '#dff1ff', '#fff3c4', '#e3f6dc', '#f1e2ff']
+const ROULETTE_COLORS = ['#ffe3ea', '#dff1ff', '#fff3c4', '#e3f6dc', '#f1e2ff', '#ffe9d3', '#d9f1f0']
 
 function rouletteWheel(): string {
   const r = 100
@@ -3870,7 +3870,7 @@ function rouletteWheel(): string {
     const small = end - start < 30
     const [lx, ly] = point(mid, small ? 80 : 64).split(' ')
     return `<path d="M0 0 L${point(start, r)} A${r} ${r} 0 ${large} 1 ${point(end, r)} Z" fill="${ROULETTE_COLORS[i]}" stroke="#3a2e2f" stroke-width="2.5"/>`
-      + `<text x="${lx}" y="${ly}" transform="rotate(${mid.toFixed(1)} ${lx} ${ly})" text-anchor="middle" dominant-baseline="middle" font-size="${small ? 11 : 17}" font-weight="800" fill="#3a2e2f">${ROULETTE_PRIZES[i].coins}</text>`
+      + `<text x="${lx}" y="${ly}" transform="rotate(${mid.toFixed(1)} ${lx} ${ly})" text-anchor="middle" dominant-baseline="middle" font-size="${small ? 11 : 17}" font-weight="800" fill="#3a2e2f">${ROULETTE_PRIZES[i].diamonds ? '◆' : ''}${ROULETTE_PRIZES[i].diamonds || ROULETTE_PRIZES[i].coins}</text>`
   }).join('')
-  return `<svg class="roulette-svg" viewBox="-108 -108 216 216" role="img" aria-label="코인 룰렛"><g class="roulette-wheel">${slices}<circle r="${r}" fill="none" stroke="#3a2e2f" stroke-width="4"/></g><circle r="16" fill="#fff" stroke="#3a2e2f" stroke-width="3"/><text y="1" text-anchor="middle" dominant-baseline="middle" font-size="13">✿</text></svg>`
+  return `<svg class="roulette-svg" viewBox="-108 -108 216 216" role="img" aria-label="코인 및 다이아 룰렛"><g class="roulette-wheel">${slices}<circle r="${r}" fill="none" stroke="#3a2e2f" stroke-width="4"/></g><circle r="16" fill="#fff" stroke="#3a2e2f" stroke-width="3"/><text y="1" text-anchor="middle" dominant-baseline="middle" font-size="13">✿</text></svg>`
 }

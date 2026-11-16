@@ -214,9 +214,11 @@ export const battlePower = (id: CharacterId): number => CHARACTERS.find(item => 
 
 /** Daily roulette prizes (one spin per day, server decides). Percent values for display. */
 export const ROULETTE_PRIZES = [
-  { coins: 10, percent: 40 },
-  { coins: 20, percent: 25 },
-  { coins: 30, percent: 17.5 },
-  { coins: 50, percent: 12.5 },
-  { coins: 100, percent: 5 },
+  { coins: 1000, diamonds: 0, percent: 30 },
+  { coins: 2000, diamonds: 0, percent: 20 },
+  { coins: 0, diamonds: 500, percent: 20 },
+  { coins: 5000, diamonds: 0, percent: 10 },
+  { coins: 0, diamonds: 800, percent: 10 },
+  { coins: 0, diamonds: 1000, percent: 5 },
+  { coins: 5000, diamonds: 0, percent: 5 },
 ] as const

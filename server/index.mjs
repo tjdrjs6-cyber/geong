@@ -729,7 +729,7 @@ async function updateBattle(accountId, nextCharacter) {
         const rewardStage = success ? current : Math.max(0, battle.maxClearedStage || 0)
         if (!success && !rewardStage) { if (!battle.retryStage) failedStage = current; battle.retryStage = current; continue }
         const reward = stageReward(rewardStage)
-        if (randomInt(200) === 0) ticketsEarned++
+        if (randomInt(400) < 3) ticketsEarned++
         diamondsEarned += reward.diamonds
         earned += reward.fragments
         if (success) {
@@ -2178,7 +2178,7 @@ const routes = {
       const day = checkInDay()
       const used = state.freePullDay === day ? state.freePullUsed || 0 : 0
       if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
-      const cost = count === 10 ? 1000 : count * 100
+      const cost = count === 10 ? 500 : count * 50
       const source = free ? {...state, gems:state.gems + cost} : account.is_admin ? {...state,gems:1_000_000_000} : {...state,gems:state.diamonds ?? 0}
       let result = pull(source, count, n => randomInt(n), !free)
       if (result.ok && free) result = {...result,state:{...result.state, gems:state.gems,diamonds:state.diamonds,freePullDay:day,freePullUsed:used+count}}
@@ -2390,14 +2390,14 @@ const routes = {
     await readJson(req)
     const outcome = await withSave(account.id, state => spinRoulette(state))
     if (!outcome.ok) return send(res, 409, { error: outcome.error, save: outcome.state })
-    send(res, 200, { index: outcome.index, prize: outcome.prize, save: outcome.state })
+    send(res, 200, { index: outcome.index, prize: outcome.prize, currency: outcome.currency, save: outcome.state })
   },
   'POST /api/daily': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     await readJson(req)
     const outcome = await withSave(account.id, state => claimDaily(state))
-    send(res, 200, { claimed: outcome.ok, day: outcome.day, coins: outcome.coins, boxes: outcome.boxes, save: outcome.state })
+    send(res, 200, { claimed: outcome.ok, day: outcome.day, coins: outcome.coins, diamonds: outcome.diamonds, boxes: outcome.boxes, save: outcome.state })
   },
 }
 

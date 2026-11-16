@@ -82,10 +82,11 @@ export function claimDaily(state, now = new Date()) {
   const week = attendanceWeek(now)
   const count = state.attendanceWeek === week ? Math.min(7, Number(state.attendanceCount) || 0) : 0
   const day = count + 1
-  const coins = day <= 5 ? day * 10 : 0
+  const coins = [3000, 0, 5000, 0, 10000][day - 1] ?? 0
+  const diamonds = [0, 1000, 0, 2000, 0][day - 1] ?? 0
   const boxes = day >= 6 ? 1 : 0
-  return { ok: true, coins, boxes, day, state: {
-    ...state, gems: state.gems + coins, lastDaily: today,
+  return { ok: true, coins, diamonds, boxes, day, state: {
+    ...state, gems: state.gems + coins, diamonds: (state.diamonds ?? 0) + diamonds, lastDaily: today,
     attendanceWeek: week, attendanceCount: day,
     pendingRandomBoxes: (state.pendingRandomBoxes || 0) + boxes,
   } }
@@ -206,13 +207,15 @@ export function validateHouse(layout, decos, owned) {
   return { layout: { pieces: clean, friends } }
 }
 
-/** Roulette: one spin per Korea 12-hour window (00:00 / 12:00). Weights are per-mille (40% / 25% / 17.5% / 12.5% / 5%). */
+/** Roulette: weighted rewards in per-mille; duplicate 5000 coin slots are intentional. */
 export const ROULETTE = [
-  { coins: 10, weight: 400 },
-  { coins: 20, weight: 250 },
-  { coins: 30, weight: 175 },
-  { coins: 50, weight: 125 },
-  { coins: 100, weight: 50 },
+  { coins: 1000, diamonds: 0, weight: 300 },
+  { coins: 2000, diamonds: 0, weight: 200 },
+  { coins: 0, diamonds: 500, weight: 200 },
+  { coins: 5000, diamonds: 0, weight: 100 },
+  { coins: 0, diamonds: 800, weight: 100 },
+  { coins: 0, diamonds: 1000, weight: 50 },
+  { coins: 5000, diamonds: 0, weight: 50 },
 ]
 export function drawRoulette(random = Math.random) {
   let roll = Math.floor(random() * 1000)
@@ -230,8 +233,8 @@ export function spinRoulette(state, random = Math.random, now = new Date()) {
   const today = rouletteSlot(now)
   if (state.lastRoulette === today) return { ok: false, error: 'already_spun', state }
   const index = drawRoulette(random)
-  const prize = ROULETTE[index].coins
-  return { ok: true, index, prize, state: { ...state, gems: state.gems + prize, lastRoulette: today } }
+  const reward = ROULETTE[index]
+  return { ok: true, index, prize: reward.coins || reward.diamonds, currency: reward.diamonds ? 'diamonds' : 'coins', state: { ...state, gems: state.gems + reward.coins, diamonds: (state.diamonds ?? 0) + reward.diamonds, lastRoulette: today } }
 }
 
 /** Mailbox: up to 30 characters of text, optional coins from the sender's own balance, at most 100 coins sent per Korean day. */
