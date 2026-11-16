@@ -5919,3 +5919,23 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .battle-field.is-stage-changing .bf-friend-body,
 #ui .battle-field.is-stage-changing > .battle-weapon-strike,
 #ui .battle-field.is-stage-changing .bf-spark {animation-play-state:paused!important}
+
+/* v1.75: synchronize all deployed fighters with the one-second battle tick.
+   The hit pose occurs at the tick boundary, when server-derived HP updates. */
+@keyframes battle-squad-contact-v175 {
+  0% { transform:translate(var(--strike-hit-x,0%),var(--strike-hit-y,0%)) rotate(var(--strike-hit-r,0deg)); }
+  18% { transform:translate(var(--strike-start-x,-24%),var(--strike-start-y,0%)) rotate(var(--strike-start-r,-9deg)); }
+  65% { transform:translate(var(--strike-start-x,-24%),var(--strike-start-y,0%)) rotate(var(--strike-start-r,-9deg)); }
+  100% { transform:translate(var(--strike-hit-x,0%),var(--strike-hit-y,0%)) rotate(var(--strike-hit-r,0deg)); }
+}
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-friend-body,
+#ui .battle-field.is-fighting:not(.is-stage-changing) > .battle-weapon-strike {
+  animation-name:battle-squad-contact-v175!important;
+  animation-duration:1s!important;
+  animation-timing-function:linear!important;
+  animation-delay:var(--battle-cycle-offset,0s)!important;
+  animation-iteration-count:infinite!important;
+  animation-play-state:running!important;
+}
+#ui .battle-field.is-stage-changing .bf-friend-body,
+#ui .battle-field.is-stage-changing > .battle-weapon-strike { animation-play-state:paused!important; }

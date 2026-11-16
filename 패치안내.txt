@@ -1,16 +1,1 @@
-겅이마켓 staging 부분 패치 — 2026-11-17
-
-변경 파일:
- src/styles/gacha.css
- public/geong_main_music_garden.webp
- public/geong_loading_christmas.webp
-
-기능:
- 메인화면 배경: 사용자 제공 숲속 음악 정원
- 로딩화면 배경: 사용자 제공 크리스마스 일러스트
- 토벌장: 캐릭터/무기 공격 모션을 1초 주기로 설정; 스테이지 전환 중 일시 정지
-
-주의:
- 기존 토벌장 보상 서버 파일은 건드리지 않습니다.
- 직전 패치가 적용된 staging에 동일 경로로 덮어쓰세요.
- Railway 실제 동작은 검증되지 않았습니다.
+staging 최신 패치 기준. 변경 파일 2개. 3명 동시 1초 공격 모션, HP 갱신 시점과 타격 포즈 동기화. 서버 전투력/보상 계산 변경 없음. Railway 실기동 미검증.

@@ -3528,7 +3528,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const field = this.root.querySelector<HTMLElement>('.battle-field')
     // Set animation phase once per battle assignment, not on every 100ms UI refresh.
     // Updating animation-delay continuously restarts CSS animations on some browsers.
-    const animationKey = this.store.battle ? `${this.store.battle.since}:${this.store.battle.id}:${this.store.battle.secondId ?? ''}` : ''
+    const animationKey = this.store.battle ? `${this.store.battle.since}:${view.stage}:${this.store.battle.id}:${this.store.battle.secondId ?? ''}:${this.store.battle.thirdId ?? ''}` : ''
     if (field && animationKey !== this.battleAnimationKey) {
       this.battleAnimationKey = animationKey
       field.style.setProperty('--battle-cycle-offset', `${-(BATTLE_TICK_MS - view.nextIn) / 1000}s`)
