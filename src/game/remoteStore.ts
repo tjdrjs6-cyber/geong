@@ -24,7 +24,7 @@ export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; power?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number }
 export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
@@ -159,13 +159,13 @@ export class RemoteGachaStore {
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle=this.battle
     if (!battle) return { kills:0,hp:1200,maxHp:1200,nextIn:BATTLE_TICK_MS,power:0,stage:1,remaining:60000 }
-    const power=battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower
-    const elapsed=Math.max(0,this.serverNow()-battle.since)
-    const seconds=Math.min(59,Math.floor((elapsed%60000)/BATTLE_TICK_MS))
+    const power=battle.power ?? (battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower)
+    const elapsed=Math.max(0,this.serverNow()-(battle.stageSince || battle.since))
+    const seconds=Math.min(60,Math.floor(elapsed/BATTLE_TICK_MS))
     const stage=Math.min(100,battle.stage??1)
     const maxHp=battleStageHp(stage)
     const damage=Math.min(maxHp,Math.max(0,power)*seconds)
-    return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:60000-(elapsed%60000)}
+    return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:Math.max(0,60000-elapsed)}
   }
 
   /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
@@ -173,7 +173,8 @@ export class RemoteGachaStore {
     const members = this.weed?.members ?? []
     if (!members.length) return 0
     const bonus = Math.min(2.5, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
-    return 4230 * bonus * (this.weed?.beetle ? 2 : 1)
+    const multiplier = this.weed?.beetle ? 2 : 1
+    return Math.floor(30 * bonus * multiplier * 0.02) * 0.85 + Math.floor(300 * bonus * multiplier * 0.02) * 0.15
   }
   hourlyRate(): number { return this.weedHourlyRate() }
   /** Server credits weeding + battle coins without opening those screens. */

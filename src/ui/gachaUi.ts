@@ -2287,7 +2287,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLElement>('.diamond-value').forEach(balance => { balance.textContent = (this.isAdmin ? '∞' : (this.store.data.diamonds ?? 0).toLocaleString('ko-KR')) })
     this.tickDiamondRecharge()
     this.renderFreePullStatus()
-    const rate = `+${this.store.hourlyRate().toFixed(2)} 코인/시간`
+    const rate = `+${Math.floor(this.store.hourlyRate())} 코인/분`
     this.root.querySelectorAll<HTMLElement>('.wallet-rate').forEach(node => { node.textContent = rate })
     const count = this.store.data.owned.length
     const collectionCount = this.root.querySelector<HTMLElement>('.collection-count')
@@ -3347,7 +3347,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (!this.store.battle || this.battleSyncing) return
     this.battleSyncing = true
     try {
+      const beforeStage = this.store.battle?.stage ?? 1
       const result = await this.store.claimBattle()
+      if (this.screen === 'battle' && (this.store.battle?.stage ?? 1) > beforeStage) this.showBattleStageTransition(this.store.battle!.stage!)
       if (result.cleared.length) {
         this.audio.play('pickup')
         if (this.screen === 'battle') this.showBattleClearRewards(result.cleared)
@@ -3474,7 +3476,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const remaining = Math.max(0, Math.ceil(view.remaining / 1000))
     const timeLabel = this.root.querySelector<HTMLElement>('.battle-time-remaining')
     if (timeLabel) timeLabel.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
-    if (this.screen === 'battle' && !this.battleSyncing) this.showBattleStageTransition(view.stage)
+    if (this.screen === 'battle') this.showBattleStageTransition(view.stage)
     const enemyUnit = this.root.querySelector<HTMLElement>('.bf-enemy')
     if (enemyUnit) {
       const isBoss = view.stage % 10 === 0

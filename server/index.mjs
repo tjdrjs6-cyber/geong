@@ -803,6 +803,7 @@ async function updateBattle(accountId, nextCharacter) {
     else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage), max_cleared_stage=VALUES(max_cleared_stage)`,
       [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
+    if (battle) battle.power = battle.id ? (POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus : 0
     await conn.commit()
     return { save: state, battle, earned, coinsEarned, diamondsEarned, cleared, failedStage, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
