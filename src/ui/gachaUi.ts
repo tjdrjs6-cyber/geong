@@ -451,13 +451,13 @@ export class GachaUi {
           <button class="weed-back" data-action="close">← 뒤로가기</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
           <div class="battle-stage-rewards" aria-live="polite"><div class="battle-reward-caption">60초 자동 토벌 보상</div><div class="battle-reward-combined"><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/diamond.png" alt=""/><b class="battle-stage-coins">1</b><small>다이아</small></span><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/><b class="battle-stage-fragments">0</b><small>강화파편</small></span></div></div>
-          <div class="battle-stage-center"><div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-stage-actions"><button type="button" class="battle-retry-challenge" data-action="battle-retry-challenge" hidden>다음 스테이지 도전하기</button><button type="button" class="battle-boss-challenge" data-action="battle-boss-challenge" hidden>⚔ 보스 도전하기</button></div></div>
+          <div class="battle-stage-center"><div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-recommended-power"><span>⚔ 권장 전투력</span><strong class="battle-recommended-value">25</strong><small class="battle-recommended-compare"></small></div><div class="battle-stage-actions"><button type="button" class="battle-retry-challenge" data-action="battle-retry-challenge" hidden>다음 스테이지 도전하기</button><button type="button" class="battle-boss-challenge" data-action="battle-boss-challenge" hidden>⚔ 보스 도전하기</button></div></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span class="battle-transition-title">STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
-          <p class="battle-status"></p><p class="achievement-combat-bonus">컬렉션 영구 전투력 확인 중...</p>
+          <div class="battle-status"></div>
           <button type="button" class="battle-test-time5" data-action="battle-test-time5" hidden>남은 시간 5초</button><button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
@@ -3665,6 +3665,16 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (stageHeading) stageHeading.textContent = `${stageLabel} STAGE`
     const rewardCaption = this.root.querySelector<HTMLElement>('.battle-stage-rewards .battle-reward-caption')
     if (rewardCaption) rewardCaption.textContent = `${stageLabel} 스테이지 클리어 보상`
+    // 60초 제한 내 처치 가능한 최소 전투력 (서버와 동일한 단계 HP).
+    const recommended = Math.ceil(view.maxHp / 60)
+    const recValue = this.root.querySelector<HTMLElement>('.battle-recommended-value')
+    if (recValue) recValue.textContent = recommended.toLocaleString('ko-KR')
+    const recCompare = this.root.querySelector<HTMLElement>('.battle-recommended-compare')
+    if (recCompare) {
+      const gap = Math.abs(view.power - recommended)
+      recCompare.textContent = view.power >= recommended ? `✓ 권장보다 ${gap.toLocaleString('ko-KR')} 높음` : `${gap.toLocaleString('ko-KR')} 부족`
+      recCompare.classList.toggle('is-enough',view.power >= recommended)
+    }
     const coins = this.root.querySelector<HTMLElement>('.battle-stage-coins')
     if (coins) coins.textContent = String(stageRewards(view.stage)[0])
     const fragments = this.root.querySelector<HTMLElement>('.battle-stage-fragments')
@@ -3682,10 +3692,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const status = this.root.querySelector<HTMLElement>('.battle-status')
     if (status) {
       if (fighter) {
-        const characterPower = battlePower(this.store.battle!.id) + (this.store.battle?.secondId ? battlePower(this.store.battle.secondId) : 0) + (this.store.battle?.thirdId ? battlePower(this.store.battle.thirdId) : 0)
-        const weaponPower = this.store.forge?.bonus ?? 0
-        const collectionPower = this.collectionCombatPower
-        status.innerHTML = `<span class="battle-status-row"><span>토벌 중 ${this.store.battle?.thirdId ? '3/3명' : this.store.battle?.secondId ? '2/3명' : '1/3명'}</span><span>전투력 <b>${characterPower}</b></span><span>장비 공격력 <b>${weaponPower}</b></span><span>컬렉션 <b>+${collectionPower}</b></span><span class="battle-total-power">총전투력 <b>${view.power}</b></span></span><small class="battle-status-help">캐릭터를 눌러 교체/해제</small>`
+        const b = this.store.battle?.powerBreakdown
+        const detailWasOpen = status.querySelector('details')?.open ?? false
+        const fmt = (n:number)=>Math.max(0,n).toLocaleString('ko-KR')
+        status.innerHTML = `<div class="battle-power-summary"><span>⚔ 총 전투력 <b>${fmt(view.power)}</b></span><details class="battle-power-details" ${detailWasOpen?'open':''}><summary>상세 <span aria-hidden="true">⌄</span></summary><div class="battle-power-detail-card">${b?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(b.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(b.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(b.collection)}</b></div><div><span>연구소 증가분 <small>(+${b.researchPercent}%)</small></span><b>+${fmt(b.research)}</b></div><div class="battle-power-detail-total"><strong>총 전투력</strong><strong>${fmt(b.total)}</strong></div>`:'<p>서버에서 상세 전투력을 불러오는 중입니다.</p>'}</div></details></div>`
       } else {
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }

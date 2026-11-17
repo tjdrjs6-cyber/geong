@@ -723,7 +723,20 @@ function battleRow(row) {
 const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage FROM gm_battle WHERE account_id = ?'
 async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
-  return battleRow(rows[0])
+  const battle = battleRow(rows[0])
+  if (!battle) return battle
+  const levels = await getLimitBreak(accountId)
+  const [forgeRows] = await pool.query('SELECT level FROM gm_forge WHERE account_id=?',[accountId])
+  const accessory = await getAccessory(accountId)
+  const character = battle.id ? [battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((sum,id)=>sum+boostedCharacterPower(id,levels),0) : 0
+  const equipment = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory)
+  const collection = await achievementPower(accountId)
+  const research = await researchLevel(accountId)
+  const base = character + equipment + collection
+  const total = battle.id ? researchPower(base,research) : 0
+  battle.power = total
+  battle.powerBreakdown = {character,equipment,collection,research:total-base,researchPercent:Number((research*0.3).toFixed(1)),total}
+  return battle
 }
 // Combat research: level 0-100, +0.3% total combat power per level.
 const researchDuration = level => level<=10?level*10:level<=20?100+(level-10)*30:level<=40?400+(level-20)*60:level<=60?1600+(level-40)*90:level<=80?3400+(level-60)*120:5800+(level-80)*70
@@ -878,7 +891,14 @@ async function updateBattle(accountId, nextCharacter) {
     else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage), max_cleared_stage=VALUES(max_cleared_stage)`,
       [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
-    if (battle) battle.power = battle.id ? researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel) : 0
+    if (battle) {
+      const character = battle.id ? [battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((sum,id)=>sum+boostedCharacterPower(id,limitBreakLevels),0) : 0
+      const collection = await achievementPower(accountId,conn)
+      const equipment = weaponBonus - collection
+      const base = character + equipment + collection
+      battle.power = battle.id ? researchPower(base,combatResearchLevel) : 0
+      battle.powerBreakdown = {character,equipment,collection,research:battle.power-base,researchPercent:Number((combatResearchLevel*0.3).toFixed(1)),total:battle.power}
+    }
     await conn.commit()
     return { save: state, battle, earned, coinsEarned, diamondsEarned, cleared, failedStage, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
