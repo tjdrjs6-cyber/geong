@@ -1,2 +1,2 @@
-한계돌파석 이미지 태그에 직접 40x40px 고정 크기(!important)를 설정했습니다. CSS 선택자 문제를 우회합니다.
-최신 staging 프로젝트에 src/ui/gachaUi.ts 덮어쓰기.
+Railway Vite CSS 빌드 실패 원인: gacha.css에 잘못 삽입된 문자 \n 제거.
+최신 staging 브랜치의 src/styles/gacha.css를 이 파일로 교체하세요.
