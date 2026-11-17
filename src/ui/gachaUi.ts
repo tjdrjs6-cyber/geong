@@ -174,8 +174,7 @@ export class GachaUi {
     this.root.addEventListener('click', event => { void this.onClick(event) })
     this.root.addEventListener('click', event => this.handleFirstMenuGuide(event), true)
     window.setInterval(() => this.refreshFirstMenuDots(), 2500)
-    window.setTimeout(() => {this.refreshFirstMenuDots();void this.refreshDeploymentResetDots()}, 300)
-    window.setInterval(() => {if(this.store.user)this.refreshFirstMenuDots()}, 1000)
+    window.setTimeout(() => this.refreshFirstMenuDots(), 300)
 
     window.setInterval(()=>void this.refreshDeploymentResetDots(),15000)
     this.root.addEventListener('click',()=>window.setTimeout(()=>void this.refreshDeploymentResetDots(),900))
@@ -1148,12 +1147,7 @@ export class GachaUi {
       if(!button)continue
       let dot=button.querySelector<HTMLElement>('.geongi-first-menu-dot')
       if(!dot){dot=document.createElement('i');dot.className='geongi-first-menu-dot';dot.setAttribute('aria-hidden','true');button.appendChild(dot)}
-      const pendingGuide=actions.some(action=>!this.firstMenuSeen(action))
-      const pendingChild=actions.some(action=>{
-        const child=this.root.querySelector<HTMLElement>(`[data-action="${action}"]`)
-        return !!child && Array.from(child.querySelectorAll<HTMLElement>('.deployment-reset-dot,.geongi-keyring-dot,.wild-weed-alert-dot,.geongi-equipment-dot,.geongi-first-menu-dot')).some(b=>!b.hidden && getComputedStyle(b).display!=='none')
-      })
-      dot.hidden=!(pendingGuide||pendingChild)
+      dot.hidden=!actions.some(action=>!this.firstMenuSeen(action))
     }
   }
   private handleFirstMenuGuide(event: MouseEvent): void {
@@ -3178,7 +3172,6 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       for(const key of ['weed','battle','expedition'] as const){
         this.root.querySelectorAll<HTMLElement>(`[data-deploy-dot="${key}"]`).forEach(el=>el.hidden=!state[key])
       }
-      this.refreshFirstMenuDots()
     }catch{/* retain previous badge state on network error */}
   }
   private mailCheckedAt = 0
@@ -4200,7 +4193,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(!overlay||!title||!message)return
     title.textContent='재화가 부족합니다'
     const level=this.store.forge?.level??0
-    message.textContent=`강화에는 강화파편 ${level<20?level+1:[25,30,40,50,60][level-20]}개와 코인 ${level<20?(level+1)*5:[150,200,300,400,500][level-20]}개가 필요합니다. 현재 강화파편 ${this.isForgeOperator?'무제한':(this.store.data.fragments??0).toLocaleString()+'개'}, 코인 ${this.store.data.gems.toLocaleString()}개를 보유 중입니다.`
+    const coinsByLevel=[200,400,600,800,1000,1200,1400,1600,1800,2000,2500,2900,3300,3650,4000,4500,5100,5700,6350,7000,8000,9000,10000,11000,12000,13000,14500,16000,18000,20000]
+    const fragmentsByLevel=[0,0,0,0,0,60,60,60,60,60,180,180,180,180,180,450,450,450,450,450,900,1050,1200,1500,1500,1800,1800,2250,2250,3000]
+    const coins=coinsByLevel[level]??0
+    const fragments=fragmentsByLevel[level]??0
+    message.textContent=`강화에는 강화파편 ${fragments.toLocaleString()}개와 코인 ${coins.toLocaleString()}개가 필요합니다. 현재 강화파편 ${this.isForgeOperator?'무제한':(this.store.data.fragments??0).toLocaleString()+'개'}, 코인 ${this.store.data.gems.toLocaleString()}개를 보유 중입니다.`
     if(icon)icon.src='/assets/enhancement_fragment.png'
     overlay.hidden=false
     this.root.querySelector<HTMLButtonElement>('.insufficient-close')?.focus()
