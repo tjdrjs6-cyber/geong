@@ -75,7 +75,7 @@ const MACHINE_SPIN_SECONDS = 1.6
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'dopamine' | 'shop' | 'forge'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -355,6 +355,40 @@ export class GachaUi {
     await draw()
   }
 
+  private dopamineStake=10000
+  private dopamineState:{played:boolean;stake:number;won:boolean;coins:number}|null=null
+  private dopamineBusy=false
+  private async openDopamine():Promise<void>{
+    try{this.dopamineState=await this.store.dopamine();this.renderDopamine()}
+    catch(e){this.handleError(e)}
+  }
+  private renderDopamine():void{
+    const screen=this.root.querySelector<HTMLElement>('[data-screen="dopamine"]')
+    if(!screen)return
+    const state=this.dopamineState,stake=this.dopamineStake
+    screen.querySelectorAll<HTMLButtonElement>('[data-action="dopamine-select"]').forEach(b=>{b.classList.toggle('is-selected',Number(b.dataset.stake)===stake);b.disabled=!!state?.played||this.dopamineBusy})
+    const set=(selector:string,value:string)=>{const node=screen.querySelector<HTMLElement>(selector);if(node)node.textContent=value}
+    set('.dopamine-coins',(state?.coins??this.store.data.gems).toLocaleString('ko-KR'))
+    set('.dopamine-chance',`${stake/1000}%`)
+    set('.dopamine-profit',`+${(100000-stake).toLocaleString('ko-KR')} 코인`)
+    set('.dopamine-loss',`-${stake.toLocaleString('ko-KR')} 코인`)
+    const fill=screen.querySelector<HTMLElement>('.dopamine-fill');if(fill)fill.style.width=`${stake/1000}%`
+    const btn=screen.querySelector<HTMLButtonElement>('.dopamine-play')
+    if(btn){btn.disabled=!state||state.played||this.dopamineBusy||state.coins<stake;btn.textContent=state?.played?'오늘 도전 완료':`${stake.toLocaleString('ko-KR')}코인으로 도전하기`}
+    set('.dopamine-status',state?.played?`오늘의 결과: ${state.won?'당첨':'미당첨'} · 투입 ${state.stake.toLocaleString('ko-KR')}코인 · 내일 오전 9시 초기화`:state?.coins<stake?'코인이 부족합니다.':'오늘 1회 도전할 수 있습니다.')
+  }
+  private async playDopamine():Promise<void>{
+    if(this.dopamineBusy||!this.dopamineState||this.dopamineState.played)return
+    const stake=this.dopamineStake
+    if(!window.confirm(`${stake.toLocaleString('ko-KR')}코인을 투입하시겠습니까?\n당첨 확률 ${stake/1000}% · 당첨 보상 100,000코인\n실패 시 투입 코인은 반환되지 않습니다.\n오늘의 도전 기회 1회를 사용합니다.`))return
+    this.dopamineBusy=true;this.renderDopamine()
+    try{
+      this.dopamineState=await this.store.dopaminePlay(stake)
+      this.renderWallet();this.renderDopamine()
+      window.alert(this.dopamineState.won?`당첨! 100,000코인을 획득했습니다.\n순이익 +${(100000-stake).toLocaleString('ko-KR')}코인`:`미당첨! ${stake.toLocaleString('ko-KR')}코인을 잃었습니다.`)
+    }catch(e){this.handleError(e);await this.openDopamine()}
+    finally{this.dopamineBusy=false;this.renderDopamine()}
+  }
   show(screen: Screen): void {
     // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
     if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.skipLottery()
@@ -377,6 +411,7 @@ export class GachaUi {
     if (screen === 'expedition') {this.expeditionPendingDamage.clear();void this.loadExpedition();this.expeditionTimer=window.setInterval(()=>void this.loadExpedition(),1000)} else {window.clearInterval(this.expeditionImpactTimer);this.expeditionImpactTimer=0}
     window.clearInterval(this.rpsTimer)
     window.clearInterval(this.lotteryTimer)
+    if(screen==='dopamine')void this.openDopamine()
     if(screen==='rps'){void this.openLottery();window.clearInterval(this.lotteryRefreshing);this.lotteryRefreshing=window.setInterval(()=>{if(this.screen==='rps'&&!this.lotteryResults.length)void this.refreshLotteryLive()},5000)}else{window.clearInterval(this.lotteryRefreshing)}
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
@@ -563,12 +598,22 @@ export class GachaUi {
           <div class="lottery-purchase"><div class="lottery-count-display">구매 수량 <input class="lottery-count" type="number" min="1" max="100" value="1" readonly tabindex="-1" aria-label="선택된 구매 수량"/></div><button data-action="lottery-all">여러장 구매</button><p class="lottery-price" style="font-size:1.2rem;line-height:1.5">필요 겅이복권 1개</p><button data-action="lottery-buy">겅이복권 사용 · 뜯기</button></div>
         </div>
       </section>
+      <section class="rps-screen lottery-screen dopamine-screen" data-screen="dopamine" aria-hidden="true">
+        <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>도파민존</b></header>
+        <div class="rps-scene lottery-scene dopamine-scene">
+          <div class="lottery-heading"><h2>도파민존</h2><p>하루 한 번, 직접 선택하는 행운</p><div class="lottery-balance"><img src="/assets/coin.png" alt=""/> 보유 코인 <strong class="dopamine-coins">0</strong></div></div>
+          <div class="dopamine-card"><small>당첨 보상</small><strong>100,000 코인</strong><p>매일 오전 9시 참여 횟수 초기화</p></div>
+          <div class="dopamine-panel"><h3>도전 금액 선택</h3><div class="dopamine-options">${Array.from({length:10},(_,i)=>`<button type="button" data-action="dopamine-select" data-stake="${(i+1)*10000}">${i+1}만</button>`).join('')}</div>
+          <div class="dopamine-summary"><span>당첨 확률 <strong class="dopamine-chance">10%</strong></span><div class="dopamine-track"><div class="dopamine-fill"></div></div><span>당첨 시 순이익 <b class="dopamine-profit">+90,000 코인</b></span><span>실패 시 손실 <b class="dopamine-loss">-10,000 코인</b></span></div>
+          <button class="dopamine-play" data-action="dopamine-play">10,000코인으로 도전하기</button><p class="dopamine-status" aria-live="polite">참여 가능 여부 확인 중...</p></div>
+        </div>
+      </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
         <header class="gacha-header">
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong></span><small class="diamond-recharge-countdown">토벌장에서 획득</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button><button class="reward-chip dopamine-lobby-tab" data-action="dopamine"><span><b>도파민존</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><i class="deployment-reset-dot" data-deploy-dot="expedition" hidden></i>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><i class="deployment-reset-dot" data-deploy-dot="weed" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><i class="deployment-reset-dot" data-deploy-dot="battle" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
@@ -1260,6 +1305,9 @@ export class GachaUi {
     }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
+    if (action === 'dopamine') {this.show('dopamine');return}
+    if (action === 'dopamine-select') {this.dopamineStake=Number(button.dataset.stake);this.renderDopamine();return}
+    if (action === 'dopamine-play') {await this.playDopamine();return}
     if (action === 'lottery-reset') {await this.resetLottery();return}
     if (action === 'lottery-all') {await this.chooseLotteryCount();return}
     if (action === 'lottery-buy') {await this.buyLottery();return}

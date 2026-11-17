@@ -6577,3 +6577,26 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 
 /* Limit break character picker: show current weed-speed bonus without changing card geometry */
 #ui .limit-break-picker .limit-break-weed-value{display:block;font-size:10px;font-weight:700;color:#518c6a;line-height:1.2;white-space:nowrap}
+
+/* Dopamine zone: same responsive screen and visual language as the lottery. */
+.top-rewards{display:flex;flex-direction:column;gap:7px}
+.dopamine-screen .dopamine-scene{display:flex;flex-direction:column;align-items:stretch;gap:14px;max-width:620px;margin:0 auto;padding:20px 16px 30px;box-sizing:border-box}
+.dopamine-screen .lottery-heading{text-align:center}
+.dopamine-screen .lottery-heading h2{margin:0 0 6px}
+.dopamine-screen .lottery-balance{margin:12px auto 0}
+.dopamine-card{background:#fff4dc;border:2px solid #e9c58e;border-radius:18px;text-align:center;padding:20px 12px;color:#67482c;display:flex;flex-direction:column;gap:8px}
+.dopamine-card strong{font-size:clamp(25px,5vw,36px);font-weight:900}
+.dopamine-card p{margin:0;font-size:12px}
+.dopamine-panel{background:#fffaf3;border:2px solid #e9d4b5;border-radius:18px;padding:18px 14px;color:#61462f}
+.dopamine-panel h3{margin:0 0 14px;text-align:center}
+.dopamine-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.dopamine-options button{min-width:0;padding:12px 0;border:2px solid #e7d0aa;background:white;color:#67482c;border-radius:12px;font-weight:800;cursor:pointer}
+.dopamine-options button.is-selected{background:#ffe3a4;border-color:#b87c32}
+.dopamine-options button:disabled{opacity:.65;cursor:default}
+.dopamine-summary{display:flex;flex-direction:column;gap:10px;margin:20px 0 16px}
+.dopamine-summary span{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.dopamine-track{height:12px;background:#ead9be;border-radius:999px;overflow:hidden}
+.dopamine-fill{height:100%;background:#cf9345;border-radius:999px;transition:width .2s}
+.dopamine-play{display:block;width:100%;padding:15px 8px;border:0;border-radius:13px;background:#c58339;color:white;font-weight:900;font-size:16px;cursor:pointer}
+.dopamine-play:disabled{background:#b9ad9d;cursor:default}
+.dopamine-status{text-align:center;font-size:13px;line-height:1.5;margin:12px 0 0}

@@ -68,6 +68,8 @@ export const ERROR_TEXT: Record<string, string> = {
   house_friends_full: '친구는 최대 3명까지 데려올 수 있어요.',
   invalid_house: '배치를 저장하지 못했어요. 다시 시도해 주세요.',
   not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',
+  dopamine_already_played: '오늘은 이미 도파민존에 도전했습니다. 내일 오전 9시에 다시 참여할 수 있습니다.',
+  dopamine_invalid_stake: '10,000코인 단위로 100,000코인까지 선택해 주세요.',
   limited_sale_ended: '한정 판매가 종료되었습니다.',
   limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
   not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
@@ -349,6 +351,8 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
+  async dopamine():Promise<{played:boolean;stake:number;won:boolean;coins:number}>{return request('dopamine')}
+  async dopaminePlay(stake:number):Promise<{played:boolean;stake:number;won:boolean;coins:number}>{const result=await request<{played:boolean;stake:number;won:boolean;coins:number}>('dopamine/play',{stake});this.data.gems=result.coins;return result}
   async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
   async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
