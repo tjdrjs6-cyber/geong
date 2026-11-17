@@ -6707,3 +6707,21 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .plaza-mobile-controls .plaza-joystick{position:relative;left:auto;bottom:auto;flex:0 0 88px;display:block;background:#fff9;border-color:#c7dac6}
 @media(pointer:coarse){.plaza-mobile-controls{display:flex}.plaza-map .plaza-joystick{display:none}}
 @media(max-width:600px){.plaza-card{max-height:96dvh}.plaza-map{height:clamp(200px,34dvh,310px)}.plaza-mobile-controls{min-height:100px}}
+
+/* Plaza 1.3 unified PC/mobile: one 1.6x-tall world, fixed viewport and following camera. */
+#ui .plaza-card{overflow:hidden!important;max-height:min(94dvh,900px)!important;min-height:0!important;box-sizing:border-box}
+#ui .plaza-map{flex:1 1 auto!important;min-height:160px!important;height:auto!important;max-height:none!important;overflow:hidden!important;overscroll-behavior:contain;touch-action:none;position:relative}
+#ui .plaza-world{position:absolute;left:0;top:0;width:100%;height:160%;will-change:transform;transition:transform .09s linear;background-color:#d7e7cf;background-image:linear-gradient(90deg,#ffffff35 1px,transparent 1px),linear-gradient(#ffffff35 1px,transparent 1px);background-size:30px 30px;}
+#ui .plaza-world .plaza-path-h{top:44%;height:12%;background:repeating-linear-gradient(90deg,#e7d8bc 0 27px,#d2bfa3 28px 30px)}
+#ui .plaza-world .plaza-path-v{left:43%;width:14%;background:repeating-linear-gradient(0deg,#e7d8bc 0 27px,#d2bfa3 28px 30px)}
+#ui .plaza-world .plaza-fountain{width:76px;height:76px;background:radial-gradient(circle,#e4f8fa 0 9%,#83c2d3 12% 60%,#6faabd 70%)}
+#ui .plaza-world .plaza-garden{height:16%;width:22%;border-radius:18px;box-shadow:0 3px 0 #91ad81}
+#ui .plaza-world .plaza-garden-a,#ui .plaza-world .plaza-garden-b{top:8%}
+#ui .plaza-world .plaza-garden-c,#ui .plaza-world .plaza-garden-d{bottom:8%}
+#ui .plaza-world .plaza-bench-a{top:31%;left:20%}
+#ui .plaza-world .plaza-bench-b{bottom:31%;right:20%}
+#ui .plaza-world .plaza-player{transition:left .12s linear,top .12s linear}
+#ui .plaza-mobile-controls{flex-shrink:0;touch-action:none}
+#ui .plaza-actions,#ui .plaza-compose,#ui .plaza-head,#ui .plaza-hint{flex-shrink:0}
+#ui .plaza-chat{flex:0 0 80px;min-height:0;overscroll-behavior:contain}
+@media(max-width:600px){#ui .plaza-card{max-height:96dvh!important;gap:5px!important;padding:10px!important}#ui .plaza-map{height:auto!important;min-height:145px!important}#ui .plaza-chat{flex-basis:65px;height:65px}#ui .plaza-mobile-controls{min-height:96px}}
