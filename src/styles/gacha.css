@@ -6358,3 +6358,61 @@ body #geong-research-panel .research-card .research-cost strong.research-resourc
  transform:none!important;opacity:1!important;filter:none!important;
  margin:0 auto!important;padding:0!important;pointer-events:none!important;
 }
+
+
+/* V2.52 Christmas: same heading anchor and image area as Siren.
+   No zoom/crop: maximize artwork inside all available space. */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase:not([hidden]) {
+  display:flex!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  gap:0!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase > .pull-event-copy {
+  display:flex!important;
+  position:relative!important;
+  left:auto!important;
+  top:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  flex:0 0 auto!important;
+  align-items:stretch!important;
+  text-align:left!important;
+  gap:6px!important;
+  z-index:5!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase > img.christmas-event-hero-image {
+  display:block!important;
+  position:relative!important;
+  flex:1 1 0%!important;
+  align-self:stretch!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  margin:auto 0 0!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+  transform-origin:center bottom!important;
+  opacity:1!important;
+  filter:drop-shadow(0 7px 10px #8e5b4730)!important;
+  pointer-events:none!important;
+}
