@@ -1,3 +1,42 @@
+// Format displayed game amounts without changing raw game state, IDs, probabilities, or API payloads.
+let gameNumberFormattingInstalled = false
+function installGameNumberFormatting(): void {
+  if (gameNumberFormattingInstalled) return
+  gameNumberFormattingInstalled = true
+  const skip = 'script,style,textarea,input,select,option,code,pre,svg,[contenteditable="true"],.game-version'
+  const pattern = /(^|[^\d.,:/+\-])([1-9]\d{3,})(?=$|[^\d.,:/\-])/g
+  const formatText = (node: Text) => {
+    const parent = node.parentElement
+    if (!parent || parent.closest(skip)) return
+    const old = node.nodeValue || ''
+    if (!/\d{4}/.test(old)) return
+    const next = old.replace(pattern, (full, prefix: string, digits: string, offset: number) => {
+      // Preserve dates, years, identifiers, times, percentages and numeric version strings.
+      const suffix = old.slice(offset + full.length)
+      if (/^(년|월|일|시|분|초|%|px|ms|번|회차)/.test(suffix)) return full
+      if (/^(19|20)\d{2}$/.test(digits)) return full
+      return prefix + Number(digits).toLocaleString('en-US')
+    })
+    if (next !== old) node.nodeValue = next
+  }
+  const visit = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) { formatText(node as Text); return }
+    if (node.nodeType !== Node.ELEMENT_NODE) return
+    const element = node as Element
+    if (element.matches(skip)) return
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+    while (walker.nextNode()) formatText(walker.currentNode as Text)
+  }
+  const observer = new MutationObserver(records => {
+    for (const record of records) {
+      if (record.type === 'characterData') formatText(record.target as Text)
+      else for (const node of Array.from(record.addedNodes)) visit(node)
+    }
+  })
+  observer.observe(document.body, {subtree:true,childList:true,characterData:true})
+  visit(document.body)
+}
+
 const BATTLE_DIAMONDS=[1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10];
 const BATTLE_FRAGMENTS=[1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(19,Math.floor((Math.max(1,stage)-1)/10));return [BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]};
@@ -130,6 +169,7 @@ export class GachaUi {
 
   constructor(private readonly store: RemoteGachaStore, private readonly audio: Audio, private readonly actions: Actions) {
     this.root.innerHTML = this.template()
+    installGameNumberFormatting()
     // The draw dialog must be a sibling of the lobby, not a child of its bottom toolbar.
     const drawDialog=this.root.querySelector<HTMLElement>('.pull-popup')
     if(drawDialog) this.root.append(drawDialog)
