@@ -1254,6 +1254,11 @@ async function ensureLotteryNoticeTables(){
 
 // V2.3: collection achievements. Only server-verified owned characters qualify.
 const ACHIEVEMENTS = [
+ {id:'keyring_normal',kind:'keyring',grade:'normal',tier:'노말',name:'노말 키링 8종 수집',ids:ACCESSORY_IDS,coins:0,power:10},
+ {id:'keyring_rare',kind:'keyring',grade:'rare',tier:'레어',name:'레어 키링 8종 수집',ids:ACCESSORY_IDS,coins:0,power:30},
+ {id:'keyring_epic',kind:'keyring',grade:'epic',tier:'에픽',name:'에픽 키링 8종 수집',ids:ACCESSORY_IDS,coins:0,power:100},
+ {id:'keyring_unique',kind:'keyring',grade:'unique',tier:'유니크',name:'유니크 키링 8종 수집',ids:ACCESSORY_IDS,coins:0,power:300},
+ {id:'keyring_legendary',kind:'keyring',grade:'legendary',tier:'레전더리',name:'레전더리 키링 8종 수집',ids:ACCESSORY_IDS,coins:0,power:500},
  {id:'normal',tier:'노말',name:'기본캐릭터 수집',ids:['chiikawa','hachiware','usagi','momonga','kurimanju','kani','shisa','rakko'],coins:0,power:10},
  {id:'mermaid',tier:'레어',name:'인어의섬 수집',ids:['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_kani','m_shisa','m_rakko'],coins:0,power:20},
  {id:'staff',tier:'에픽',name:'토벌시리즈 수집',ids:['staff_chiikawa','staff_hachiware','staff_usagi'],coins:0,power:30},
@@ -1364,8 +1369,10 @@ const routes = {
       pool.query('SELECT achievement_id FROM gm_achievement_claims WHERE account_id=?',[account.id])
     ])
     const owned=new Set(saveRows.length?normalizeOwned(parseJson(saveRows[0].owned)):[])
+    const [discoveryRows]=await pool.query('SELECT accessory_id,grade FROM gm_accessory_discoveries WHERE account_id=?',[account.id])
+    const keyringOwned=new Set(discoveryRows.map(row=>`${row.accessory_id}:${row.grade}`))
     const claimed=new Set(claimRows.map(row=>row.achievement_id))
-    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
+    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>a.kind==='keyring'?keyringOwned.has(`${id}:${a.grade}`):owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
   },
   'POST /api/achievements/claim': async (req,res) => {
     const account=await currentAccount(req)
@@ -1379,7 +1386,13 @@ const routes = {
       await ensureAchievementTable()
       const [rows]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
       const owned=new Set(rows.length?normalizeOwned(parseJson(rows[0].owned)):[])
-      if(!item.ids.every(cid=>owned.has(cid))){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
+      let complete=item.ids.every(cid=>owned.has(cid))
+      if(item.kind==='keyring'){
+        const [discovered]=await conn.query('SELECT accessory_id FROM gm_accessory_discoveries WHERE account_id=? AND grade=?',[account.id,item.grade])
+        const found=new Set(discovered.map(row=>row.accessory_id))
+        complete=item.ids.every(cid=>found.has(cid))
+      }
+      if(!complete){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
       const [inserted]=await conn.query('INSERT IGNORE INTO gm_achievement_claims(account_id,achievement_id) VALUES (?,?)',[account.id,item.id])
       if(!inserted.affectedRows){await conn.rollback();return send(res,409,{error:'already_claimed'})}
       await conn.commit()
