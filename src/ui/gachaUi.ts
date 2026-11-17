@@ -1157,10 +1157,10 @@ export class GachaUi {
     const button=(event.target as HTMLElement).closest<HTMLElement>('[data-action]')
     const action=button?.dataset.action||''
     const guide=this.firstMenuGuides[action]
-    if(!guide || this.firstMenuSeen(action))return
+    if(!guide || this.firstMenuSeen(action) || document.querySelector('.geongi-first-menu-guide'))return
     const key=this.firstMenuKey(action)
-    if(key)try{window.localStorage.setItem(key,'seen')}catch{/* storage unavailable */}
-    this.refreshFirstMenuDots()
+    // Do not consume the first-visit notice on click: only acknowledgement completes it.
+    // Otherwise switching between weed/battle can make unread dots disappear.
     // Allow the original click to open the menu before presenting its explanation.
     window.setTimeout(()=>{
       if(document.querySelector('.geongi-first-menu-guide'))return
@@ -1178,7 +1178,7 @@ export class GachaUi {
       content.append(title,description)
       const controls=document.createElement('div');controls.className='geongi-tutorial-controls'
       const close=document.createElement('button');close.type='button';close.className='geongi-tutorial-next';close.textContent='확인'
-      close.onclick=()=>{overlay.close();overlay.remove()};controls.append(close)
+      close.onclick=()=>{if(key)try{window.localStorage.setItem(key,'seen')}catch{/* storage unavailable */};overlay.close();overlay.remove();this.refreshFirstMenuDots()};controls.append(close)
       card.append(top,content,controls);overlay.append(card);document.body.append(overlay);overlay.showModal()
     },90)
   }
