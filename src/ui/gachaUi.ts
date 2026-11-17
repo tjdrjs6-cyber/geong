@@ -510,6 +510,7 @@ export class GachaUi {
           <div class="battle-status"></div>
           <button type="button" class="battle-test-time5" data-action="battle-test-time5" hidden>남은 시간 5초</button><button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
                     </div>
+          <div class="battle-deployed-count" aria-live="polite">배치캐릭터 0/3</div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
         <div class="battle-reward-popup" role="status" aria-live="polite" aria-atomic="true" hidden></div>
@@ -3651,6 +3652,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private renderBattle(): void {
+    const battle = this.store.battle
+    const deployedCount = new Set([battle?.id, battle?.secondId, battle?.thirdId].filter(Boolean)).size
+    const countLabel = this.root.querySelector<HTMLElement>('.battle-deployed-count')
+    if (countLabel) countLabel.textContent = `배치캐릭터 ${deployedCount}/3`
     const picker = this.root.querySelector<HTMLElement>('.battle-picker')
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).sort((a, b) => this.characterCombatPower(b.id) - this.characterCombatPower(a.id))
     if (picker) {
