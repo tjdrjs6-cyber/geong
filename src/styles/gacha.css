@@ -6052,3 +6052,8 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .limit-break-panel .limit-break-progress-fill.ready{background:linear-gradient(90deg,#98d9bb,#62bf98)}
 #ui .limit-break-panel .limit-break-material-hint{text-align:center;margin:8px 0 0;font-size:11px;color:#8b7798}
 @media(max-width:390px){#ui .limit-break-panel .limit-break-material{padding:9px 8px;gap:5px}#ui .limit-break-panel .limit-break-material-info{gap:6px}#ui .limit-break-panel .limit-break-material-icon{width:35px;height:35px}#ui .limit-break-panel .limit-break-stepper{gap:3px}#ui .limit-break-panel .limit-break-stepper button{width:28px;min-width:28px;height:28px}#ui .limit-break-panel .limit-break-material-label b{font-size:12px}}
+
+/* Limit-break material icon: override generic dialog image sizing */
+#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{display:block!important;position:static!important;width:43px!important;height:43px!important;min-width:43px!important;min-height:43px!important;max-width:43px!important;max-height:43px!important;flex:0 0 43px!important;object-fit:contain!important;box-sizing:border-box!important;margin:0!important;padding:4px!important;transform:none!important;}
+#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-info{min-width:0!important;max-width:100%!important;}
+@media(max-width:390px){#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;max-width:35px!important;max-height:35px!important;flex-basis:35px!important;}}

@@ -689,11 +689,11 @@ async function getWeed(accountId) {
 const STAGE_LIMIT_MS = 60_000
 const BATTLE_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
 // Geong Market 3.0: 30 zones, 300 stages; all rewards are integers.
-const MAX_BATTLE_STAGE = 100
+const MAX_BATTLE_STAGE = 200
 // Unified 100-stage HP table; proposed reduction followed by an additional 10% reduction.
-const BATTLE_HP_ANCHORS = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000]];
+const BATTLE_HP_ANCHORS = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000]];
 function stageHp(stage) {
-  const s = Math.max(1, Math.min(100, Number(stage) || 1));
+  const s = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1));
   for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
     const [end, endHp] = BATTLE_HP_ANCHORS[i];
     if (s <= end) {
@@ -701,16 +701,16 @@ function stageHp(stage) {
       return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
     }
   }
-  return 165000;
+  return 465000;
 }
 
 
 // Use the same existing per-zone rewards as the battle HUD (no substage bonuses).
-const BATTLE_REWARD_DIAMONDS = [1,1,2,2,3,3,4,4,5,5]
-const BATTLE_REWARD_FRAGMENTS = [1,2,2,3,4,5,6,7,8,10]
+const BATTLE_REWARD_DIAMONDS = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10]
+const BATTLE_REWARD_FRAGMENTS = [1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 function stageReward(stage) {
   const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
-  const zone = Math.min(9, Math.floor(n / 10))
+  const zone = Math.min(19, Math.floor(n / 10))
   return { diamonds: BATTLE_REWARD_DIAMONDS[zone], fragments: BATTLE_REWARD_FRAGMENTS[zone], coins: 0 }
 }
 
@@ -723,20 +723,7 @@ function battleRow(row) {
 const BATTLE_SELECT = 'SELECT character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage FROM gm_battle WHERE account_id = ?'
 async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
-  const battle = battleRow(rows[0])
-  if (!battle) return battle
-  const levels = await getLimitBreak(accountId)
-  const [forgeRows] = await pool.query('SELECT level FROM gm_forge WHERE account_id=?',[accountId])
-  const accessory = await getAccessory(accountId)
-  const character = battle.id ? [battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((sum,id)=>sum+boostedCharacterPower(id,levels),0) : 0
-  const equipment = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory)
-  const collection = await achievementPower(accountId)
-  const research = await researchLevel(accountId)
-  const base = character + equipment + collection
-  const total = battle.id ? researchPower(base,research) : 0
-  battle.power = total
-  battle.powerBreakdown = {character,equipment,collection,research:total-base,researchPercent:Number((research*0.3).toFixed(1)),total}
-  return battle
+  return battleRow(rows[0])
 }
 // Combat research: level 0-100, +0.3% total combat power per level.
 const researchDuration = level => level<=10?level*10:level<=20?100+(level-10)*30:level<=40?400+(level-20)*60:level<=60?1600+(level-40)*90:level<=80?3400+(level-60)*120:5800+(level-80)*70
@@ -891,14 +878,7 @@ async function updateBattle(accountId, nextCharacter) {
     else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage), max_cleared_stage=VALUES(max_cleared_stage)`,
       [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
-    if (battle) {
-      const character = battle.id ? [battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((sum,id)=>sum+boostedCharacterPower(id,limitBreakLevels),0) : 0
-      const collection = await achievementPower(accountId,conn)
-      const equipment = weaponBonus - collection
-      const base = character + equipment + collection
-      battle.power = battle.id ? researchPower(base,combatResearchLevel) : 0
-      battle.powerBreakdown = {character,equipment,collection,research:battle.power-base,researchPercent:Number((combatResearchLevel*0.3).toFixed(1)),total:battle.power}
-    }
+    if (battle) battle.power = battle.id ? researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel) : 0
     await conn.commit()
     return { save: state, battle, earned, coinsEarned, diamondsEarned, cleared, failedStage, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
