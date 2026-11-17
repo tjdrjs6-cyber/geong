@@ -6504,3 +6504,41 @@ dialog.geongi-first-menu-guide {
 }
 dialog.geongi-first-menu-guide::backdrop{background:rgba(30,40,45,.58)!important;}
 dialog.geongi-first-menu-guide:not([open]){display:none!important;}
+
+/* vNext: ONE unified top-right notification indicator per menu button.
+   Existing reminder logic remains independent: hide only duplicate visuals.
+   The first active indicator wins; when it becomes hidden the next one appears. */
+#ui button[data-action] {position:relative!important;}
+#ui button[data-action] > :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {
+  position:absolute!important;
+  top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;
+  width:9px!important;height:9px!important;
+  min-width:9px!important;min-height:9px!important;
+  border-radius:50%!important;border:1.5px solid #fff!important;
+  background:#ee384b!important;
+  box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;
+  z-index:15!important;pointer-events:none!important;
+  transform:none!important;
+}
+/* The first visible dot in DOM order is the only rendered dot. */
+#ui button[data-action] > :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) ~ :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* The tutorial indicator is appended last: existing notifications are kept
+   logically active, but visually collapsed into the single tutorial dot. */
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
+  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
+  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
+  .geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* When tutorial is complete, the other pending alerts become visible again. */
