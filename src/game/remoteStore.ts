@@ -438,8 +438,8 @@ export class RemoteGachaStore {
     this.apply({ user: null })
   }
 
-  async pull(count: PullCount, free = false): Promise<PullResult[]> {
-    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free })
+  async pull(count: PullCount, free = false, banner: 'standard'|'christmas' = 'standard'): Promise<PullResult[]> {
+    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free, banner })
     this.data = result.save
     if (result.dupes) this.dupes = result.dupes
     return result.results

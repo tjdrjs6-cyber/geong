@@ -6224,3 +6224,27 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-mermaid .limit-break-tier-name {color:#3988ed!important;}
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-rare .limit-break-tier-name,
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-epic .limit-break-tier-name {color:#e54848!important;}
+
+/* Battle controls: parent previously disabled pointer input. */
+#ui .battle-screen .battle-stage-center{pointer-events:auto!important}
+#ui .battle-screen .battle-stage-center .battle-stage-heading,
+#ui .battle-screen .battle-stage-center .battle-recommended-power{pointer-events:none!important}
+#ui .battle-screen .battle-stage-center .battle-stage-actions,
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]){pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}
+#ui .battle-screen .battle-panel .field-info-sticky,
+#ui .battle-screen .battle-panel .battle-status,
+#ui .battle-screen .battle-panel button[data-action]{pointer-events:auto!important;touch-action:manipulation!important}
+#ui .battle-screen .battle-stage-transition,
+#ui .battle-screen .battle-field .bf-hit,
+#ui .battle-screen .battle-field .bf-spark{pointer-events:none!important}
+body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action:manipulation!important}
+
+/* Christmas event uses the existing gacha popup and result UI. */
+.christmas-banner-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px auto 12px;position:relative;z-index:3}
+.christmas-banner-tab{border:1px solid #e6b2a5;background:#fff9f5;color:#794f4a;border-radius:14px;padding:8px 12px;font-weight:800;cursor:pointer;touch-action:manipulation}
+.christmas-banner-tab.is-active{background:#cf3f46;color:white;border-color:#b92b35}
+.christmas-showcase{width:100%;text-align:center}
+.christmas-showcase[hidden]{display:none!important}
+.christmas-showcase-characters{display:flex;align-items:end;justify-content:center;gap:4px;margin:10px auto;max-width:620px}
+.christmas-showcase-characters img{width:24%;max-width:145px;min-width:0;object-fit:contain;aspect-ratio:1}
+.pull-showcase-char .pull-event-copy[hidden],.pull-showcase-char .pull-event-hero-image[hidden]{display:none!important}
