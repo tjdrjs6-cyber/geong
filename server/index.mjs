@@ -725,21 +725,19 @@ async function getBattle(accountId) {
   const [rows] = await pool.query(BATTLE_SELECT, [accountId])
   const battle=battleRow(rows[0])
   if(!battle)return null
-  battle.powerBreakdown=await battlePowerBreakdown(accountId,battle)
+  battle.powerBreakdown=await getBattlePowerBreakdown(accountId,battle)
   battle.power=battle.powerBreakdown.total
   return battle
 }
-async function battlePowerBreakdown(accountId,battle,conn=pool,known=null) {
+async function getBattlePowerBreakdown(accountId,battle,conn=pool,known=null) {
+  if(!battle?.id)return {character:0,equipment:0,collection:0,research:0,researchPercent:0,total:0}
   const levels=known?.levels??await getLimitBreak(accountId,conn)
-  const researchLevelValue=known?.research??await researchLevel(accountId,conn)
-  const character=battle?.id?[battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((n,id)=>n+boostedCharacterPower(id,levels),0):0
-  const equipment=known?.equipment??await (async()=>{
-    const [forgeRows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[accountId])
-    return (forgeRows.length?forgeBonus(Number(forgeRows[0].level)):0)+accessoryPower(await getAccessory(accountId,conn))
-  })()
+  const research=known?.research??await researchLevel(accountId,conn)
+  const character=[battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((n,id)=>n+boostedCharacterPower(id,levels),0)
+  const equipment=known?.equipment??await (async()=>{const [rows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[accountId]);return (rows.length?forgeBonus(Number(rows[0].level)):0)+accessoryPower(await getAccessory(accountId,conn))})()
   const collection=known?.collection??await achievementPower(accountId,conn)
-  const total=battle?.id?researchPower(character+equipment+collection,researchLevelValue):0
-  return {character,equipment:battle?.id?equipment:0,collection:battle?.id?collection:0,research:Math.max(0,total-character-(battle?.id?equipment+collection:0)),researchPercent:Number((researchLevelValue*0.3).toFixed(1)),total}
+  const total=researchPower(character+equipment+collection,research)
+  return {character,equipment,collection,research:total-character-equipment-collection,researchPercent:Number((research*0.3).toFixed(1)),total}
 }
 // Combat research: level 0-100, +0.3% total combat power per level.
 const researchDuration = level => level<=10?level*10:level<=20?100+(level-10)*30:level<=40?400+(level-20)*60:level<=60?1600+(level-40)*90:level<=80?3400+(level-60)*120:5800+(level-80)*70
@@ -896,7 +894,7 @@ async function updateBattle(accountId, nextCharacter) {
       [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
     if (battle) {
       const collection=await achievementPower(accountId,conn)
-      battle.powerBreakdown=await battlePowerBreakdown(accountId,battle,conn,{levels:limitBreakLevels,research:combatResearchLevel,equipment:weaponBonus-collection,collection})
+      battle.powerBreakdown=await getBattlePowerBreakdown(accountId,battle,conn,{levels:limitBreakLevels,research:combatResearchLevel,equipment:weaponBonus-collection,collection})
       battle.power=battle.powerBreakdown.total
     }
     await conn.commit()
