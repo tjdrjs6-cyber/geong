@@ -6058,16 +6058,17 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .myroom-equipment-panel.limit-break-panel .limit-break-material-info{min-width:0!important;max-width:100%!important;}
 @media(max-width:390px){#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;max-width:35px!important;max-height:35px!important;flex-basis:35px!important;}}
 
-/* 2026-11-17: alchemy dialog is mounted outside #ui; target its real DOM scope. */
-.alchemy-dialog .myroom-equipment-panel.limit-break-panel .limit-break-material-stones .limit-break-material-info > img.limit-break-material-icon {
-  display:block!important; position:static!important; width:43px!important; height:43px!important;
-  min-width:43px!important; min-height:43px!important; max-width:43px!important; max-height:43px!important;
-  flex:0 0 43px!important; padding:4px!important; margin:0!important; box-sizing:border-box!important;
-  object-fit:contain!important; object-position:center!important; transform:none!important;
-}
-@media (max-width:390px) {
- .alchemy-dialog .myroom-equipment-panel.limit-break-panel .limit-break-material-stones .limit-break-material-info > img.limit-break-material-icon {
-  width:35px!important; height:35px!important; min-width:35px!important; min-height:35px!important;
-  max-width:35px!important; max-height:35px!important; flex-basis:35px!important;
- }
-}
+/* 전투력 상세: 화면 내부 잘림 방지를 위해 body 최상위 dialog 사용 */
+#ui .expedition-power-summary{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin:7px 0 10px;padding:9px 12px;border-radius:14px;background:#fff8ed;color:#755438;font-size:12px;font-weight:800}
+#ui .expedition-power-summary b{font-size:17px;color:#bb7037}
+#ui .combat-detail-button{cursor:pointer;border:1px solid #d8b58e;background:#fffdf9;border-radius:18px;padding:6px 13px;color:#95653e;font-weight:800;font-size:12px;white-space:nowrap;touch-action:manipulation}
+.combat-power-modal{position:fixed;inset:0;margin:auto;width:min(360px,calc(100vw - 28px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #e7cbb0;border-radius:19px;background:#fffdf9;box-shadow:0 16px 55px #3e2a264d;z-index:2147483000;color:#674e3b;overflow:auto}
+.combat-power-modal::backdrop{background:rgba(41,30,43,.48)}
+.combat-power-modal-inner{padding:18px}
+.combat-power-modal-title{display:flex;align-items:center;justify-content:space-between;font-size:16px;margin-bottom:15px}
+.combat-power-modal-close{border:0;background:#f7e9e4;border-radius:50%;width:30px;height:30px;font-size:21px;color:#8b665c;cursor:pointer}
+.combat-power-modal-rows>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #f1e6dc;font-size:13px}
+.combat-power-modal-rows small{display:block;color:#a08a7c;font-size:10px;margin-top:2px}
+.combat-power-modal-rows b{color:#ae6c3c}
+.combat-power-modal-rows .combat-power-modal-total{border:0;margin-top:8px;font-size:16px;color:#a75d2b}
+.combat-power-modal-done{display:block;width:100%;margin-top:15px;border:0;border-radius:13px;padding:12px;background:#e9c5a1;color:#754622;font-weight:900;cursor:pointer}

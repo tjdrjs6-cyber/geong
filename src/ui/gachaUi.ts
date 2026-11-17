@@ -486,7 +486,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-stage-transition" aria-hidden="true"><strong>STAGE CLEAR!</strong><span class="expedition-stage-next">다음 단계</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><p class="achievement-combat-bonus">컬렉션 영구 전투력 확인 중...</p><p class="expedition-equipment-bonus">장비 전투력 적용 중: 확인 중...</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 150코인·강화파편 15개 / 2단계 300코인·강화파편 20개 / 3단계 500코인·강화파편 30개 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-power-summary"></div><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 150코인·강화파편 15개 / 2단계 300코인·강화파편 20개 / 3단계 500코인·강화파편 30개 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -1237,6 +1237,7 @@ export class GachaUi {
       }catch(e){this.handleError(e)}
       return
     }
+    if (action === 'battle-power-detail' || action === 'expedition-power-detail') { this.openCombatPowerDetail(action === 'expedition-power-detail'); return }
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.expeditionImpactServer=this.expeditionServer;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup){popup.hidden=false;popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true')} return }
@@ -2909,6 +2910,23 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     },1000)
   }
 
+  private openCombatPowerDetail(expedition:boolean):void {
+    const room=this.expedition?.servers.find(r=>r.id===this.expeditionServer)
+    const member=room?.members.find(m=>m.me)
+    const breakdown=expedition?member?.powerBreakdown:this.store.battle?.powerBreakdown
+    const total=expedition?(member?.power??0):(this.store.battle?.powerBreakdown?.total??0)
+    const fmt=(n:number)=>Math.max(0,Number(n)||0).toLocaleString('ko-KR')
+    const dialog=document.createElement('dialog')
+    dialog.className='combat-power-modal'
+    const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
+    dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>⚔ ${expedition?'원정대':'토벌장'} 전투력 상세</strong><button type="button" class="combat-power-modal-close" aria-label="닫기">×</button></div><div class="combat-power-modal-rows">${rows}<div class="combat-power-modal-total"><strong>총 전투력</strong><strong>${fmt(total)}</strong></div></div><button type="button" class="combat-power-modal-done">확인</button></div>`
+    document.body.appendChild(dialog)
+    dialog.querySelectorAll('.combat-power-modal-close,.combat-power-modal-done').forEach(el=>el.addEventListener('click',()=>dialog.close()))
+    dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()})
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true})
+    dialog.showModal()
+  }
+
   private renderExpedition():void {
     const state=this.expedition
     if(!state)return
@@ -2982,8 +3000,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         })
       }))
     }
-    const equipmentLabel=this.root.querySelector<HTMLElement>('.expedition-equipment-bonus')
-    if(equipmentLabel)equipmentLabel.textContent=`장비 전투력 +${Math.max(0,Number(this.store.forge?.bonus)||0)} 적용 중`
+    const expeditionPower=this.root.querySelector<HTMLElement>('.expedition-power-summary')
+    if(expeditionPower){
+      const mine=room.members.find(m=>m.me)
+      const power=mine?.power??0
+      const html=mine?`<span>⚔ 총 전투력 <b>${power.toLocaleString('ko-KR')}</b></span><button type="button" data-action="expedition-power-detail" class="combat-detail-button">상세 보기</button>`:'<span>캐릭터를 배치하면 총 전투력이 표시됩니다.</span>'
+      if(expeditionPower.innerHTML!==html)expeditionPower.innerHTML=html
+    }
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
     if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${[...this.store.data.owned].sort((a,b)=>battlePower(b)-battlePower(a)).map(id=>`<button data-action="exp-join" data-id="${id}" aria-pressed="${state.mine?.serverId===room.id && state.mine.characterId===id}" style="${state.mine?.serverId===room.id && state.mine.characterId===id?'border:2px solid #6ba883;background:#ecf9ee;box-shadow:0 0 0 2px #d2ecd8 inset;':''}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small>${state.mine?.serverId===room.id && state.mine.characterId===id?'<small style="color:#2c8653;font-weight:800">✓ 배치 중</small>':''}</span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
@@ -3693,9 +3716,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (status) {
       if (fighter) {
         const b = this.store.battle?.powerBreakdown
-        const detailWasOpen = status.querySelector('details')?.open ?? false
         const fmt = (n:number)=>Math.max(0,n).toLocaleString('ko-KR')
-        status.innerHTML = `<div class="battle-power-summary"><span>⚔ 총 전투력 <b>${fmt(view.power)}</b></span><details class="battle-power-details" ${detailWasOpen?'open':''}><summary>상세 <span aria-hidden="true">⌄</span></summary><div class="battle-power-detail-card">${b?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(b.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(b.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(b.collection)}</b></div><div><span>연구소 증가분 <small>(+${b.researchPercent}%)</small></span><b>+${fmt(b.research)}</b></div><div class="battle-power-detail-total"><strong>총 전투력</strong><strong>${fmt(b.total)}</strong></div>`:'<p>서버에서 상세 전투력을 불러오는 중입니다.</p>'}</div></details></div>`
+        status.innerHTML = `<div class="battle-power-summary"><span>⚔ 총 전투력 <b>${fmt(view.power)}</b></span><button type="button" class="combat-detail-button" data-action="battle-power-detail">상세 보기</button></div>`
       } else {
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }
