@@ -6275,3 +6275,29 @@ dialog.alchemy-dialog .limit-break-panel img.limit-break-material-icon-dupes{wid
  height:19px!important;padding:1px 4px!important;font-size:11px!important;
  line-height:1!important;transform:none!important;animation:none!important;pointer-events:none!important;
 }
+
+
+/* Expedition: display limit-break level on the top-right border of each selection card. */
+.expedition-picker .expedition-choices button[data-action="exp-join"]{position:relative!important;isolation:isolate}
+.expedition-picker .expedition-choices button .expedition-choice-limit-badge{
+ position:absolute!important;top:-7px!important;right:-7px!important;left:auto!important;
+ z-index:20!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ min-width:23px!important;height:22px!important;box-sizing:border-box!important;padding:1px 5px!important;
+ border-radius:12px!important;border:2px solid #fff!important;background:#9a67e4!important;color:#fff!important;
+ font-size:11px!important;font-weight:900!important;line-height:1!important;
+ box-shadow:0 2px 5px #0002!important;pointer-events:none!important;transform:none!important;
+}
+/* Research dialog is attached directly to body (outside #ui): target it without #ui. */
+body .research-card .research-cost strong.research-resource{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;
+ line-height:1.3!important;
+}
+body .research-card .research-cost strong.research-resource>img{
+ display:inline-block!important;position:static!important;
+ width:18px!important;height:18px!important;
+ min-width:18px!important;min-height:18px!important;
+ max-width:18px!important;max-height:18px!important;
+ flex:0 0 18px!important;object-fit:contain!important;
+ margin:0!important;padding:0!important;transform:none!important;
+ aspect-ratio:1/1!important;vertical-align:middle!important;
+}
