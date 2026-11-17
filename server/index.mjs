@@ -2351,10 +2351,15 @@ const routes = {
       const [saves] = await conn.query('SELECT gems FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       const balance = saves[0] ? Number(saves[0].gems) : 0
       const already = await sentToday(conn, account.id)
-      const checked = validateMail(body, { sentToday: already, balance, admin: Boolean(account.is_admin) })
+      const diamonds = Number(body.diamonds ?? 0)
+      const fragments = Number(body.fragments ?? 0)
+      if (![diamonds, fragments].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 1000000) || (!account.is_admin && (diamonds || fragments))) {
+        await conn.rollback(); return send(res, 400, { error: 'admin_only' })
+      }
+      const checked = validateMail({ ...body, message: body.message || ((diamonds || fragments) ? '운영자 보상' : '') }, { sentToday: already, balance, admin: Boolean(account.is_admin) })
       if (checked.error) { await conn.rollback(); return send(res, 400, { error: checked.error }) }
       if (checked.coins > 0 && !account.is_admin) await conn.query('UPDATE gm_saves SET gems = gems - ? WHERE account_id = ?', [checked.coins, account.id])
-      await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?)', [account.id, toId, checked.text, checked.coins, checkInDay(), Date.now()])
+      await conn.query('INSERT INTO gm_mail (from_id, to_id, message, coins, diamonds, fragments, sent_day, created_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [account.id, toId, checked.text, checked.coins, diamonds, fragments, checkInDay(), Date.now()])
       await trimInbox(conn, toId)
       await trimSent(conn, account.id)
       await conn.commit()
