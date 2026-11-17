@@ -2498,8 +2498,8 @@ const routes = {
       // Operator accounts have unlimited coins: deco pulls never spend their balance.
       const outcome = pullDecos(account.is_admin ? 1_000_000_000 : state.diamonds, decos, count, n => randomInt(n))
       if (!outcome.ok) { await conn.rollback(); return send(res, 400, { error: outcome.error==='not_enough_coins'?'not_enough_diamonds':outcome.error }) }
-      if (!account.is_admin) { const cost = {1:100,3:300,5:500,10:1000}[count]; state.diamonds -= cost; state.gems += outcome.gems - (state.diamonds); /* new collection bonuses are coins */ }
-      await conn.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE gems = VALUES(gems)', [account.id, state.gems, JSON.stringify(state.owned), state.lastDaily])
+      if (!account.is_admin) { state.diamonds = outcome.gems; /* pullDecos returns remaining diamonds; no coin rewards */ }
+      await conn.query('UPDATE gm_saves SET gems = ?, diamonds = ? WHERE account_id = ?', [state.gems, state.diamonds, account.id])
       await conn.query('INSERT INTO gm_decos (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(outcome.decos)])
       await conn.commit()
       send(res, 200, { save: state, decos: outcome.decos, results: outcome.results })
