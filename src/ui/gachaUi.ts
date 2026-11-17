@@ -133,6 +133,7 @@ export class GachaUi {
     const drawDialog=this.root.querySelector<HTMLElement>('.pull-popup')
     if(drawDialog) this.root.append(drawDialog)
     this.root.addEventListener('click', event => { void this.onClick(event) })
+    this.root.addEventListener('click', event => {const btn=(event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action="battle-power-detail"],button[data-action="expedition-power-detail"]');if(!btn)return;event.preventDefault();event.stopImmediatePropagation();this.openCombatPowerDetail(btn.dataset.action==='expedition-power-detail')},true)
     this.root.addEventListener('pointerdown', event => {
       const target=(event.target as HTMLElement).closest<HTMLElement>('.wild-weed-pick')
       if(!target || this.wildWeedBusy)return
@@ -729,8 +730,8 @@ export class GachaUi {
         dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
         dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
         dialog.querySelector('[data-mode="keyring"]')?.addEventListener('click',()=>{alchemyMode='keyring';render()})
-        dialog.querySelectorAll<HTMLButtonElement>('[data-adjust]').forEach(b=>b.addEventListener('click',()=>{const action=b.dataset.adjust;if(action==='dupes-minus')selectedDupes--;if(action==='dupes-plus')selectedDupes++;if(action==='stones-minus')selectedStones--;if(action==='stones-plus')selectedStones++;render()}))
-        dialog.querySelectorAll<HTMLButtonElement>('[data-character]').forEach(b=>b.addEventListener('click',()=>{selectedCharacter=b.dataset.character as CharacterId;selectedDupes=0;selectedStones=0;render()}))
+        dialog.querySelectorAll<HTMLButtonElement>('[data-adjust]').forEach(b=>b.addEventListener('click',()=>{const scrollY=dialog.scrollTop;const pickerScroll=dialog.querySelector<HTMLElement>('.limit-break-picker')?.scrollTop??0;const action=b.dataset.adjust;if(action==='dupes-minus')selectedDupes--;if(action==='dupes-plus')selectedDupes++;if(action==='stones-minus')selectedStones--;if(action==='stones-plus')selectedStones++;render();dialog.scrollTop=scrollY;const picker=dialog.querySelector<HTMLElement>('.limit-break-picker');if(picker)picker.scrollTop=pickerScroll}))
+        dialog.querySelectorAll<HTMLButtonElement>('[data-character]').forEach(b=>b.addEventListener('click',()=>{const scrollY=dialog.scrollTop;const pickerScroll=dialog.querySelector<HTMLElement>('.limit-break-picker')?.scrollTop??0;selectedCharacter=b.dataset.character as CharacterId;selectedDupes=0;selectedStones=0;render();dialog.scrollTop=scrollY;const picker=dialog.querySelector<HTMLElement>('.limit-break-picker');if(picker)picker.scrollTop=pickerScroll}))
         dialog.querySelector<HTMLButtonElement>('.limit-break-upgrade')?.addEventListener('click',async()=>{
           if(!char||level>=10)return
           const confirmPanel=document.createElement('div')
@@ -2927,7 +2928,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const dialog=document.createElement('dialog')
     dialog.className='combat-power-modal'
     const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
-    dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>⚔ ${expedition?'원정대':'토벌장'} 전투력 상세</strong><button type="button" class="combat-power-modal-close" aria-label="닫기">×</button></div><div class="combat-power-modal-rows">${rows}<div class="combat-power-modal-total"><strong>총 전투력</strong><strong>${fmt(total)}</strong></div></div><button type="button" class="combat-power-modal-done">확인</button></div>`
+    dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>${expedition?'원정대':'토벌장'} 전투력 상세</strong><button type="button" class="combat-power-modal-close" aria-label="닫기">×</button></div><div class="combat-power-modal-rows">${rows}<div class="combat-power-modal-total"><strong>총 전투력</strong><strong>${fmt(total)}</strong></div></div><button type="button" class="combat-power-modal-done">확인</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelectorAll('.combat-power-modal-close,.combat-power-modal-done').forEach(el=>el.addEventListener('click',()=>dialog.close()))
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()})
@@ -3012,7 +3013,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(expeditionPower){
       const mine=room.members.find(m=>m.me)
       const power=mine?.power??0
-      const html=mine?`<span>⚔ 총 전투력 <b>${power.toLocaleString('ko-KR')}</b></span><button type="button" data-action="expedition-power-detail" class="combat-detail-button">상세 보기</button>`:'<span>캐릭터를 배치하면 총 전투력이 표시됩니다.</span>'
+      const html=mine?`<span>총 전투력 <b>${power.toLocaleString('ko-KR')}</b></span><button type="button" data-action="expedition-power-detail" class="combat-detail-button">상세 보기</button>`:'<span>캐릭터를 배치하면 총 전투력이 표시됩니다.</span>'
       if(expeditionPower.innerHTML!==html)expeditionPower.innerHTML=html
     }
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
@@ -3725,7 +3726,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       if (fighter) {
         const b = this.store.battle?.powerBreakdown
         const fmt = (n:number)=>Math.max(0,n).toLocaleString('ko-KR')
-        status.innerHTML = `<div class="battle-power-summary"><span>⚔ 총 전투력 <b>${fmt(view.power)}</b></span><button type="button" class="combat-detail-button" data-action="battle-power-detail">상세 보기</button></div>`
+        status.innerHTML = `<div class="battle-power-summary"><span>총 전투력 <b>${fmt(view.power)}</b></span><button type="button" class="combat-detail-button" data-action="battle-power-detail">상세 보기</button></div>`
       } else {
         status.textContent = '아래에서 토벌할 친구를 최대 3명 골라 주세요.'
       }

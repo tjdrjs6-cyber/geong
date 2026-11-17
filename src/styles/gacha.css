@@ -6207,3 +6207,10 @@ dialog.alchemy-dialog {
   font-size:12px!important;line-height:1.2!important;
 }
 /* Avoid the previous mobile-only selector changing the four-column PC layout. */
+
+/* PC/mobile shared alchemy dialog: authoritative tier border colors */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-rare{border:2px solid #3988ed!important;border-color:#3988ed!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-epic{border:2px solid #e54848!important;border-color:#e54848!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-rare .limit-break-tier-name{color:#3988ed!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-epic .limit-break-tier-name{color:#e54848!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-face{display:block!important;width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;min-height:40px!important;max-height:40px!important;object-fit:contain!important;flex:0 0 40px!important}
