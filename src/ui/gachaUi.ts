@@ -356,6 +356,7 @@ export class GachaUi {
   }
 
   private dopamineStake=10000
+  private dopamineConfirmOpen=false
   private dopamineState:{played:boolean;stake:number;won:boolean;coins:number}|null=null
   private dopamineBusy=false
   private dopamineWheelAngle=0
@@ -369,6 +370,8 @@ export class GachaUi {
     const screen=this.root.querySelector<HTMLElement>('[data-screen="dopamine"]')
     if(!screen)return
     const state=this.dopamineState,stake=this.dopamineStake
+    const confirm=screen.querySelector<HTMLElement>('.dopamine-confirm-overlay')
+    if(confirm){confirm.hidden=!this.dopamineConfirmOpen;const details=confirm.querySelector<HTMLElement>('.dopamine-confirm-details');if(details)details.textContent=`${stake.toLocaleString('ko-KR')}코인 투입 · 당첨 확률 ${stake/1000}% · 당첨 시 100,000코인 지급`}
     screen.querySelectorAll<HTMLButtonElement>('[data-action="dopamine-select"]').forEach(b=>{b.classList.toggle('is-selected',Number(b.dataset.stake)===stake);b.disabled=!!state?.played||this.dopamineBusy})
     const set=(selector:string,value:string)=>{const node=screen.querySelector<HTMLElement>(selector);if(node)node.textContent=value}
     set('.dopamine-coins',(state?.coins??this.store.data.gems).toLocaleString('ko-KR'))
@@ -389,7 +392,7 @@ export class GachaUi {
   private async playDopamine():Promise<void>{
     if(this.dopamineBusy||!this.dopamineState||this.dopamineState.played)return
     const stake=this.dopamineStake
-    if(!window.confirm(`${stake.toLocaleString('ko-KR')}코인을 투입하시겠습니까?\n당첨 확률 ${stake/1000}% · 당첨 보상 100,000코인\n실패 시 투입 코인은 반환되지 않습니다.\n오늘의 도전 기회 1회를 사용합니다.`))return
+    this.dopamineConfirmOpen=false
     this.dopamineBusy=true;this.renderDopamine()
     try{
       this.dopamineState=await this.store.dopaminePlay(stake)
@@ -626,7 +629,8 @@ export class GachaUi {
           <div class="dopamine-roulette" aria-label="당첨 확률에 따라 영역이 바뀌는 룰렛"><div class="dopamine-wheel-wrap"><div class="dopamine-wheel-pointer"></div><div class="dopamine-wheel"><span class="dopamine-wheel-label dopamine-win-label">당첨</span><span class="dopamine-wheel-label dopamine-lose-label">미당첨</span></div><div class="dopamine-wheel-hub"></div></div><div class="dopamine-wheel-legend"><span>당첨 영역</span><span>미당첨 영역</span></div><p class="dopamine-wheel-result" aria-live="polite" hidden></p><button type="button" class="dopamine-result-close" data-action="dopamine-result-close" hidden>결과 확인</button></div>
           <div class="dopamine-panel"><h3>도전 금액 선택</h3><div class="dopamine-options">${Array.from({length:10},(_,i)=>`<button type="button" data-action="dopamine-select" data-stake="${(i+1)*10000}">${i+1}만</button>`).join('')}</div>
           <div class="dopamine-summary"><span>당첨 확률 <strong class="dopamine-chance">10%</strong></span><div class="dopamine-track"><div class="dopamine-fill"></div></div><span>당첨 시 순이익 <b class="dopamine-profit">+90,000 코인</b></span><span>실패 시 손실 <b class="dopamine-loss">-10,000 코인</b></span></div>
-          <button class="dopamine-play" data-action="dopamine-play">10,000코인으로 도전하기</button><p class="dopamine-status" aria-live="polite">참여 가능 여부 확인 중...</p></div>
+          <button class="dopamine-play" data-action="dopamine-confirm-open">10,000코인으로 도전하기</button><p class="dopamine-status" aria-live="polite">참여 가능 여부 확인 중...</p></div>
+          <div class="dopamine-confirm-overlay" hidden><div class="dopamine-confirm-dialog" role="dialog" aria-modal="true" aria-label="도파민존 도전 확인"><h3>도파민존 도전 확인</h3><p class="dopamine-confirm-details"></p><p>실패하면 투입한 코인은 반환되지 않으며, 오늘의 도전 기회 1회를 사용합니다.</p><div class="dopamine-confirm-actions"><button type="button" data-action="dopamine-confirm-cancel">취소</button><button type="button" data-action="dopamine-play">도전하기</button></div></div></div>
         </div>
       </section>
       <main class="gacha-screen" data-screen="title" aria-hidden="true">
@@ -1329,6 +1333,8 @@ export class GachaUi {
     if (action === 'dopamine') {this.show('dopamine');return}
     if (action === 'dopamine-result-close') {this.dopamineRevealText='';this.renderDopamine();return}
     if (action === 'dopamine-select') {this.dopamineStake=Number(button.dataset.stake);this.renderDopamine();return}
+    if (action === 'dopamine-confirm-open') {if(!this.dopamineBusy&&!this.dopamineState?.played){this.dopamineConfirmOpen=true;this.renderDopamine()}return}
+    if (action === 'dopamine-confirm-cancel') {this.dopamineConfirmOpen=false;this.renderDopamine();return}
     if (action === 'dopamine-play') {await this.playDopamine();return}
     if (action === 'lottery-reset') {await this.resetLottery();return}
     if (action === 'lottery-all') {await this.chooseLotteryCount();return}
