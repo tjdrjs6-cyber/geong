@@ -25,7 +25,7 @@ async function marketState(accountId, conn=pool, lock=false){
   const r=rows[0], keys=kstMarketKeys()
   return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
 }
-const SKILL_TIERS = {"rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+const SKILL_TIERS = {"christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
 const COOKIE = 'gm_session'
@@ -2363,7 +2363,8 @@ const routes = {
   'POST /api/pull': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const { count, free = false } = await readJson(req)
+    const { count, free = false, banner = 'standard' } = await readJson(req)
+    if (!['standard','christmas'].includes(banner) || (free && banner !== 'standard')) return send(res, 400, { error: 'invalid_banner' })
     // Operator accounts have unlimited coins: pulls never spend their balance.
     let dupes = {}
     const outcome = await withSave(account.id, state => {
@@ -2372,7 +2373,7 @@ const routes = {
       if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
       const cost = count === 10 ? 500 : count * 50
       const source = free ? {...state, gems:state.gems + cost} : account.is_admin ? {...state,gems:1_000_000_000} : {...state,gems:state.diamonds ?? 0}
-      let result = pull(source, count, n => randomInt(n), !free)
+      let result = pull(source, count, n => randomInt(n), !free, banner)
       if (result.ok && free) result = {...result,state:{...result.state, gems:state.gems,diamonds:state.diamonds,freePullDay:day,freePullUsed:used+count}}
       if (result.ok && account.is_admin && !free) result = { ...result, state: { ...result.state, gems: state.gems, diamonds:state.diamonds } }
       if (result.ok && !free && !account.is_admin) result={...result,state:{...result.state,diamonds:result.state.gems,gems:state.gems + (result.state.gems - ((state.diamonds ?? 0) - cost))}}
