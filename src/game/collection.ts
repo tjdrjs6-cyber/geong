@@ -1,6 +1,10 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
+  { id: 'christmas_chiikawa', name: '치이카와', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
+  { id: 'christmas_hachiware', name: '하치와레', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
+  { id: 'christmas_usagi', name: '우사기', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
+  { id: 'christmas_tree_usagi', name: '우사기', variant: '트리', probability: 0, tier: 'legendary', weedBonus: 60, power: 200, color: '#fff1df', accent: '#dd343a' },
   { id: 'rilakkuma', name: '리락쿠마', variant: '', probability: 0, tier: 'rare', weedBonus: 45, power: 195, color: '#f9e5cb', accent: '#b98343' },
   { id: 'korilakkuma', name: '코리락쿠마', variant: '', probability: 0, tier: 'rare', weedBonus: 45, power: 195, color: '#fff4e7', accent: '#dca7a7' },
   { id: 'chairoikoguma', name: '차이로이코구마', variant: '', probability: 0, tier: 'rare', weedBonus: 45, power: 195, color: '#f1dfd5', accent: '#a77860' },
@@ -62,7 +66,7 @@ export const CHARACTERS = [
 ] as const
 
 export type CharacterId = (typeof CHARACTERS)[number]['id']
-export type GachaSave = { version: 1; gems: number; diamonds?: number; lotteryTickets?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; lastRoulette?: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number; freePullDay?: string; freePullUsed?: number }
+export type GachaSave = { version: 1; gems: number; diamonds?: number; lotteryTickets?: number; fragments?: number; owned: CharacterId[]; lastDaily: string; pendingRandomBoxes?: number; attendanceWeek?: string; attendanceCount?: number; freePullDay?: string; freePullUsed?: number; clawTickets?:number; clawLastHour?:number }
 export type PullResult = { id: CharacterId; duplicate: boolean; bonus: number }
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -212,11 +216,3 @@ export const BATTLE_TICK_MS = 1_000
 /** Battle power per friend (mirrors server/game.mjs POWER). */
 export const battlePower = (id: CharacterId): number => CHARACTERS.find(item => item.id === id)?.power ?? 0
 
-/** Daily roulette prizes (one spin per day, server decides). Percent values for display. */
-export const ROULETTE_PRIZES = [
-  { coins: 10, percent: 40 },
-  { coins: 20, percent: 25 },
-  { coins: 30, percent: 17.5 },
-  { coins: 50, percent: 12.5 },
-  { coins: 100, percent: 5 },
-] as const

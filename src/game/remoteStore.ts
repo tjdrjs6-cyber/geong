@@ -1,19 +1,30 @@
-const BATTLE_ZONES = [[1200,180,5000],[4000,400,12000],[9000,700,24000],[18000,1100,42000],[32000,1500,65000],[50000,1800,90000],[72000,2100,120000],[95000,2400,145000],[120000,2700,170000],[145000,3000,195000]];
-const battleStageHp = (stage: number): number => { const n=Math.max(1,Math.min(100,stage))-1;const [base,step,boss]=BATTLE_ZONES[Math.floor(n/10)];return n%10===9?boss:base+step*(n%10) };
+const BATTLE_HP_ANCHORS: [number, number][] = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000]];
+const battleStageHp = (stage: number): number => {
+  const s = Math.max(1, Math.min(200, stage));
+  for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
+    const [end, endHp] = BATTLE_HP_ANCHORS[i];
+    if (s <= end) {
+      const [start, startHp] = BATTLE_HP_ANCHORS[i - 1];
+      return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
+    }
+  }
+  return 465000;
+};
+
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
 import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
 import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
-export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;limitBreakLevel?:number;power?:number;powerBreakdown?:{character:number;equipment:number;collection:number;research:number;researchPercent:number;total:number};weapon?:string|null;weaponLevel?:number|null}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; power?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number; powerBreakdown?:{character:number;equipment:number;collection:number;research:number;researchPercent:number;total:number} }
 export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
@@ -21,9 +32,11 @@ export type SentItem = { id: number; to: string; message: string; coins: number;
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
 export type Suggestion = { id: number; from: string; message: string; at: number; reply: string | null; replyAt: number | null; mine: boolean }
 export type SuggestBox = { items: Suggestion[]; admin: boolean; todayCount: number; dailyMax: number }
+export type MarketItems = {stones:number;weeklyBought:number;dailyBought:number;daily:string;weekly:string}
+export type LimitBreakLevels = Partial<Record<CharacterId,number>>
 export type CharDupes = Partial<Record<CharacterId, number>>
-export const CHAR_SELL_PRICES = { normal: 3, rare: 5, epic: 10, unique: 30 } as const
-export const DECO_SELL_PRICE = 5
+export const CHAR_SELL_PRICES = { normal: 10, rare: 10, epic: 10, unique: 10 } as const
+export const DECO_SELL_PRICE = 20
 export const SUGGEST_MAX_CHARS = 50
 export const SUGGEST_REPLY_MAX_CHARS = 100
 export const MAILBOX_MAX = 10
@@ -33,7 +46,7 @@ export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
 export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>> }
 export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
-type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
+type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; limitBreak?: LimitBreakLevels; market?: MarketItems; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
 type ApiError = { error?: string }
 
@@ -58,6 +71,9 @@ export const ERROR_TEXT: Record<string, string> = {
   limited_sale_ended: '한정 판매가 종료되었습니다.',
   limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
   not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
+  weekly_limit: '이번 주 한계돌파석 구매 한도 5개를 모두 사용했어요.',
+  daily_limit: '오늘 겅이복권 구매 한도 5개를 모두 사용했어요.',
+  not_enough_claw_tickets: '인형뽑기 쿠폰이 부족합니다. 다음 정각에 5개 충전됩니다.',
   not_enough_tickets: '겅이복권이 부족해요. 토벌장 처치 시 0.5% 확률로 획득해요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
   mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
@@ -72,6 +88,9 @@ export const ERROR_TEXT: Record<string, string> = {
   house_coin_taken: '이번 시간 코인은 이미 받았어요.',
   mail_not_found: '이미 지워진 우편이에요.',
   sell_invalid: '팔 수 없는 아이템이에요.',
+  not_enough_duplicates: '한계돌파에 필요한 중복 캐릭터가 부족해요.',
+  limit_break_max: '이미 +10 한계돌파를 완료했어요.',
+  invalid_character: '올바른 캐릭터를 선택해 주세요.',
   sell_not_enough: '팔 수 있는 중복 아이템이 부족해요.',
   sell_placed: '하우스에 놓인 데코는 팔 수 없어요. 먼저 하우스에서 넣어 주세요.',
   suggest_empty: '건의 내용을 적어 주세요.',
@@ -122,6 +141,8 @@ export class RemoteGachaStore {
   featured: CharacterId | null = null
   mailUnread = 0
   dupes: CharDupes = {}
+  limitBreak: LimitBreakLevels = {}
+  market: MarketItems = {stones:0,weeklyBought:0,dailyBought:0,daily:'',weekly:''}
   /** Server clock minus local clock, so countdowns match the server's payout. */
   private clockOffset = 0
 
@@ -148,21 +169,22 @@ export class RemoteGachaStore {
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
     const battle=this.battle
     if (!battle) return { kills:0,hp:1200,maxHp:1200,nextIn:BATTLE_TICK_MS,power:0,stage:1,remaining:60000 }
-    const power=battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower
-    const elapsed=Math.max(0,this.serverNow()-battle.since)
-    const seconds=Math.min(59,Math.floor((elapsed%60000)/BATTLE_TICK_MS))
-    const stage=Math.min(100,battle.stage??1)
+    const power=battle.power ?? (battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower)
+    const elapsed=Math.max(0,this.serverNow()-(battle.stageSince || battle.since))
+    const seconds=Math.min(60,Math.floor(elapsed/BATTLE_TICK_MS))
+    const stage=Math.min(200,battle.stage??1)
     const maxHp=battleStageHp(stage)
     const damage=Math.min(maxHp,Math.max(0,power)*seconds)
-    return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:60000-(elapsed%60000)}
+    return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:Math.max(0,60000-elapsed)}
   }
 
-  /** Passive coins per hour from weeding (with speed bonuses and the 풍뎅이 x2) plus battle kills. House coins excluded. */
+  /** Exact passive coins per minute, matching server settlement. */
   weedHourlyRate(): number {
     const members = this.weed?.members ?? []
     if (!members.length) return 0
-    const bonus = Math.min(2.5, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
-    return 4230 * bonus * (this.weed?.beetle ? 2 : 1)
+    const bonus = Math.max(0, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
+    const multiplier = this.weed?.beetle ? 2 : 1
+    return Math.floor(10 * bonus * multiplier)
   }
   hourlyRate(): number { return this.weedHourlyRate() }
   /** Server credits weeding + battle coins without opening those screens. */
@@ -191,7 +213,7 @@ export class RemoteGachaStore {
     return this.applyBattle(await request<BattleResult>('battle/test-clear', {}))
   }
 
-  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;fragments:number}[];failedStage:number}> {
+  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;diamonds:number;fragments:number;tickets?:number}[];failedStage:number}> {
     const result=await request<BattleResult>('battle/claim', {})
     const earned=this.applyBattle(result)
     return {earned,cleared:result.cleared??[],failedStage:result.failedStage??0}
@@ -223,6 +245,16 @@ export class RemoteGachaStore {
   async equipAccessory(id: string|null,grade='normal'): Promise<void> {
     const r=await request<{forge:ForgeState|null;accessory:AccessoryState;save:GachaSave}>('accessory/equip',{id,grade})
     this.forge=r.forge;this.accessory=r.accessory;this.data=r.save
+  }
+  async loadMarket():Promise<void>{this.market=await request<MarketItems>('market/items',{})}
+  async buyMarketItem(item:'stone'|'lottery'):Promise<void>{
+    const r=await request<{market:MarketItems;save:GachaSave}>('market/items/buy',{item})
+    this.market=r.market;this.data=r.save
+  }
+  async upgradeCharacter(id:CharacterId,consumeDupes:number,consumeStones:number):Promise<number>{
+    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id,consumeDupes,consumeStones})
+    this.dupes=r.dupes;this.limitBreak=r.limitBreak;this.market=r.market
+    return r.level
   }
   async synthesizeAccessory(id:string,grade:string):Promise<void>{
     const r=await request<{accessory:AccessoryState;forge:ForgeState|null;save:GachaSave}>('accessory/alchemy',{id,grade})
@@ -406,8 +438,8 @@ export class RemoteGachaStore {
     this.apply({ user: null })
   }
 
-  async pull(count: PullCount, free = false): Promise<PullResult[]> {
-    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free })
+  async pull(count: PullCount, free = false, banner: 'standard'|'christmas' = 'standard'): Promise<PullResult[]> {
+    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free, banner })
     this.data = result.save
     if (result.dupes) this.dupes = result.dupes
     return result.results
@@ -437,24 +469,10 @@ export class RemoteGachaStore {
     this.house = (await request<{ house: HouseLayout }>('house/save', { layout })).house
   }
 
-  /** One spin per 12-hour Korea time window. Returns the winning slot, or null when today's spin was already used. */
-  async spinRoulette(): Promise<{ index: number; prize: number } | null> {
-    try {
-      const result = await request<{ index: number; prize: number; save: GachaSave }>('roulette', {})
-      this.data = result.save
-      return { index: result.index, prize: result.prize }
-    } catch (error) {
-      if (error instanceof RequestError && error.message === 'already_spun') {
-        this.data = { ...this.data, lastRoulette: `${new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}` }
-        return null
-      }
-      throw error
-    }
-  }
-  async claimDaily(): Promise<{ claimed: boolean; coins: number; boxes: number }> {
-    const result = await request<{ claimed: boolean; coins: number; boxes: number; save: GachaSave }>('daily', {})
+  async claimDaily(): Promise<{ claimed: boolean; coins: number; diamonds: number; boxes: number }> {
+    const result = await request<{ claimed: boolean; coins: number; diamonds: number; boxes: number; save: GachaSave }>('daily', {})
     this.data = result.save
-    return { claimed: result.claimed, coins: result.coins ?? 0, boxes: result.boxes ?? 0 }
+    return { claimed: result.claimed, coins: result.coins ?? 0, diamonds: result.diamonds ?? 0, boxes: result.boxes ?? 0 }
   }
 
   private apply(payload: AccountPayload): void {
@@ -468,6 +486,8 @@ export class RemoteGachaStore {
     this.featured = payload.featured ?? null
     this.mailUnread = payload.mailUnread ?? 0
     this.dupes = payload.dupes ?? {}
+    this.limitBreak = payload.limitBreak ?? {}
+    this.market = payload.market ?? this.market
     if (typeof payload.now === 'number') this.clockOffset = payload.now - Date.now()
     this.data = payload.save ?? { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
   }

@@ -477,19 +477,8 @@ html, body { background:#fff8f1; }
   .reward-chip b { font-size:12px; } .reward-chip small { font-size:10px; }
 }
 
-/* ---------- Roulette modal ---------- */
-.roulette-card { width:min(420px,94cqw); text-align:center; }
-.roulette-wrap { position:relative; width:min(290px,74cqw); aspect-ratio:1; margin:6px auto 10px; }
-.roulette-svg { width:100%; height:100%; display:block; filter:drop-shadow(0 10px 18px rgba(90,65,74,.18)); }
-.roulette-wheel { transform-origin:0 0; transform-box:view-box; transition:transform 4.1s cubic-bezier(.12,.75,.12,1); }
-.roulette-pointer { position:absolute; left:50%; top:-6px; z-index:2; width:0; height:0; transform:translateX(-50%); border-left:14px solid transparent; border-right:14px solid transparent; border-top:26px solid #e8687f; filter:drop-shadow(0 2px 0 #3a2e2f); }
-.roulette-wrap.is-win .roulette-svg { animation:roulette-win .5s ease-in-out 3; }
+/* ---------- Roulette modal ---------- *
 @keyframes roulette-win { 50% { transform:scale(1.05); } }
-.roulette-odds { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:0 0 12px; padding:0; list-style:none; }
-.roulette-odds li { display:flex; flex-direction:column; min-width:58px; padding:6px 8px; border-radius:12px; background:#fff6f0; border:1px solid #f0dcd2; }
-.roulette-odds b { font-size:13px; color:#5b4750; } .roulette-odds span { font-size:11px; color:#a07f86; }
-.roulette-spin:disabled { opacity:.55; cursor:default; }
-.roulette-wheel { transform-box:fill-box; transform-origin:center; }
 /* House background photo: keep the floor visible at the bottom on any aspect ratio. */
 .house-bg { object-fit:cover; object-position:center bottom; pointer-events:none; user-select:none; -webkit-user-drag:none; background:#eeeef3; }
 .house-inventory .weed-empty { grid-column:1 / -1; width:auto; text-align:center; }
@@ -1164,8 +1153,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .claw-message{min-height:40px;font-weight:700;font-size:13px;margin:10px 0 0}
 @media(max-width:99998px){.claw-screen .claw-card{padding:12px}.claw-machine{height:36cqh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}}
 
-/* Persistent roulette reward notice, visible on PC and mobile. */
-.roulette-reward-message:not([hidden]) {display:block;margin:12px auto 0;padding:12px 14px;border-radius:14px;background:#fff1ce;border:1px solid #e7c77d;color:#68471e;font-weight:800;font-size:14px;line-height:1.5;text-align:center;}
+/* Persistent roulette reward notice, visible on PC and mobile. *
 
 /* Profile requested at the top center on mobile; keep wallets out of its row. */
 @media screen and (max-width:99998px) {
@@ -1188,9 +1176,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   }
 }
 
-/* Roulette reward: short pop-up over wheel on desktop and mobile. */
-.roulette-pop-reward:not([hidden]) {display:block;position:absolute;top:42%;left:50%;width:max-content;max-width:90%;transform:translate(-50%,-50%);padding:15px 23px;border:2px solid #f4c969;border-radius:24px;background:#fff5d6;color:#78441e;box-shadow:0 12px 35px #68432955;font-size:clamp(18px,4.5cqw,26px);font-weight:900;z-index:25;pointer-events:none;text-align:center;}
-.roulette-pop-reward.pop-in {animation:roulette-reward-pop 2.3s ease-in-out both;}
+/* Roulette reward: short pop-up over wheel on desktop and mobile. *
 @keyframes roulette-reward-pop {0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}13%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}23%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%) scale(1.03)}}
 @media(prefers-reduced-motion:reduce){.roulette-pop-reward.pop-in{animation:none;}}
 
@@ -1485,7 +1471,6 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen>.collection-peek{background:linear-gradient(155deg,#fffefd,#fff0f6)!important;border:2px solid #f5c8d8!important;border-radius:17px!important;box-shadow:0 4px 0 #e8bdcd!important}
 .gacha-screen>.collection-peek .soft-button{background:#fff!important;color:#945d7b!important;border:1.5px solid #edc2d6!important;border-radius:12px!important;font-weight:800!important;box-shadow:0 2px 0 #efc8d9!important}
 .gacha-screen>.top-rewards .reward-chip{background:linear-gradient(135deg,#fffefa,#fff0db)!important;border:2px solid #f4d7a6!important;border-radius:16px!important;box-shadow:0 3px 0 #e9cda3!important;color:#7c5d61!important}
-.gacha-screen>.top-rewards .roulette-chip{background:linear-gradient(135deg,#fffafa,#f0edff)!important;border-color:#d6c9f5!important;box-shadow:0 3px 0 #c6b7eb!important}
 @media(max-width:99998px){
  .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,24cqw,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(100cqh - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
  .gacha-screen>.gacha-nav .nav-button{width:100%!important;min-height:34px!important;padding:6px 3px!important;font-size:10px!important;line-height:1.15!important;flex-shrink:0!important}
@@ -4519,8 +4504,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* test.073: hide the lobby representative character's name badge only. */
 #ui .gacha-screen .toon-stage .toon-hero-name{display:none!important;}
 
-/* test.074: roulette artwork and first-login update notice */
-#ui .gacha-screen .roulette-chip .reward-icon img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important;animation:none!important;transform:none!important}
+/* test.074: roulette artwork and first-login update notice *
 #ui .update-notice-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;background:rgba(28,22,29,.7)!important;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important}
 #ui .update-notice-panel{width:min(100%,440px)!important;max-height:100%!important;background:#fff9ed!important;border:3px solid #b78c69!important;border-radius:22px!important;box-shadow:0 14px 40px #0005!important;overflow:hidden!important;box-sizing:border-box!important}
 #ui .update-notice-scroll{max-height:calc(100dvh - 65px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:24px 22px 22px!important;box-sizing:border-box!important;color:#513c32!important;font-size:13px!important;line-height:1.7!important;text-align:left!important}
@@ -5859,3 +5843,749 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 /* Patch 4: combat visuals run on the same one-second cycle as server damage. */
 #ui .battle-field.is-fighting .bf-friend-body,#ui .battle-field.is-fighting > .battle-weapon-strike,#ui .battle-field.is-fighting .bf-spark,#ui .battle-field.is-fighting .bf-enemy-body{animation-duration:1s!important}
 #ui .battle-field .battle-weapon-strike,#ui .battle-field .bf-friend{animation-duration:1s!important}
+
+/* 2026-11: attendance currency artwork and mobile-safe roulette layout */
+#ui .attendance-reward .attendance-currency-icon{display:block;width:29px;height:29px;object-fit:contain;margin:0 auto;flex:none}
+@media(max-width:360px){#ui .roulette-wrap{width:min(220px,66vw)}#ui .roulette-odds li{padding:7px 6px}}
+
+/* Attendance icon size must override generic modal img/span styles. */
+#ui .attendance-popup-inner .attendance-reward-grid{width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
+#ui .attendance-popup-inner .attendance-reward{min-width:0;overflow:hidden;box-sizing:border-box}
+#ui .attendance-popup-inner .attendance-reward span{display:flex;align-items:center;justify-content:center;width:34px;height:34px;max-width:100%;flex:none}
+#ui .attendance-popup-inner .attendance-reward img.attendance-currency-icon{display:block!important;position:static!important;width:26px!important;height:26px!important;min-width:0!important;max-width:26px!important;max-height:26px!important;object-fit:contain!important;margin:0!important;transform:none!important}
+#ui .attendance-popup-inner{overflow-x:hidden;max-width:100%;box-sizing:border-box}
+#ui .attendance-popup-inner .attendance-reward b{overflow-wrap:anywhere;word-break:keep-all;max-width:100%}
+#ui .claw-balance-count .claw-ticket-value{font-size:clamp(17px,4vw,25px)}
+
+
+/* 2026-11-17: user-provided portrait art. Only the backgrounds are changed. */
+#ui .gacha-screen, #ui .gacha-screen.is-active {
+  background-color:#c7ecb3!important;
+  background-image:url('/geong_main_music_garden.webp')!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+}
+#ui .gacha-boot, #ui .gacha-boot.is-active {
+  background-color:#a9c9f7!important;
+  background-image:url('/geong_loading_christmas.webp')!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+}
+/* One second per visible strike: override old 3-second animation shorthands. */
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-friend-body {
+  animation-name:battle-strike-return-v173!important;
+  animation-duration:1s!important;
+  animation-timing-function:cubic-bezier(.35,0,.3,1)!important;
+  animation-delay:var(--battle-cycle-offset,0s)!important;
+  animation-iteration-count:infinite!important;
+  animation-play-state:running!important;
+}
+#ui .battle-field.is-fighting:not(.is-stage-changing) > .battle-weapon-strike {
+  animation-name:battle-strike-return-v173!important;
+  animation-duration:1s!important;
+  animation-timing-function:cubic-bezier(.35,0,.3,1)!important;
+  animation-delay:var(--battle-cycle-offset,0s)!important;
+  animation-iteration-count:infinite!important;
+  animation-play-state:running!important;
+}
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-spark {animation-duration:1s!important}
+#ui .battle-field.is-fighting:not(.is-stage-changing) .bf-enemy-body {animation-duration:1.6s,1s!important}
+#ui .battle-field.is-stage-changing .bf-friend-body,
+#ui .battle-field.is-stage-changing > .battle-weapon-strike,
+#ui .battle-field.is-stage-changing .bf-spark {animation-play-state:paused!important}
+
+/* Research laboratory – pastel fantasy modal */
+.research-overlay[hidden]{display:none!important}
+.research-overlay{position:fixed;inset:0;z-index:99999;background:rgba(40,32,61,.54);display:grid;place-items:center;padding:18px;overflow:auto}
+.research-card{position:relative;box-sizing:border-box;width:min(100%,430px);padding:28px 22px 25px;border:3px solid #d9b7f4;border-radius:28px;background:radial-gradient(circle at 50% 0%,#fff 0%,#faf2ff 52%,#eaf8ff 100%);box-shadow:0 16px 55px #39245c55, inset 0 0 0 4px #ffffffa6;text-align:center;color:#54446e;font-family:inherit}
+.research-close{position:absolute;top:12px;right:14px;border:0;background:#fff;border-radius:50%;width:34px;height:34px;font-size:24px;color:#8e6ca7;cursor:pointer}
+.research-sparkles{letter-spacing:24px;color:#dba7ff;font-size:23px}
+.research-illustration{font-size:64px;margin:4px auto 0;filter:drop-shadow(0 8px 5px #ab90d144)}
+.research-illustration span{font-size:32px;vertical-align:top}
+.research-card h2{font-size:28px;color:#8355b5;margin:0 0 3px}
+.research-subtitle{margin:0 0 16px;color:#9b7bb7;font-weight:700}
+.research-level{font-size:29px;font-weight:900;color:#7150a0}.research-level small{font-size:16px;color:#b49cc9}
+.research-track{height:14px;background:#e4d7ed;border-radius:30px;overflow:hidden;margin:10px 0 12px}.research-track span{display:block;height:100%;background:linear-gradient(90deg,#9ed5ff,#c7a1f5,#ffb8d7);border-radius:30px;transition:width .25s}
+.research-bonus{font-size:19px;font-weight:800;margin:10px 0}.research-bonus strong{color:#ad68d6;font-size:26px}.research-hint{font-size:12px;color:#9b87aa}
+.research-cost{display:flex;flex-direction:column;gap:6px;background:#ffffffb8;border:2px solid #e7d6f4;border-radius:18px;padding:14px;margin:17px 0 12px}.research-cost span{font-weight:800}.research-cost strong{font-size:15px}
+.research-upgrade{width:100%;border:0;border-radius:16px;padding:15px;background:linear-gradient(100deg,#a88bf4,#eaa2d0);color:white;font-size:16px;font-weight:900;box-shadow:0 5px 0 #a57cc1;cursor:pointer}.research-upgrade:disabled{opacity:.55;cursor:wait}
+.research-max{font-size:17px;color:#a066c1;font-weight:800}.research-feedback{color:#c34f77;font-size:13px;min-height:18px}
+
+/* Character limit-break tab: matches existing pastel alchemy UI. */
+.alchemy-mode-tabs{display:flex;gap:8px;margin:12px 0 16px}.alchemy-mode-tabs button{flex:1;border:1px solid #e7c7dd;border-radius:14px;padding:11px 6px;background:#fff7fc;color:#916486;font-weight:800}.alchemy-mode-tabs button.active{background:linear-gradient(135deg,#f8cde8,#d8d1ff);color:#633d75;border-color:#d9b4e4;box-shadow:0 3px 12px #d9b4e455}.limit-break-picker{max-height:180px;overflow:auto}.limit-break-picker .alchemy-pick img{height:48px;object-fit:contain}.limit-break-picker .alchemy-pick small{display:block}.limit-break-preview{text-align:center;background:linear-gradient(145deg,#fff6fb,#f1edff);border:1px solid #ead4f2;border-radius:20px;padding:14px;margin:12px 0}.limit-break-preview>img{width:94px;height:94px;object-fit:contain;filter:drop-shadow(0 5px 9px #c7a8d2)}.limit-break-preview h3{margin:7px 0}.limit-break-preview p{margin:6px 0}.limit-break-preview strong{color:#ac5fa0}.limit-break-upgrade{width:100%;padding:15px!important}
+
+/* 캐릭터 한계돌파: 컴팩트 가로 미리보기 및 인게임 확인창 */
+.limit-break-panel .limit-break-preview{display:flex;align-items:center;gap:14px;text-align:left;padding:10px 13px;margin:8px 0;min-height:112px}
+.limit-break-panel .limit-break-preview>img{width:88px;height:88px;flex:0 0 88px;object-fit:contain}
+.limit-break-panel .limit-break-details{min-width:0;flex:1}
+.limit-break-panel .limit-break-details h3{font-size:15px;margin:0 0 5px}
+.limit-break-panel .limit-break-details p{font-size:12px;margin:4px 0;line-height:1.35}
+.limit-break-panel .limit-break-details strong{font-size:13px}
+.limit-break-panel .limit-break-picker{max-height:165px}
+.limit-break-panel .alchemy-description{margin:7px 0}
+.limit-break-panel .alchemy-mode-tabs{margin:8px 0}
+.limit-break-confirm-overlay{position:absolute;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;background:#30233a66;border-radius:inherit;padding:12px}
+.limit-break-panel{position:relative}
+.limit-break-confirm{width:min(100%,320px);padding:20px 15px;border-radius:20px;background:#fff9fe;text-align:center;box-shadow:0 12px 30px #44304a44;border:1px solid #ebd0ee}
+.limit-break-confirm h3{margin:0 0 8px;color:#8154a2}.limit-break-confirm img{height:76px;width:76px;object-fit:contain}.limit-break-confirm p{margin:7px 0;font-size:13px}
+.limit-break-confirm-actions{display:flex;gap:8px;margin-top:15px}.limit-break-confirm-actions button{flex:1;border:1px solid #ddc5e8;border-radius:12px;padding:11px 4px;font-weight:800;background:#fff;color:#8c679a}.limit-break-confirm-actions button[data-confirm=accept]{background:linear-gradient(110deg,#b69af7,#ee9acb);color:white;border:0}
+@media(max-height:740px){.limit-break-panel .limit-break-picker{max-height:125px}.limit-break-panel .limit-break-preview>img{width:72px;height:72px;flex-basis:72px}.limit-break-panel .limit-break-preview{min-height:90px}}
+
+/* v176: market consumables and keyring ticket artwork */
+#ui .geong-market-items{display:grid;gap:10px;margin:12px 0}
+#ui .geong-market-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e6c8ed;border-radius:17px;background:linear-gradient(120deg,#fff8fc,#f3edff)}
+#ui .geong-market-item>img{width:66px;height:66px;object-fit:contain;flex:none}
+#ui .geong-market-item>div{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+#ui .geong-market-item small{font-size:11px;color:#7b6688}
+#ui .geong-market-item button{border:0;border-radius:12px;padding:10px;background:#b28bdf;color:white;font-weight:800}
+#ui .geong-market-item button:disabled{opacity:.4}
+#ui .market-inline-stone{width:20px;height:20px;vertical-align:middle;object-fit:contain}
+#ui .claw-ticket-icon{width:26px;height:21px;object-fit:contain;vertical-align:middle;display:inline-block}
+
+/* Limit-break UI compact selection, tier borders and top-right badges */
+.limit-break-panel .limit-break-picker .alchemy-pick{position:relative;border:2px solid #e8dfe7;overflow:visible}
+.limit-break-panel .limit-break-picker .limit-break-tier-normal{border-color:#d9d9d9}
+.limit-break-panel .limit-break-picker .limit-break-tier-mermaid{border-color:#76cfa5}
+.limit-break-panel .limit-break-picker .limit-break-tier-rare{border-color:#69a8f8}
+.limit-break-panel .limit-break-picker .limit-break-tier-epic{border-color:#ed7a86}
+.limit-break-panel .limit-break-picker .limit-break-tier-super,.limit-break-panel .limit-break-picker .limit-break-tier-unique{border-color:#b681ee}
+.limit-break-panel .limit-break-picker .limit-break-tier-legendary{border-color:#f2c451}
+.limit-break-panel .limit-break-picker .limit-break-tier-transcendent{border-color:#ff995b}
+.limit-break-level-badge,.limit-break-combat-badge{position:absolute;top:2px;right:2px;z-index:8;display:inline-flex;align-items:center;justify-content:center;min-width:26px;padding:2px 5px;border-radius:9px;background:#8055c5;color:white;font-size:11px;font-weight:900;line-height:1.25;box-shadow:0 1px 5px #43236b77;pointer-events:none}
+.limit-break-panel .limit-break-picker .alchemy-pick small{display:none}
+.limit-break-materials{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}
+.limit-break-material{border:2px solid #e5d6eb;border-radius:13px;padding:10px 5px;background:#fffafc;color:#7e6687;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px}
+.limit-break-material.active{border-color:#b487ed;background:#f4eaff;box-shadow:0 2px 9px #ac87de44}
+.limit-break-material span{font-size:11px}
+.limit-break-legacy-hidden{display:none}
+.bf-friend-body,.expedition-combatant,.weed-pick{position:relative}
+.bf-friend-body .limit-break-combat-badge{top:-13px;right:-10px;animation:none!important;transform:none!important}
+.expedition-combatant .limit-break-combat-badge{top:8px;right:0;animation:none!important;transform:none!important}
+.weed-pick .limit-break-level-badge{top:3px;right:3px}
+
+/* v178: clear rarity labels, mixed materials and shop limits */
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-rare{border-color:#3988ed!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-epic{border-color:#e54848!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-unique,#ui .limit-break-panel .limit-break-picker .limit-break-tier-super{border-color:#a45be8!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-legendary{border-color:#daa520!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-transcendent{border-color:#ef8428!important}
+#ui .limit-break-panel .limit-break-picker .alchemy-pick .limit-break-tier-name{display:block!important;font-size:10px;font-weight:800;line-height:1.25}
+#ui .limit-break-tier-rare .limit-break-tier-name{color:#3988ed}
+#ui .limit-break-tier-epic .limit-break-tier-name{color:#e54848}
+#ui .limit-break-tier-unique .limit-break-tier-name,#ui .limit-break-tier-super .limit-break-tier-name{color:#a45be8}
+#ui .limit-break-tier-legendary .limit-break-tier-name{color:#b18a0a}
+#ui .limit-break-tier-transcendent .limit-break-tier-name{color:#ef8428}
+#ui .limit-break-stepper{display:flex;align-items:center;gap:9px;margin-top:4px}
+#ui .limit-break-stepper button{width:29px;height:29px;border:1px solid #d4b5e4;border-radius:9px;background:#fff;color:#7651a1;font-size:19px;font-weight:800}
+#ui .limit-break-stepper button:disabled{opacity:.35}
+#ui .limit-break-stepper strong{min-width:18px;text-align:center}
+#ui .limit-break-material-summary{text-align:center;margin:5px 0 10px;font-size:12px;color:#735787}
+#ui .geong-market-item small:first-of-type{font-weight:900;color:#7640a2;font-size:13px}
+
+/* 2026-11-17 battle power summary / details and compact stage recommendation */
+#ui .battle-screen .battle-recommended-power{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin:5px auto 0;padding:4px 9px;width:max-content;max-width:100%;border:1px solid #e4bb7e;border-radius:15px;background:rgba(255,249,231,.97);box-shadow:0 2px 5px #5b3b1830;color:#78542d;font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}
+#ui .battle-screen .battle-recommended-power strong{color:#a36c29;font-size:13px}
+#ui .battle-screen .battle-recommended-compare{color:#c06c3b;font-size:9px}
+#ui .battle-screen .battle-recommended-compare.is-enough{color:#438f69}
+#ui .battle-screen .battle-stage-center .battle-recommended-power{pointer-events:none}
+#ui .battle-screen .battle-panel .battle-status{margin:4px 0 5px;overflow:visible}
+#ui .battle-screen .battle-power-summary{display:flex;align-items:center;justify-content:center;gap:10px;position:relative;font-size:12px;font-weight:800;color:#674d35}
+#ui .battle-screen .battle-power-summary>span{white-space:nowrap}
+#ui .battle-screen .battle-power-summary>span b{font-size:16px;color:#ba6a31}
+#ui .battle-screen .battle-power-details{position:relative;z-index:70}
+#ui .battle-screen .battle-power-details>summary{list-style:none;cursor:pointer;border:1px solid #d9b893;background:#fff8ed;color:#8a623a;padding:4px 10px;border-radius:15px;font-size:11px;white-space:nowrap}
+#ui .battle-screen .battle-power-details>summary::-webkit-details-marker{display:none}
+#ui .battle-screen .battle-power-detail-card{position:absolute;right:0;bottom:calc(100% + 9px);width:min(290px,80vw);padding:12px 14px;border:1px solid #dcb88e;border-radius:14px;background:#fffdf8;box-shadow:0 7px 22px #3f2e2540;z-index:80;text-align:left;color:#66513e;font-size:12px}
+#ui .battle-screen .battle-power-detail-card>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0}
+#ui .battle-screen .battle-power-detail-card small{font-size:10px;color:#998675}
+#ui .battle-screen .battle-power-detail-card b{color:#a76b36}
+#ui .battle-screen .battle-power-detail-card .battle-power-detail-total{border-top:1px solid #e9d9c7;margin-top:5px;padding-top:10px;color:#ad6731}
+#ui .battle-screen .battle-panel .field-info-sticky{overflow:visible!important}
+
+/* 한계돌파 재료 선택: 파스텔 인게임 카드 UI */
+#ui .limit-break-panel .limit-break-materials{display:flex;flex-direction:column;gap:9px;margin:14px 0 10px}
+#ui .limit-break-panel .limit-break-material{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px;min-height:76px;padding:11px 13px;border:1.5px solid #e9d9e8;border-radius:17px;background:linear-gradient(115deg,#fff9fc,#fff);box-shadow:0 3px 10px #8e699019;color:#66516e;box-sizing:border-box}
+#ui .limit-break-panel .limit-break-material-stones{border-color:#ddd4f1;background:linear-gradient(115deg,#faf6ff,#fff)}
+#ui .limit-break-panel .limit-break-material-info{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+#ui .limit-break-panel .limit-break-material-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:43px;height:43px;object-fit:contain;border-radius:13px;background:#fce7f1;color:#d17aa2;font-size:27px;font-weight:800}
+#ui .limit-break-panel .limit-break-material-stones .limit-break-material-icon{background:#eee6fb;padding:3px;box-sizing:border-box}
+#ui .limit-break-panel .limit-break-material-label{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;text-align:left}
+#ui .limit-break-panel .limit-break-material-label b{font-size:13px;line-height:1.2;color:#69536d;white-space:nowrap}
+#ui .limit-break-panel .limit-break-material-label small{font-size:11px;color:#a18da5}
+#ui .limit-break-panel .limit-break-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;margin:0;padding:4px;background:#f8f0fa;border:1px solid #f0e5f4;border-radius:13px}
+#ui .limit-break-panel .limit-break-material-stones .limit-break-stepper{background:#f3edfc;border-color:#ebe1f9}
+#ui .limit-break-panel .limit-break-stepper button{display:flex;align-items:center;justify-content:center;width:31px;height:31px;min-width:31px;border:1px solid #e6d2e9;border-radius:10px;background:#fff;color:#9c72b4;font-size:21px;font-weight:700;line-height:1;box-shadow:0 2px 4px #80608a12;cursor:pointer;touch-action:manipulation}
+#ui .limit-break-panel .limit-break-stepper button:not(:disabled):active{transform:scale(.94);background:#f6eafa}
+#ui .limit-break-panel .limit-break-stepper button:disabled{opacity:.32;cursor:default}
+#ui .limit-break-panel .limit-break-stepper strong{min-width:22px;text-align:center;color:#674d7b;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+#ui .limit-break-panel .limit-break-material-progress{padding:12px 13px 10px;border:1px solid #e7dcef;border-radius:15px;background:#fcf9ff;margin-bottom:11px}
+#ui .limit-break-panel .limit-break-progress-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#745f85;font-weight:700}
+#ui .limit-break-panel .limit-break-progress-heading b{font-size:14px;color:#8561ad;font-variant-numeric:tabular-nums}
+#ui .limit-break-panel .limit-break-progress-track{height:9px;overflow:hidden;margin-top:9px;background:#eee6f2;border-radius:99px}
+#ui .limit-break-panel .limit-break-progress-fill{height:100%;background:linear-gradient(90deg,#c3a8e9,#a58be1);border-radius:99px;transition:width .2s ease}
+#ui .limit-break-panel .limit-break-progress-fill.ready{background:linear-gradient(90deg,#98d9bb,#62bf98)}
+#ui .limit-break-panel .limit-break-material-hint{text-align:center;margin:8px 0 0;font-size:11px;color:#8b7798}
+@media(max-width:390px){#ui .limit-break-panel .limit-break-material{padding:9px 8px;gap:5px}#ui .limit-break-panel .limit-break-material-info{gap:6px}#ui .limit-break-panel .limit-break-material-icon{width:35px;height:35px}#ui .limit-break-panel .limit-break-stepper{gap:3px}#ui .limit-break-panel .limit-break-stepper button{width:28px;min-width:28px;height:28px}#ui .limit-break-panel .limit-break-material-label b{font-size:12px}}
+
+/* Limit-break material icon: override generic dialog image sizing */
+#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{display:block!important;position:static!important;width:43px!important;height:43px!important;min-width:43px!important;min-height:43px!important;max-width:43px!important;max-height:43px!important;flex:0 0 43px!important;object-fit:contain!important;box-sizing:border-box!important;margin:0!important;padding:4px!important;transform:none!important;}
+#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-info{min-width:0!important;max-width:100%!important;}
+@media(max-width:390px){#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;max-width:35px!important;max-height:35px!important;flex-basis:35px!important;}}
+
+/* 전투력 상세: 화면 내부 잘림 방지를 위해 body 최상위 dialog 사용 */
+#ui .expedition-power-summary{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin:7px 0 10px;padding:9px 12px;border-radius:14px;background:#fff8ed;color:#755438;font-size:12px;font-weight:800}
+#ui .expedition-power-summary b{font-size:17px;color:#bb7037}
+#ui .combat-detail-button{cursor:pointer;border:1px solid #d8b58e;background:#fffdf9;border-radius:18px;padding:6px 13px;color:#95653e;font-weight:800;font-size:12px;white-space:nowrap;touch-action:manipulation}
+.combat-power-modal{position:fixed;inset:0;margin:auto;width:min(360px,calc(100vw - 28px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #e7cbb0;border-radius:19px;background:#fffdf9;box-shadow:0 16px 55px #3e2a264d;z-index:2147483000;color:#674e3b;overflow:auto}
+.combat-power-modal::backdrop{background:rgba(41,30,43,.48)}
+.combat-power-modal-inner{padding:18px}
+.combat-power-modal-title{display:flex;align-items:center;justify-content:space-between;font-size:16px;margin-bottom:15px}
+.combat-power-modal-close{border:0;background:#f7e9e4;border-radius:50%;width:30px;height:30px;font-size:21px;color:#8b665c;cursor:pointer}
+.combat-power-modal-rows>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #f1e6dc;font-size:13px}
+.combat-power-modal-rows small{display:block;color:#a08a7c;font-size:10px;margin-top:2px}
+.combat-power-modal-rows b{color:#ae6c3c}
+.combat-power-modal-rows .combat-power-modal-total{border:0;margin-top:8px;font-size:16px;color:#a75d2b}
+.combat-power-modal-done{display:block;width:100%;margin-top:15px;border:0;border-radius:13px;padding:12px;background:#e9c5a1;color:#754622;font-weight:900;cursor:pointer}
+
+/* FIX: Alchemy dialog exists outside #ui */
+/* 한계돌파 재료 선택: 파스텔 인게임 카드 UI */
+dialog.alchemy-dialog .limit-break-panel .limit-break-materials{display:flex;flex-direction:column;gap:9px;margin:14px 0 10px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px;min-height:76px;padding:11px 13px;border:1.5px solid #e9d9e8;border-radius:17px;background:linear-gradient(115deg,#fff9fc,#fff);box-shadow:0 3px 10px #8e699019;color:#66516e;box-sizing:border-box}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones{border-color:#ddd4f1;background:linear-gradient(115deg,#faf6ff,#fff)}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-info{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:43px;height:43px;object-fit:contain;border-radius:13px;background:#fce7f1;color:#d17aa2;font-size:27px;font-weight:800}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones .limit-break-material-icon{background:#eee6fb;padding:3px;box-sizing:border-box}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;text-align:left}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label b{font-size:13px;line-height:1.2;color:#69536d;white-space:nowrap}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label small{font-size:11px;color:#a18da5}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;margin:0;padding:4px;background:#f8f0fa;border:1px solid #f0e5f4;border-radius:13px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones .limit-break-stepper{background:#f3edfc;border-color:#ebe1f9}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button{display:flex;align-items:center;justify-content:center;width:31px;height:31px;min-width:31px;border:1px solid #e6d2e9;border-radius:10px;background:#fff;color:#9c72b4;font-size:21px;font-weight:700;line-height:1;box-shadow:0 2px 4px #80608a12;cursor:pointer;touch-action:manipulation}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button:not(:disabled):active{transform:scale(.94);background:#f6eafa}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button:disabled{opacity:.32;cursor:default}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper strong{min-width:22px;text-align:center;color:#674d7b;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-progress{padding:12px 13px 10px;border:1px solid #e7dcef;border-radius:15px;background:#fcf9ff;margin-bottom:11px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#745f85;font-weight:700}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-heading b{font-size:14px;color:#8561ad;font-variant-numeric:tabular-nums}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-track{height:9px;overflow:hidden;margin-top:9px;background:#eee6f2;border-radius:99px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-fill{height:100%;background:linear-gradient(90deg,#c3a8e9,#a58be1);border-radius:99px;transition:width .2s ease}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-fill.ready{background:linear-gradient(90deg,#98d9bb,#62bf98)}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-hint{text-align:center;margin:8px 0 0;font-size:11px;color:#8b7798}
+@media(max-width:390px){dialog.alchemy-dialog .limit-break-panel .limit-break-material{padding:9px 8px;gap:5px}dialog.alchemy-dialog .limit-break-panel .limit-break-material-info{gap:6px}dialog.alchemy-dialog .limit-break-panel .limit-break-material-icon{width:35px;height:35px}dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{gap:3px}dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button{width:28px;min-width:28px;height:28px}dialog.alchemy-dialog .limit-break-panel .limit-break-material-label b{font-size:12px}}
+
+
+/* Actual alchemy dialog: force compact icon and horizontally arranged material controls */
+dialog.alchemy-dialog .limit-break-panel .limit-break-materials{
+  display:flex!important;flex-direction:column!important;width:100%!important;max-width:100%!important;
+  gap:10px!important;box-sizing:border-box!important;overflow:hidden!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:space-between!important;width:100%!important;max-width:100%!important;
+  min-width:0!important;box-sizing:border-box!important;gap:8px!important;overflow:hidden!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-info{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex:1 1 auto!important;min-width:0!important;gap:9px!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones img.limit-break-material-icon{
+  display:block!important;position:static!important;float:none!important;
+  width:43px!important;height:43px!important;min-width:43px!important;min-height:43px!important;
+  max-width:43px!important;max-height:43px!important;flex:0 0 43px!important;
+  object-fit:contain!important;object-position:center!important;padding:3px!important;
+  margin:0!important;box-sizing:border-box!important;transform:none!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label{
+  display:flex!important;flex-direction:column!important;min-width:0!important;
+  flex:1 1 auto!important;white-space:normal!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex:0 0 auto!important;white-space:nowrap!important;
+}
+@media(max-width:390px){
+ dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones img.limit-break-material-icon{
+  width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;
+  max-width:35px!important;max-height:35px!important;flex-basis:35px!important;
+ }
+}
+
+
+/* PC-first shared layouts (2026-11-17). One rule set for desktop and mobile. */
+:root { --geong-ui-gap:10px; --geong-card-radius:13px; }
+/* The four-column PC character selector is retained on every viewport. */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker,
+dialog.alchemy-dialog .limit-break-picker {
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:var(--geong-ui-gap)!important;
+  width:100%!important;min-width:0!important;
+}
+dialog.alchemy-dialog .limit-break-picker .alchemy-pick {
+  min-width:0!important;max-width:100%!important;width:100%!important;
+  height:auto!important;box-sizing:border-box!important;
+  padding:7px 3px!important;border-radius:var(--geong-card-radius)!important;
+  overflow-wrap:anywhere!important;word-break:keep-all!important;
+}
+dialog.alchemy-dialog .limit-break-picker .alchemy-pick > span:not(.limit-break-level-badge),
+dialog.alchemy-dialog .limit-break-picker .alchemy-pick .limit-break-tier-name {
+  display:block!important;max-width:100%!important;
+  white-space:normal!important;overflow:visible!important;
+  text-overflow:clip!important;overflow-wrap:anywhere!important;
+  line-height:1.3!important;text-align:center!important;
+}
+/* PC material rows, icon and steppers are the single source of truth. */
+dialog.alchemy-dialog .limit-break-panel .limit-break-materials {
+  display:flex!important;flex-direction:column!important;gap:10px!important;
+  width:100%!important;min-width:0!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material {
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:space-between!important;gap:8px!important;
+  padding:11px 12px!important;min-height:68px!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  box-sizing:border-box!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-info {
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex:1 1 auto!important;min-width:0!important;gap:8px!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-icon,
+dialog.alchemy-dialog .limit-break-panel .limit-break-material img {
+  width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+  max-width:40px!important;max-height:40px!important;flex:0 0 40px!important;
+  object-fit:contain!important;transform:none!important;box-sizing:border-box!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label {
+  flex:1 1 auto!important;min-width:0!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label b {
+  white-space:normal!important;overflow-wrap:anywhere!important;word-break:keep-all!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper {
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex:0 0 auto!important;gap:6px!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button {
+  width:31px!important;height:31px!important;min-width:31px!important;
+}
+/* Shared dialog sizing: same design; viewport only limits the available space. */
+dialog.alchemy-dialog {
+  box-sizing:border-box!important;max-width:min(540px,calc(100vw - 20px))!important;
+  max-height:calc(100dvh - 24px)!important;overflow:auto!important;
+}
+/* Battle and expedition power details share identical control dimensions. */
+#ui .battle-power-summary button,
+#ui .expedition-power-summary button,
+#ui .battle-power-detail-button,
+#ui .expedition-power-detail-button {
+  min-height:30px!important;border-radius:12px!important;
+  font-size:12px!important;line-height:1.2!important;
+}
+/* Avoid the previous mobile-only selector changing the four-column PC layout. */
+
+/* PC/mobile shared alchemy dialog: authoritative tier border colors */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-rare{border:2px solid #3988ed!important;border-color:#3988ed!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-epic{border:2px solid #e54848!important;border-color:#e54848!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-rare .limit-break-tier-name{color:#3988ed!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-epic .limit-break-tier-name{color:#e54848!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-face{display:block!important;width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;min-height:40px!important;max-height:40px!important;object-fit:contain!important;flex:0 0 40px!important}
+
+/* Alchemy actual rarity mapping: mermaid = rare (blue), rare = epic (red) */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit-break-tier-mermaid {border:2px solid #3988ed!important;}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit-break-tier-rare,
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit-break-tier-epic {border:2px solid #e54848!important;}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-mermaid .limit-break-tier-name {color:#3988ed!important;}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-rare .limit-break-tier-name,
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-epic .limit-break-tier-name {color:#e54848!important;}
+
+/* Battle controls: parent previously disabled pointer input. */
+#ui .battle-screen .battle-stage-center{pointer-events:auto!important}
+#ui .battle-screen .battle-stage-center .battle-stage-heading,
+#ui .battle-screen .battle-stage-center .battle-recommended-power{pointer-events:none!important}
+#ui .battle-screen .battle-stage-center .battle-stage-actions,
+#ui .battle-screen .battle-stage-center .battle-stage-actions button:not([hidden]){pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}
+#ui .battle-screen .battle-panel .field-info-sticky,
+#ui .battle-screen .battle-panel .battle-status,
+#ui .battle-screen .battle-panel button[data-action]{pointer-events:auto!important;touch-action:manipulation!important}
+#ui .battle-screen .battle-stage-transition,
+#ui .battle-screen .battle-field .bf-hit,
+#ui .battle-screen .battle-field .bf-spark{pointer-events:none!important}
+body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action:manipulation!important}
+
+/* Christmas event uses the existing gacha popup and result UI. */
+.christmas-banner-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px auto 12px;position:relative;z-index:3}
+.christmas-banner-tab{border:1px solid #e6b2a5;background:#fff9f5;color:#794f4a;border-radius:14px;padding:8px 12px;font-weight:800;cursor:pointer;touch-action:manipulation}
+.christmas-banner-tab.is-active{background:#cf3f46;color:white;border-color:#b92b35}
+.christmas-showcase{width:100%;text-align:center}
+.christmas-showcase[hidden]{display:none!important}
+.christmas-showcase-characters{display:flex;align-items:end;justify-content:center;gap:4px;margin:10px auto;max-width:620px}
+.christmas-showcase-characters img{width:24%;max-width:145px;min-width:0;object-fit:contain;aspect-ratio:1}
+.pull-showcase-char .pull-event-copy[hidden],.pull-showcase-char .pull-event-hero-image[hidden]{display:none!important}
+
+/* Christmas event uses the same banner illustration layout as the Siren pickup. */
+#ui .christmas-showcase .christmas-event-hero-image{display:block;width:100%;max-width:100%;height:auto;object-fit:contain;margin:0 auto;}
+
+/* Christmas pickup: keep supplied artwork within the same fixed-height banner as Siren.
+   Override the older global 1.8x image zoom only for Christmas. */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase {
+  display:flex!important; flex-direction:column!important; justify-content:space-between!important;
+  align-items:stretch!important; box-sizing:border-box!important;
+  width:100%!important; min-width:0!important; height:100%!important; max-height:100%!important;
+  overflow:hidden!important; position:relative!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase[hidden] {display:none!important;}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase .pull-event-copy {
+  flex:0 0 auto!important; position:relative!important; z-index:3!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase img.christmas-event-hero-image {
+  display:block!important; box-sizing:border-box!important; flex:1 1 auto!important;
+  width:100%!important; max-width:100%!important; min-width:0!important;
+  height:0!important; min-height:0!important; max-height:100%!important;
+  object-fit:contain!important; object-position:center center!important;
+  transform:none!important; transform-origin:center center!important;
+  opacity:1!important; margin:0 auto!important;
+  filter:none!important; pointer-events:none!important;
+}
+
+/* Research dialog is attached to BODY, not #ui. Keep actual item icons small. */
+body #geong-research-panel .research-card .research-cost strong.research-resource {
+ display:inline-flex!important;align-items:center!important;gap:6px!important;justify-content:flex-start!important;
+}
+body #geong-research-panel .research-card .research-cost strong.research-resource > img {
+ display:inline-block!important;position:static!important;
+ width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;
+ max-width:18px!important;max-height:18px!important;flex:0 0 18px!important;
+ object-fit:contain!important;transform:none!important;margin:0!important;padding:0!important;
+}
+
+
+/* FIX: Christmas showcase is a SIBLING of .pull-showcase-char, not its child.
+   The previous selector never matched; constrain the actual Christmas container. */
+#ui .pull-popup:not(.is-deco) .christmas-showcase:not([hidden]) {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:clamp(410px,111vw,590px)!important;
+  max-height:590px!important;
+  padding:clamp(14px,4vw,24px)!important;
+  border:1px solid #b4e0cc!important;
+  border-radius:18px!important;
+  background:linear-gradient(120deg,#e5fff4,#f9fff4 36%,#fff0d9)!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase[hidden] {
+  display:none!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase .pull-event-copy {
+  flex:0 0 auto!important;
+  position:relative!important;
+  z-index:3!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase > img.christmas-event-hero-image {
+  display:block!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  flex:1 1 0!important;
+  align-self:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  margin:0 auto!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:none!important;
+  transform-origin:center center!important;
+  opacity:1!important;
+  filter:none!important;
+  pointer-events:none!important;
+}
+@media(max-width:390px) {
+  #ui .pull-popup:not(.is-deco) .christmas-showcase:not([hidden]) {
+    height:clamp(375px,109vw,490px)!important;
+    padding:12px!important;
+  }
+}
+
+/* First-login tutorial: shared PC/mobile layout with responsive sizing. */
+.geongi-tutorial-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(30,40,45,.58);box-sizing:border-box}
+.geongi-tutorial-card{box-sizing:border-box;width:min(460px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;background:#fffaf4;border:2px solid #e7d7c7;border-radius:22px;box-shadow:0 18px 60px #0004;padding:22px;color:#594a46;font-family:inherit}
+.geongi-tutorial-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px}
+.geongi-tutorial-top span{color:#8a8078;font-variant-numeric:tabular-nums}
+.geongi-tutorial-progress{height:7px;background:#ece7e2;border-radius:10px;overflow:hidden;margin-top:14px}
+.geongi-tutorial-progress span{display:block;height:100%;background:#92cbb8;border-radius:10px;transition:width .15s}
+.geongi-tutorial-content{min-height:190px;display:flex;flex-direction:column;justify-content:center;gap:14px;text-align:center;padding:22px 4px}
+.geongi-tutorial-content small{color:#6e9f91;font-size:12px;font-weight:700}
+.geongi-tutorial-content h2{font-size:23px;line-height:1.35;margin:0;color:#594a46}
+.geongi-tutorial-content p{font-size:15px;line-height:1.7;margin:0;color:#6b605a;overflow-wrap:anywhere}
+.geongi-tutorial-controls{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.geongi-tutorial-controls>div{display:flex;gap:8px}
+.geongi-tutorial-controls button{border:1px solid #d9c8bb;border-radius:12px;padding:11px 14px;min-height:42px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;background:white;color:#594a46;touch-action:manipulation}
+.geongi-tutorial-controls .geongi-tutorial-next{background:#91c8b7;color:#253e35;border-color:#91c8b7}
+.geongi-tutorial-controls .geongi-tutorial-skip{border:0;background:transparent;color:#84766f;padding-left:0}
+.geongi-tutorial-controls button:disabled{opacity:.4;cursor:default}
+@media(max-width:420px){.geongi-tutorial-card{padding:17px}.geongi-tutorial-content h2{font-size:20px}.geongi-tutorial-content{min-height:180px}.geongi-tutorial-controls button{padding:10px}}
+
+/* Christmas and Siren occupy the SAME character showcase; hide the inactive art. */
+#ui .pull-popup .pull-showcase-char.is-christmas > .pull-event-copy,
+#ui .pull-popup .pull-showcase-char.is-christmas > img.pull-event-hero-image {display:none!important}
+#ui .pull-popup .pull-showcase-char:not(.is-christmas) > .christmas-showcase {display:none!important}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase:not([hidden]) {
+ display:flex!important;flex:1 1 auto!important;min-height:0!important;
+ height:100%!important;max-height:100%!important;width:100%!important;
+ box-sizing:border-box!important;overflow:hidden!important;
+ padding:12px 8px!important;background:transparent!important;border:0!important;
+ flex-direction:column!important;align-items:center!important;justify-content:space-between!important;
+}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase > .pull-event-copy {
+ position:relative!important;z-index:3!important;flex:0 0 auto!important;width:100%!important;
+}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase > img.christmas-event-hero-image {
+ display:block!important;position:relative!important;flex:1 1 0!important;
+ width:100%!important;height:0!important;min-height:0!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center center!important;
+ transform:none!important;opacity:1!important;filter:none!important;
+ margin:0 auto!important;padding:0!important;pointer-events:none!important;
+}
+
+
+/* V2.52 Christmas: same heading anchor and image area as Siren.
+   No zoom/crop: maximize artwork inside all available space. */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase:not([hidden]) {
+  display:flex!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  gap:0!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase > .pull-event-copy {
+  display:flex!important;
+  position:relative!important;
+  left:auto!important;
+  top:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  flex:0 0 auto!important;
+  align-items:stretch!important;
+  text-align:left!important;
+  gap:6px!important;
+  z-index:5!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase > img.christmas-event-hero-image {
+  display:block!important;
+  position:relative!important;
+  flex:1 1 0%!important;
+  align-self:stretch!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  margin:auto 0 0!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+  transform-origin:center bottom!important;
+  opacity:1!important;
+  filter:drop-shadow(0 7px 10px #8e5b4730)!important;
+  pointer-events:none!important;
+}
+
+/* Weapon aura tiers (2026-11-17): blue 10, red 15, purple 20, yellow 25, orange 30.
+   No sparkle glyphs or sparkle animations on weapon auras. */
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::before,
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::after,
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::before,
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::after {
+  content:none!important;display:none!important;animation:none!important;
+}
+.forge-aura.aura-10 {--aura-color:#328df6!important}
+.forge-aura.aura-15 {--aura-color:#f04a55!important}
+.forge-aura.aura-20 {--aura-color:#a05bf2!important}
+.forge-aura.aura-25 {--aura-color:#f5c83c!important}
+.forge-aura.aura-30 {--aura-color:#ff8a22!important}
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)>img:not(.weapon-keyring),
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)>img:not(.weapon-keyring) {
+  filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 12px var(--aura-color))!important;
+  animation:none!important;
+}
+
+/* Limit-break character picker: show exactly two complete rows before scrolling. */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker {
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-rows:102px!important;
+  gap:8px!important;
+  height:auto!important;
+  max-height:212px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  align-content:start!important;
+  overscroll-behavior:contain;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick {
+  height:102px!important;
+  min-height:0!important;
+  max-height:102px!important;
+  overflow:hidden!important;
+  justify-content:center!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick img {
+  width:36px!important;height:40px!important;flex:0 0 40px!important;
+  object-fit:contain!important;
+}
+
+/* Restore claimable-achievement red notification dot on lobby button. */
+#ui .achievement-lobby-tab {position:relative!important;overflow:visible!important;}
+#ui .achievement-lobby-tab.has-claimable-achievement::after {
+  content:""!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  background:#f4434b!important;
+  box-shadow:0 0 0 2px #fff!important;
+  pointer-events:none!important;
+  z-index:5!important;
+}
+
+/* First-login deployment reminders: top-right red dot */
+#ui .nav-button { position:relative; }
+#ui .deployment-reset-dot:not([hidden]) { display:block!important;position:absolute!important;top:4px!important;right:5px!important;width:9px!important;height:9px!important;border-radius:50%!important;background:#e53935!important;border:1px solid white!important;z-index:9!important;pointer-events:none!important; }
+
+/* First-time menu guides: red dot at top right of each tab. */
+#ui [data-action]:has(> .geongi-first-menu-dot) { position:relative; }
+#ui .geongi-first-menu-dot {
+  position:absolute!important;top:3px!important;right:3px!important;
+  width:9px!important;height:9px!important;min-width:9px!important;
+  border-radius:50%!important;background:#ee384b!important;
+  border:1.5px solid #fff!important;box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;
+  z-index:12!important;pointer-events:none!important;
+}
+#ui .geongi-first-menu-dot[hidden]{display:none!important;}
+#ui .expedition-entry-label .geongi-first-menu-dot{top:3px!important;right:3px!important;}
+
+/* First-menu explanations: native modal top layer, above equipment/alchemy dialogs. */
+dialog.geongi-first-menu-guide {
+  position:fixed!important;inset:0!important;margin:0!important;
+  width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;
+  padding:18px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  overflow:auto!important;color:inherit!important;
+}
+dialog.geongi-first-menu-guide::backdrop{background:rgba(30,40,45,.58)!important;}
+dialog.geongi-first-menu-guide:not([open]){display:none!important;}
+
+/* vNext: ONE unified top-right notification indicator per menu button.
+   Existing reminder logic remains independent: hide only duplicate visuals.
+   The first active indicator wins; when it becomes hidden the next one appears. */
+#ui button[data-action]:has(> :is(.geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,.global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot)) {position:relative!important;}
+#ui button[data-action] > :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {
+  position:absolute!important;
+  top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;
+  width:9px!important;height:9px!important;
+  min-width:9px!important;min-height:9px!important;
+  border-radius:50%!important;border:1.5px solid #fff!important;
+  background:#ee384b!important;
+  box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;
+  z-index:15!important;pointer-events:none!important;
+  transform:none!important;
+}
+/* The first visible dot in DOM order is the only rendered dot. */
+#ui button[data-action] > :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) ~ :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* The tutorial indicator is appended last: existing notifications are kept
+   logically active, but visually collapsed into the single tutorial dot. */
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
+  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
+  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
+  .geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* When tutorial is complete, the other pending alerts become visible again. */
+
+/* Menu guide + deployment notifications: a single dot at each top-level activity button. */
+#ui .nav-activity > .geongi-first-menu-dot:not([hidden]){display:block!important;}
+#ui .nav-activity > .geongi-first-menu-dot[hidden]{display:none!important;}
+
+
+/* Fix first-visit notification: the earlier sibling rule could hide the
+   tutorial dot appended after deployment/weed/claw indicators. */
+#ui button[data-action] > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  z-index:30!important;
+}
+/* Only one visible indicator: when guide is pending, all other dots yield. */
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
+  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
+  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
+  .geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* Top-level activity button must remain visible while any child guide is unread. */
+#ui .nav-activity > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+/* First-visit badges: one deterministic visual per menu, independent of sibling dots. */
+#ui button.nav-button[data-action] { isolation:isolate; }
+#ui button.nav-button[data-action] > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;visibility:visible!important;opacity:1!important;
+  position:absolute!important;top:3px!important;right:3px!important;
+  width:9px!important;height:9px!important;border-radius:50%!important;
+  background:#ee384b!important;border:1.5px solid white!important;z-index:35!important;
+}
+#ui button.nav-button[data-action] > .geongi-first-menu-dot[hidden] {display:none!important;}
+#ui button.nav-button:is(.nav-activity,.nav-market,.nav-myroom)[data-guide-pending]::after {
+  content:""!important;display:block!important;position:absolute!important;
+  top:3px!important;right:3px!important;width:9px!important;height:9px!important;
+  background:#ee384b!important;border:1.5px solid white!important;border-radius:50%!important;
+  z-index:36!important;pointer-events:none!important;
+}
+#ui button.nav-button:is(.nav-activity,.nav-market,.nav-myroom)[data-guide-pending] > .geongi-first-menu-dot {display:none!important;}
+#ui button.nav-button:is(.nav-activity,.nav-market,.nav-myroom):not([data-guide-pending])::after {content:none!important;}

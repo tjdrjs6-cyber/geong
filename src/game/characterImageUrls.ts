@@ -1,6 +1,10 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art. New PNGs should use a centered square transparent canvas with minimal padding to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
+  christmas_chiikawa: '/assets/chars/christmas_chiikawa.png',
+  christmas_hachiware: '/assets/chars/christmas_hachiware.png',
+  christmas_usagi: '/assets/chars/christmas_usagi.png',
+  christmas_tree_usagi: '/assets/chars/christmas_tree_usagi.png',
   rilakkuma: '/assets/chars/rilakkuma.png',
   korilakkuma: '/assets/chars/korilakkuma.png',
   chairoikoguma: '/assets/chars/chairoikoguma.png',
@@ -64,6 +68,10 @@ const previewUrls: Record<CharacterId, string> = {
   usagi: '/assets/chars/usagi.png',
 }
 const managedUrls: Record<CharacterId, string> = {
+  christmas_chiikawa: '/assets/chars/christmas_chiikawa.png',
+  christmas_hachiware: '/assets/chars/christmas_hachiware.png',
+  christmas_usagi: '/assets/chars/christmas_usagi.png',
+  christmas_tree_usagi: '/assets/chars/christmas_tree_usagi.png',
   pepero_chiikawa: '/assets/chars/pepero_chiikawa.png',
   pajama_chiikawa: '/assets/chars/pajama_chiikawa.png',
   pajama_hachiware: '/assets/chars/pajama_hachiware.png',

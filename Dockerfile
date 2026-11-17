@@ -12,5 +12,6 @@ COPY server/package*.json ./server/
 RUN cd server && npm ci --omit=dev --no-audit --no-fund
 COPY server/*.mjs ./server/
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/src ./src
 EXPOSE 3000
 CMD ["node", "server/index.mjs"]

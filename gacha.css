@@ -477,19 +477,8 @@ html, body { background:#fff8f1; }
   .reward-chip b { font-size:12px; } .reward-chip small { font-size:10px; }
 }
 
-/* ---------- Roulette modal ---------- */
-.roulette-card { width:min(420px,94cqw); text-align:center; }
-.roulette-wrap { position:relative; width:min(290px,74cqw); aspect-ratio:1; margin:6px auto 10px; }
-.roulette-svg { width:100%; height:100%; display:block; filter:drop-shadow(0 10px 18px rgba(90,65,74,.18)); }
-.roulette-wheel { transform-origin:0 0; transform-box:view-box; transition:transform 4.1s cubic-bezier(.12,.75,.12,1); }
-.roulette-pointer { position:absolute; left:50%; top:-6px; z-index:2; width:0; height:0; transform:translateX(-50%); border-left:14px solid transparent; border-right:14px solid transparent; border-top:26px solid #e8687f; filter:drop-shadow(0 2px 0 #3a2e2f); }
-.roulette-wrap.is-win .roulette-svg { animation:roulette-win .5s ease-in-out 3; }
+/* ---------- Roulette modal ---------- *
 @keyframes roulette-win { 50% { transform:scale(1.05); } }
-.roulette-odds { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:0 0 12px; padding:0; list-style:none; }
-.roulette-odds li { display:flex; flex-direction:column; min-width:58px; padding:6px 8px; border-radius:12px; background:#fff6f0; border:1px solid #f0dcd2; }
-.roulette-odds b { font-size:13px; color:#5b4750; } .roulette-odds span { font-size:11px; color:#a07f86; }
-.roulette-spin:disabled { opacity:.55; cursor:default; }
-.roulette-wheel { transform-box:fill-box; transform-origin:center; }
 /* House background photo: keep the floor visible at the bottom on any aspect ratio. */
 .house-bg { object-fit:cover; object-position:center bottom; pointer-events:none; user-select:none; -webkit-user-drag:none; background:#eeeef3; }
 .house-inventory .weed-empty { grid-column:1 / -1; width:auto; text-align:center; }
@@ -1164,8 +1153,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .claw-message{min-height:40px;font-weight:700;font-size:13px;margin:10px 0 0}
 @media(max-width:99998px){.claw-screen .claw-card{padding:12px}.claw-machine{height:36cqh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}}
 
-/* Persistent roulette reward notice, visible on PC and mobile. */
-.roulette-reward-message:not([hidden]) {display:block;margin:12px auto 0;padding:12px 14px;border-radius:14px;background:#fff1ce;border:1px solid #e7c77d;color:#68471e;font-weight:800;font-size:14px;line-height:1.5;text-align:center;}
+/* Persistent roulette reward notice, visible on PC and mobile. *
 
 /* Profile requested at the top center on mobile; keep wallets out of its row. */
 @media screen and (max-width:99998px) {
@@ -1188,9 +1176,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   }
 }
 
-/* Roulette reward: short pop-up over wheel on desktop and mobile. */
-.roulette-pop-reward:not([hidden]) {display:block;position:absolute;top:42%;left:50%;width:max-content;max-width:90%;transform:translate(-50%,-50%);padding:15px 23px;border:2px solid #f4c969;border-radius:24px;background:#fff5d6;color:#78441e;box-shadow:0 12px 35px #68432955;font-size:clamp(18px,4.5cqw,26px);font-weight:900;z-index:25;pointer-events:none;text-align:center;}
-.roulette-pop-reward.pop-in {animation:roulette-reward-pop 2.3s ease-in-out both;}
+/* Roulette reward: short pop-up over wheel on desktop and mobile. *
 @keyframes roulette-reward-pop {0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}13%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}23%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%) scale(1.03)}}
 @media(prefers-reduced-motion:reduce){.roulette-pop-reward.pop-in{animation:none;}}
 
@@ -1485,7 +1471,6 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen>.collection-peek{background:linear-gradient(155deg,#fffefd,#fff0f6)!important;border:2px solid #f5c8d8!important;border-radius:17px!important;box-shadow:0 4px 0 #e8bdcd!important}
 .gacha-screen>.collection-peek .soft-button{background:#fff!important;color:#945d7b!important;border:1.5px solid #edc2d6!important;border-radius:12px!important;font-weight:800!important;box-shadow:0 2px 0 #efc8d9!important}
 .gacha-screen>.top-rewards .reward-chip{background:linear-gradient(135deg,#fffefa,#fff0db)!important;border:2px solid #f4d7a6!important;border-radius:16px!important;box-shadow:0 3px 0 #e9cda3!important;color:#7c5d61!important}
-.gacha-screen>.top-rewards .roulette-chip{background:linear-gradient(135deg,#fffafa,#f0edff)!important;border-color:#d6c9f5!important;box-shadow:0 3px 0 #c6b7eb!important}
 @media(max-width:99998px){
  .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,24cqw,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(100cqh - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
  .gacha-screen>.gacha-nav .nav-button{width:100%!important;min-height:34px!important;padding:6px 3px!important;font-size:10px!important;line-height:1.15!important;flex-shrink:0!important}
@@ -4519,8 +4504,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* test.073: hide the lobby representative character's name badge only. */
 #ui .gacha-screen .toon-stage .toon-hero-name{display:none!important;}
 
-/* test.074: roulette artwork and first-login update notice */
-#ui .gacha-screen .roulette-chip .reward-icon img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important;animation:none!important;transform:none!important}
+/* test.074: roulette artwork and first-login update notice *
 #ui .update-notice-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;background:rgba(28,22,29,.7)!important;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important}
 #ui .update-notice-panel{width:min(100%,440px)!important;max-height:100%!important;background:#fff9ed!important;border:3px solid #b78c69!important;border-radius:22px!important;box-shadow:0 14px 40px #0005!important;overflow:hidden!important;box-sizing:border-box!important}
 #ui .update-notice-scroll{max-height:calc(100dvh - 65px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:24px 22px 22px!important;box-sizing:border-box!important;color:#513c32!important;font-size:13px!important;line-height:1.7!important;text-align:left!important}
@@ -5862,14 +5846,6 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 
 /* 2026-11: attendance currency artwork and mobile-safe roulette layout */
 #ui .attendance-reward .attendance-currency-icon{display:block;width:29px;height:29px;object-fit:contain;margin:0 auto;flex:none}
-#ui .roulette-card{width:min(430px,calc(100vw - 22px));max-height:calc(100dvh - 28px);overflow-y:auto;overflow-x:hidden;box-sizing:border-box;padding:clamp(12px,3vw,22px)!important}
-#ui .roulette-wrap{width:min(260px,70vw);max-width:100%;margin:8px auto 12px}
-#ui .roulette-svg{width:100%;height:auto;overflow:visible}
-#ui .roulette-odds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 12px;padding:0;list-style:none}
-#ui .roulette-odds li{min-width:0;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:5px;padding:9px 10px;border-radius:12px;background:#fff8f1;border:1px solid #ead5bf;box-sizing:border-box}
-#ui .roulette-odds li b{font-size:clamp(10px,2.9vw,13px);white-space:normal;overflow-wrap:anywhere;line-height:1.25;text-align:left}
-#ui .roulette-odds li span{flex:none;font-size:11px;font-weight:800}
-#ui .roulette-spin{width:100%;min-height:46px}
 @media(max-width:360px){#ui .roulette-wrap{width:min(220px,66vw)}#ui .roulette-odds li{padding:7px 6px}}
 
 /* Attendance icon size must override generic modal img/span styles. */
@@ -6238,3 +6214,360 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-e
 #ui .battle-screen .battle-field .bf-hit,
 #ui .battle-screen .battle-field .bf-spark{pointer-events:none!important}
 body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action:manipulation!important}
+
+/* Christmas event uses the existing gacha popup and result UI. */
+.christmas-banner-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px auto 12px;position:relative;z-index:3}
+.christmas-banner-tab{border:1px solid #e6b2a5;background:#fff9f5;color:#794f4a;border-radius:14px;padding:8px 12px;font-weight:800;cursor:pointer;touch-action:manipulation}
+.christmas-banner-tab.is-active{background:#cf3f46;color:white;border-color:#b92b35}
+.christmas-showcase{width:100%;text-align:center}
+.christmas-showcase[hidden]{display:none!important}
+.christmas-showcase-characters{display:flex;align-items:end;justify-content:center;gap:4px;margin:10px auto;max-width:620px}
+.christmas-showcase-characters img{width:24%;max-width:145px;min-width:0;object-fit:contain;aspect-ratio:1}
+.pull-showcase-char .pull-event-copy[hidden],.pull-showcase-char .pull-event-hero-image[hidden]{display:none!important}
+
+/* Christmas event uses the same banner illustration layout as the Siren pickup. */
+#ui .christmas-showcase .christmas-event-hero-image{display:block;width:100%;max-width:100%;height:auto;object-fit:contain;margin:0 auto;}
+
+/* Christmas pickup: keep supplied artwork within the same fixed-height banner as Siren.
+   Override the older global 1.8x image zoom only for Christmas. */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase {
+  display:flex!important; flex-direction:column!important; justify-content:space-between!important;
+  align-items:stretch!important; box-sizing:border-box!important;
+  width:100%!important; min-width:0!important; height:100%!important; max-height:100%!important;
+  overflow:hidden!important; position:relative!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase[hidden] {display:none!important;}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase .pull-event-copy {
+  flex:0 0 auto!important; position:relative!important; z-index:3!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase img.christmas-event-hero-image {
+  display:block!important; box-sizing:border-box!important; flex:1 1 auto!important;
+  width:100%!important; max-width:100%!important; min-width:0!important;
+  height:0!important; min-height:0!important; max-height:100%!important;
+  object-fit:contain!important; object-position:center center!important;
+  transform:none!important; transform-origin:center center!important;
+  opacity:1!important; margin:0 auto!important;
+  filter:none!important; pointer-events:none!important;
+}
+
+/* Research dialog is attached to BODY, not #ui. Keep actual item icons small. */
+body #geong-research-panel .research-card .research-cost strong.research-resource {
+ display:inline-flex!important;align-items:center!important;gap:6px!important;justify-content:flex-start!important;
+}
+body #geong-research-panel .research-card .research-cost strong.research-resource > img {
+ display:inline-block!important;position:static!important;
+ width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;
+ max-width:18px!important;max-height:18px!important;flex:0 0 18px!important;
+ object-fit:contain!important;transform:none!important;margin:0!important;padding:0!important;
+}
+
+
+/* FIX: Christmas showcase is a SIBLING of .pull-showcase-char, not its child.
+   The previous selector never matched; constrain the actual Christmas container. */
+#ui .pull-popup:not(.is-deco) .christmas-showcase:not([hidden]) {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:clamp(410px,111vw,590px)!important;
+  max-height:590px!important;
+  padding:clamp(14px,4vw,24px)!important;
+  border:1px solid #b4e0cc!important;
+  border-radius:18px!important;
+  background:linear-gradient(120deg,#e5fff4,#f9fff4 36%,#fff0d9)!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase[hidden] {
+  display:none!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase .pull-event-copy {
+  flex:0 0 auto!important;
+  position:relative!important;
+  z-index:3!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase > img.christmas-event-hero-image {
+  display:block!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  flex:1 1 0!important;
+  align-self:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  margin:0 auto!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:none!important;
+  transform-origin:center center!important;
+  opacity:1!important;
+  filter:none!important;
+  pointer-events:none!important;
+}
+@media(max-width:390px) {
+  #ui .pull-popup:not(.is-deco) .christmas-showcase:not([hidden]) {
+    height:clamp(375px,109vw,490px)!important;
+    padding:12px!important;
+  }
+}
+
+/* First-login tutorial: shared PC/mobile layout with responsive sizing. */
+.geongi-tutorial-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(30,40,45,.58);box-sizing:border-box}
+.geongi-tutorial-card{box-sizing:border-box;width:min(460px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;background:#fffaf4;border:2px solid #e7d7c7;border-radius:22px;box-shadow:0 18px 60px #0004;padding:22px;color:#594a46;font-family:inherit}
+.geongi-tutorial-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px}
+.geongi-tutorial-top span{color:#8a8078;font-variant-numeric:tabular-nums}
+.geongi-tutorial-progress{height:7px;background:#ece7e2;border-radius:10px;overflow:hidden;margin-top:14px}
+.geongi-tutorial-progress span{display:block;height:100%;background:#92cbb8;border-radius:10px;transition:width .15s}
+.geongi-tutorial-content{min-height:190px;display:flex;flex-direction:column;justify-content:center;gap:14px;text-align:center;padding:22px 4px}
+.geongi-tutorial-content small{color:#6e9f91;font-size:12px;font-weight:700}
+.geongi-tutorial-content h2{font-size:23px;line-height:1.35;margin:0;color:#594a46}
+.geongi-tutorial-content p{font-size:15px;line-height:1.7;margin:0;color:#6b605a;overflow-wrap:anywhere}
+.geongi-tutorial-controls{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.geongi-tutorial-controls>div{display:flex;gap:8px}
+.geongi-tutorial-controls button{border:1px solid #d9c8bb;border-radius:12px;padding:11px 14px;min-height:42px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;background:white;color:#594a46;touch-action:manipulation}
+.geongi-tutorial-controls .geongi-tutorial-next{background:#91c8b7;color:#253e35;border-color:#91c8b7}
+.geongi-tutorial-controls .geongi-tutorial-skip{border:0;background:transparent;color:#84766f;padding-left:0}
+.geongi-tutorial-controls button:disabled{opacity:.4;cursor:default}
+@media(max-width:420px){.geongi-tutorial-card{padding:17px}.geongi-tutorial-content h2{font-size:20px}.geongi-tutorial-content{min-height:180px}.geongi-tutorial-controls button{padding:10px}}
+
+/* Christmas and Siren occupy the SAME character showcase; hide the inactive art. */
+#ui .pull-popup .pull-showcase-char.is-christmas > .pull-event-copy,
+#ui .pull-popup .pull-showcase-char.is-christmas > img.pull-event-hero-image {display:none!important}
+#ui .pull-popup .pull-showcase-char:not(.is-christmas) > .christmas-showcase {display:none!important}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase:not([hidden]) {
+ display:flex!important;flex:1 1 auto!important;min-height:0!important;
+ height:100%!important;max-height:100%!important;width:100%!important;
+ box-sizing:border-box!important;overflow:hidden!important;
+ padding:12px 8px!important;background:transparent!important;border:0!important;
+ flex-direction:column!important;align-items:center!important;justify-content:space-between!important;
+}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase > .pull-event-copy {
+ position:relative!important;z-index:3!important;flex:0 0 auto!important;width:100%!important;
+}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase > img.christmas-event-hero-image {
+ display:block!important;position:relative!important;flex:1 1 0!important;
+ width:100%!important;height:0!important;min-height:0!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center center!important;
+ transform:none!important;opacity:1!important;filter:none!important;
+ margin:0 auto!important;padding:0!important;pointer-events:none!important;
+}
+
+
+/* V2.52 Christmas: same heading anchor and image area as Siren.
+   No zoom/crop: maximize artwork inside all available space. */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase:not([hidden]) {
+  display:flex!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  gap:0!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase > .pull-event-copy {
+  display:flex!important;
+  position:relative!important;
+  left:auto!important;
+  top:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  flex:0 0 auto!important;
+  align-items:stretch!important;
+  text-align:left!important;
+  gap:6px!important;
+  z-index:5!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char.is-christmas > .christmas-showcase > img.christmas-event-hero-image {
+  display:block!important;
+  position:relative!important;
+  flex:1 1 0%!important;
+  align-self:stretch!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  margin:auto 0 0!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+  transform-origin:center bottom!important;
+  opacity:1!important;
+  filter:drop-shadow(0 7px 10px #8e5b4730)!important;
+  pointer-events:none!important;
+}
+
+/* Weapon aura tiers (2026-11-17): blue 10, red 15, purple 20, yellow 25, orange 30.
+   No sparkle glyphs or sparkle animations on weapon auras. */
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::before,
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::after,
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::before,
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::after {
+  content:none!important;display:none!important;animation:none!important;
+}
+.forge-aura.aura-10 {--aura-color:#328df6!important}
+.forge-aura.aura-15 {--aura-color:#f04a55!important}
+.forge-aura.aura-20 {--aura-color:#a05bf2!important}
+.forge-aura.aura-25 {--aura-color:#f5c83c!important}
+.forge-aura.aura-30 {--aura-color:#ff8a22!important}
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)>img:not(.weapon-keyring),
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)>img:not(.weapon-keyring) {
+  filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 12px var(--aura-color))!important;
+  animation:none!important;
+}
+
+/* Limit-break character picker: show exactly two complete rows before scrolling. */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker {
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-rows:102px!important;
+  gap:8px!important;
+  height:auto!important;
+  max-height:212px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  align-content:start!important;
+  overscroll-behavior:contain;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick {
+  height:102px!important;
+  min-height:0!important;
+  max-height:102px!important;
+  overflow:hidden!important;
+  justify-content:center!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick img {
+  width:36px!important;height:40px!important;flex:0 0 40px!important;
+  object-fit:contain!important;
+}
+
+/* Restore claimable-achievement red notification dot on lobby button. */
+#ui .achievement-lobby-tab {position:relative!important;overflow:visible!important;}
+#ui .achievement-lobby-tab.has-claimable-achievement::after {
+  content:""!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  background:#f4434b!important;
+  box-shadow:0 0 0 2px #fff!important;
+  pointer-events:none!important;
+  z-index:5!important;
+}
+
+/* First-login deployment reminders: top-right red dot */
+#ui .nav-button { position:relative; }
+#ui .deployment-reset-dot:not([hidden]) { display:block!important;position:absolute!important;top:4px!important;right:5px!important;width:9px!important;height:9px!important;border-radius:50%!important;background:#e53935!important;border:1px solid white!important;z-index:9!important;pointer-events:none!important; }
+
+/* First-time menu guides: red dot at top right of each tab. */
+#ui [data-action]:has(> .geongi-first-menu-dot) { position:relative; }
+#ui .geongi-first-menu-dot {
+  position:absolute!important;top:3px!important;right:3px!important;
+  width:9px!important;height:9px!important;min-width:9px!important;
+  border-radius:50%!important;background:#ee384b!important;
+  border:1.5px solid #fff!important;box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;
+  z-index:12!important;pointer-events:none!important;
+}
+#ui .geongi-first-menu-dot[hidden]{display:none!important;}
+#ui .expedition-entry-label .geongi-first-menu-dot{top:3px!important;right:3px!important;}
+
+/* First-menu explanations: native modal top layer, above equipment/alchemy dialogs. */
+dialog.geongi-first-menu-guide {
+  position:fixed!important;inset:0!important;margin:0!important;
+  width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;
+  padding:18px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  overflow:auto!important;color:inherit!important;
+}
+dialog.geongi-first-menu-guide::backdrop{background:rgba(30,40,45,.58)!important;}
+dialog.geongi-first-menu-guide:not([open]){display:none!important;}
+
+/* vNext: ONE unified top-right notification indicator per menu button.
+   Existing reminder logic remains independent: hide only duplicate visuals.
+   The first active indicator wins; when it becomes hidden the next one appears. */
+#ui button[data-action]:has(> :is(.geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,.global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot)) {position:relative!important;}
+#ui button[data-action] > :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {
+  position:absolute!important;
+  top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;
+  width:9px!important;height:9px!important;
+  min-width:9px!important;min-height:9px!important;
+  border-radius:50%!important;border:1.5px solid #fff!important;
+  background:#ee384b!important;
+  box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;
+  z-index:15!important;pointer-events:none!important;
+  transform:none!important;
+}
+/* The first visible dot in DOM order is the only rendered dot. */
+#ui button[data-action] > :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) ~ :is(
+  .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
+  .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
+  .geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* The tutorial indicator is appended last: existing notifications are kept
+   logically active, but visually collapsed into the single tutorial dot. */
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
+  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
+  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
+  .geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* When tutorial is complete, the other pending alerts become visible again. */
+
+/* Menu guide + deployment notifications: a single dot at each top-level activity button. */
+#ui .nav-activity > .geongi-first-menu-dot:not([hidden]){display:block!important;}
+#ui .nav-activity > .geongi-first-menu-dot[hidden]{display:none!important;}
+
+
+/* Fix first-visit notification: the earlier sibling rule could hide the
+   tutorial dot appended after deployment/weed/claw indicators. */
+#ui button[data-action] > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  z-index:30!important;
+}
+/* Only one visible indicator: when guide is pending, all other dots yield. */
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
+  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
+  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
+  .geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* Top-level activity button must remain visible while any child guide is unread. */
+#ui .nav-activity > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
