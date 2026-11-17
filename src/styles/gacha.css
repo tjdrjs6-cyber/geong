@@ -6072,3 +6072,64 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 .combat-power-modal-rows b{color:#ae6c3c}
 .combat-power-modal-rows .combat-power-modal-total{border:0;margin-top:8px;font-size:16px;color:#a75d2b}
 .combat-power-modal-done{display:block;width:100%;margin-top:15px;border:0;border-radius:13px;padding:12px;background:#e9c5a1;color:#754622;font-weight:900;cursor:pointer}
+\n/* FIX: Alchemy dialog exists outside #ui */\n/* 한계돌파 재료 선택: 파스텔 인게임 카드 UI */
+dialog.alchemy-dialog .limit-break-panel .limit-break-materials{display:flex;flex-direction:column;gap:9px;margin:14px 0 10px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px;min-height:76px;padding:11px 13px;border:1.5px solid #e9d9e8;border-radius:17px;background:linear-gradient(115deg,#fff9fc,#fff);box-shadow:0 3px 10px #8e699019;color:#66516e;box-sizing:border-box}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones{border-color:#ddd4f1;background:linear-gradient(115deg,#faf6ff,#fff)}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-info{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:43px;height:43px;object-fit:contain;border-radius:13px;background:#fce7f1;color:#d17aa2;font-size:27px;font-weight:800}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones .limit-break-material-icon{background:#eee6fb;padding:3px;box-sizing:border-box}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;text-align:left}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label b{font-size:13px;line-height:1.2;color:#69536d;white-space:nowrap}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label small{font-size:11px;color:#a18da5}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;margin:0;padding:4px;background:#f8f0fa;border:1px solid #f0e5f4;border-radius:13px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones .limit-break-stepper{background:#f3edfc;border-color:#ebe1f9}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button{display:flex;align-items:center;justify-content:center;width:31px;height:31px;min-width:31px;border:1px solid #e6d2e9;border-radius:10px;background:#fff;color:#9c72b4;font-size:21px;font-weight:700;line-height:1;box-shadow:0 2px 4px #80608a12;cursor:pointer;touch-action:manipulation}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button:not(:disabled):active{transform:scale(.94);background:#f6eafa}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button:disabled{opacity:.32;cursor:default}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper strong{min-width:22px;text-align:center;color:#674d7b;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-progress{padding:12px 13px 10px;border:1px solid #e7dcef;border-radius:15px;background:#fcf9ff;margin-bottom:11px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#745f85;font-weight:700}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-heading b{font-size:14px;color:#8561ad;font-variant-numeric:tabular-nums}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-track{height:9px;overflow:hidden;margin-top:9px;background:#eee6f2;border-radius:99px}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-fill{height:100%;background:linear-gradient(90deg,#c3a8e9,#a58be1);border-radius:99px;transition:width .2s ease}
+dialog.alchemy-dialog .limit-break-panel .limit-break-progress-fill.ready{background:linear-gradient(90deg,#98d9bb,#62bf98)}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-hint{text-align:center;margin:8px 0 0;font-size:11px;color:#8b7798}
+@media(max-width:390px){dialog.alchemy-dialog .limit-break-panel .limit-break-material{padding:9px 8px;gap:5px}dialog.alchemy-dialog .limit-break-panel .limit-break-material-info{gap:6px}dialog.alchemy-dialog .limit-break-panel .limit-break-material-icon{width:35px;height:35px}dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{gap:3px}dialog.alchemy-dialog .limit-break-panel .limit-break-stepper button{width:28px;min-width:28px;height:28px}dialog.alchemy-dialog .limit-break-panel .limit-break-material-label b{font-size:12px}}
+
+
+/* Actual alchemy dialog: force compact icon and horizontally arranged material controls */
+dialog.alchemy-dialog .limit-break-panel .limit-break-materials{
+  display:flex!important;flex-direction:column!important;width:100%!important;max-width:100%!important;
+  gap:10px!important;box-sizing:border-box!important;overflow:hidden!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:space-between!important;width:100%!important;max-width:100%!important;
+  min-width:0!important;box-sizing:border-box!important;gap:8px!important;overflow:hidden!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-info{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex:1 1 auto!important;min-width:0!important;gap:9px!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones img.limit-break-material-icon{
+  display:block!important;position:static!important;float:none!important;
+  width:43px!important;height:43px!important;min-width:43px!important;min-height:43px!important;
+  max-width:43px!important;max-height:43px!important;flex:0 0 43px!important;
+  object-fit:contain!important;object-position:center!important;padding:3px!important;
+  margin:0!important;box-sizing:border-box!important;transform:none!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-material-label{
+  display:flex!important;flex-direction:column!important;min-width:0!important;
+  flex:1 1 auto!important;white-space:normal!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex:0 0 auto!important;white-space:nowrap!important;
+}
+@media(max-width:390px){
+ dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones img.limit-break-material-icon{
+  width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;
+  max-width:35px!important;max-height:35px!important;flex-basis:35px!important;
+ }
+}
