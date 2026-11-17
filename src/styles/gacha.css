@@ -477,19 +477,8 @@ html, body { background:#fff8f1; }
   .reward-chip b { font-size:12px; } .reward-chip small { font-size:10px; }
 }
 
-/* ---------- Roulette modal ---------- */
-.roulette-card { width:min(420px,94cqw); text-align:center; }
-.roulette-wrap { position:relative; width:min(290px,74cqw); aspect-ratio:1; margin:6px auto 10px; }
-.roulette-svg { width:100%; height:100%; display:block; filter:drop-shadow(0 10px 18px rgba(90,65,74,.18)); }
-.roulette-wheel { transform-origin:0 0; transform-box:view-box; transition:transform 4.1s cubic-bezier(.12,.75,.12,1); }
-.roulette-pointer { position:absolute; left:50%; top:-6px; z-index:2; width:0; height:0; transform:translateX(-50%); border-left:14px solid transparent; border-right:14px solid transparent; border-top:26px solid #e8687f; filter:drop-shadow(0 2px 0 #3a2e2f); }
-.roulette-wrap.is-win .roulette-svg { animation:roulette-win .5s ease-in-out 3; }
+/* ---------- Roulette modal ---------- *
 @keyframes roulette-win { 50% { transform:scale(1.05); } }
-.roulette-odds { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:0 0 12px; padding:0; list-style:none; }
-.roulette-odds li { display:flex; flex-direction:column; min-width:58px; padding:6px 8px; border-radius:12px; background:#fff6f0; border:1px solid #f0dcd2; }
-.roulette-odds b { font-size:13px; color:#5b4750; } .roulette-odds span { font-size:11px; color:#a07f86; }
-.roulette-spin:disabled { opacity:.55; cursor:default; }
-.roulette-wheel { transform-box:fill-box; transform-origin:center; }
 /* House background photo: keep the floor visible at the bottom on any aspect ratio. */
 .house-bg { object-fit:cover; object-position:center bottom; pointer-events:none; user-select:none; -webkit-user-drag:none; background:#eeeef3; }
 .house-inventory .weed-empty { grid-column:1 / -1; width:auto; text-align:center; }
@@ -1164,8 +1153,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .claw-message{min-height:40px;font-weight:700;font-size:13px;margin:10px 0 0}
 @media(max-width:99998px){.claw-screen .claw-card{padding:12px}.claw-machine{height:36cqh;min-height:210px;border-width:8px}.claw-toys img{height:52px}.claw-controls{gap:10px}.claw-controls button{min-width:39px;min-height:38px}.claw-play{min-width:94px!important}}
 
-/* Persistent roulette reward notice, visible on PC and mobile. */
-.roulette-reward-message:not([hidden]) {display:block;margin:12px auto 0;padding:12px 14px;border-radius:14px;background:#fff1ce;border:1px solid #e7c77d;color:#68471e;font-weight:800;font-size:14px;line-height:1.5;text-align:center;}
+/* Persistent roulette reward notice, visible on PC and mobile. *
 
 /* Profile requested at the top center on mobile; keep wallets out of its row. */
 @media screen and (max-width:99998px) {
@@ -1188,9 +1176,7 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
   }
 }
 
-/* Roulette reward: short pop-up over wheel on desktop and mobile. */
-.roulette-pop-reward:not([hidden]) {display:block;position:absolute;top:42%;left:50%;width:max-content;max-width:90%;transform:translate(-50%,-50%);padding:15px 23px;border:2px solid #f4c969;border-radius:24px;background:#fff5d6;color:#78441e;box-shadow:0 12px 35px #68432955;font-size:clamp(18px,4.5cqw,26px);font-weight:900;z-index:25;pointer-events:none;text-align:center;}
-.roulette-pop-reward.pop-in {animation:roulette-reward-pop 2.3s ease-in-out both;}
+/* Roulette reward: short pop-up over wheel on desktop and mobile. *
 @keyframes roulette-reward-pop {0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}13%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}23%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%) scale(1.03)}}
 @media(prefers-reduced-motion:reduce){.roulette-pop-reward.pop-in{animation:none;}}
 
@@ -1485,7 +1471,6 @@ html, body { position:fixed; inset:0; width:100%; height:100%; overflow:hidden; 
 .gacha-screen>.collection-peek{background:linear-gradient(155deg,#fffefd,#fff0f6)!important;border:2px solid #f5c8d8!important;border-radius:17px!important;box-shadow:0 4px 0 #e8bdcd!important}
 .gacha-screen>.collection-peek .soft-button{background:#fff!important;color:#945d7b!important;border:1.5px solid #edc2d6!important;border-radius:12px!important;font-weight:800!important;box-shadow:0 2px 0 #efc8d9!important}
 .gacha-screen>.top-rewards .reward-chip{background:linear-gradient(135deg,#fffefa,#fff0db)!important;border:2px solid #f4d7a6!important;border-radius:16px!important;box-shadow:0 3px 0 #e9cda3!important;color:#7c5d61!important}
-.gacha-screen>.top-rewards .roulette-chip{background:linear-gradient(135deg,#fffafa,#f0edff)!important;border-color:#d6c9f5!important;box-shadow:0 3px 0 #c6b7eb!important}
 @media(max-width:99998px){
  .gacha-screen>.gacha-nav{position:absolute!important;left:7px!important;right:auto!important;top:calc(115px + var(--safe-t,0px))!important;width:clamp(82px,24cqw,106px)!important;display:flex!important;flex-direction:column!important;gap:6px!important;z-index:31!important;max-height:calc(100cqh - 145px)!important;overflow-y:auto!important;scrollbar-width:none!important}
  .gacha-screen>.gacha-nav .nav-button{width:100%!important;min-height:34px!important;padding:6px 3px!important;font-size:10px!important;line-height:1.15!important;flex-shrink:0!important}
@@ -4519,8 +4504,7 @@ background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.65) 49%,tran
 /* test.073: hide the lobby representative character's name badge only. */
 #ui .gacha-screen .toon-stage .toon-hero-name{display:none!important;}
 
-/* test.074: roulette artwork and first-login update notice */
-#ui .gacha-screen .roulette-chip .reward-icon img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important;animation:none!important;transform:none!important}
+/* test.074: roulette artwork and first-login update notice *
 #ui .update-notice-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;background:rgba(28,22,29,.7)!important;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important}
 #ui .update-notice-panel{width:min(100%,440px)!important;max-height:100%!important;background:#fff9ed!important;border:3px solid #b78c69!important;border-radius:22px!important;box-shadow:0 14px 40px #0005!important;overflow:hidden!important;box-sizing:border-box!important}
 #ui .update-notice-scroll{max-height:calc(100dvh - 65px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:24px 22px 22px!important;box-sizing:border-box!important;color:#513c32!important;font-size:13px!important;line-height:1.7!important;text-align:left!important}
@@ -5862,14 +5846,6 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 
 /* 2026-11: attendance currency artwork and mobile-safe roulette layout */
 #ui .attendance-reward .attendance-currency-icon{display:block;width:29px;height:29px;object-fit:contain;margin:0 auto;flex:none}
-#ui .roulette-card{width:min(430px,calc(100vw - 22px));max-height:calc(100dvh - 28px);overflow-y:auto;overflow-x:hidden;box-sizing:border-box;padding:clamp(12px,3vw,22px)!important}
-#ui .roulette-wrap{width:min(260px,70vw);max-width:100%;margin:8px auto 12px}
-#ui .roulette-svg{width:100%;height:auto;overflow:visible}
-#ui .roulette-odds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 12px;padding:0;list-style:none}
-#ui .roulette-odds li{min-width:0;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:5px;padding:9px 10px;border-radius:12px;background:#fff8f1;border:1px solid #ead5bf;box-sizing:border-box}
-#ui .roulette-odds li b{font-size:clamp(10px,2.9vw,13px);white-space:normal;overflow-wrap:anywhere;line-height:1.25;text-align:left}
-#ui .roulette-odds li span{flex:none;font-size:11px;font-weight:800}
-#ui .roulette-spin{width:100%;min-height:46px}
 @media(max-width:360px){#ui .roulette-wrap{width:min(220px,66vw)}#ui .roulette-odds li{padding:7px 6px}}
 
 /* Attendance icon size must override generic modal img/span styles. */

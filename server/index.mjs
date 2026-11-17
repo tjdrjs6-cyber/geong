@@ -6,7 +6,7 @@ import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual
 import { promisify } from 'node:util'
 import mysql from 'mysql2/promise'
 import { houseCoinFor, houseCoinSlot, HOUSE_COIN_MS, BEETLE_ID, weedCoinMultiplier, WEED_MAX } from './game.mjs'
-import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots, weedFieldEarnedBetweenSlots, WEED_HOUR_MS, WEED_BONUS, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, newEntryBonus, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
+import { CHARACTER_IDS, STARTING_COINS, claimDaily, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots, weedFieldEarnedBetweenSlots, WEED_HOUR_MS, WEED_BONUS, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, newEntryBonus, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
 
 const kstMarketKeys = () => {
   const d = new Date(Date.now()+9*3600000-9*3600000) // Use 09:00 KST as the daily boundary.
@@ -25,7 +25,7 @@ async function marketState(accountId, conn=pool, lock=false){
   const r=rows[0], keys=kstMarketKeys()
   return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
 }
-const SKILL_TIERS = {"christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+const SKILL_TIERS = {"rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
 const COOKIE = 'gm_session'
@@ -650,12 +650,12 @@ async function suggestions(account) {
 }
 const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1,1,1,1,1,1]
-const FORGE_COSTS = [{"coins":200,"fragments":0},{"coins":400,"fragments":0},{"coins":600,"fragments":0},{"coins":800,"fragments":0},{"coins":1000,"fragments":0},{"coins":1200,"fragments":15},{"coins":1400,"fragments":15},{"coins":1600,"fragments":15},{"coins":1800,"fragments":15},{"coins":2000,"fragments":15},{"coins":2500,"fragments":30},{"coins":2900,"fragments":30},{"coins":3300,"fragments":30},{"coins":3650,"fragments":30},{"coins":4000,"fragments":30},{"coins":4500,"fragments":60},{"coins":5100,"fragments":60},{"coins":5700,"fragments":60},{"coins":6350,"fragments":60},{"coins":7000,"fragments":60},{"coins":8000,"fragments":90},{"coins":9000,"fragments":90},{"coins":10000,"fragments":90},{"coins":11000,"fragments":90},{"coins":12000,"fragments":90},{"coins":13000,"fragments":150},{"coins":14500,"fragments":150},{"coins":16000,"fragments":150},{"coins":18000,"fragments":150},{"coins":20000,"fragments":150}]
+const FORGE_COSTS = [{"coins":200,"fragments":0},{"coins":400,"fragments":0},{"coins":600,"fragments":0},{"coins":800,"fragments":0},{"coins":1000,"fragments":0},{"coins":1200,"fragments":5},{"coins":1400,"fragments":5},{"coins":1600,"fragments":5},{"coins":1800,"fragments":5},{"coins":2000,"fragments":5},{"coins":2500,"fragments":10},{"coins":2900,"fragments":10},{"coins":3300,"fragments":10},{"coins":3650,"fragments":10},{"coins":4000,"fragments":10},{"coins":4500,"fragments":20},{"coins":5100,"fragments":20},{"coins":5700,"fragments":20},{"coins":6350,"fragments":20},{"coins":7000,"fragments":20},{"coins":8000,"fragments":30},{"coins":9000,"fragments":30},{"coins":10000,"fragments":30},{"coins":11000,"fragments":30},{"coins":12000,"fragments":30},{"coins":13000,"fragments":50},{"coins":14500,"fragments":50},{"coins":16000,"fragments":50},{"coins":18000,"fragments":50},{"coins":20000,"fragments":50}]
 const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885'
 const FORGE_POWER = [10, 16, 22, 28, 34, 40, 50, 60, 70, 80, 90, 104, 118, 132, 146, 160, 178, 196, 214, 232, 250, 272, 294, 316, 338, 360, 388, 416, 444, 472, 500]
 const forgeBonus = level => FORGE_POWER[Math.max(0, Math.min(30, Number(level) || 0))]
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
-const ACCESSORY_GRADES = {rare:{cost:3,coins:2500,fragments:700,power:30},epic:{cost:3,coins:10000,fragments:2500,power:80},unique:{cost:3,coins:30000,fragments:5000,power:160},legendary:{cost:3,coins:100000,fragments:20000,power:300},transcendent:{cost:3,coins:300000,fragments:100000,power:500}}
+const ACCESSORY_GRADES = {rare:{cost:3,coins:2500,fragments:500,power:30},epic:{cost:3,coins:10000,fragments:2000,power:80},unique:{cost:3,coins:30000,fragments:6000,power:160},legendary:{cost:3,coins:100000,fragments:20000,power:300},transcendent:{cost:3,coins:300000,fragments:300000,power:500}}
 const accessoryPower = a => a?.equipped ? (ACCESSORY_GRADES[a.equippedGrade]?.power || 10) : 0
 async function getAccessory(accountId, conn=pool) {
   const [rows]=await conn.query('SELECT * FROM gm_weapon_accessories WHERE account_id=?',[accountId])
@@ -833,7 +833,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        const ticket = randomInt(500) < 3 ? 1 : 0
+        const ticket = randomInt(400) < 3 ? 1 : 0
         ticketsEarned += ticket
         diamondsEarned += reward.diamonds
         earned += reward.fragments
@@ -1055,9 +1055,8 @@ async function expeditionSettle(conn, day, serverId, now) {
     for(const player of players) {
       const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
       if(paid.affectedRows) {
-        const coins=stage===1?3000:stage===2?5000:10000
-        const diamonds=stage===1?300:stage===2?500:1000
-        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,diamonds,day,now])
+        const coins=stage===1?2000:stage===2?3000:5000, fragments=0
+        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
         await trimInbox(conn,player.account_id)
       }
     }
@@ -1693,7 +1692,7 @@ const routes = {
       if(level>=30){await conn.rollback();return send(res,409,{error:'forge_max'})}
       const {coins}=FORGE_COSTS[level]
       const targetLevel=level+1
-      const fragments=3*(targetLevel<=5?0:targetLevel<=10?20:targetLevel<=15?60:targetLevel<=20?150:targetLevel===21?300:targetLevel===22?350:targetLevel===23?400:targetLevel<=25?500:targetLevel<=27?600:targetLevel<=29?750:1000)
+      const fragments=targetLevel<=5?0:targetLevel<=10?20:targetLevel<=15?60:targetLevel<=20?150:targetLevel===21?300:targetLevel===22?350:targetLevel===23?400:targetLevel<=25?500:targetLevel<=27?600:targetLevel<=29?750:1000
       if(!saves.length || (!rpsAdmin(account) && Number(saves[0].fragments)<fragments)){await conn.rollback();return send(res,409,{error:'forge_no_fragments'})}
       if(!rpsAdmin(account) && Number(saves[0].gems)<coins){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
       // Settle battle damage with the OLD bonus before raising weapon level.
@@ -2364,8 +2363,7 @@ const routes = {
   'POST /api/pull': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const { count, free = false, banner = 'standard' } = await readJson(req)
-    if (!['standard','christmas'].includes(banner) || (free && banner !== 'standard')) return send(res, 400, { error: 'invalid_banner' })
+    const { count, free = false } = await readJson(req)
     // Operator accounts have unlimited coins: pulls never spend their balance.
     let dupes = {}
     const outcome = await withSave(account.id, state => {
@@ -2374,7 +2372,7 @@ const routes = {
       if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
       const cost = count === 10 ? 500 : count * 50
       const source = free ? {...state, gems:state.gems + cost} : account.is_admin ? {...state,gems:1_000_000_000} : {...state,gems:state.diamonds ?? 0}
-      let result = pull(source, count, n => randomInt(n), !free, banner)
+      let result = pull(source, count, n => randomInt(n), !free)
       if (result.ok && free) result = {...result,state:{...result.state, gems:state.gems,diamonds:state.diamonds,freePullDay:day,freePullUsed:used+count}}
       if (result.ok && account.is_admin && !free) result = { ...result, state: { ...result.state, gems: state.gems, diamonds:state.diamonds } }
       if (result.ok && !free && !account.is_admin) result={...result,state:{...result.state,diamonds:result.state.gems,gems:state.gems + (result.state.gems - ((state.diamonds ?? 0) - cost))}}
@@ -2577,14 +2575,6 @@ const routes = {
     const [r] = await pool.query('DELETE FROM gm_suggest WHERE id = ?', [Number(id)])
     if (!r.affectedRows) return send(res, 404, { error: 'suggest_not_found' })
     send(res, 200, await suggestions(account))
-  },
-  'POST /api/roulette': async (req, res) => {
-    const account = await currentAccount(req)
-    if (!account) return send(res, 401, { error: 'login_required' })
-    await readJson(req)
-    const outcome = await withSave(account.id, state => spinRoulette(state))
-    if (!outcome.ok) return send(res, 409, { error: outcome.error, save: outcome.state })
-    send(res, 200, { index: outcome.index, prize: outcome.prize, currency: outcome.currency, save: outcome.state })
   },
   'POST /api/daily': async (req, res) => {
     const account = await currentAccount(req)

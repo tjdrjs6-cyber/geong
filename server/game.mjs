@@ -1,31 +1,12 @@
 import { createHash } from 'node:crypto'
 // Server-authoritative gacha rules. Keep these values in sync with src/game/collection.ts (tests verify).
-export const CHARACTER_IDS = ['christmas_tree_usagi', 'christmas_usagi', 'christmas_hachiware', 'christmas_chiikawa', 'rilakkuma', 'korilakkuma', 'chairoikoguma', 'rilakkuma_chiikawa', 'korilakkuma_kani', 'pepero_chiikawa', 'chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison', 'usagi_orange', 'halloween_chiikawa', 'halloween_hachiware', 'halloween_usagi', 'pajama_chiikawa', 'pajama_hachiware', 'pajama_usagi', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren_curry']
+export const CHARACTER_IDS = ['rilakkuma', 'korilakkuma', 'chairoikoguma', 'rilakkuma_chiikawa', 'korilakkuma_kani', 'pepero_chiikawa', 'chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'shisa', 'kani', 'goblin', 'rakko', 'armor1', 'armor2', 'armor3', 'm_chiikawa', 'm_hachiware', 'm_usagi', 'm_momonga', 'm_kurimanju', 'm_shisa', 'm_kani', 'm_rakko', 'hanip', 'duip', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'honey', 'ode', 'ode_prison', 'usagi_orange', 'halloween_chiikawa', 'halloween_hachiware', 'halloween_usagi', 'pajama_chiikawa', 'pajama_hachiware', 'pajama_usagi', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren_curry']
 /** Draw weights out of 100000. Unlisted characters have zero draw weight. */
 export const WEIGHTS = {chiikawa: 4700, hachiware: 4700, usagi: 4700, momonga: 4700, kurimanju: 4700, shisa: 4700, kani: 4700, goblin: 4700, rakko: 4700, armor1: 4700, armor2: 4700, armor3: 4700, pajama_chiikawa: 4690, pajama_hachiware: 4700, pajama_usagi: 4700, m_chiikawa: 1940, m_hachiware: 1940, m_usagi: 1940, m_momonga: 1940, m_kurimanju: 1940, m_shisa: 1940, m_kani: 1940, m_rakko: 1940, hanip: 1940, duip: 1940, honey: 1940, siren: 750, shimajiro: 750, anoko: 750, dekatsuyo: 750, ode: 750, staff_chiikawa: 750, staff_hachiware: 750, staff_usagi: 750, c_curry: 200, h_curry: 200, u_curry: 200, ginger_chiikawa: 200, ginger_hachiware: 200, ginger_usagi: 200, beetle: 200, ode_prison: 200, angel_momonga: 200, devil_momonga: 200, kurimanju_bean: 40, beetle_berserk: 40, rakko_limited: 40, usagi_orange: 40, siren_curry: 10}
 /** Weeding speed bonus in percent. */
-export const WEED_BONUS = {christmas_chiikawa: 0, christmas_hachiware: 0, christmas_usagi: 0, christmas_tree_usagi: 60, rilakkuma: 45, korilakkuma: 45, chairoikoguma: 45, rilakkuma_chiikawa: 0, korilakkuma_kani: 0, pepero_chiikawa: 0, siren_curry: 70, chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30, usagi_orange: 60, halloween_chiikawa: 0, halloween_hachiware: 0, halloween_usagi: 0, pajama_chiikawa: 0, pajama_hachiware: 0, pajama_usagi: 0, staff_chiikawa: 10, staff_hachiware: 10, staff_usagi: 10, devil_momonga: 35, angel_momonga: 52}
-export const RARE_IDS = ['christmas_chiikawa', 'christmas_hachiware', 'christmas_usagi', 'christmas_tree_usagi', 'siren_curry', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
+export const WEED_BONUS = {rilakkuma: 45, korilakkuma: 45, chairoikoguma: 45, rilakkuma_chiikawa: 0, korilakkuma_kani: 0, pepero_chiikawa: 0, siren_curry: 70, chiikawa: 0, hachiware: 0, usagi: 0, momonga: 0, kurimanju: 0, shisa: 0, kani: 0, goblin: 0, rakko: 0, armor1: 0, armor2: 0, armor3: 0, m_chiikawa: 5, m_hachiware: 5, m_usagi: 5, m_momonga: 5, m_kurimanju: 5, m_shisa: 5, m_kani: 5, m_rakko: 5, hanip: 10, duip: 10, siren: 40, shimajiro: 10, anoko: 30, dekatsuyo: 25, c_curry: 50, h_curry: 50, u_curry: 50, ginger_chiikawa: 50, beetle: 0, ginger_hachiware: 50, ginger_usagi: 50, beetle_berserk: 0, kurimanju_bean: 60, rakko_limited: 0, honey: 10, ode: 25, ode_prison: 30, usagi_orange: 60, halloween_chiikawa: 0, halloween_hachiware: 0, halloween_usagi: 0, pajama_chiikawa: 0, pajama_hachiware: 0, pajama_usagi: 0, staff_chiikawa: 10, staff_hachiware: 10, staff_usagi: 10, devil_momonga: 35, angel_momonga: 52}
+export const RARE_IDS = ['siren_curry', 'staff_chiikawa', 'staff_hachiware', 'staff_usagi', 'devil_momonga', 'angel_momonga', 'siren', 'shimajiro', 'anoko', 'dekatsuyo', 'c_curry', 'h_curry', 'u_curry', 'ginger_chiikawa', 'ginger_hachiware', 'ginger_usagi', 'beetle_berserk', 'kurimanju_bean', 'rakko_limited', 'beetle', 'ode', 'ode_prison']
 export const TOTAL_WEIGHT = 100000
-
-/** Christmas banner uses an independent 100,000-point pool. */
-export const CHRISTMAS_WEIGHTS = {
-  ...WEIGHTS,
-  siren_curry: 0,
-  kurimanju_bean: 0, rakko_limited: 0, beetle_berserk: 0, usagi_orange: 0,
-  pajama_chiikawa: 4700,
-  christmas_chiikawa: 40, christmas_hachiware: 40,
-  christmas_usagi: 40, christmas_tree_usagi: 40,
-}
-export function christmasCharacterForRoll(roll) {
-  let remaining = roll
-  for (const id of CHARACTER_IDS) {
-    remaining -= CHRISTMAS_WEIGHTS[id] ?? 0
-    if (remaining < 0) return id
-  }
-  throw new Error('invalid_christmas_gacha_weights')
-}
-
 export const STARTING_COINS = 100
 export const PULL_COST = 50
 export const TEN_PULL_COST = 500
@@ -37,7 +18,7 @@ export const SIREN_NEW_BONUS = 50
 const ENTRY_REWARD_15 = new Set(['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_shisa','m_kani','m_rakko','hanip','duip','honey'])
 const ENTRY_REWARD_30 = new Set(['siren','shimajiro','anoko','dekatsuyo','ode','staff_chiikawa','staff_hachiware','staff_usagi'])
 const ENTRY_REWARD_50 = new Set(['c_curry','h_curry','u_curry','ginger_chiikawa','ginger_hachiware','ginger_usagi','beetle','ode_prison','angel_momonga','devil_momonga'])
-const ENTRY_REWARD_80 = new Set(['christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi','kurimanju_bean','beetle_berserk','rakko_limited','usagi_orange','halloween_chiikawa','halloween_hachiware','halloween_usagi'])
+const ENTRY_REWARD_80 = new Set(['kurimanju_bean','beetle_berserk','rakko_limited','usagi_orange','halloween_chiikawa','halloween_hachiware','halloween_usagi'])
 export const newEntryBonus = id => id === 'siren_curry' ? 150 : ENTRY_REWARD_80.has(id) ? 80 : ENTRY_REWARD_50.has(id) ? 50 : ENTRY_REWARD_30.has(id) ? 30 : ENTRY_REWARD_15.has(id) ? 15 : 10
 
 /** Maps an integer roll in [0, TOTAL_WEIGHT) to a character id. */
@@ -65,7 +46,7 @@ export function normalizeOwned(value) {
 }
 
 /** randomInt(n) must return an integer in [0, n); it is called with TOTAL_WEIGHT. */
-export function pull(state, count, randomInt, bonusDraw = true, banner = 'standard') {
+export function pull(state, count, randomInt, bonusDraw = true) {
   if (!Object.hasOwn(PULL_COSTS, count)) return { ok: false, error: 'invalid_count' }
   const cost = PULL_COSTS[count]
   if (state.gems < cost) return { ok: false, error: 'not_enough_coins' }
@@ -73,7 +54,7 @@ export function pull(state, count, randomInt, bonusDraw = true, banner = 'standa
   const owned = new Set(normalizeOwned(state.owned))
   const results = []
   for (let i = 0; i < (count === 10 && bonusDraw ? 11 : count); i += 1) {
-    const id = banner === 'christmas' ? christmasCharacterForRoll(randomInt(TOTAL_WEIGHT)) : characterForRoll(randomInt(TOTAL_WEIGHT))
+    const id = characterForRoll(randomInt(TOTAL_WEIGHT))
     const duplicate = owned.has(id)
     const bonus = duplicate ? DUPLICATE_BONUS : newEntryBonus(id)
     gems += bonus
@@ -149,7 +130,7 @@ export const ENEMY_HP = 30_000
 export const BATTLE_TICK_MS = 1_000
 export const BATTLE_DIAMOND_CHANCE = 1
 /** Battle power per friend. */
-export const POWER = {christmas_chiikawa: 520, christmas_hachiware: 520, christmas_usagi: 520, christmas_tree_usagi: 200, rilakkuma: 195, korilakkuma: 195, chairoikoguma: 195, rilakkuma_chiikawa: 530, korilakkuma_kani: 530, pepero_chiikawa: 8, chiikawa: 20, hachiware: 20, usagi: 20, momonga: 10, kurimanju: 8, shisa: 9, kani: 10, goblin: 5, rakko: 35, armor1: 40, armor2: 42, armor3: 45, m_chiikawa: 65, m_hachiware: 65, m_usagi: 65, m_momonga: 40, m_kurimanju: 35, m_shisa: 38, m_kani: 42, m_rakko: 95, hanip: 30, duip: 32, honey: 85, siren: 125, shimajiro: 170, anoko: 150, dekatsuyo: 165, ode: 135, staff_chiikawa: 170, staff_hachiware: 170, staff_usagi: 170, c_curry: 240, h_curry: 240, u_curry: 240, ginger_chiikawa: 260, ginger_hachiware: 260, ginger_usagi: 260, ode_prison: 340, beetle: 100, angel_momonga: 280, devil_momonga: 370, kurimanju_bean: 390, beetle_berserk: 490, rakko_limited: 510, usagi_orange: 430, halloween_chiikawa: 550, halloween_hachiware: 550, halloween_usagi: 550, pajama_chiikawa: 30, pajama_hachiware: 30, pajama_usagi: 30, siren_curry: 800}
+export const POWER = {rilakkuma: 195, korilakkuma: 195, chairoikoguma: 195, rilakkuma_chiikawa: 530, korilakkuma_kani: 530, pepero_chiikawa: 8, chiikawa: 20, hachiware: 20, usagi: 20, momonga: 10, kurimanju: 8, shisa: 9, kani: 10, goblin: 5, rakko: 35, armor1: 40, armor2: 42, armor3: 45, m_chiikawa: 65, m_hachiware: 65, m_usagi: 65, m_momonga: 40, m_kurimanju: 35, m_shisa: 38, m_kani: 42, m_rakko: 95, hanip: 30, duip: 32, honey: 85, siren: 125, shimajiro: 170, anoko: 150, dekatsuyo: 165, ode: 135, staff_chiikawa: 170, staff_hachiware: 170, staff_usagi: 170, c_curry: 240, h_curry: 240, u_curry: 240, ginger_chiikawa: 260, ginger_hachiware: 260, ginger_usagi: 260, ode_prison: 340, beetle: 100, angel_momonga: 280, devil_momonga: 370, kurimanju_bean: 390, beetle_berserk: 490, rakko_limited: 510, usagi_orange: 430, halloween_chiikawa: 550, halloween_hachiware: 550, halloween_usagi: 550, pajama_chiikawa: 30, pajama_hachiware: 30, pajama_usagi: 30, siren_curry: 800}
 /** Settles elapsed attacks: returns defeated enemies (1 coin each), the leftover damage and the new tick anchor. */
 export function settleBattle(since, damage, now, power) {
   const ticks = Math.max(0, Math.floor((now - since) / BATTLE_TICK_MS))
@@ -224,36 +205,6 @@ export function validateHouse(layout, decos, owned) {
     friends.push({ id: f.id, x: clampPct(f.x), y: clampPct(f.y), s: Number.isFinite(s) ? Math.round(Math.min(1.6, Math.max(0.6, s)) * 100) / 100 : 1, f: Boolean(f.f) })
   }
   return { layout: { pieces: clean, friends } }
-}
-
-/** Roulette: weighted rewards in per-mille; duplicate 5000 coin slots are intentional. */
-export const ROULETTE = [
-  { coins: 1000, diamonds: 0, weight: 300 },
-  { coins: 2000, diamonds: 0, weight: 200 },
-  { coins: 0, diamonds: 500, weight: 200 },
-  { coins: 5000, diamonds: 0, weight: 100 },
-  { coins: 0, diamonds: 800, weight: 100 },
-  { coins: 0, diamonds: 1000, weight: 50 },
-  { coins: 5000, diamonds: 0, weight: 50 },
-]
-export function drawRoulette(random = Math.random) {
-  let roll = Math.floor(random() * 1000)
-  for (let i = 0; i < ROULETTE.length; i += 1) {
-    if (roll < ROULETTE[i].weight) return i
-    roll -= ROULETTE[i].weight
-  }
-  return ROULETTE.length - 1
-}
-export function rouletteSlot(now = new Date()) {
-  const koreaHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(now))
-  return `${checkInDay(now)}${koreaHour < 12 ? 'A' : 'B'}`
-}
-export function spinRoulette(state, random = Math.random, now = new Date()) {
-  const today = rouletteSlot(now)
-  if (state.lastRoulette === today) return { ok: false, error: 'already_spun', state }
-  const index = drawRoulette(random)
-  const reward = ROULETTE[index]
-  return { ok: true, index, prize: reward.coins || reward.diamonds, currency: reward.diamonds ? 'diamonds' : 'coins', state: { ...state, gems: state.gems + reward.coins, diamonds: (state.diamonds ?? 0) + reward.diamonds, lastRoulette: today } }
 }
 
 /** Mailbox: up to 30 characters of text, optional coins from the sender's own balance, at most 100 coins sent per Korean day. */

@@ -438,8 +438,8 @@ export class RemoteGachaStore {
     this.apply({ user: null })
   }
 
-  async pull(count: PullCount, free = false, banner: 'standard'|'christmas' = 'standard'): Promise<PullResult[]> {
-    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free, banner })
+  async pull(count: PullCount, free = false): Promise<PullResult[]> {
+    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free })
     this.data = result.save
     if (result.dupes) this.dupes = result.dupes
     return result.results
@@ -469,20 +469,6 @@ export class RemoteGachaStore {
     this.house = (await request<{ house: HouseLayout }>('house/save', { layout })).house
   }
 
-  /** One spin per 12-hour Korea time window. Returns the winning slot, or null when today's spin was already used. */
-  async spinRoulette(): Promise<{ index: number; prize: number; currency: 'coins' | 'diamonds' } | null> {
-    try {
-      const result = await request<{ index: number; prize: number; currency: 'coins' | 'diamonds'; save: GachaSave }>('roulette', {})
-      this.data = result.save
-      return { index: result.index, prize: result.prize, currency: result.currency }
-    } catch (error) {
-      if (error instanceof RequestError && error.message === 'already_spun') {
-        this.data = { ...this.data, lastRoulette: `${new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}` }
-        return null
-      }
-      throw error
-    }
-  }
   async claimDaily(): Promise<{ claimed: boolean; coins: number; diamonds: number; boxes: number }> {
     const result = await request<{ claimed: boolean; coins: number; diamonds: number; boxes: number; save: GachaSave }>('daily', {})
     this.data = result.save

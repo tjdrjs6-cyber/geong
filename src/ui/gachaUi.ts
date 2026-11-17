@@ -61,7 +61,7 @@ function weaponAuraClass(level: number): string {
 }
 import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'
-import { BATTLE_TICK_MS, ENEMY_HP, battlePower, CHARACTERS, DAILY_GIFT, NEW_ENTRY_BONUS, RARE_NEW_BONUS, PULL_OPTIONS, characterById, fullName, type Character, pullCost, STARTING_COINS, ROULETTE_PRIZES, type CharacterId, type PullCount, type PullResult } from '../game/collection'
+import { BATTLE_TICK_MS, ENEMY_HP, battlePower, CHARACTERS, DAILY_GIFT, NEW_ENTRY_BONUS, RARE_NEW_BONUS, PULL_OPTIONS, characterById, fullName, type Character, pullCost, STARTING_COINS, type CharacterId, type PullCount, type PullResult } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
 import { ERROR_TEXT, NICKNAME_RULE, RemoteGachaStore, WEED_MAX, RequestError, type PublicUser, type ExpeditionState, type RpsState, type ProfilePrivacy, MAIL_MAX_CHARS, MAIL_DAILY_COINS, CHAR_SELL_PRICES, DECO_SELL_PRICE, SUGGEST_MAX_CHARS, SUGGEST_REPLY_MAX_CHARS, MAILBOX_MAX } from '../game/remoteStore'
 import { weedFieldMarkup } from './weedField'
@@ -75,7 +75,7 @@ const MACHINE_SPIN_SECONDS = 1.6
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'roulette' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'expedition' | 'rps' | 'shop' | 'forge'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -93,8 +93,6 @@ export class GachaUi {
   private readonly root = document.getElementById('ui')!
   private battleAnimationKey = ''
   private toastTimer = 0
-  private wheelSpinning = false
-  private wheelTurn = 0
   private results: RevealItem[] = []
   private resultKind: 'char' | 'deco' = 'char'
   private house!: HouseView
@@ -550,7 +548,7 @@ export class GachaUi {
           <div class="brand"><span class="brand-icon"><img src="/assets/chars/hachiware_face.png" alt="하치와레 얼굴" /></span><div><b>겅이마켓</b><small>오늘의 작은 행운을 뽑아봐요</small></div></div>
           <div class="header-right"><div class="account-chip"><span class="account-name"></span><button class="logout-button" data-action="logout">로그아웃</button></div><div class="wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div><div class="diamond-wallet" aria-label="보유 다이아"><span class="diamond-wallet-line"><img class="diamond-icon" src="/assets/diamond.png" alt="다이아"/><strong class="diamond-value">0</strong></span><small class="diamond-recharge-countdown">토벌장에서 획득</small></div></div>
         </header>
-        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip roulette-chip" data-action="roulette"><span><b>룰렛</b><small class="roulette-copy">12시간마다 1회</small></span></button><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button></div>
+        <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition">원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
@@ -601,16 +599,6 @@ export class GachaUi {
           <p class="collection-summary">총 ${CHARACTERS.length}종의 친구</p></div>
           <div class="collection-grid"></div>
           <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
-        </div>
-      </section>
-      <section class="gacha-modal" data-screen="roulette" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roulette-title">
-        <div class="modal-card roulette-card">
-          <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="modal-kicker">DAILY ROULETTE</div><h2 id="roulette-title">오늘의 룰렛</h2>
-          <p class="collection-summary">한국 시간 오전·오후 각 1회, 하루 최대 2회 돌릴 수 있어요.</p>
-          <div class="roulette-wrap"><i class="roulette-pointer" aria-hidden="true"></i>${rouletteWheel()}</div>
-          <ul class="roulette-odds">${ROULETTE_PRIZES.map(p => `<li><b>${p.diamonds ? `💎 ${p.diamonds.toLocaleString('ko-KR')}다이아` : `${p.coins.toLocaleString('ko-KR')}코인`}</b><span>${p.percent}%</span></li>`).join('')}</ul>
-          <button class="modal-primary roulette-spin" data-action="roulette-spin">룰렛 돌리기</button><div class="roulette-pop-reward" role="status" aria-live="polite" hidden></div>
         </div>
       </section>
       <section class="gacha-modal" data-screen="decos" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decos-title">
@@ -1340,8 +1328,6 @@ export class GachaUi {
       return
     }
     if (this.busy) return
-    if (action === 'roulette') { this.show('roulette'); this.renderWallet(); return }
-    if (action === 'roulette-spin') { await this.spinRoulette(); return }
     if (action === 'daily') {
       this.openAttendancePopup()
       return
@@ -2540,19 +2526,6 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const copy = daily.querySelector<HTMLElement>('.daily-copy')
       if (copy) copy.textContent = alreadyClaimed ? '수령 완료 · 내일 다시' : `${attendanceReward} 받기`
     }
-    const rouletteSlot = `${today}${Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) < 12 ? 'A' : 'B'}`
-    const spun = this.store.data.lastRoulette === rouletteSlot
-    const rouletteCopy = this.root.querySelector<HTMLElement>('.roulette-copy')
-    if (rouletteCopy) rouletteCopy.textContent = spun ? '다음 12시간 구간에 다시!' : '하루 2회 · 12시간 간격'
-    const rouletteChip = this.root.querySelector<HTMLButtonElement>('.roulette-chip')
-    if (rouletteChip) {
-      rouletteChip.classList.toggle('is-used', spun)
-      rouletteChip.disabled = spun
-      const rouletteLabel = rouletteChip.querySelector<HTMLElement>('b')
-      if (rouletteLabel) rouletteLabel.textContent = spun ? '룰렛 완료 ✓' : '룰렛'
-    }
-    const spinButton = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
-    if (spinButton && !this.wheelSpinning) { spinButton.disabled = spun; spinButton.textContent = spun ? '다음 시간대에 다시 돌려주세요' : '룰렛 돌리기' }
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
       pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
@@ -4049,42 +4022,6 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     node?.setAttribute('aria-hidden', 'true')
   }
 
-  private async spinRoulette(): Promise<void> {
-    if (this.wheelSpinning) return
-    const wheel = this.root.querySelector<SVGGElement>('.roulette-wheel')
-    const button = this.root.querySelector<HTMLButtonElement>('.roulette-spin')
-    const rewardMessage = this.root.querySelector<HTMLElement>('.roulette-pop-reward')
-    if (rewardMessage) { rewardMessage.hidden = true; rewardMessage.textContent = '' }
-    this.wheelSpinning = true
-    if (button) { button.disabled = true; button.textContent = '빙글빙글…' }
-    try {
-      const result = await this.store.spinRoulette()
-      if (!result) { this.toast('이번 시간대 룰렛은 이미 돌렸어요.'); return }
-      const [start, end] = ROULETTE_SLICES[result.index]
-      const landing = start + (end - start) * (0.2 + Math.random() * 0.6)
-      const current = ((this.wheelTurn % 360) + 360) % 360
-      this.wheelTurn += 360 * 5 + ((360 - landing - current) % 360 + 360) % 360
-      if (wheel) wheel.style.transform = `rotate(${this.wheelTurn}deg)`
-      this.audio.play('ui')
-      await new Promise(resolve => window.setTimeout(resolve, 4200))
-      this.audio.play('pickup')
-      
-      if (rewardMessage) {
-        rewardMessage.textContent = `🎉 ${result.prize.toLocaleString('ko-KR')}${result.currency === 'diamonds' ? '다이아' : '코인'} 획득!!`
-        rewardMessage.hidden = false
-        rewardMessage.classList.remove('pop-in')
-        void rewardMessage.offsetWidth
-        rewardMessage.classList.add('pop-in')
-        window.setTimeout(() => { rewardMessage.hidden = true; rewardMessage.classList.remove('pop-in') }, 2300)
-      }
-      this.root.querySelector('.roulette-wrap')?.classList.add('is-win')
-      window.setTimeout(() => this.root.querySelector('.roulette-wrap')?.classList.remove('is-win'), 1600)
-    } catch (error) { this.handleError(error) } finally {
-      this.wheelSpinning = false
-      this.renderWallet()
-    }
-  }
-
   private showForgeInsufficient(): void {
     const overlay=this.root.querySelector<HTMLElement>('.insufficient-overlay')
     const title=this.root.querySelector<HTMLElement>('#insufficient-title')
@@ -4148,26 +4085,3 @@ function withJosa(word: string, withFinal: string, withoutFinal: string): string
   return word + (hasFinal ? withFinal : withoutFinal)
 }
 
-/** Slice angles (degrees, clockwise from the top) sized by each prize's real probability. */
-const ROULETTE_SLICES: Array<[number, number]> = (() => {
-  let at = 0
-  return ROULETTE_PRIZES.map(prize => { const start = at; at += prize.percent * 3.6; return [start, at] as [number, number] })
-})()
-const ROULETTE_COLORS = ['#ffe3ea', '#dff1ff', '#fff3c4', '#e3f6dc', '#f1e2ff', '#ffe9d3', '#d9f1f0']
-
-function rouletteWheel(): string {
-  const r = 100
-  const point = (deg: number, radius: number): string => {
-    const rad = (deg - 90) * Math.PI / 180
-    return `${(Math.cos(rad) * radius).toFixed(2)} ${(Math.sin(rad) * radius).toFixed(2)}`
-  }
-  const slices = ROULETTE_SLICES.map(([start, end], i) => {
-    const large = end - start > 180 ? 1 : 0
-    const mid = (start + end) / 2
-    const small = end - start < 30
-    const [lx, ly] = point(mid, small ? 80 : 64).split(' ')
-    return `<path d="M0 0 L${point(start, r)} A${r} ${r} 0 ${large} 1 ${point(end, r)} Z" fill="${ROULETTE_COLORS[i]}" stroke="#fffaf0" stroke-width="2.5"/>`
-      + `<g transform="translate(${lx} ${ly})"><text y="-4" text-anchor="middle" font-size="${small ? 9 : 11}" font-weight="900" fill="#694b42">${ROULETTE_PRIZES[i].diamonds ? '◆' : '●'} ${ROULETTE_PRIZES[i].diamonds || ROULETTE_PRIZES[i].coins}</text><text y="9" text-anchor="middle" font-size="9" font-weight="700" fill="#80645b">${ROULETTE_PRIZES[i].diamonds ? '다이아' : '코인'}</text></g>`
-  }).join('')
-  return `<svg class="roulette-svg" viewBox="-108 -108 216 216" role="img" aria-label="코인 및 다이아 룰렛"><g class="roulette-wheel">${slices}<circle r="${r}" fill="none" stroke="#3a2e2f" stroke-width="4"/></g><circle r="16" fill="#fff" stroke="#3a2e2f" stroke-width="3"/><text y="1" text-anchor="middle" dominant-baseline="middle" font-size="13">✿</text></svg>`
-}

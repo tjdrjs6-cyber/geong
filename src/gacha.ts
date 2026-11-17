@@ -53,7 +53,7 @@ const initialArt = [
   '/assets/chars/chiikawa.png', '/assets/chars/hachiware.png',
   '/assets/chars/usagi.png', '/assets/chars/kani.png',
   '/assets/coin.png', '/assets/attendance_kani.png',
-  '/assets/roulette_icon_074.png', '/assets/lottery_ticket_custom.png',
+  '/assets/lottery_ticket_custom.png',
   '/lobby_meadow.png', '/expedition_cave.png', '/expedition_banner.jpg',
 ]
 function warmImage(url: string): Promise<void> {
