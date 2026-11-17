@@ -6249,55 +6249,5 @@ body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action
 .christmas-showcase-characters img{width:24%;max-width:145px;min-width:0;object-fit:contain;aspect-ratio:1}
 .pull-showcase-char .pull-event-copy[hidden],.pull-showcase-char .pull-event-hero-image[hidden]{display:none!important}
 
-/* Limit break selector: two visible rows and internal scrolling. */
-dialog.alchemy-dialog .limit-break-panel .limit-break-picker{grid-auto-rows:112px!important;height:230px!important;max-height:230px!important;overflow-y:auto!important;overflow-x:hidden!important;align-content:start!important;overscroll-behavior:contain;scrollbar-gutter:stable}
-dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick{height:112px!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
-dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick img{width:48px!important;height:48px!important;object-fit:contain!important;flex-shrink:0!important}
-dialog.alchemy-dialog .limit-break-panel img.limit-break-material-icon-dupes{width:40px!important;height:40px!important;max-width:40px!important;max-height:40px!important;object-fit:contain!important;flex:0 0 40px!important}
-
-/* Research resource icons: reuse existing game assets. */
-#ui .research-resource{display:flex;align-items:center;gap:7px}
-#ui .research-resource img{width:22px!important;height:22px!important;max-width:22px!important;max-height:22px!important;object-fit:contain;flex:none}
-
-/* Research resource icons: fixed compact inline size. */
-#ui .research-card .research-cost .research-resource img {
- display:inline-block!important;width:16px!important;height:16px!important;
- min-width:16px!important;min-height:16px!important;
- max-width:16px!important;max-height:16px!important;
- flex:0 0 16px!important;object-fit:contain!important;
- margin:0!important;padding:0!important;transform:none!important;
-}
-/* Expedition limit-break level visible above fighter artwork. */
-#ui .expedition-party .expedition-combatant {position:relative!important;overflow:visible!important}
-#ui .expedition-party .expedition-combatant .limit-break-combat-badge {
- position:absolute!important;top:0!important;right:0!important;left:auto!important;
- z-index:30!important;display:inline-flex!important;min-width:23px!important;
- height:19px!important;padding:1px 4px!important;font-size:11px!important;
- line-height:1!important;transform:none!important;animation:none!important;pointer-events:none!important;
-}
-
-
-/* Expedition: display limit-break level on the top-right border of each selection card. */
-.expedition-picker .expedition-choices button[data-action="exp-join"]{position:relative!important;isolation:isolate}
-.expedition-picker .expedition-choices button .expedition-choice-limit-badge{
- position:absolute!important;top:-7px!important;right:-7px!important;left:auto!important;
- z-index:20!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
- min-width:23px!important;height:22px!important;box-sizing:border-box!important;padding:1px 5px!important;
- border-radius:12px!important;border:2px solid #fff!important;background:#9a67e4!important;color:#fff!important;
- font-size:11px!important;font-weight:900!important;line-height:1!important;
- box-shadow:0 2px 5px #0002!important;pointer-events:none!important;transform:none!important;
-}
-/* Research dialog is attached directly to body (outside #ui): target it without #ui. */
-body .research-card .research-cost strong.research-resource{
- display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;
- line-height:1.3!important;
-}
-body .research-card .research-cost strong.research-resource>img{
- display:inline-block!important;position:static!important;
- width:18px!important;height:18px!important;
- min-width:18px!important;min-height:18px!important;
- max-width:18px!important;max-height:18px!important;
- flex:0 0 18px!important;object-fit:contain!important;
- margin:0!important;padding:0!important;transform:none!important;
- aspect-ratio:1/1!important;vertical-align:middle!important;
-}
+/* Christmas event uses the same banner illustration layout as the Siren pickup. */
+#ui .christmas-showcase .christmas-event-hero-image{display:block;width:100%;max-width:100%;height:auto;object-fit:contain;margin:0 auto;}
