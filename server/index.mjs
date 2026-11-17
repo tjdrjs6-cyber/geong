@@ -1332,7 +1332,6 @@ const routes = {
       if(!item.ids.every(cid=>owned.has(cid))){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
       const [inserted]=await conn.query('INSERT IGNORE INTO gm_achievement_claims(account_id,achievement_id) VALUES (?,?)',[account.id,item.id])
       if(!inserted.affectedRows){await conn.rollback();return send(res,409,{error:'already_claimed'})}
-      await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[item.coins,account.id])
       await conn.commit()
       send(res,200,{coins:item.coins,power:item.power})
     }catch(error){await conn.rollback();throw error}finally{conn.release()}
