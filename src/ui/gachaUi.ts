@@ -172,6 +172,10 @@ export class GachaUi {
     const drawDialog=this.root.querySelector<HTMLElement>('.pull-popup')
     if(drawDialog) this.root.append(drawDialog)
     this.root.addEventListener('click', event => { void this.onClick(event) })
+    this.root.addEventListener('click', event => this.handleFirstMenuGuide(event), true)
+    window.setInterval(() => this.refreshFirstMenuDots(), 2500)
+    window.setTimeout(() => this.refreshFirstMenuDots(), 300)
+
     window.setInterval(()=>void this.refreshDeploymentResetDots(),15000)
     this.root.addEventListener('click',()=>window.setTimeout(()=>void this.refreshDeploymentResetDots(),900))
 
@@ -557,7 +561,7 @@ export class GachaUi {
         </header>
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
-        <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"<i class="deployment-reset-dot" data-deploy-dot="expedition" hidden></i>>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
+        <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><i class="deployment-reset-dot" data-deploy-dot="expedition" hidden></i>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
         <nav class="gacha-nav" aria-label="이동"><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><i class="deployment-reset-dot" data-deploy-dot="weed" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><i class="deployment-reset-dot" data-deploy-dot="battle" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button></div></div></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
@@ -1096,6 +1100,83 @@ export class GachaUi {
     overlay.innerHTML=`<div class="achievement-reward-dialog" role="dialog" aria-modal="true" aria-label="컬렉션 보상"><h2>컬렉션 보상 획득!</h2>${power>0?`<p>영구 전투력 <b>+${Math.max(0,Number(power)||0)}</b> 획득!</p>`:''}<button type="button">닫기</button></div>`
     overlay.querySelector('button')?.addEventListener('click',()=>overlay.remove())
     document.body.append(overlay)
+  }
+
+  /** Each account sees each menu explanation once, independently of the welcome tutorial. */
+  private readonly firstMenuGuides: Record<string, [string,string]> = {
+    announcements:['공지사항','운영 공지와 업데이트 내용을 확인할 수 있습니다.'],
+    'global-chat':['전체채팅','다른 유저와 자유롭게 대화할 수 있습니다.'],
+    users:['유저 목록','다른 유저의 프로필과 수집 현황을 확인할 수 있습니다.'],
+    weed:['제초장','캐릭터를 배치하면 코인을 자동으로 획득합니다. 잡초를 직접 뽑아 추가 코인도 모아 보세요.'],
+    battle:['토벌장','캐릭터 최대 3명을 배치해 몬스터를 처치하고 단계별 보상을 획득합니다.'],
+    expedition:['원정대','캐릭터를 배치해 다른 유저와 함께 보스를 공격하고 클리어 보상을 획득합니다.'],
+    claw:['키링뽑기','키링을 뽑아 무기에 장착하고 전투력을 높일 수 있습니다.'],
+    equipment:['장비','무기와 키링을 장착하고 현재 전투력을 확인할 수 있습니다.'],
+    storage:['인벤토리','보유한 아이템과 재료를 확인할 수 있습니다.'],
+    house:['하우스','나만의 공간을 꾸미고 수집한 데코를 배치할 수 있습니다.'],
+    research:['연구소','강화파편과 코인을 사용해 연구를 진행하면 전투력이 영구적으로 증가합니다.'],
+    forge:['대장간','무기를 강화하여 전투력을 올릴 수 있습니다.'],
+    shop:['장터','게임 재화로 다양한 상품과 아이템을 구매할 수 있습니다.'],
+    alchemy:['연금술','키링 합성과 캐릭터 한계돌파를 진행할 수 있습니다.'],
+  }
+  private firstMenuKey(action: string): string | null {
+    const username = this.store.user?.username?.trim().toLowerCase()
+    return username ? `geongi-menu-guide-v1-${username}-${action}` : null
+  }
+  private firstMenuSeen(action: string): boolean {
+    const key=this.firstMenuKey(action)
+    if(!key)return true
+    try{return window.localStorage.getItem(key)==='seen'}catch{return false}
+  }
+  private refreshFirstMenuDots(): void {
+    if(!this.store.user)return
+    for(const action of Object.keys(this.firstMenuGuides)){
+      const button=this.root.querySelector<HTMLElement>(`[data-action="${action}"]`)
+      if(!button)continue
+      let dot=button.querySelector<HTMLElement>('.geongi-first-menu-dot')
+      if(!dot){dot=document.createElement('i');dot.className='geongi-first-menu-dot';dot.setAttribute('aria-hidden','true');button.appendChild(dot)}
+      dot.hidden=this.firstMenuSeen(action)
+    }
+    for(const [toggle,actions] of [
+      ['activity-toggle',['weed','battle','claw']],
+      ['myroom-toggle',['equipment','storage','house','research']],
+      ['market-toggle',['forge','shop','alchemy']],
+    ] as const){
+      const button=this.root.querySelector<HTMLElement>(`[data-action="${toggle}"]`)
+      if(!button)continue
+      let dot=button.querySelector<HTMLElement>('.geongi-first-menu-dot')
+      if(!dot){dot=document.createElement('i');dot.className='geongi-first-menu-dot';dot.setAttribute('aria-hidden','true');button.appendChild(dot)}
+      dot.hidden=!actions.some(action=>!this.firstMenuSeen(action))
+    }
+  }
+  private handleFirstMenuGuide(event: MouseEvent): void {
+    const button=(event.target as HTMLElement).closest<HTMLElement>('[data-action]')
+    const action=button?.dataset.action||''
+    const guide=this.firstMenuGuides[action]
+    if(!guide || this.firstMenuSeen(action))return
+    const key=this.firstMenuKey(action)
+    if(key)try{window.localStorage.setItem(key,'seen')}catch{/* storage unavailable */}
+    this.refreshFirstMenuDots()
+    // Allow the original click to open the menu before presenting its explanation.
+    window.setTimeout(()=>{
+      if(document.querySelector('.geongi-first-menu-guide'))return
+      const overlay=document.createElement('div')
+      overlay.className='geongi-tutorial-overlay geongi-first-menu-guide'
+      overlay.setAttribute('role','dialog')
+      overlay.setAttribute('aria-modal','true')
+      overlay.setAttribute('aria-label',`${guide[0]} 안내`)
+      const card=document.createElement('section');card.className='geongi-tutorial-card'
+      const top=document.createElement('div');top.className='geongi-tutorial-top'
+      const heading=document.createElement('strong');heading.textContent='겅이마켓 메뉴 안내';top.append(heading)
+      const content=document.createElement('div');content.className='geongi-tutorial-content'
+      const title=document.createElement('h2');title.textContent=guide[0]
+      const description=document.createElement('p');description.textContent=guide[1]
+      content.append(title,description)
+      const controls=document.createElement('div');controls.className='geongi-tutorial-controls'
+      const close=document.createElement('button');close.type='button';close.className='geongi-tutorial-next';close.textContent='확인'
+      close.onclick=()=>overlay.remove();controls.append(close)
+      card.append(top,content,controls);overlay.append(card);document.body.append(overlay)
+    },90)
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
