@@ -80,6 +80,8 @@ export class GachaUi {
   private authMode: 'login' | 'register' = 'login'
   private weedTimer = 0
   private lastEnemyHp = -1
+  private lastEnemyHpKey = ''
+  private lastEnemyHpAt = 0
   private battleSyncing = false
   private clawX = 88
   private clawY = 15
@@ -3610,6 +3612,17 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private renderBattleStatus(): void {
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
     const view = this.store.battleView()
+    // Prevent client-side HP prediction from increasing within one encounter.
+    const hpKey = this.store.battle
+      ? `${view.stage}:${this.store.battle.stageSince ?? this.store.battle.since}:${this.store.battle.id}:${this.store.battle.secondId ?? ''}:${this.store.battle.thirdId ?? ''}`
+      : ''
+    if (hpKey !== this.lastEnemyHpKey) {
+      this.lastEnemyHpKey = hpKey
+      this.lastEnemyHp = -1
+      this.lastEnemyHpAt = view.maxHp
+    }
+    view.hp = Math.min(view.hp, this.lastEnemyHpAt)
+    this.lastEnemyHpAt = view.hp
     if ((view.kills > 0 || view.hp <= 0 || view.remaining <= 0) && !this.battleStageChanging) void this.syncBattle()
     const stageLabel = `${Math.floor((view.stage - 1) / 10) + 1}-${((view.stage - 1) % 10) + 1}`
     const stageHeading = this.root.querySelector<HTMLElement>('.battle-stage-heading')
@@ -3646,7 +3659,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     // Boss challenge has priority when a failed boss sends the player back to stage 9.
     const bossAvailable = Boolean(fighter && view.stage % 10 === 9 && this.store.battle?.bossReady)
     if (challenge) challenge.hidden = true
-    if (retry) retry.hidden = true
+    if (retry) retry.hidden = !(fighter && (this.store.battle?.retryStage ?? 0) === -(view.stage + 1))
     const time5 = this.root.querySelector<HTMLButtonElement>('.battle-test-time5')
     if (time5) time5.hidden = this.store.user?.username?.toLowerCase() !== 'test' || !fighter
     const testClear = this.root.querySelector<HTMLButtonElement>('.battle-test-clear')
@@ -3841,7 +3854,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.renderWallet()
       if (this.screen === 'weed') this.renderWeed()
       if (this.screen === 'battle') this.renderBattle()
-      if (earned > 0) this.toast(`🌿 제초장에서 ${earned}코인이 자동으로 들어왔어요!`)
+      if (earned > 0 && this.screen === 'weed') this.toast(`🌿 제초장에서 ${earned}코인이 자동으로 들어왔어요!`)
     } catch { /* next tick retries */ }
   }
   private handleError(error: unknown): void {

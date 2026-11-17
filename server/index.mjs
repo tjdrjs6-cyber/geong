@@ -790,8 +790,9 @@ async function updateBattle(accountId, nextCharacter) {
         if (killMs > STAGE_LIMIT_MS) {
           if (now - cursor >= STAGE_LIMIT_MS) {
             if (!battle.retryStage) failedStage = current
-            battle.retryStage = current
-            const fallback = battle.maxClearedStage || current
+            // A failed challenge locks progression until the player explicitly retries.
+            battle.retryStage = Math.abs(battle.retryStage) || current
+            const fallback = Math.max(1, current - 1)
             battle.stage = fallback
             cursor += STAGE_LIMIT_MS + 1500
             continue
@@ -806,8 +807,11 @@ async function updateBattle(accountId, nextCharacter) {
         earned += reward.fragments
         cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket})
         battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
-        battle.retryStage = 0
-        if (current < MAX_BATTLE_STAGE) battle.stage = current + 1
+        // Negative retryStage means the fallback stage has been cleared and manual
+        // challenge is now available; keep farming this stage until clicked.
+        if (battle.retryStage > 0 && current === battle.retryStage - 1) battle.retryStage = -battle.retryStage
+        if (!battle.retryStage && current < MAX_BATTLE_STAGE) battle.stage = current + 1
+        if (battle.retryStage > 0 && current === battle.retryStage) battle.retryStage = 0
         cursor += killMs + 1500
         if (current === MAX_BATTLE_STAGE) break
       }
@@ -2087,9 +2091,9 @@ const routes = {
       await conn.beginTransaction()
       const [rows]=await conn.query(BATTLE_SELECT+' FOR UPDATE',[account.id])
       const battle=battleRow(rows[0])
-      if(!battle||battle.retryStage!==battle.stage+1){await conn.rollback();return send(res,409,{error:'retry_not_ready'})}
+      if(!battle||battle.retryStage!==-(battle.stage+1)){await conn.rollback();return send(res,409,{error:'retry_not_ready'})}
       const now=Date.now()
-      await conn.query('UPDATE gm_battle SET stage=?,retry_stage=0,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=? WHERE account_id=?',[battle.retryStage,now,now,STAGE_LIMIT_MS,account.id])
+      await conn.query('UPDATE gm_battle SET stage=?,retry_stage=0,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=? WHERE account_id=?',[-battle.retryStage,now,now,STAGE_LIMIT_MS,account.id])
       await conn.commit()
       send(res,200,{battle:await getBattle(account.id),save:await getSave(account.id),earned:0,now})
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
