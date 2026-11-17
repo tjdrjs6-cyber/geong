@@ -980,10 +980,12 @@ export class GachaUi {
       {id:'normal',name:'노말'}, {id:'mermaid',name:'레어'}, {id:'rare',name:'에픽'},
       {id:'super',name:'유니크'}, {id:'legendary',name:'레전더리'}, {id:'transcendent',name:'초월'}
     ]
-    const gradeSelector = this.shopSellTab === 'char'
-      ? `<div class="shop-grade-bulk"><b>등급별 중복 일괄 판매</b><div class="shop-grade-bulk-options">${gradeOptions.map(g=>`<label><input type="checkbox" data-action="shop-grade-toggle" data-grade="${g.id}" ${this.bulkSellGrades.has(g.id)?'checked':''}/>${g.name}</label>`).join('')}</div><small>선택한 등급의 중복 캐릭터만 판매합니다. 캐릭터별 마지막 1개는 보존됩니다.</small></div>`
-      : ''
     const bulk = this.getBulkSellItems(this.shopSellTab === 'char' ? 'char' : 'deco')
+    const bulkForGrade = (grade: string) => bulk.filter(item=>CHARACTERS.find(c=>c.id===item.id)?.tier===grade).reduce((sum,item)=>sum+item.count,0)
+    const gradeSelector = this.shopSellTab === 'char'
+      ? `<section class="shop-grade-bulk"><div class="shop-grade-bulk-heading"><strong>등급별 중복 판매</strong><span>판매할 등급을 선택해 주세요</span></div><div class="shop-grade-bulk-options">${gradeOptions.map(g=>{const count=bulkForGrade(g.id);return `<label class="shop-grade-choice grade-${g.id} ${this.bulkSellGrades.has(g.id)?'is-selected':''}"><input type="checkbox" data-action="shop-grade-toggle" data-grade="${g.id}" ${this.bulkSellGrades.has(g.id)?'checked':''}/><span class="shop-grade-choice-name">${g.name}</span><span class="shop-grade-choice-count">${count}개</span><span class="shop-grade-choice-check" aria-hidden="true">✓</span></label>`}).join('')}</div><p class="shop-grade-bulk-note">캐릭터별 마지막 1개는 자동으로 보호됩니다.</p></section>`
+      : ''
+
     const selectedBulk = this.shopSellTab === 'char' ? bulk.filter(item=>this.bulkSellGrades.has(CHARACTERS.find(c=>c.id===item.id)?.tier||'')) : bulk
     const bulkCount = selectedBulk.reduce((sum, item) => sum + item.count, 0)
     const bulkCoins = selectedBulk.reduce((sum, item) => sum + item.count * item.price, 0)
@@ -2599,7 +2601,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private refreshEquipmentAndKeyringDots(): void {
-    const canPull = !!this.store.user && Number(this.store.data.diamonds ?? 0) >= 20
+    const canPull = false // First-visit notice is handled by refreshFirstMenuDots; owning currency is not an unread alert.
     const hasAccessory = Object.values(this.store.accessory.counts || {}).some(count => Number(count) > 0) || Object.values(this.store.accessory.grades || {}).some(grades => Object.values(grades || {}).some(count => Number(count) > 0))
     const needsAccessory = !!this.store.user && hasAccessory && !this.store.accessory.equipped
     this.root.querySelectorAll<HTMLElement>('.geongi-keyring-dot').forEach(dot => { dot.hidden = !canPull })
