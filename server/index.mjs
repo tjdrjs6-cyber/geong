@@ -963,7 +963,9 @@ async function updateWeed(accountId, op = {}) {
       // Apply only completed minute slots to avoid rounding/drift between settlements.
       const startMinute=Math.max(Math.floor(now/60000)-480,Math.floor(Math.max(...members.map(m=>m.since))/60000))
       const endMinute=Math.floor(now/60000)
-      const bonus=Math.max(0,1+members.reduce((v,m)=>v+(WEED_BONUS[m.id]||0)/100,0))
+      // Limit break increases each character's BASE weeding bonus by 10% per level.
+      const weedLimitBreak = await getLimitBreak(accountId,conn)
+      const bonus=Math.max(0,1+members.reduce((v,m)=>v+Math.ceil((WEED_BONUS[m.id]||0)*(1+Math.min(10,Math.max(0,Number(weedLimitBreak[m.id]||0)))*0.03))/100,0))
       const perMinute=Math.floor(10*bonus*weedCoinMultiplier(beetle))
       earned+=Math.max(0,endMinute-startMinute)*perMinute
     }

@@ -6543,49 +6543,37 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 ):not([hidden]) {display:none!important;}
 /* When tutorial is complete, the other pending alerts become visible again. */
 
-/* Menu guide + deployment notifications: a single dot at each top-level activity button. */
-#ui .nav-activity > .geongi-first-menu-dot:not([hidden]){display:block!important;}
-#ui .nav-activity > .geongi-first-menu-dot[hidden]{display:none!important;}
+/* Character grade bulk sale: compact two-column selectable rarity cards */
+#ui .shop-grade-bulk{padding:14px;border:1px solid #ecdcd7;border-radius:17px;background:linear-gradient(145deg,#fffaf6,#fff4f4);margin:8px 0 12px;box-sizing:border-box}
+#ui .shop-grade-bulk-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+#ui .shop-grade-bulk-heading strong{font-size:15px;color:#654d55}
+#ui .shop-grade-bulk-heading span{font-size:11px;color:#947b82}
+#ui .shop-grade-bulk-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#ui .shop-grade-choice{position:relative;display:flex;align-items:center;gap:7px;padding:10px 9px;border:1.5px solid #e8dce0;border-radius:12px;background:#fff;cursor:pointer;min-width:0;box-sizing:border-box;transition:background .15s,border-color .15s,box-shadow .15s}
+#ui .shop-grade-choice input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+#ui .shop-grade-choice-name{font-size:13px;font-weight:800;color:#66545d;white-space:nowrap}
+#ui .shop-grade-choice-count{margin-left:auto;font-size:11px;color:#8f7e84;white-space:nowrap}
+#ui .shop-grade-choice-check{display:grid;place-items:center;width:17px;height:17px;flex:0 0 17px;border-radius:50%;background:#e9e3e6;color:transparent;font-size:11px}
+#ui .shop-grade-choice.is-selected{background:#fff6f8;border-color:#d69cab;box-shadow:0 2px 7px #c98ca220}
+#ui .shop-grade-choice.is-selected .shop-grade-choice-check{background:#cb8ca2;color:white}
+#ui .shop-grade-choice.grade-mermaid.is-selected{border-color:#7faee5;background:#f4f9ff}
+#ui .shop-grade-choice.grade-rare.is-selected{border-color:#e29ca2;background:#fff6f6}
+#ui .shop-grade-choice.grade-super.is-selected{border-color:#b8a0e3;background:#faf6ff}
+#ui .shop-grade-choice.grade-legendary.is-selected{border-color:#dfc073;background:#fffaf0}
+#ui .shop-grade-choice.grade-transcendent.is-selected{border-color:#eda878;background:#fff7ef}
+#ui .shop-grade-bulk-note{font-size:11px;color:#947d84;margin:10px 0 0}
+@media(max-width:360px){#ui .shop-grade-choice{padding:8px 6px;gap:4px}#ui .shop-grade-choice-name{font-size:12px}}
 
+/* Fix: market bulk controls must stack vertically, never in a narrow side-by-side flex row. */
+#ui .shop-panel .shop-bulk-fixed:not([hidden]){display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:9px!important;width:100%!important;box-sizing:border-box!important;padding:6px 4px 10px!important;min-width:0!important;max-height:46vh!important;overflow-y:auto!important;overflow-x:hidden!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk{width:100%!important;max-width:none!important;min-width:0!important;flex:none!important;margin:0!important;padding:11px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk-options{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;width:100%!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice{min-width:0!important;padding:9px 7px!important;gap:4px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice-name{font-size:12px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice-count{font-size:10px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice-check{width:14px!important;height:14px!important;flex-basis:14px!important;font-size:10px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-bulk-sell{display:block!important;width:100%!important;max-width:none!important;flex:0 0 auto!important;margin:0!important;box-sizing:border-box!important;min-height:40px!important}
+@media(max-width:390px){#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 
-/* Fix first-visit notification: the earlier sibling rule could hide the
-   tutorial dot appended after deployment/weed/claw indicators. */
-#ui button[data-action] > .geongi-first-menu-dot:not([hidden]) {
-  display:block!important;
-  visibility:visible!important;
-  opacity:1!important;
-  position:absolute!important;
-  top:3px!important;
-  right:3px!important;
-  z-index:30!important;
-}
-/* Only one visible indicator: when guide is pending, all other dots yield. */
-#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
-  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
-  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
-  .geongi-equipment-dot,.pepero-sale-dot
-):not([hidden]) {display:none!important;}
-/* Top-level activity button must remain visible while any child guide is unread. */
-#ui .nav-activity > .geongi-first-menu-dot:not([hidden]) {
-  display:block!important;
-  visibility:visible!important;
-  opacity:1!important;
-}
-
-/* First-visit badges: one deterministic visual per menu, independent of sibling dots. */
-#ui button.nav-button[data-action] { isolation:isolate; }
-#ui button.nav-button[data-action] > .geongi-first-menu-dot:not([hidden]) {
-  display:block!important;visibility:visible!important;opacity:1!important;
-  position:absolute!important;top:3px!important;right:3px!important;
-  width:9px!important;height:9px!important;border-radius:50%!important;
-  background:#ee384b!important;border:1.5px solid white!important;z-index:35!important;
-}
-#ui button.nav-button[data-action] > .geongi-first-menu-dot[hidden] {display:none!important;}
-#ui button.nav-button:is(.nav-activity,.nav-market,.nav-myroom)[data-guide-pending]::after {
-  content:""!important;display:block!important;position:absolute!important;
-  top:3px!important;right:3px!important;width:9px!important;height:9px!important;
-  background:#ee384b!important;border:1.5px solid white!important;border-radius:50%!important;
-  z-index:36!important;pointer-events:none!important;
-}
-#ui button.nav-button:is(.nav-activity,.nav-market,.nav-myroom)[data-guide-pending] > .geongi-first-menu-dot {display:none!important;}
-#ui button.nav-button:is(.nav-activity,.nav-market,.nav-myroom):not([data-guide-pending])::after {content:none!important;}
+/* Limit break character picker: show current weed-speed bonus without changing card geometry */
+#ui .limit-break-picker .limit-break-weed-value{display:block;font-size:10px;font-weight:700;color:#518c6a;line-height:1.2;white-space:nowrap}
