@@ -6684,3 +6684,68 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
  #ui .dopamine-screen .dopamine-play{padding:7px!important}
  #ui .dopamine-screen .lottery-balance{margin:1px auto 0!important}
 }
+
+/* Recent winners: compact inside the existing dopamine layout, no page scrolling. */
+#ui .dopamine-screen .dopamine-scene>.dopamine-winners{grid-column:1/-1;grid-row:4;min-width:0;max-width:100%;padding:7px 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:11px;box-sizing:border-box;overflow:hidden}
+#ui .dopamine-screen .dopamine-winners>strong{display:block;margin-bottom:3px;font-size:12px}
+#ui .dopamine-screen .dopamine-winners-list{display:flex;gap:5px 14px;overflow-x:auto;white-space:nowrap;scrollbar-width:thin}
+#ui .dopamine-screen .dopamine-winner-item{flex:0 0 auto}
+#ui .dopamine-screen .dopamine-scene{grid-template-rows:auto auto minmax(0,1fr) auto!important}
+@media(max-width:650px){#ui .dopamine-screen .dopamine-scene{grid-template-rows:auto auto minmax(0,.8fr) minmax(0,1.3fr) auto!important}#ui .dopamine-screen .dopamine-scene>.dopamine-winners{grid-column:1;grid-row:5;padding:4px 8px;font-size:10px}}
+/* Geongi Plaza: shared PC/mobile layout, existing character assets only */
+.plaza-card{width:min(920px,96vw)!important;max-height:94dvh;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:20px!important}.plaza-head{display:flex;justify-content:space-between;align-items:center;padding-right:28px}.plaza-head h2{margin:0}.plaza-status{font-size:13px;color:#58715d}.plaza-map{height:clamp(220px,43dvh,450px);width:100%;position:relative;overflow:hidden;border:2px solid #c4d9be;border-radius:13px;background:#dfebd8;touch-action:none}.plaza-path-h,.plaza-path-v{position:absolute;background:#ebddc8}.plaza-path-h{left:0;right:0;top:40%;height:20%}.plaza-path-v{top:0;bottom:0;left:42%;width:16%}.plaza-fountain{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:65px;height:65px;border-radius:50%;background:#9dc9d4;border:7px solid #f8f6ed;box-shadow:inset 0 0 0 7px #badfe6;pointer-events:none}.plaza-players{position:absolute;inset:0}.plaza-player{position:absolute;transform:translate(-50%,-50%);width:46px;height:46px;transition:left .16s linear,top .16s linear;z-index:2}.plaza-player img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 2px #6b816b55)}.plaza-player.is-me img{filter:drop-shadow(0 0 5px #43945b)}.plaza-name{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);white-space:nowrap;background:#ffffffed;border-radius:8px;padding:2px 5px;font-size:11px;color:#333}.plaza-bubble{position:absolute;bottom:calc(100% + 25px);left:50%;transform:translateX(-50%);max-width:160px;min-width:35px;white-space:normal;overflow-wrap:anywhere;background:white;border-radius:10px;padding:5px 8px;font-size:11px;box-shadow:0 2px 5px #0002;color:#222}.plaza-bubble[hidden]{display:none}.plaza-player[data-emote="jump"] img{animation:plaza-jump .6s infinite alternate}.plaza-player[data-emote="wave"] img{animation:plaza-wave .7s infinite alternate}.plaza-player[data-emote="dance"] img{animation:plaza-wave .3s infinite alternate}.plaza-player[data-emote="sit"] img{transform:scaleY(.7);transform-origin:bottom}@keyframes plaza-jump{to{transform:translateY(-12px)}}@keyframes plaza-wave{to{transform:rotate(12deg)}}.plaza-actions,.plaza-compose{display:flex;gap:7px}.plaza-actions button,.plaza-compose button{border:1px solid #b8cdb9;border-radius:9px;padding:7px 12px;background:#f5f9f2;color:#344b3b;cursor:pointer}.plaza-chat{height:100px;overflow:auto;background:#f7f9f5;border-radius:9px;padding:9px;font-size:13px;color:#333}.plaza-chat>div{padding:2px 0}.plaza-compose input{flex:1;min-width:0;border:1px solid #c6d3c6;border-radius:8px;padding:8px}.plaza-hint{font-size:11px;color:#65766b;margin:0}.plaza-joystick{display:none;position:absolute;bottom:14px;left:14px;width:88px;height:88px;border-radius:50%;background:#fff8;border:2px solid #fff9;z-index:5;touch-action:none}.plaza-stick{position:absolute;left:calc(50% - 17px);top:calc(50% - 17px);width:34px;height:34px;border-radius:50%;background:#658a79bb;pointer-events:none}@media(pointer:coarse){.plaza-joystick{display:block}}@media(max-width:600px){.plaza-card{padding:12px!important;gap:6px}.plaza-map{height:clamp(200px,38dvh,330px)}.plaza-player{width:36px;height:36px}.plaza-chat{height:80px}.plaza-actions button{padding:6px 9px;font-size:12px}}
+
+/* Plaza 1.1: decorative CSS-only square, preserved avatar spots, bottom mobile controls */
+.plaza-map{background-color:#d9e8d0;background-image:linear-gradient(90deg,#ffffff25 1px,transparent 1px),linear-gradient(#ffffff25 1px,transparent 1px);background-size:30px 30px;box-shadow:inset 0 0 0 8px #b8d6aa55}
+.plaza-path-h,.plaza-path-v{background-color:#ecdfc8;background-image:repeating-linear-gradient(90deg,transparent 0 29px,#cbbda860 30px 31px)}
+.plaza-fountain{box-shadow:inset 0 0 0 7px #badfe6,0 0 0 9px #d6c5aa;z-index:1}
+.plaza-garden{position:absolute;width:17%;height:22%;border:5px solid #b9a88b;border-radius:18px;background:radial-gradient(circle at 25% 30%,#f4c7d5 0 5px,transparent 6px),radial-gradient(circle at 65% 60%,#fff1a8 0 5px,transparent 6px),radial-gradient(circle at 70% 20%,#f4c7d5 0 4px,transparent 5px),#a8cd92;pointer-events:none}
+.plaza-garden-a{top:5%;left:5%}.plaza-garden-b{top:5%;right:5%}.plaza-garden-c{bottom:5%;left:5%}.plaza-garden-d{bottom:5%;right:5%}
+.plaza-bench{position:absolute;width:55px;height:18px;border-radius:5px;border:3px solid #987858;background:repeating-linear-gradient(0deg,#d5a97b 0 5px,#9b714c 6px 7px);pointer-events:none}.plaza-bench-a{left:24%;top:15%}.plaza-bench-b{right:24%;bottom:15%}
+.plaza-player.is-away{opacity:.64;filter:saturate(.6)}.plaza-player.is-away .plaza-name{background:#edf0e9e8}.plaza-player.is-away .plaza-name:after{content:' · 자리 유지';color:#687568;font-size:9px}
+.plaza-mobile-controls{display:none;align-items:center;gap:14px;padding:6px 8px;background:#edf5e8;border:1px solid #d0dfc9;border-radius:12px;color:#637663;font-size:12px;min-height:110px}
+.plaza-mobile-controls .plaza-joystick{position:relative;left:auto;bottom:auto;flex:0 0 88px;display:block;background:#fff9;border-color:#c7dac6}
+@media(pointer:coarse){.plaza-mobile-controls{display:flex}.plaza-map .plaza-joystick{display:none}}
+@media(max-width:600px){.plaza-card{max-height:96dvh}.plaza-map{height:clamp(200px,34dvh,310px)}.plaza-mobile-controls{min-height:100px}}
+
+/* Plaza 1.3 unified PC/mobile: one 1.6x-tall world, fixed viewport and following camera. */
+#ui .plaza-card{overflow:hidden!important;max-height:min(94dvh,900px)!important;min-height:0!important;box-sizing:border-box}
+#ui .plaza-map{flex:1 1 auto!important;min-height:160px!important;height:auto!important;max-height:none!important;overflow:hidden!important;overscroll-behavior:contain;touch-action:none;position:relative}
+#ui .plaza-world{position:absolute;left:0;top:0;width:100%;height:160%;will-change:transform;transition:transform .09s linear;background-color:#d7e7cf;background-image:linear-gradient(90deg,#ffffff35 1px,transparent 1px),linear-gradient(#ffffff35 1px,transparent 1px);background-size:30px 30px;}
+#ui .plaza-world .plaza-path-h{top:44%;height:12%;background:repeating-linear-gradient(90deg,#e7d8bc 0 27px,#d2bfa3 28px 30px)}
+#ui .plaza-world .plaza-path-v{left:43%;width:14%;background:repeating-linear-gradient(0deg,#e7d8bc 0 27px,#d2bfa3 28px 30px)}
+#ui .plaza-world .plaza-fountain{width:76px;height:76px;background:radial-gradient(circle,#e4f8fa 0 9%,#83c2d3 12% 60%,#6faabd 70%)}
+#ui .plaza-world .plaza-garden{height:16%;width:22%;border-radius:18px;box-shadow:0 3px 0 #91ad81}
+#ui .plaza-world .plaza-garden-a,#ui .plaza-world .plaza-garden-b{top:8%}
+#ui .plaza-world .plaza-garden-c,#ui .plaza-world .plaza-garden-d{bottom:8%}
+#ui .plaza-world .plaza-bench-a{top:31%;left:20%}
+#ui .plaza-world .plaza-bench-b{bottom:31%;right:20%}
+#ui .plaza-world .plaza-player{transition:left .12s linear,top .12s linear}
+#ui .plaza-mobile-controls{flex-shrink:0;touch-action:none}
+#ui .plaza-actions,#ui .plaza-compose,#ui .plaza-head,#ui .plaza-hint{flex-shrink:0}
+#ui .plaza-chat{flex:0 0 80px;min-height:0;overscroll-behavior:contain}
+@media(max-width:600px){#ui .plaza-card{max-height:96dvh!important;gap:5px!important;padding:10px!important}#ui .plaza-map{height:auto!important;min-height:145px!important}#ui .plaza-chat{flex-basis:65px;height:65px}#ui .plaza-mobile-controls{min-height:96px}}
+
+/* Plaza 1.4: shared PC/mobile full-viewport layout, 2x avatars, no page scrolling. */
+#ui [data-screen="plaza"].gacha-modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;display:flex;align-items:stretch!important;justify-content:center!important;overflow:hidden!important;padding:env(safe-area-inset-top) 8px env(safe-area-inset-bottom)!important;box-sizing:border-box;overscroll-behavior:none}
+#ui [data-screen="plaza"].gacha-modal[aria-hidden="true"]{display:none!important}
+#ui [data-screen="plaza"] .plaza-card{height:100%!important;max-height:100%!important;width:min(100%,920px)!important;max-width:920px!important;margin:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;box-sizing:border-box!important;padding:12px!important;gap:6px!important}
+#ui [data-screen="plaza"] .plaza-map{flex:1 1 0!important;height:0!important;min-height:90px!important;max-height:none!important}
+#ui [data-screen="plaza"] .plaza-world{height:100%!important}
+#ui [data-screen="plaza"] .plaza-player{width:92px!important;height:92px!important}
+#ui [data-screen="plaza"] .plaza-head{min-height:32px}
+#ui [data-screen="plaza"] .plaza-chat{flex:0 0 68px!important;height:68px!important}
+#ui [data-screen="plaza"] .plaza-mobile-controls{min-height:88px!important;padding:2px 8px!important}
+#ui [data-screen="plaza"] .plaza-hint{margin:0!important}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-card{padding:8px!important;gap:4px!important}#ui [data-screen="plaza"] .plaza-player{width:92px!important;height:92px!important}#ui [data-screen="plaza"] .plaza-chat{flex-basis:54px!important;height:54px!important}#ui [data-screen="plaza"] .plaza-mobile-controls{min-height:82px!important}}
+
+/* Plaza 1.5: user-provided background; same scene for PC/mobile. */
+#ui [data-screen="plaza"] .plaza-world{background:#dce9c7 url('/assets/plaza/plaza_background.png') center center / 100% 100% no-repeat!important;}
+#ui [data-screen="plaza"] .plaza-path-h,#ui [data-screen="plaza"] .plaza-path-v,#ui [data-screen="plaza"] .plaza-fountain,#ui [data-screen="plaza"] .plaza-garden,#ui [data-screen="plaza"] .plaza-bench{display:none!important;}
+#ui [data-screen="plaza"] .plaza-players{position:absolute;inset:0;}
+
+/* Plaza 1.6: identical avatar size across desktop/mobile, prevent iOS input focus zoom. */
+#ui [data-screen="plaza"] .plaza-player{width:64.4px!important;height:64.4px!important}
+#ui [data-screen="plaza"] .plaza-compose input,
+#ui [data-screen="plaza"] input.plaza-input{font-size:16px!important;line-height:1.35!important;min-height:40px;box-sizing:border-box}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-player{width:64.4px!important;height:64.4px!important}}

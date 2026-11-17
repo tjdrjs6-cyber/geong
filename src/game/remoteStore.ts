@@ -351,8 +351,8 @@ export class RemoteGachaStore {
   async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
   async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
-  async dopamine():Promise<{played:boolean;stake:number;won:boolean;coins:number}>{return request('dopamine')}
-  async dopaminePlay(stake:number):Promise<{played:boolean;stake:number;won:boolean;coins:number}>{const result=await request<{played:boolean;stake:number;won:boolean;coins:number}>('dopamine/play',{stake});this.data.gems=result.coins;return result}
+  async dopamine():Promise<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>{return request('dopamine')}
+  async dopaminePlay(stake:number):Promise<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>{const result=await request<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>('dopamine/play',{stake});this.data.gems=result.coins;return result}
   async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
   async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
