@@ -6600,3 +6600,17 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .dopamine-play{display:block;width:100%;padding:15px 8px;border:0;border-radius:13px;background:#c58339;color:white;font-weight:900;font-size:16px;cursor:pointer}
 .dopamine-play:disabled{background:#b9ad9d;cursor:default}
 .dopamine-status{text-align:center;font-size:13px;line-height:1.5;margin:12px 0 0}
+
+/* Dopamine roulette: probability area is proportional to selected stake. */
+.dopamine-roulette{display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 10px;background:#fffaf3;border:2px solid #e9d4b5;border-radius:18px;color:#61462f}
+.dopamine-wheel-wrap{width:min(240px,65vw);aspect-ratio:1;position:relative;display:grid;place-items:center}
+.dopamine-wheel{width:92%;height:92%;border-radius:50%;border:7px solid #fff;box-shadow:0 3px 12px #8d694944;background:conic-gradient(#e9ad56 0deg var(--win-angle,36deg),#b9ad9d var(--win-angle,36deg) 360deg);position:relative;transition:transform 4.1s cubic-bezier(.12,.78,.12,1);box-sizing:border-box}
+.dopamine-wheel-pointer{position:absolute;top:-1px;left:50%;transform:translateX(-50%);z-index:3;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:24px solid #68442a;filter:drop-shadow(0 2px 1px #fff)}
+.dopamine-wheel-hub{position:absolute;width:35px;height:35px;border-radius:50%;background:#fff8e8;border:5px solid #b9874b;box-shadow:0 2px 5px #6c4e3944;pointer-events:none}
+.dopamine-wheel-label{position:absolute;font-size:13px;font-weight:900;color:#503822;text-shadow:0 1px #ffffff88}
+.dopamine-win-label{top:26%;right:18%}.dopamine-lose-label{bottom:25%;left:14%}
+.dopamine-wheel-legend{display:flex;gap:20px;font-size:12px;font-weight:800}.dopamine-wheel-legend span:before{content:'';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:#e9ad56}.dopamine-wheel-legend span+span:before{background:#b9ad9d}
+.dopamine-wheel-result{margin:0;font-size:15px;font-weight:900;text-align:center;line-height:1.5}
+.dopamine-result-close{border:0;background:#c58339;color:white;padding:10px 24px;border-radius:12px;font-weight:800;cursor:pointer}
+.dopamine-wheel-result[hidden],.dopamine-result-close[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.dopamine-wheel{transition-duration:.01ms}}

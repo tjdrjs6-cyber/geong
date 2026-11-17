@@ -358,6 +358,9 @@ export class GachaUi {
   private dopamineStake=10000
   private dopamineState:{played:boolean;stake:number;won:boolean;coins:number}|null=null
   private dopamineBusy=false
+  private dopamineWheelAngle=0
+  private dopamineRevealing=false
+  private dopamineRevealText=""
   private async openDopamine():Promise<void>{
     try{this.dopamineState=await this.store.dopamine();this.renderDopamine()}
     catch(e){this.handleError(e)}
@@ -373,6 +376,12 @@ export class GachaUi {
     set('.dopamine-profit',`+${(100000-stake).toLocaleString('ko-KR')} 코인`)
     set('.dopamine-loss',`-${stake.toLocaleString('ko-KR')} 코인`)
     const fill=screen.querySelector<HTMLElement>('.dopamine-fill');if(fill)fill.style.width=`${stake/1000}%`
+    const wheel=screen.querySelector<HTMLElement>('.dopamine-wheel')
+    if(wheel){wheel.style.setProperty('--win-angle',`${stake/1000*3.6}deg`);wheel.style.transform=`rotate(${this.dopamineWheelAngle}deg)`}
+    const result=screen.querySelector<HTMLElement>('.dopamine-wheel-result')
+    if(result){result.textContent=this.dopamineRevealing?'룰렛 회전 중...':this.dopamineRevealText;result.hidden=!this.dopamineRevealing&&!this.dopamineRevealText}
+    const revealClose=screen.querySelector<HTMLButtonElement>('[data-action="dopamine-result-close"]')
+    if(revealClose)revealClose.hidden=this.dopamineRevealing||!this.dopamineRevealText
     const btn=screen.querySelector<HTMLButtonElement>('.dopamine-play')
     if(btn){btn.disabled=!state||state.played||this.dopamineBusy||state.coins<stake;btn.textContent=state?.played?'오늘 도전 완료':`${stake.toLocaleString('ko-KR')}코인으로 도전하기`}
     set('.dopamine-status',state?.played?`오늘의 결과: ${state.won?'당첨':'미당첨'} · 투입 ${state.stake.toLocaleString('ko-KR')}코인 · 내일 오전 9시 초기화`:state?.coins<stake?'코인이 부족합니다.':'오늘 1회 도전할 수 있습니다.')
@@ -384,9 +393,20 @@ export class GachaUi {
     this.dopamineBusy=true;this.renderDopamine()
     try{
       this.dopamineState=await this.store.dopaminePlay(stake)
-      this.renderWallet();this.renderDopamine()
-      window.alert(this.dopamineState.won?`당첨! 100,000코인을 획득했습니다.\n순이익 +${(100000-stake).toLocaleString('ko-KR')}코인`:`미당첨! ${stake.toLocaleString('ko-KR')}코인을 잃었습니다.`)
-    }catch(e){this.handleError(e);await this.openDopamine()}
+      this.renderWallet()
+      this.dopamineRevealing=true
+      this.dopamineRevealText=''
+      const winAngle=stake/1000*3.6
+      const landing=this.dopamineState.won?winAngle/2:winAngle+(360-winAngle)/2
+      const previous=((this.dopamineWheelAngle%360)+360)%360
+      const offset=((360-landing-previous)%360+360)%360
+      this.dopamineWheelAngle+=360*6+offset
+      this.renderDopamine()
+      await new Promise<void>(resolve=>window.setTimeout(resolve,4200))
+      this.dopamineRevealing=false
+      this.dopamineRevealText=this.dopamineState.won?`당첨! 100,000코인 지급 · 순이익 +${(100000-stake).toLocaleString('ko-KR')}코인`:`미당첨 · ${stake.toLocaleString('ko-KR')}코인 소멸`
+      this.renderDopamine()
+    }catch(e){this.dopamineRevealing=false;this.handleError(e);await this.openDopamine()}
     finally{this.dopamineBusy=false;this.renderDopamine()}
   }
   show(screen: Screen): void {
@@ -603,6 +623,7 @@ export class GachaUi {
         <div class="rps-scene lottery-scene dopamine-scene">
           <div class="lottery-heading"><h2>도파민존</h2><p>하루 한 번, 직접 선택하는 행운</p><div class="lottery-balance"><img src="/assets/coin.png" alt=""/> 보유 코인 <strong class="dopamine-coins">0</strong></div></div>
           <div class="dopamine-card"><small>당첨 보상</small><strong>100,000 코인</strong><p>매일 오전 9시 참여 횟수 초기화</p></div>
+          <div class="dopamine-roulette" aria-label="당첨 확률에 따라 영역이 바뀌는 룰렛"><div class="dopamine-wheel-wrap"><div class="dopamine-wheel-pointer"></div><div class="dopamine-wheel"><span class="dopamine-wheel-label dopamine-win-label">당첨</span><span class="dopamine-wheel-label dopamine-lose-label">미당첨</span></div><div class="dopamine-wheel-hub"></div></div><div class="dopamine-wheel-legend"><span>당첨 영역</span><span>미당첨 영역</span></div><p class="dopamine-wheel-result" aria-live="polite" hidden></p><button type="button" class="dopamine-result-close" data-action="dopamine-result-close" hidden>결과 확인</button></div>
           <div class="dopamine-panel"><h3>도전 금액 선택</h3><div class="dopamine-options">${Array.from({length:10},(_,i)=>`<button type="button" data-action="dopamine-select" data-stake="${(i+1)*10000}">${i+1}만</button>`).join('')}</div>
           <div class="dopamine-summary"><span>당첨 확률 <strong class="dopamine-chance">10%</strong></span><div class="dopamine-track"><div class="dopamine-fill"></div></div><span>당첨 시 순이익 <b class="dopamine-profit">+90,000 코인</b></span><span>실패 시 손실 <b class="dopamine-loss">-10,000 코인</b></span></div>
           <button class="dopamine-play" data-action="dopamine-play">10,000코인으로 도전하기</button><p class="dopamine-status" aria-live="polite">참여 가능 여부 확인 중...</p></div>
@@ -1306,6 +1327,7 @@ export class GachaUi {
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
     if (action === 'dopamine') {this.show('dopamine');return}
+    if (action === 'dopamine-result-close') {this.dopamineRevealText='';this.renderDopamine();return}
     if (action === 'dopamine-select') {this.dopamineStake=Number(button.dataset.stake);this.renderDopamine();return}
     if (action === 'dopamine-play') {await this.playDopamine();return}
     if (action === 'lottery-reset') {await this.resetLottery();return}
