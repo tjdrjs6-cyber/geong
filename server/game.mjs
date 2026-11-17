@@ -38,7 +38,7 @@ const ENTRY_REWARD_15 = new Set(['m_chiikawa','m_hachiware','m_usagi','m_momonga
 const ENTRY_REWARD_30 = new Set(['siren','shimajiro','anoko','dekatsuyo','ode','staff_chiikawa','staff_hachiware','staff_usagi'])
 const ENTRY_REWARD_50 = new Set(['c_curry','h_curry','u_curry','ginger_chiikawa','ginger_hachiware','ginger_usagi','beetle','ode_prison','angel_momonga','devil_momonga'])
 const ENTRY_REWARD_80 = new Set(['christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi','kurimanju_bean','beetle_berserk','rakko_limited','usagi_orange','halloween_chiikawa','halloween_hachiware','halloween_usagi'])
-export const newEntryBonus = id => id === 'siren_curry' ? 150 : ENTRY_REWARD_80.has(id) ? 80 : ENTRY_REWARD_50.has(id) ? 50 : ENTRY_REWARD_30.has(id) ? 30 : ENTRY_REWARD_15.has(id) ? 15 : 10
+export const newEntryBonus = id => 0
 
 /** Maps an integer roll in [0, TOTAL_WEIGHT) to a character id. */
 export function characterForRoll(roll) {
@@ -161,7 +161,7 @@ export function settleBattle(since, damage, now, power) {
 /** 데코 뽑기: decorations with equal chance; 20 coins each, 10 pulls for 180. */
 export const DECO_IDS = ["d001", "d002", "d003", "d004", "d005", "d006", "d007", "d008", "d009", "d010", "d011", "d012", "d013", "d014", "d015", "d016", "d017", "d018", "d019", "d020", "d021", "d022", "d023", "d024", "d025", "d026", "d027", "d028", "d029", "d030", "d031"]
 export const DECO_PULL_COSTS = { 1: 100, 3: 300, 5: 500, 10: 1000 }
-export const DECO_NEW_BONUS = 10
+export const DECO_NEW_BONUS = 0
 const VALID_DECO = new Set(DECO_IDS)
 export function normalizeDecos(value) {
   const out = {}
