@@ -6725,3 +6725,16 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .plaza-actions,#ui .plaza-compose,#ui .plaza-head,#ui .plaza-hint{flex-shrink:0}
 #ui .plaza-chat{flex:0 0 80px;min-height:0;overscroll-behavior:contain}
 @media(max-width:600px){#ui .plaza-card{max-height:96dvh!important;gap:5px!important;padding:10px!important}#ui .plaza-map{height:auto!important;min-height:145px!important}#ui .plaza-chat{flex-basis:65px;height:65px}#ui .plaza-mobile-controls{min-height:96px}}
+
+/* Plaza 1.4: shared PC/mobile full-viewport layout, 2x avatars, no page scrolling. */
+#ui [data-screen="plaza"].gacha-modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;display:flex;align-items:stretch!important;justify-content:center!important;overflow:hidden!important;padding:env(safe-area-inset-top) 8px env(safe-area-inset-bottom)!important;box-sizing:border-box;overscroll-behavior:none}
+#ui [data-screen="plaza"].gacha-modal[aria-hidden="true"]{display:none!important}
+#ui [data-screen="plaza"] .plaza-card{height:100%!important;max-height:100%!important;width:min(100%,920px)!important;max-width:920px!important;margin:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;box-sizing:border-box!important;padding:12px!important;gap:6px!important}
+#ui [data-screen="plaza"] .plaza-map{flex:1 1 0!important;height:0!important;min-height:90px!important;max-height:none!important}
+#ui [data-screen="plaza"] .plaza-world{height:100%!important}
+#ui [data-screen="plaza"] .plaza-player{width:92px!important;height:92px!important}
+#ui [data-screen="plaza"] .plaza-head{min-height:32px}
+#ui [data-screen="plaza"] .plaza-chat{flex:0 0 68px!important;height:68px!important}
+#ui [data-screen="plaza"] .plaza-mobile-controls{min-height:88px!important;padding:2px 8px!important}
+#ui [data-screen="plaza"] .plaza-hint{margin:0!important}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-card{padding:8px!important;gap:4px!important}#ui [data-screen="plaza"] .plaza-player{width:92px!important;height:92px!important}#ui [data-screen="plaza"] .plaza-chat{flex-basis:54px!important;height:54px!important}#ui [data-screen="plaza"] .plaza-mobile-controls{min-height:82px!important}}
