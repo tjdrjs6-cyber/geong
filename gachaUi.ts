@@ -80,7 +80,10 @@ export class GachaUi {
   private authMode: 'login' | 'register' = 'login'
   private weedTimer = 0
   private lastEnemyHp = -1
+  private lastEnemyHpKey = ''
+  private lastEnemyHpAt = 0
   private battleSyncing = false
+  private battleActionBusy = false
   private clawX = 88
   private clawY = 15
   private clawHoldTimer: number | undefined
@@ -397,7 +400,7 @@ export class GachaUi {
         <div class="weed-panel battle-panel">
           <div class="field-info-sticky">
           <p class="battle-reward-hint">남은 시간 <strong class="battle-time-remaining">30:00</strong></p>
-          <p class="battle-status"></p><p class="achievement-combat-bonus">컬렉션 영구 전투력 확인 중...</p>
+          <div class="battle-status"></div>
           <button type="button" class="battle-test-time5" data-action="battle-test-time5" hidden>남은 시간 5초</button><button type="button" class="battle-test-clear" data-action="battle-test-clear" hidden>단계 클리어 → 다음 단계</button><button type="button" class="battle-test-hp500" data-action="battle-test-hp500" hidden>몬스터 HP 500</button><button type="button" class="battle-test-reset" data-action="battle-test-reset" hidden>단계 초기화 (1-1)</button>
                     </div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
@@ -426,7 +429,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b><img class="expedition-heading-weapon" src="/assets/decos/d01.png" alt=""/> 원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-stage-transition" aria-hidden="true"><strong>STAGE CLEAR!</strong><span class="expedition-stage-next">다음 단계</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><p class="achievement-combat-bonus">컬렉션 영구 전투력 확인 중...</p><p class="expedition-equipment-bonus">장비 전투력 적용 중: 확인 중...</p><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 150코인·강화파편 15개 / 2단계 300코인·강화파편 20개 / 3단계 500코인·강화파편 30개 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-power-summary"></div><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 150코인·강화파편 15개 / 2단계 300코인·강화파편 20개 / 3단계 500코인·강화파편 30개 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -635,7 +638,55 @@ export class GachaUi {
   private showAlchemy():void {
     const dialog=document.createElement('dialog');dialog.className='myroom-equipment-dialog alchemy-dialog'
     let selected=WEAPON_ACCESSORIES[0].id
+    let alchemyMode:'keyring'|'character'='keyring'
+    let selectedCharacter=this.store.data.owned[0]
+    let selectedDupes=0
+    let selectedStones=0
     const render=()=>{
+      if(alchemyMode==='character'){
+        const tierRank:Record<string,number>={transcendent:7,legendary:6,super:5,unique:5,epic:4,rare:3,mermaid:2,normal:1}
+        const choices=CHARACTERS.filter(c=>this.store.data.owned.includes(c.id)).sort((a,b)=>(tierRank[b.tier]||0)-(tierRank[a.tier]||0)||b.power-a.power)
+        if(!selectedCharacter||!choices.some(c=>c.id===selectedCharacter))selectedCharacter=choices[0]?.id
+        const char=choices.find(c=>c.id===selectedCharacter)
+        const level=char?this.store.limitBreak[char.id]||0:0
+        const dupes=char?this.store.dupes[char.id]||0:0
+        const stones=this.store.market.stones||0
+        const required=[1,1,2,2,3,3,4,4,5,5][level]||0
+        selectedDupes=Math.max(0,Math.min(selectedDupes,dupes,required))
+        selectedStones=Math.max(0,Math.min(selectedStones,stones,required-selectedDupes))
+        const useDupes=selectedDupes
+        const useStones=selectedStones
+        const materialsReady=level<10&&useDupes+useStones===required
+        const base=char?battlePower(char.id):0
+        const current=Math.ceil(base*(1+level*0.1))
+        const next=Math.ceil(base*(1+(level+1)*0.1))
+        dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel limit-break-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><div class="alchemy-mode-tabs"><button data-mode="keyring">키링 합성</button><button class="active" data-mode="character">캐릭터 한계돌파</button></div><p class="alchemy-description">같은 캐릭터를 합쳐 최대 +10 · 성공률 100%</p><div class="alchemy-picker limit-break-picker">${choices.map(c=>`<button type="button" class="alchemy-pick limit-break-tier-${c.tier} ${c.id===selectedCharacter?'selected':''}" data-character="${c.id}"><span class="limit-break-level-badge">+${this.store.limitBreak[c.id]||0}</span><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt=""/><span>${fullName(c)}</span><small class="limit-break-tier-name">${({normal:'노말',rare:'에픽',epic:'에픽',unique:'유니크',super:'유니크',legendary:'레전더리',transcendent:'초월',mermaid:'레어'} as Record<string,string>)[c.tier]||c.tier}</small></button>`).join('')}</div>${char?`<div class="limit-break-preview"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt=""/><div class="limit-break-details"><h3>${fullName(char)} · +${level}/10</h3><p>본체 전투력 ${current.toLocaleString()} ${level<10?`→ ${next.toLocaleString()}`:''}</p><strong>전투력 +${level*10}% ${level<10?`→ +${(level+1)*10}%`:''}</strong></div></div><div class="limit-break-materials"><div class="limit-break-material limit-break-material-dupes"><div class="limit-break-material-info"><span class="limit-break-material-icon limit-break-material-icon-dupes">♧</span><div class="limit-break-material-label"><b>중복 캐릭터</b><small>보유 ${dupes}개</small></div></div><div class="limit-break-stepper"><button type="button" data-adjust="dupes-minus" aria-label="중복 캐릭터 1개 줄이기" ${useDupes<=0?'disabled':''}>−</button><strong>${useDupes}</strong><button type="button" data-adjust="dupes-plus" aria-label="중복 캐릭터 1개 늘리기" ${useDupes>=dupes||useDupes+useStones>=required?'disabled':''}>+</button></div></div><div class="limit-break-material limit-break-material-stones"><div class="limit-break-material-info"><img class="limit-break-material-icon" src="/assets/items/breakthrough_stone.png" alt=""/><div class="limit-break-material-label"><b>한계돌파석</b><small>보유 ${stones}개</small></div></div><div class="limit-break-stepper"><button type="button" data-adjust="stones-minus" aria-label="한계돌파석 1개 줄이기" ${useStones<=0?'disabled':''}>−</button><strong>${useStones}</strong><button type="button" data-adjust="stones-plus" aria-label="한계돌파석 1개 늘리기" ${useStones>=stones||useDupes+useStones>=required?'disabled':''}>+</button></div></div></div><div class="limit-break-material-progress"><div class="limit-break-progress-heading"><span>✨ 선택한 강화 재료</span><b>${useDupes+useStones} / ${required}개</b></div><div class="limit-break-progress-track"><div class="limit-break-progress-fill ${materialsReady?'ready':''}" style="width:${required?Math.min(100,(useDupes+useStones)/required*100):100}%"></div></div><p class="limit-break-material-hint">${level>=10?'최대 강화 단계입니다':materialsReady?'강화 준비 완료!':`재료 ${required-useDupes-useStones}개를 더 선택해 주세요`}</p></div><button type="button" class="alchemy-recipe limit-break-upgrade" ${!materialsReady?'disabled':''}>${level>=10?'+10 한계돌파 완료':!materialsReady?'재료 수량을 맞춰주세요':`+${level+1} 한계돌파 · 합성하기`}</button>`:'<p>보유 캐릭터가 없습니다.</p>'}<button type="button" class="myroom-equipment-done">닫기</button></div>`
+        dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
+        dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
+        dialog.querySelector('[data-mode="keyring"]')?.addEventListener('click',()=>{alchemyMode='keyring';render()})
+        dialog.querySelectorAll<HTMLButtonElement>('[data-adjust]').forEach(b=>b.addEventListener('click',()=>{const action=b.dataset.adjust;if(action==='dupes-minus')selectedDupes--;if(action==='dupes-plus')selectedDupes++;if(action==='stones-minus')selectedStones--;if(action==='stones-plus')selectedStones++;render()}))
+        dialog.querySelectorAll<HTMLButtonElement>('[data-character]').forEach(b=>b.addEventListener('click',()=>{selectedCharacter=b.dataset.character as CharacterId;selectedDupes=0;selectedStones=0;render()}))
+        dialog.querySelector<HTMLButtonElement>('.limit-break-upgrade')?.addEventListener('click',async()=>{
+          if(!char||level>=10)return
+          const confirmPanel=document.createElement('div')
+          confirmPanel.className='limit-break-confirm-overlay'
+          confirmPanel.innerHTML=`<div class="limit-break-confirm" role="alertdialog" aria-modal="true" aria-label="캐릭터 한계돌파 확인"><h3>캐릭터 한계돌파</h3><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt=""/><p><b>${fullName(char)}</b> +${level+1} 한계돌파</p><p>중복 캐릭터 ${useDupes}개와 한계돌파석 ${useStones}개를 사용하시겠어요?</p><div class="limit-break-confirm-actions"><button type="button" data-confirm="cancel">취소</button><button type="button" data-confirm="accept">합성하기</button></div></div>`
+          dialog.querySelector('.myroom-equipment-panel')?.appendChild(confirmPanel)
+          const accepted=await new Promise<boolean>(resolve=>{
+            confirmPanel.querySelector('[data-confirm="cancel"]')?.addEventListener('click',()=>resolve(false),{once:true})
+            confirmPanel.querySelector('[data-confirm="accept"]')?.addEventListener('click',()=>resolve(true),{once:true})
+          })
+          confirmPanel.remove()
+          if(!accepted)return
+          try{
+            await this.store.upgradeCharacter(char.id,useDupes,useStones)
+            dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2 class="alchemy-result-status">합성 중...</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt="재료"/><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt="본체"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" src="${CHARACTER_IMAGE_URLS[char.id]}" alt="강화 완료"/><h3>한계돌파 +${level+1} 성공!</h3><p>본체 전투력 +${(level+1)*10}%</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
+            window.setTimeout(()=>{const el=dialog.querySelector('.alchemy-result-status');if(el)el.textContent='한계돌파 성공!'},2250)
+            dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
+          }catch(e){this.handleError(e);render()}
+        })
+        return
+      }
       const counts=this.store.accessory.counts||{}
       const item=accessoryInfo(selected) || WEAPON_ACCESSORIES[0]
       const normal=counts[selected]||0
@@ -645,6 +696,7 @@ export class GachaUi {
       dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><p class="alchemy-description">같은 캐릭터의 이전 등급 키링 3개로 합성 · 성공률 100%</p><div class="alchemy-picker">${WEAPON_ACCESSORIES.map(x=>`<button type="button" class="alchemy-pick ${x.id===selected?'selected':''}" data-pick="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===selected}"><img src="${x.image}" alt=""/><span>${x.name.replace(' 키링','')}</span></button>`).join('')}</div><div class="alchemy-owned-title">보유 키링 · ${item.name.replace(' 키링','')}</div><div class="alchemy-owned-grades">${inventoryGrades.map(({grade,count})=>`<div class="alchemy-owned-grade" style="--alchemy-accent:${grade.color}"><span>${grade.name}</span><strong>${count.toLocaleString()}개</strong></div>`).join('')}</div><div class="alchemy-fragments"><img src="/assets/enhancement_fragment.png" alt=""/><span>보유 강화파편</span><strong>${fragments.toLocaleString()}개</strong></div><div class="alchemy-recipes">${ALCHEMY_GRADES.slice(1).map((g,gi)=>{const previous=ALCHEMY_GRADES[gi];const available=previous.id==='normal'?normal:(owned[previous.id]||0);const shortage=available<g.cost||fragments<g.fragments||this.store.data.gems<(g.coins??0);return `<button type="button" class="alchemy-recipe ${shortage?'is-shortage':'is-ready'}" data-id="${selected}" data-grade="${g.id}" ${shortage?'disabled':''}><b style="color:${g.color}">${g.name}</b><small>${previous.name} ${g.cost}개 · 파편 ${g.fragments}개 · 코인 ${(g.coins??0).toLocaleString()}개</small><strong>${shortage?'재료 부족':`합성 · 전투력 +${g.power}`}</strong></button>`}).join('')}</div><button type="button" class="myroom-equipment-done">닫기</button></div>`
       dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
       dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
+      dialog.querySelector('[data-mode="character"]')?.addEventListener('click',()=>{alchemyMode='character';render()})
       dialog.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.pick!;render()}))
       dialog.querySelectorAll<HTMLButtonElement>('.alchemy-recipe').forEach(btn=>btn.addEventListener('click',async()=>{
         if(btn.disabled)return
@@ -800,7 +852,7 @@ export class GachaUi {
     const bulkFixed = screen.querySelector<HTMLElement>('.shop-bulk-fixed')
     if (!items) return
     if (bulkFixed) { bulkFixed.hidden = true; bulkFixed.innerHTML = '' }
-    const balance = `<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 보유 코인 ${Number(this.store.data.gems ?? 0).toLocaleString('ko-KR')}</div>`
+    const balance = `<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')} · 💎 다이아 ${Number(this.store.data.diamonds??0).toLocaleString('ko-KR')}</div>`
     if (this.shopTab !== 'sell') {
       const owned=this.store.data.owned.includes('pepero_chiikawa')
       const active=this.peperoSaleActive()
@@ -808,14 +860,14 @@ export class GachaUi {
       return
     }
     if (this.shopSellTab === 'inventory') {
-      const weeds = ([['normal', this.store.wildWeed?.count ?? 0, '잡초', 5, '/field_wild_weed.png'], ['golden', this.store.wildWeed?.goldenCount ?? 0, '황금잡초', 50, '/field_golden_weed.png']] as const)
+      const weeds = ([['normal', this.store.wildWeed?.count ?? 0, '잡초', 500, '/field_wild_weed.png'], ['golden', this.store.wildWeed?.goldenCount ?? 0, '황금잡초', 5000, '/field_golden_weed.png']] as const)
       items.innerHTML = balance + (weeds.filter(x => x[1] > 0).map(([type,count,name,price,img]) => `<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">판매할 기타 아이템이 없어요.</div>')
       return
     }
     const bulk = this.getBulkSellItems(this.shopSellTab === 'char' ? 'char' : 'deco')
     const bulkCount = bulk.reduce((sum, item) => sum + item.count, 0)
     const bulkCoins = bulk.reduce((sum, item) => sum + item.count * item.price, 0)
-    const bulkButton = `<button class="shop-bulk-sell" data-action="storage-bulk-sell" data-kind="${this.shopSellTab === 'char' ? 'char' : 'deco'}" ${bulkCount ? '' : 'disabled'}>중복 일괄 판매 · ${bulkCount}개 (+${bulkCoins}코인)</button>`
+    const bulkButton = `<button class="shop-bulk-sell" data-action="storage-bulk-sell" data-kind="${this.shopSellTab === 'char' ? 'char' : 'deco'}" ${bulkCount ? '' : 'disabled'}>중복 일괄 판매 · ${bulkCount}개 (+${bulkCoins}다이아)</button>`
     if (bulkFixed) { bulkFixed.innerHTML = bulkButton; bulkFixed.hidden = false }
     const sellButtons = (kind: 'char' | 'deco', id: string, count: number, price: number) => count > 0
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 판매 +${price}</button>${count > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${count}">중복 모두 판매 +${count * price}</button>` : ''}</div>`
@@ -1120,6 +1172,7 @@ export class GachaUi {
       }catch(e){this.handleError(e)}
       return
     }
+    if (action === 'battle-power-detail' || action === 'expedition-power-detail') { this.openCombatPowerDetail(action === 'expedition-power-detail'); return }
     if (action === 'exp-server') {this.expeditionServer=Number(button.dataset.id)||1;this.expeditionImpactServer=this.expeditionServer;if(this.expedition)this.renderExpedition();return}
     if (action === 'exp-join' && button.dataset.id) {try{await this.store.joinExpedition(this.expeditionServer,button.dataset.id as CharacterId);this.toast('원정대 캐릭터 배치를 저장했어요!');await this.loadExpedition();this.setExpeditionBadge(false)}catch(e){this.handleError(e)}return}
     if (action === 'mode') { this.setPullMode(button.dataset.mode === 'deco' ? 'deco' : 'char'); const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup){popup.hidden=false;popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true')} return }
@@ -1260,15 +1313,15 @@ export class GachaUi {
       return
     }
     if (action === 'battle-retry-challenge') {
-      if (this.busy || !this.store.battle) return
-      this.busy=true
+      if (this.battleActionBusy || !this.store.battle) return
+      this.battleActionBusy=true
       try { await this.store.retryBattleStage(); this.lastEnemyHp=-1; this.renderBattleStatus() }
-      catch(error){this.handleError(error)} finally{this.busy=false}
+      catch(error){this.handleError(error)} finally{this.battleActionBusy=false}
       return
     }
     if (action === 'battle-boss-challenge' || action === 'battle-test-time5') {
-      if (this.busy || !this.store.battle) return
-      this.busy = true
+      if (this.battleActionBusy || !this.store.battle) return
+      this.battleActionBusy = true
       try {
         if (action === 'battle-boss-challenge') await this.store.challengeBattleBoss()
         else {
@@ -1278,38 +1331,38 @@ export class GachaUi {
         this.lastEnemyHp = -1
         this.renderBattleStatus()
       } catch (error) { this.handleError(error) }
-      finally { this.busy = false }
+      finally { this.battleActionBusy = false }
       return
     }
     if (action === 'battle-test-hp500') {
-      if (this.busy || this.store.user?.username?.toLowerCase() !== 'test') return
-      this.busy = true
+      if (this.battleActionBusy || this.store.user?.username?.toLowerCase() !== 'test') return
+      this.battleActionBusy = true
       try { await this.store.testBattleHp500(); this.lastEnemyHp = -1; this.toast('현재 단계 몬스터 HP가 500이 되었습니다.') }
       catch (error) { this.handleError(error) }
-      finally { this.busy = false }
+      finally { this.battleActionBusy = false }
       this.renderBattleStatus()
       return
     }
     if (action === 'battle-test-reset') {
-      if (this.busy || this.store.user?.username?.toLowerCase() !== 'test') return
-      this.busy = true
+      if (this.battleActionBusy || this.store.user?.username?.toLowerCase() !== 'test') return
+      this.battleActionBusy = true
       try {
         await this.store.testResetBattle()
         this.lastEnemyHp = -1
         this.toast('1-1 단계부터 다시 시작합니다.')
-      } catch (error) { this.handleError(error) } finally { this.busy = false }
+      } catch (error) { this.handleError(error) } finally { this.battleActionBusy = false }
       this.renderBattle()
       this.renderWallet()
       return
     }
     if (action === 'battle-test-clear') {
-      if (this.busy || this.store.user?.username?.toLowerCase() !== 'test') return
-      this.busy = true
+      if (this.battleActionBusy || this.store.user?.username?.toLowerCase() !== 'test') return
+      this.battleActionBusy = true
       try {
         await this.store.testClearBattle()
         this.lastEnemyHp = -1
         this.toast('테스트 단계 클리어! 다음 단계로 이동했어요.')
-      } catch (error) { this.handleError(error) } finally { this.busy = false }
+      } catch (error) { this.handleError(error) } finally { this.battleActionBusy = false }
       this.renderBattle()
       this.renderWallet()
       return
@@ -2792,6 +2845,24 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     },1000)
   }
 
+  private openCombatPowerDetail(expedition:boolean):void {
+    const room=this.expedition?.servers.find(r=>r.id===this.expeditionServer)
+    const member=room?.members.find(m=>m.me)
+    const breakdown=expedition?member?.powerBreakdown:this.store.battle?.powerBreakdown
+    const total=expedition?(member?.power??0):(this.store.battle?.powerBreakdown?.total??0)
+    const fmt=(n:number)=>Math.max(0,Number(n)||0).toLocaleString('ko-KR')
+    if(document.querySelector<HTMLDialogElement>('dialog.combat-power-modal'))return
+    const dialog=document.createElement('dialog')
+    dialog.className='combat-power-modal'
+    const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
+    dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>${expedition?'원정대':'토벌장'} 전투력 상세</strong><button type="button" class="combat-power-modal-close" aria-label="닫기">×</button></div><div class="combat-power-modal-rows">${rows}<div class="combat-power-modal-total"><strong>총 전투력</strong><strong>${fmt(total)}</strong></div></div><button type="button" class="combat-power-modal-done">확인</button></div>`
+    document.body.appendChild(dialog)
+    dialog.querySelectorAll('.combat-power-modal-close,.combat-power-modal-done').forEach(el=>el.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();if(dialog.open)dialog.close()}))
+    dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()})
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true})
+    dialog.showModal()
+  }
+
   private renderExpedition():void {
     const state=this.expedition
     if(!state)return
@@ -2865,8 +2936,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         })
       }))
     }
-    const equipmentLabel=this.root.querySelector<HTMLElement>('.expedition-equipment-bonus')
-    if(equipmentLabel)equipmentLabel.textContent=`장비 전투력 +${Math.max(0,Number(this.store.forge?.bonus)||0)} 적용 중`
+    const expeditionPower=this.root.querySelector<HTMLElement>('.expedition-power-summary')
+    if(expeditionPower){
+      const mine=room.members.find(m=>m.me)
+      const power=mine?.power??0
+      const html=mine?`<span>총 전투력 <b>${power.toLocaleString('ko-KR')}</b></span><button type="button" data-action="expedition-power-detail" class="combat-detail-button">상세 보기</button>`:'<span>캐릭터를 배치하면 총 전투력이 표시됩니다.</span>'
+      if(expeditionPower.innerHTML!==html)expeditionPower.innerHTML=html
+    }
     const picker=this.root.querySelector<HTMLElement>('.expedition-picker')
     if(picker){const html=hp===0?'':state.mine && state.mine.serverId!==room.id?'다른 서버에 배치되어 있어요. 같은 날 서버 이동은 불가능해요.':room.members.length>=10 && !state.mine?'이 서버는 인원이 가득 찼어요.':`<b>${state.mine?"배치 캐릭터 변경":"원정대에 보낼 캐릭터 선택"}</b><div class="expedition-choices">${[...this.store.data.owned].sort((a,b)=>battlePower(b)-battlePower(a)).map(id=>`<button data-action="exp-join" data-id="${id}" aria-pressed="${state.mine?.serverId===room.id && state.mine.characterId===id}" style="${state.mine?.serverId===room.id && state.mine.characterId===id?'border:2px solid #6ba883;background:#ecf9ee;box-shadow:0 0 0 2px #d2ecd8 inset;':''}"><img src="${CHARACTER_IMAGE_URLS[id]}" alt=""/><span>${fullName(characterById(id))}<small>전투력 ${battlePower(id)}</small>${state.mine?.serverId===room.id && state.mine.characterId===id?'<small style="color:#2c8653;font-weight:800">✓ 배치 중</small>':''}</span></button>`).join('')}</div>`
       // 3초마다 HP를 갱신하더라도 캐릭터 선택 목록 DOM은 유지해 스크롤이 튀지 않게 합니다.
@@ -3098,7 +3174,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const dialog = document.createElement('dialog')
       dialog.className = 'storage-confirm-dialog'
       dialog.setAttribute('aria-label', '중복 일괄 판매 확인')
-      dialog.innerHTML = `<div class="storage-confirm-content"><div class="storage-confirm-heading">중복 일괄 판매</div><p>${label} 중복 ${count.toLocaleString('ko-KR')}개를 ${expected.toLocaleString('ko-KR')}코인에 판매할까요?</p><div class="storage-confirm-actions"><button type="button" data-choice="cancel">취소</button><button type="button" data-choice="ok">판매하기</button></div></div>`
+      dialog.innerHTML = `<div class="storage-confirm-content"><div class="storage-confirm-heading">중복 일괄 판매</div><p>${label} 중복 ${count.toLocaleString('ko-KR')}개를 ${expected.toLocaleString('ko-KR')}다이아에 판매할까요?</p><div class="storage-confirm-actions"><button type="button" data-choice="cancel">취소</button><button type="button" data-choice="ok">판매하기</button></div></div>`
       document.body.appendChild(dialog)
       let settled = false
       const finish = (ok: boolean) => {
@@ -3132,6 +3208,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const expected = items.reduce((sum, item) => sum + item.count * item.price, 0)
     const label = category === 'char' ? '캐릭터' : '데코'
     if (!await this.confirmBulkSell(label, count, expected)) { button.disabled = false; return }
+    if(category==='char' && items.some(item=>{const c=CHARACTERS.find(c=>c.id===item.id);return c&&(['super','legendary','transcendent'].includes(c.tier))})){
+      if(!await this.confirmBulkSell('⚠️ 유니크 이상 캐릭터가 포함되어 있습니다. 판매 후 복구 불가!',count,expected)){button.disabled=false;return}
+    }
     // Refuse to sell if the user switched categories while the confirmation was open.
     if (this.shopSellTab !== category || this.shopTab !== 'sell') { button.disabled = false; return }
     let sold = 0
@@ -3142,7 +3221,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         sold += item.count
       }
       this.audio.play('win')
-      this.toast(`${label} 중복 ${sold}개 판매 완료! +${earned.toLocaleString('ko-KR')}코인`)
+      this.toast(`${label} 중복 ${sold}개 판매 완료! +${earned.toLocaleString('ko-KR')}다이아`)
     } catch (error) {
       this.handleError(error)
       if (sold) this.toast(`${sold}개 판매 후 중단됐어요. 남은 중복은 다시 판매할 수 있어요.`)
@@ -3154,6 +3233,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private async sell(kind: 'char' | 'deco', id: string, count: number, button: HTMLButtonElement): Promise<void> {
+    if(kind==='char'){
+      const c=CHARACTERS.find(c=>c.id===id)
+      if(c&&['super','legendary','transcendent'].includes(c.tier)){
+        if(!await this.confirmBulkSell('⚠️ 유니크 이상 캐릭터입니다. 판매 후 복구할 수 없습니다!',count,count*10))return
+      }
+    }
     button.disabled = true
     try {
       const coins = await this.store.sell(kind, id, count)
@@ -3162,7 +3247,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.renderShop()
       this.audio.play('win')
       const name = kind === 'char' ? fullName(characterById(id as CharacterId)) : decoById(id as DecoId).name
-      this.toast(`${name} 중복 ${count}개를 팔아 ${coins}코인을 받았어요!`)
+      this.toast(`${name} 중복 ${count}개를 팔아 ${coins}다이아를 받았어요!`)
     } catch (error) { this.handleError(error); button.disabled = false }
   }
 
@@ -3360,13 +3445,17 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   private battleFlipCharacter(id:string):boolean { return ['m_shisa','m_rakko','shimajiro','staff_chiikawa','staff_hachiware'].includes(id) }
 
+  private characterCombatPower(id: CharacterId): number {
+    return Math.ceil(battlePower(id) * (1 + Math.max(0, Math.min(10, Number(this.store.limitBreak[id] || 0))) * 0.1))
+  }
+
   private renderBattle(): void {
     const picker = this.root.querySelector<HTMLElement>('.battle-picker')
     const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id)).sort((a, b) => battlePower(b.id) - battlePower(a.id))
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
+            ${(this.store.limitBreak[character.id]||0)>0?`<span class="limit-break-level-badge">+${this.store.limitBreak[character.id]}</span>`:''}<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${this.characterCombatPower(character.id).toLocaleString('ko-KR')}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
@@ -3753,7 +3842,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.renderWallet()
       if (this.screen === 'weed') this.renderWeed()
       if (this.screen === 'battle') this.renderBattle()
-      if (earned > 0) this.toast(`🌿 제초장에서 ${earned}코인이 자동으로 들어왔어요!`)
+      if (earned > 0 && this.screen === 'weed') this.toast(`🌿 제초장에서 ${earned}코인이 자동으로 들어왔어요!`)
     } catch { /* next tick retries */ }
   }
   private handleError(error: unknown): void {
