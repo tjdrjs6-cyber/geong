@@ -32,6 +32,7 @@ export type SentItem = { id: number; to: string; message: string; coins: number;
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
 export type Suggestion = { id: number; from: string; message: string; at: number; reply: string | null; replyAt: number | null; mine: boolean }
 export type SuggestBox = { items: Suggestion[]; admin: boolean; todayCount: number; dailyMax: number }
+export type LimitBreakLevels = Partial<Record<CharacterId,number>>
 export type CharDupes = Partial<Record<CharacterId, number>>
 export const CHAR_SELL_PRICES = { normal: 3, rare: 5, epic: 10, unique: 30 } as const
 export const DECO_SELL_PRICE = 5
@@ -44,7 +45,7 @@ export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
 export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>> }
 export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
-type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
+type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; limitBreak?: LimitBreakLevels; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
 type ApiError = { error?: string }
 
@@ -84,6 +85,9 @@ export const ERROR_TEXT: Record<string, string> = {
   house_coin_taken: '이번 시간 코인은 이미 받았어요.',
   mail_not_found: '이미 지워진 우편이에요.',
   sell_invalid: '팔 수 없는 아이템이에요.',
+  not_enough_duplicates: '한계돌파에 필요한 중복 캐릭터가 부족해요.',
+  limit_break_max: '이미 +10 한계돌파를 완료했어요.',
+  invalid_character: '올바른 캐릭터를 선택해 주세요.',
   sell_not_enough: '팔 수 있는 중복 아이템이 부족해요.',
   sell_placed: '하우스에 놓인 데코는 팔 수 없어요. 먼저 하우스에서 넣어 주세요.',
   suggest_empty: '건의 내용을 적어 주세요.',
@@ -134,6 +138,7 @@ export class RemoteGachaStore {
   featured: CharacterId | null = null
   mailUnread = 0
   dupes: CharDupes = {}
+  limitBreak: LimitBreakLevels = {}
   /** Server clock minus local clock, so countdowns match the server's payout. */
   private clockOffset = 0
 
@@ -236,6 +241,11 @@ export class RemoteGachaStore {
   async equipAccessory(id: string|null,grade='normal'): Promise<void> {
     const r=await request<{forge:ForgeState|null;accessory:AccessoryState;save:GachaSave}>('accessory/equip',{id,grade})
     this.forge=r.forge;this.accessory=r.accessory;this.data=r.save
+  }
+  async upgradeCharacter(id:CharacterId):Promise<number>{
+    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels}>('character/limit-break',{id})
+    this.dupes=r.dupes;this.limitBreak=r.limitBreak
+    return r.level
   }
   async synthesizeAccessory(id:string,grade:string):Promise<void>{
     const r=await request<{accessory:AccessoryState;forge:ForgeState|null;save:GachaSave}>('accessory/alchemy',{id,grade})
@@ -481,6 +491,7 @@ export class RemoteGachaStore {
     this.featured = payload.featured ?? null
     this.mailUnread = payload.mailUnread ?? 0
     this.dupes = payload.dupes ?? {}
+    this.limitBreak = payload.limitBreak ?? {}
     if (typeof payload.now === 'number') this.clockOffset = payload.now - Date.now()
     this.data = payload.save ?? { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
   }

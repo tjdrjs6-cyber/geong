@@ -282,6 +282,7 @@ async function prepareDatabase() {
     account_id BIGINT UNSIGNED PRIMARY KEY,
     last_seen_id BIGINT UNSIGNED NOT NULL DEFAULT 0
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_limit_break (account_id BIGINT UNSIGNED NOT NULL, character_id VARCHAR(100) NOT NULL, level TINYINT UNSIGNED NOT NULL DEFAULT 0, PRIMARY KEY(account_id,character_id))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_dupes (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     items JSON NOT NULL
@@ -597,6 +598,12 @@ async function trimSent(conn, fromId) {
   const [old] = await conn.query('SELECT id FROM gm_mail WHERE from_id = ? AND from_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [fromId, MAILBOX_MAX])
   if (old.length) await conn.query(`UPDATE gm_mail SET from_deleted = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
 }
+const BREAK_COSTS = [1,1,2,2,3,3,4,4,5,5]
+async function getLimitBreak(accountId,conn=pool) {
+  const [rows]=await conn.query('SELECT character_id,level FROM gm_limit_break WHERE account_id=?',[accountId])
+  return Object.fromEntries(rows.map(r=>[r.character_id,Math.min(10,Math.max(0,Number(r.level)||0))]))
+}
+const boostedCharacterPower=(id,levels)=>Math.ceil((POWER[id]??10)*(1+(Number(levels[id]||0)*0.1)))
 async function getDupes(accountId) {
   const [rows] = await pool.query('SELECT items FROM gm_dupes WHERE account_id = ?', [accountId])
   return rows[0] ? normalizeDupes(parseJson(rows[0].items)) : {}
@@ -653,7 +660,7 @@ async function getForge(accountId) {
 }
 async function accountState(accountId) {
   const box = await mailbox(accountId)
-  return { accessory: await getAccessory(accountId), forge: await getForge(accountId), dupes: await getDupes(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
+  return { accessory: await getAccessory(accountId), forge: await getForge(accountId), dupes: await getDupes(accountId), limitBreak: await getLimitBreak(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
 }
 
 async function getWeed(accountId) {
@@ -769,9 +776,10 @@ async function updateBattle(accountId, nextCharacter) {
     const accessory = await getAccessory(accountId, conn)
     const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory) + await achievementPower(accountId,conn)
     const combatResearchLevel = await researchLevel(accountId,conn)
+    const limitBreakLevels = await getLimitBreak(accountId,conn)
     let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
-      const power = !battle.id ? 0 : researchPower((POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus,combatResearchLevel)
+      const power = !battle.id ? 0 : researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel)
       // Settle each completed stage exactly once, using the persisted stage clock.
       // A 1.5s transition prevents the next enemy from receiving damage during the clear overlay.
       let cursor = Math.max(Number(battle.stageSince || battle.since), now - BATTLE_OFFLINE_CAP_MS)
@@ -848,7 +856,7 @@ async function updateBattle(accountId, nextCharacter) {
     else await conn.query(`INSERT INTO gm_battle (account_id, character_id, second_id, third_id, since_ms, damage, stage, stage_since, stage_damage, stage_limit_ms, boss_ready, retry_stage, max_cleared_stage)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE character_id=VALUES(character_id), second_id=VALUES(second_id), third_id=VALUES(third_id), since_ms=VALUES(since_ms), damage=VALUES(damage), stage=VALUES(stage), stage_since=VALUES(stage_since), stage_damage=VALUES(stage_damage), stage_limit_ms=VALUES(stage_limit_ms), boss_ready=VALUES(boss_ready), retry_stage=VALUES(retry_stage), max_cleared_stage=VALUES(max_cleared_stage)`,
       [accountId, battle.id, battle.secondId || '', battle.thirdId || '', battle.since, battle.damage, battle.stage, battle.stageSince, battle.stageDamage, battle.stageLimitMs, battle.bossReady ? 1 : 0, battle.retryStage || 0, battle.maxClearedStage || 0])
-    if (battle) battle.power = battle.id ? researchPower((POWER[battle.id] ?? 10) + (battle.secondId ? POWER[battle.secondId] ?? 10 : 0) + (battle.thirdId ? POWER[battle.thirdId] ?? 10 : 0) + weaponBonus,combatResearchLevel) : 0
+    if (battle) battle.power = battle.id ? researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel) : 0
     await conn.commit()
     return { save: state, battle, earned, coinsEarned, diamondsEarned, cleared, failedStage, now }
   } catch (error) { await conn.rollback().catch(() => {}); throw error } finally { conn.release() }
@@ -996,7 +1004,8 @@ async function expeditionSettle(conn, day, serverId, now) {
     const [members]=await conn.query('SELECT m.account_id,m.character_id,f.level AS forge_level,a.equipped AS accessory_equipped,a.equipped_grade AS accessory_grade FROM gm_expedition_member m LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories a ON a.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=?',[day,serverId])
     const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
     const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
-    const power=members.reduce((sum,m,i)=>sum+researchPower(achievementBonuses[i]+(POWER[m.character_id]||0)+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 10):0),researchLevels[i]),0)
+    const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
+    const power=members.reduce((sum,m,i)=>sum+researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 10):0),researchLevels[i]),0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
@@ -1089,7 +1098,8 @@ async function expeditionSnapshot(accountId) {
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level,wa.equipped AS accessory_equipped,wa.equipped_grade AS accessory_grade FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories wa ON wa.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
       const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
       const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
-      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:researchPower(achievementBonuses[i]+(POWER[m.character_id]||0)+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]),me:String(m.account_id)===String(accountId)}))})
+    const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]),me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -1503,7 +1513,8 @@ const routes = {
         const [forgeRows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[account.id])
         const b=battles[0]
         const oldBonus=forgeRows.length?forgeBonus(Number(forgeRows[0].level)):0
-        const power=researchPower((POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+(b.third_id?(POWER[b.third_id]??10):0)+oldBonus+accessoryPower(await getAccessory(account.id,conn))+await achievementPower(account.id,conn),await researchLevel(account.id,conn))
+        const breakLevels=await getLimitBreak(account.id,conn)
+        const power=researchPower(boostedCharacterPower(b.character_id,breakLevels)+(b.second_id?boostedCharacterPower(b.second_id,breakLevels):0)+(b.third_id?boostedCharacterPower(b.third_id,breakLevels):0)+oldBonus+accessoryPower(await getAccessory(account.id,conn))+await achievementPower(account.id,conn),await researchLevel(account.id,conn))
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),power)
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
         if(settled.kills)await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[settled.kills,account.id])
@@ -1512,6 +1523,31 @@ const routes = {
       await conn.commit()
       send(res,200,{accessory:await getAccessory(account.id),forge:await getForge(account.id),save:await getSave(account.id)})
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
+  },
+  'POST /api/character/limit-break': async(req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {id}=await readJson(req)
+    if(!CHARACTER_IDS.includes(id))return send(res,400,{error:'invalid_character'})
+    // Settle elapsed combat with the PRE-UPGRADE power before applying the new bonus.
+    await updateBattle(account.id,undefined)
+    const result=await inTransaction(async conn=>{
+      const [saveRows]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(!saveRows.length||!normalizeOwned(parseJson(saveRows[0].owned)).includes(id))return {error:'not_owned'}
+      const [dupeRows]=await conn.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[account.id])
+      const dupes=normalizeDupes(dupeRows.length?parseJson(dupeRows[0].items):{})
+      const [levelRows]=await conn.query('SELECT level FROM gm_limit_break WHERE account_id=? AND character_id=? FOR UPDATE',[account.id,id])
+      const level=Number(levelRows[0]?.level||0)
+      if(level>=10)return {error:'limit_break_max'}
+      const required=BREAK_COSTS[level]
+      if((dupes[id]||0)<required)return {error:'not_enough_duplicates'}
+      dupes[id]-=required
+      await conn.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
+      await conn.query('INSERT INTO gm_limit_break(account_id,character_id,level) VALUES(?,?,?) ON DUPLICATE KEY UPDATE level=VALUES(level)',[account.id,id,level+1])
+      return {success:true,level:level+1,required}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,{...result,dupes:await getDupes(account.id),limitBreak:await getLimitBreak(account.id),save:await getSave(account.id)})
   },
   'POST /api/accessory/alchemy': async (req,res) => {
     const account=await currentAccount(req)
@@ -1597,7 +1633,8 @@ const routes = {
       if(battles.length){
         const b=battles[0]
         const accessory=await getAccessory(account.id,conn)
-        const oldPower=researchPower((POWER[b.character_id]??10)+(b.second_id?(POWER[b.second_id]??10):0)+(b.third_id?(POWER[b.third_id]??10):0)+forgeBonus(level)+accessoryPower(accessory)+await achievementPower(account.id,conn),await researchLevel(account.id,conn))
+        const breakLevels=await getLimitBreak(account.id,conn)
+        const oldPower=researchPower(boostedCharacterPower(b.character_id,breakLevels)+(b.second_id?boostedCharacterPower(b.second_id,breakLevels):0)+(b.third_id?boostedCharacterPower(b.third_id,breakLevels):0)+forgeBonus(level)+accessoryPower(accessory)+await achievementPower(account.id,conn),await researchLevel(account.id,conn))
         const settled=settleBattle(Number(b.since_ms),Number(b.damage),Date.now(),oldPower)
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
