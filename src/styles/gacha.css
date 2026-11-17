@@ -6435,3 +6435,28 @@ body #geong-research-panel .research-card .research-cost strong.research-resourc
   filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 12px var(--aura-color))!important;
   animation:none!important;
 }
+
+/* Limit-break character picker: show exactly two complete rows before scrolling. */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker {
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-rows:102px!important;
+  gap:8px!important;
+  height:auto!important;
+  max-height:212px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  align-content:start!important;
+  overscroll-behavior:contain;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick {
+  height:102px!important;
+  min-height:0!important;
+  max-height:102px!important;
+  overflow:hidden!important;
+  justify-content:center!important;
+}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick img {
+  width:36px!important;height:40px!important;flex:0 0 40px!important;
+  object-fit:contain!important;
+}
