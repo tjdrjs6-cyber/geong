@@ -6251,3 +6251,25 @@ body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action
 
 /* Christmas event uses the same banner illustration layout as the Siren pickup. */
 #ui .christmas-showcase .christmas-event-hero-image{display:block;width:100%;max-width:100%;height:auto;object-fit:contain;margin:0 auto;}
+
+/* Christmas pickup: keep supplied artwork within the same fixed-height banner as Siren.
+   Override the older global 1.8x image zoom only for Christmas. */
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase {
+  display:flex!important; flex-direction:column!important; justify-content:space-between!important;
+  align-items:stretch!important; box-sizing:border-box!important;
+  width:100%!important; min-width:0!important; height:100%!important; max-height:100%!important;
+  overflow:hidden!important; position:relative!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase[hidden] {display:none!important;}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase .pull-event-copy {
+  flex:0 0 auto!important; position:relative!important; z-index:3!important;
+}
+#ui .pull-popup:not(.is-deco) .pull-showcase-char .christmas-showcase img.christmas-event-hero-image {
+  display:block!important; box-sizing:border-box!important; flex:1 1 auto!important;
+  width:100%!important; max-width:100%!important; min-width:0!important;
+  height:0!important; min-height:0!important; max-height:100%!important;
+  object-fit:contain!important; object-position:center center!important;
+  transform:none!important; transform-origin:center center!important;
+  opacity:1!important; margin:0 auto!important;
+  filter:none!important; pointer-events:none!important;
+}
