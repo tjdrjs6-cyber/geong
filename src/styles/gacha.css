@@ -6336,3 +6336,25 @@ body #geong-research-panel .research-card .research-cost strong.research-resourc
 .geongi-tutorial-controls .geongi-tutorial-skip{border:0;background:transparent;color:#84766f;padding-left:0}
 .geongi-tutorial-controls button:disabled{opacity:.4;cursor:default}
 @media(max-width:420px){.geongi-tutorial-card{padding:17px}.geongi-tutorial-content h2{font-size:20px}.geongi-tutorial-content{min-height:180px}.geongi-tutorial-controls button{padding:10px}}
+
+/* Christmas and Siren occupy the SAME character showcase; hide the inactive art. */
+#ui .pull-popup .pull-showcase-char.is-christmas > .pull-event-copy,
+#ui .pull-popup .pull-showcase-char.is-christmas > img.pull-event-hero-image {display:none!important}
+#ui .pull-popup .pull-showcase-char:not(.is-christmas) > .christmas-showcase {display:none!important}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase:not([hidden]) {
+ display:flex!important;flex:1 1 auto!important;min-height:0!important;
+ height:100%!important;max-height:100%!important;width:100%!important;
+ box-sizing:border-box!important;overflow:hidden!important;
+ padding:12px 8px!important;background:transparent!important;border:0!important;
+ flex-direction:column!important;align-items:center!important;justify-content:space-between!important;
+}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase > .pull-event-copy {
+ position:relative!important;z-index:3!important;flex:0 0 auto!important;width:100%!important;
+}
+#ui .pull-popup .pull-showcase-char.is-christmas > .christmas-showcase > img.christmas-event-hero-image {
+ display:block!important;position:relative!important;flex:1 1 0!important;
+ width:100%!important;height:0!important;min-height:0!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center center!important;
+ transform:none!important;opacity:1!important;filter:none!important;
+ margin:0 auto!important;padding:0!important;pointer-events:none!important;
+}
