@@ -6284,3 +6284,60 @@ body #geong-research-panel .research-card .research-cost strong.research-resourc
  max-width:18px!important;max-height:18px!important;flex:0 0 18px!important;
  object-fit:contain!important;transform:none!important;margin:0!important;padding:0!important;
 }
+
+
+/* FIX: Christmas showcase is a SIBLING of .pull-showcase-char, not its child.
+   The previous selector never matched; constrain the actual Christmas container. */
+#ui .pull-popup:not(.is-deco) .christmas-showcase:not([hidden]) {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:clamp(410px,111vw,590px)!important;
+  max-height:590px!important;
+  padding:clamp(14px,4vw,24px)!important;
+  border:1px solid #b4e0cc!important;
+  border-radius:18px!important;
+  background:linear-gradient(120deg,#e5fff4,#f9fff4 36%,#fff0d9)!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase[hidden] {
+  display:none!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase .pull-event-copy {
+  flex:0 0 auto!important;
+  position:relative!important;
+  z-index:3!important;
+}
+#ui .pull-popup:not(.is-deco) .christmas-showcase > img.christmas-event-hero-image {
+  display:block!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  flex:1 1 0!important;
+  align-self:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:100%!important;
+  margin:0 auto!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:none!important;
+  transform-origin:center center!important;
+  opacity:1!important;
+  filter:none!important;
+  pointer-events:none!important;
+}
+@media(max-width:390px) {
+  #ui .pull-popup:not(.is-deco) .christmas-showcase:not([hidden]) {
+    height:clamp(375px,109vw,490px)!important;
+    padding:12px!important;
+  }
+}
