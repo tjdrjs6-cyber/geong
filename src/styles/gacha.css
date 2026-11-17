@@ -5939,3 +5939,20 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 
 /* Character limit-break tab: matches existing pastel alchemy UI. */
 .alchemy-mode-tabs{display:flex;gap:8px;margin:12px 0 16px}.alchemy-mode-tabs button{flex:1;border:1px solid #e7c7dd;border-radius:14px;padding:11px 6px;background:#fff7fc;color:#916486;font-weight:800}.alchemy-mode-tabs button.active{background:linear-gradient(135deg,#f8cde8,#d8d1ff);color:#633d75;border-color:#d9b4e4;box-shadow:0 3px 12px #d9b4e455}.limit-break-picker{max-height:180px;overflow:auto}.limit-break-picker .alchemy-pick img{height:48px;object-fit:contain}.limit-break-picker .alchemy-pick small{display:block}.limit-break-preview{text-align:center;background:linear-gradient(145deg,#fff6fb,#f1edff);border:1px solid #ead4f2;border-radius:20px;padding:14px;margin:12px 0}.limit-break-preview>img{width:94px;height:94px;object-fit:contain;filter:drop-shadow(0 5px 9px #c7a8d2)}.limit-break-preview h3{margin:7px 0}.limit-break-preview p{margin:6px 0}.limit-break-preview strong{color:#ac5fa0}.limit-break-upgrade{width:100%;padding:15px!important}
+
+/* 캐릭터 한계돌파: 컴팩트 가로 미리보기 및 인게임 확인창 */
+.limit-break-panel .limit-break-preview{display:flex;align-items:center;gap:14px;text-align:left;padding:10px 13px;margin:8px 0;min-height:112px}
+.limit-break-panel .limit-break-preview>img{width:88px;height:88px;flex:0 0 88px;object-fit:contain}
+.limit-break-panel .limit-break-details{min-width:0;flex:1}
+.limit-break-panel .limit-break-details h3{font-size:15px;margin:0 0 5px}
+.limit-break-panel .limit-break-details p{font-size:12px;margin:4px 0;line-height:1.35}
+.limit-break-panel .limit-break-details strong{font-size:13px}
+.limit-break-panel .limit-break-picker{max-height:165px}
+.limit-break-panel .alchemy-description{margin:7px 0}
+.limit-break-panel .alchemy-mode-tabs{margin:8px 0}
+.limit-break-confirm-overlay{position:absolute;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;background:#30233a66;border-radius:inherit;padding:12px}
+.limit-break-panel{position:relative}
+.limit-break-confirm{width:min(100%,320px);padding:20px 15px;border-radius:20px;background:#fff9fe;text-align:center;box-shadow:0 12px 30px #44304a44;border:1px solid #ebd0ee}
+.limit-break-confirm h3{margin:0 0 8px;color:#8154a2}.limit-break-confirm img{height:76px;width:76px;object-fit:contain}.limit-break-confirm p{margin:7px 0;font-size:13px}
+.limit-break-confirm-actions{display:flex;gap:8px;margin-top:15px}.limit-break-confirm-actions button{flex:1;border:1px solid #ddc5e8;border-radius:12px;padding:11px 4px;font-weight:800;background:#fff;color:#8c679a}.limit-break-confirm-actions button[data-confirm=accept]{background:linear-gradient(110deg,#b69af7,#ee9acb);color:white;border:0}
+@media(max-height:740px){.limit-break-panel .limit-break-picker{max-height:125px}.limit-break-panel .limit-break-preview>img{width:72px;height:72px;flex-basis:72px}.limit-break-panel .limit-break-preview{min-height:90px}}
