@@ -697,7 +697,8 @@ export class GachaUi {
     let selected=WEAPON_ACCESSORIES[0].id
     let alchemyMode:'keyring'|'character'='keyring'
     let selectedCharacter=this.store.data.owned[0]
-    let materialMode:'duplicates'|'stones'='duplicates'
+    let selectedDupes=0
+    let selectedStones=0
     const render=()=>{
       if(alchemyMode==='character'){
         const tierRank:Record<string,number>={transcendent:7,legendary:6,super:5,unique:5,epic:4,rare:3,mermaid:2,normal:1}
@@ -707,18 +708,21 @@ export class GachaUi {
         const level=char?this.store.limitBreak[char.id]||0:0
         const dupes=char?this.store.dupes[char.id]||0:0
         const stones=this.store.market.stones||0
-        const useDupes=materialMode==='duplicates'?Math.min(dupes,[1,1,2,2,3,3,4,4,5,5][level]||0):0
-        const useStones=materialMode==='stones'?([1,1,2,2,3,3,4,4,5,5][level]||0):0
         const required=[1,1,2,2,3,3,4,4,5,5][level]||0
+        selectedDupes=Math.max(0,Math.min(selectedDupes,dupes,required))
+        selectedStones=Math.max(0,Math.min(selectedStones,stones,required-selectedDupes))
+        const useDupes=selectedDupes
+        const useStones=selectedStones
+        const materialsReady=level<10&&useDupes+useStones===required
         const base=char?battlePower(char.id):0
         const current=Math.ceil(base*(1+level*0.1))
         const next=Math.ceil(base*(1+(level+1)*0.1))
-        dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel limit-break-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><div class="alchemy-mode-tabs"><button data-mode="keyring">키링 합성</button><button class="active" data-mode="character">캐릭터 한계돌파</button></div><p class="alchemy-description">같은 캐릭터를 합쳐 최대 +10 · 성공률 100%</p><div class="alchemy-picker limit-break-picker">${choices.map(c=>`<button type="button" class="alchemy-pick limit-break-tier-${c.tier} ${c.id===selectedCharacter?'selected':''}" data-character="${c.id}"><span class="limit-break-level-badge">+${this.store.limitBreak[c.id]||0}</span><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt=""/><span>${fullName(c)}</span></button>`).join('')}</div>${char?`<div class="limit-break-preview"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt=""/><div class="limit-break-details"><h3>${fullName(char)} · +${level}/10</h3><p>본체 전투력 ${current.toLocaleString()} ${level<10?`→ ${next.toLocaleString()}`:''}</p><strong>전투력 +${level*10}% ${level<10?`→ +${(level+1)*10}%`:''}</strong></div></div><div class="limit-break-materials"><button type="button" data-material="duplicates" class="limit-break-material ${materialMode==='duplicates'?'active':''}"><b>중복 캐릭터 사용</b><span>보유 ${dupes}개 · 필요 ${required}개</span></button><button type="button" data-material="stones" class="limit-break-material ${materialMode==='stones'?'active':''}"><b>한계돌파석 사용</b><span>보유 ${stones}개 · 필요 ${required}개</span></button></div><button type="button" class="alchemy-recipe limit-break-upgrade" ${level>=10||(materialMode==='duplicates'?dupes<required:stones<required)?'disabled':''}>${level>=10?'+10 한계돌파 완료':(materialMode==='duplicates'?dupes<required:stones<required)?'재료 부족':`+${level+1} 한계돌파 · 합성하기`}</button>`:'<p>보유 캐릭터가 없습니다.</p>'}<button type="button" class="myroom-equipment-done">닫기</button></div>`
+        dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel limit-break-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><div class="alchemy-mode-tabs"><button data-mode="keyring">키링 합성</button><button class="active" data-mode="character">캐릭터 한계돌파</button></div><p class="alchemy-description">같은 캐릭터를 합쳐 최대 +10 · 성공률 100%</p><div class="alchemy-picker limit-break-picker">${choices.map(c=>`<button type="button" class="alchemy-pick limit-break-tier-${c.tier} ${c.id===selectedCharacter?'selected':''}" data-character="${c.id}"><span class="limit-break-level-badge">+${this.store.limitBreak[c.id]||0}</span><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt=""/><span>${fullName(c)}</span><small class="limit-break-tier-name">${({normal:'노말',rare:'레어',epic:'에픽',unique:'유니크',super:'유니크',legendary:'레전더리',transcendent:'초월',mermaid:'특수'} as Record<string,string>)[c.tier]||c.tier}</small></button>`).join('')}</div>${char?`<div class="limit-break-preview"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt=""/><div class="limit-break-details"><h3>${fullName(char)} · +${level}/10</h3><p>본체 전투력 ${current.toLocaleString()} ${level<10?`→ ${next.toLocaleString()}`:''}</p><strong>전투력 +${level*10}% ${level<10?`→ +${(level+1)*10}%`:''}</strong></div></div><div class="limit-break-materials"><div class="limit-break-material"><b>중복 캐릭터</b><span>보유 ${dupes}개</span><div class="limit-break-stepper"><button type="button" data-adjust="dupes-minus" ${useDupes<=0?'disabled':''}>−</button><strong>${useDupes}</strong><button type="button" data-adjust="dupes-plus" ${useDupes>=dupes||useDupes+useStones>=required?'disabled':''}>+</button></div></div><div class="limit-break-material"><b>한계돌파석</b><span>보유 ${stones}개</span><div class="limit-break-stepper"><button type="button" data-adjust="stones-minus" ${useStones<=0?'disabled':''}>−</button><strong>${useStones}</strong><button type="button" data-adjust="stones-plus" ${useStones>=stones||useDupes+useStones>=required?'disabled':''}>+</button></div></div></div><p class="limit-break-material-summary">선택한 재료 <b>${useDupes+useStones} / ${required}개</b> · 중복 ${useDupes} + 돌파석 ${useStones}</p><button type="button" class="alchemy-recipe limit-break-upgrade" ${!materialsReady?'disabled':''}>${level>=10?'+10 한계돌파 완료':!materialsReady?'재료 수량을 맞춰주세요':`+${level+1} 한계돌파 · 합성하기`}</button>`:'<p>보유 캐릭터가 없습니다.</p>'}<button type="button" class="myroom-equipment-done">닫기</button></div>`
         dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
         dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
         dialog.querySelector('[data-mode="keyring"]')?.addEventListener('click',()=>{alchemyMode='keyring';render()})
-        dialog.querySelectorAll<HTMLButtonElement>('[data-material]').forEach(b=>b.addEventListener('click',()=>{materialMode=b.dataset.material as 'duplicates'|'stones';render()}))
-        dialog.querySelectorAll<HTMLButtonElement>('[data-character]').forEach(b=>b.addEventListener('click',()=>{selectedCharacter=b.dataset.character as CharacterId;render()}))
+        dialog.querySelectorAll<HTMLButtonElement>('[data-adjust]').forEach(b=>b.addEventListener('click',()=>{const action=b.dataset.adjust;if(action==='dupes-minus')selectedDupes--;if(action==='dupes-plus')selectedDupes++;if(action==='stones-minus')selectedStones--;if(action==='stones-plus')selectedStones++;render()}))
+        dialog.querySelectorAll<HTMLButtonElement>('[data-character]').forEach(b=>b.addEventListener('click',()=>{selectedCharacter=b.dataset.character as CharacterId;selectedDupes=0;selectedStones=0;render()}))
         dialog.querySelector<HTMLButtonElement>('.limit-break-upgrade')?.addEventListener('click',async()=>{
           if(!char||level>=10)return
           const confirmPanel=document.createElement('div')
@@ -732,7 +736,7 @@ export class GachaUi {
           confirmPanel.remove()
           if(!accepted)return
           try{
-            await this.store.upgradeCharacter(char.id,materialMode)
+            await this.store.upgradeCharacter(char.id,useDupes,useStones)
             dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2 class="alchemy-result-status">합성 중...</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt="재료"/><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt="본체"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" src="${CHARACTER_IMAGE_URLS[char.id]}" alt="강화 완료"/><h3>한계돌파 +${level+1} 성공!</h3><p>본체 전투력 +${(level+1)*10}%</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
             window.setTimeout(()=>{const el=dialog.querySelector('.alchemy-result-status');if(el)el.textContent='한계돌파 성공!'},2250)
             dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
@@ -909,7 +913,7 @@ export class GachaUi {
     if (this.shopTab !== 'sell') {
       const owned=this.store.data.owned.includes('pepero_chiikawa')
       const active=this.peperoSaleActive()
-      items.innerHTML=balance+`<div class="geong-market-items"><article class="geong-market-item"><img src="/assets/items/breakthrough_stone.png" alt="한계돌파석"/><div><strong>한계돌파석</strong><small>5,000 다이아 · 이번 주 ${this.store.market.weeklyBought}/5</small><small>월요일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="stone" ${this.store.market.weeklyBought>=5?'disabled':''}>구매</button></article><article class="geong-market-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권"/><div><strong>겅이복권</strong><small>1,000 다이아 · 오늘 ${this.store.market.dailyBought}/5</small><small>매일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="lottery" ${this.store.market.dailyBought>=5?'disabled':''}>구매</button></article></div><div class="pepero-market-card"><img src="/assets/chars/pepero_chiikawa.png" alt="치이카와 빼빼로"/><div><strong>치이카와(빼빼로) <em>한정판</em></strong><small>노말 · 전투력 2 · 제초속도 증가 없음</small><small>2026년 11월 18일까지 판매 · 계정당 1회</small><button type="button" data-action="buy-pepero" ${owned||!active?'disabled':''}>${owned?'구매 완료':active?'1코인 구매':'판매 종료'}</button></div></div>`
+      items.innerHTML=balance+`<div class="geong-market-items"><article class="geong-market-item"><img src="/assets/items/breakthrough_stone.png" alt="한계돌파석"/><div><strong>한계돌파석</strong><small>5,000 다이아 · 이번 주 구매 가능 ${Math.max(0,5-this.store.market.weeklyBought)}/5개</small><small>월요일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="stone" ${this.store.market.weeklyBought>=5?'disabled':''}>구매</button></article><article class="geong-market-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권"/><div><strong>겅이복권</strong><small>1,000 다이아 · 오늘 구매 가능 ${Math.max(0,5-this.store.market.dailyBought)}/5개</small><small>매일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="lottery" ${this.store.market.dailyBought>=5?'disabled':''}>구매</button></article></div><div class="pepero-market-card"><img src="/assets/chars/pepero_chiikawa.png" alt="치이카와 빼빼로"/><div><strong>치이카와(빼빼로) <em>한정판</em></strong><small>노말 · 전투력 2 · 제초속도 증가 없음</small><small>2026년 11월 18일까지 판매 · 계정당 1회</small><button type="button" data-action="buy-pepero" ${owned||!active?'disabled':''}>${owned?'구매 완료':active?'1코인 구매':'판매 종료'}</button></div></div>`
       return
     }
     if (this.shopSellTab === 'inventory') {
@@ -1120,7 +1124,7 @@ export class GachaUi {
     }
     if(action==='market-buy' && (button.dataset.item==='stone'||button.dataset.item==='lottery')){
       const item=button.dataset.item
-      if(!window.confirm(`${item==='stone'?'한계돌파석':'겅이복권'} 1개를 ${item==='stone'?'5,000':'1,000'}다이아로 구매하시겠습니까?`))return
+      const ok=await new Promise<boolean>(resolve=>{const overlay=document.createElement('div');overlay.className='limit-break-confirm-overlay';overlay.innerHTML=`<div class="limit-break-confirm" role="alertdialog" aria-modal="true"><h3>${item==='stone'?'한계돌파석':'겅이복권'} 구매</h3><p>1개 · ${item==='stone'?'5,000':'1,000'} 다이아</p><p>${item==='stone'?`이번 주 남은 수량 ${Math.max(0,5-this.store.market.weeklyBought)}/5개`:`오늘 남은 수량 ${Math.max(0,5-this.store.market.dailyBought)}/5개`}</p><div class="limit-break-confirm-actions"><button data-confirm="cancel">취소</button><button data-confirm="accept">구매하기</button></div></div>`;document.body.appendChild(overlay);overlay.querySelector('[data-confirm="cancel"]')?.addEventListener('click',()=>{overlay.remove();resolve(false)},{once:true});overlay.querySelector('[data-confirm="accept"]')?.addEventListener('click',()=>{overlay.remove();resolve(true)},{once:true})});if(!ok)return
       button.disabled=true
       try{await this.store.buyMarketItem(item);this.renderShop();this.renderStorage();this.renderWallet();this.toast('구매가 완료됐어요!')}
       catch(e){this.handleError(e);button.disabled=false}
@@ -2954,7 +2958,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span>${m.me&&(this.store.limitBreak[m.characterId]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[m.characterId]}</span>`:''}<img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span>${(m.limitBreakLevel??(m.me?this.store.limitBreak[m.characterId]:0)??0)>0?`<span class="limit-break-combat-badge">+${m.limitBreakLevel??this.store.limitBreak[m.characterId]??0}</span>`:''}<img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     // Position the first shots only after the expedition panel is laid out.
     // The original immediate measurement could read zero/stale coordinates on entry.
     if(party && boss && hp>0){

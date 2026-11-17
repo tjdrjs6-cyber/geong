@@ -17,7 +17,7 @@ import { STARTING_COINS } from './collection'
 import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
 
 export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
-export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;weapon?:string|null;weaponLevel?:number|null}[]}[] }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;limitBreakLevel?:number;weapon?:string|null;weaponLevel?:number|null}[]}[] }
 export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
 export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
 export type WeedMember = { id: CharacterId; since: number }
@@ -251,8 +251,8 @@ export class RemoteGachaStore {
     const r=await request<{market:MarketItems;save:GachaSave}>('market/items/buy',{item})
     this.market=r.market;this.data=r.save
   }
-  async upgradeCharacter(id:CharacterId,materialMode:'duplicates'|'stones'='duplicates'):Promise<number>{
-    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id,materialMode})
+  async upgradeCharacter(id:CharacterId,consumeDupes:number,consumeStones:number):Promise<number>{
+    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id,consumeDupes,consumeStones})
     this.dupes=r.dupes;this.limitBreak=r.limitBreak;this.market=r.market
     return r.level
   }

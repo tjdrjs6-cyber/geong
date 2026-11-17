@@ -1121,7 +1121,7 @@ async function expeditionSnapshot(accountId) {
       const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
       const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
     const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
-      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]),me:String(m.account_id)===String(accountId)}))})
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,limitBreakLevel:Number(limitBreakLevels[i]?.[m.character_id]||0),weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]),me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -1573,9 +1573,9 @@ const routes = {
   'POST /api/character/limit-break': async(req,res)=>{
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const {id,materialMode}=await readJson(req)
+    const {id,consumeDupes,consumeStones}=await readJson(req)
     if(!CHARACTER_IDS.includes(id))return send(res,400,{error:'invalid_character'})
-    if(!['duplicates','stones'].includes(materialMode))return send(res,400,{error:'invalid_material_mode'})
+    if(!Number.isSafeInteger(consumeDupes)||!Number.isSafeInteger(consumeStones)||consumeDupes<0||consumeStones<0)return send(res,400,{error:'invalid_material_count'})
     // Settle elapsed combat with the PRE-UPGRADE power before applying the new bonus.
     await updateBattle(account.id,undefined)
     const result=await inTransaction(async conn=>{
@@ -1588,8 +1588,7 @@ const routes = {
       if(level>=10)return {error:'limit_break_max'}
       const required=BREAK_COSTS[level]
       const market=await marketState(account.id,conn,true)
-      const consumeDupes=materialMode==='duplicates'?required:0
-      const consumeStones=materialMode==='stones'?required:0
+      if(consumeDupes+consumeStones!==required)return {error:'invalid_material_count'}
       if(Number(dupes[id]||0)<consumeDupes||market.stones<consumeStones)return {error:'not_enough_materials'}
       dupes[id]-=consumeDupes
       if(consumeStones)await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[consumeStones,account.id])

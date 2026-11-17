@@ -5988,3 +5988,22 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 .bf-friend-body .limit-break-combat-badge{top:-13px;right:-10px;animation:none!important;transform:none!important}
 .expedition-combatant .limit-break-combat-badge{top:8px;right:0;animation:none!important;transform:none!important}
 .weed-pick .limit-break-level-badge{top:3px;right:3px}
+
+/* v178: clear rarity labels, mixed materials and shop limits */
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-rare{border-color:#3988ed!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-epic{border-color:#e54848!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-unique,#ui .limit-break-panel .limit-break-picker .limit-break-tier-super{border-color:#a45be8!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-legendary{border-color:#daa520!important}
+#ui .limit-break-panel .limit-break-picker .limit-break-tier-transcendent{border-color:#ef8428!important}
+#ui .limit-break-panel .limit-break-picker .alchemy-pick .limit-break-tier-name{display:block!important;font-size:10px;font-weight:800;line-height:1.25}
+#ui .limit-break-tier-rare .limit-break-tier-name{color:#3988ed}
+#ui .limit-break-tier-epic .limit-break-tier-name{color:#e54848}
+#ui .limit-break-tier-unique .limit-break-tier-name,#ui .limit-break-tier-super .limit-break-tier-name{color:#a45be8}
+#ui .limit-break-tier-legendary .limit-break-tier-name{color:#b18a0a}
+#ui .limit-break-tier-transcendent .limit-break-tier-name{color:#ef8428}
+#ui .limit-break-stepper{display:flex;align-items:center;gap:9px;margin-top:4px}
+#ui .limit-break-stepper button{width:29px;height:29px;border:1px solid #d4b5e4;border-radius:9px;background:#fff;color:#7651a1;font-size:19px;font-weight:800}
+#ui .limit-break-stepper button:disabled{opacity:.35}
+#ui .limit-break-stepper strong{min-width:18px;text-align:center}
+#ui .limit-break-material-summary{text-align:center;margin:5px 0 10px;font-size:12px;color:#735787}
+#ui .geong-market-item small:first-of-type{font-weight:900;color:#7640a2;font-size:13px}
