@@ -5967,3 +5967,24 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .geong-market-item button:disabled{opacity:.4}
 #ui .market-inline-stone{width:20px;height:20px;vertical-align:middle;object-fit:contain}
 #ui .claw-ticket-icon{width:26px;height:21px;object-fit:contain;vertical-align:middle;display:inline-block}
+
+/* Limit-break UI compact selection, tier borders and top-right badges */
+.limit-break-panel .limit-break-picker .alchemy-pick{position:relative;border:2px solid #e8dfe7;overflow:visible}
+.limit-break-panel .limit-break-picker .limit-break-tier-normal{border-color:#d9d9d9}
+.limit-break-panel .limit-break-picker .limit-break-tier-mermaid{border-color:#76cfa5}
+.limit-break-panel .limit-break-picker .limit-break-tier-rare{border-color:#69a8f8}
+.limit-break-panel .limit-break-picker .limit-break-tier-epic{border-color:#ed7a86}
+.limit-break-panel .limit-break-picker .limit-break-tier-super,.limit-break-panel .limit-break-picker .limit-break-tier-unique{border-color:#b681ee}
+.limit-break-panel .limit-break-picker .limit-break-tier-legendary{border-color:#f2c451}
+.limit-break-panel .limit-break-picker .limit-break-tier-transcendent{border-color:#ff995b}
+.limit-break-level-badge,.limit-break-combat-badge{position:absolute;top:2px;right:2px;z-index:8;display:inline-flex;align-items:center;justify-content:center;min-width:26px;padding:2px 5px;border-radius:9px;background:#8055c5;color:white;font-size:11px;font-weight:900;line-height:1.25;box-shadow:0 1px 5px #43236b77;pointer-events:none}
+.limit-break-panel .limit-break-picker .alchemy-pick small{display:none}
+.limit-break-materials{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}
+.limit-break-material{border:2px solid #e5d6eb;border-radius:13px;padding:10px 5px;background:#fffafc;color:#7e6687;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px}
+.limit-break-material.active{border-color:#b487ed;background:#f4eaff;box-shadow:0 2px 9px #ac87de44}
+.limit-break-material span{font-size:11px}
+.limit-break-legacy-hidden{display:none}
+.bf-friend-body,.expedition-combatant,.weed-pick{position:relative}
+.bf-friend-body .limit-break-combat-badge{top:-13px;right:-10px;animation:none!important;transform:none!important}
+.expedition-combatant .limit-break-combat-badge{top:8px;right:0;animation:none!important;transform:none!important}
+.weed-pick .limit-break-level-badge{top:3px;right:3px}

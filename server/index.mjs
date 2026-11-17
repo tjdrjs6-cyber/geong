@@ -1573,8 +1573,9 @@ const routes = {
   'POST /api/character/limit-break': async(req,res)=>{
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const {id}=await readJson(req)
+    const {id,materialMode}=await readJson(req)
     if(!CHARACTER_IDS.includes(id))return send(res,400,{error:'invalid_character'})
+    if(!['duplicates','stones'].includes(materialMode))return send(res,400,{error:'invalid_material_mode'})
     // Settle elapsed combat with the PRE-UPGRADE power before applying the new bonus.
     await updateBattle(account.id,undefined)
     const result=await inTransaction(async conn=>{
@@ -1587,9 +1588,9 @@ const routes = {
       if(level>=10)return {error:'limit_break_max'}
       const required=BREAK_COSTS[level]
       const market=await marketState(account.id,conn,true)
-      const consumeDupes=Math.min(Number(dupes[id]||0),required)
-      const consumeStones=required-consumeDupes
-      if(market.stones<consumeStones)return {error:'not_enough_duplicates'}
+      const consumeDupes=materialMode==='duplicates'?required:0
+      const consumeStones=materialMode==='stones'?required:0
+      if(Number(dupes[id]||0)<consumeDupes||market.stones<consumeStones)return {error:'not_enough_materials'}
       dupes[id]-=consumeDupes
       if(consumeStones)await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[consumeStones,account.id])
       await conn.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])

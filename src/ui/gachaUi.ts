@@ -697,24 +697,27 @@ export class GachaUi {
     let selected=WEAPON_ACCESSORIES[0].id
     let alchemyMode:'keyring'|'character'='keyring'
     let selectedCharacter=this.store.data.owned[0]
+    let materialMode:'duplicates'|'stones'='duplicates'
     const render=()=>{
       if(alchemyMode==='character'){
-        const choices=CHARACTERS.filter(c=>this.store.data.owned.includes(c.id))
+        const tierRank:Record<string,number>={transcendent:7,legendary:6,super:5,unique:5,epic:4,rare:3,mermaid:2,normal:1}
+        const choices=CHARACTERS.filter(c=>this.store.data.owned.includes(c.id)).sort((a,b)=>(tierRank[b.tier]||0)-(tierRank[a.tier]||0)||b.power-a.power)
         if(!selectedCharacter||!choices.some(c=>c.id===selectedCharacter))selectedCharacter=choices[0]?.id
         const char=choices.find(c=>c.id===selectedCharacter)
         const level=char?this.store.limitBreak[char.id]||0:0
         const dupes=char?this.store.dupes[char.id]||0:0
         const stones=this.store.market.stones||0
-        const useDupes=Math.min(dupes,[1,1,2,2,3,3,4,4,5,5][level]||0)
-        const useStones=Math.max(0,([1,1,2,2,3,3,4,4,5,5][level]||0)-useDupes)
+        const useDupes=materialMode==='duplicates'?Math.min(dupes,[1,1,2,2,3,3,4,4,5,5][level]||0):0
+        const useStones=materialMode==='stones'?([1,1,2,2,3,3,4,4,5,5][level]||0):0
         const required=[1,1,2,2,3,3,4,4,5,5][level]||0
         const base=char?battlePower(char.id):0
         const current=Math.ceil(base*(1+level*0.1))
         const next=Math.ceil(base*(1+(level+1)*0.1))
-        dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel limit-break-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><div class="alchemy-mode-tabs"><button data-mode="keyring">키링 합성</button><button class="active" data-mode="character">캐릭터 한계돌파</button></div><p class="alchemy-description">같은 캐릭터를 합쳐 최대 +10 · 성공률 100%</p><div class="alchemy-picker limit-break-picker">${choices.map(c=>`<button type="button" class="alchemy-pick ${c.id===selectedCharacter?'selected':''}" data-character="${c.id}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt=""/><span>${fullName(c)}</span><small>+${this.store.limitBreak[c.id]||0}</small></button>`).join('')}</div>${char?`<div class="limit-break-preview"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt=""/><div class="limit-break-details"><h3>${fullName(char)} · +${level}/10</h3><p>본체 전투력 ${current.toLocaleString()} ${level<10?`→ ${next.toLocaleString()}`:''}</p><strong>전투력 +${level*10}% ${level<10?`→ +${(level+1)*10}%`:''}</strong><p>중복 보유 ${dupes}개 · 한계돌파석 <img class="market-inline-stone" src="/assets/items/breakthrough_stone.png" alt=""/> ${stones}개 · ${level<10?`필요 ${required}개`:'최대 강화 완료'}</p></div></div><button type="button" class="alchemy-recipe limit-break-upgrade" ${level>=10||dupes+stones<required?'disabled':''}>${level>=10?'+10 한계돌파 완료':dupes+stones<required?'재료 부족':`+${level+1} 한계돌파 · 합성하기`}</button>`:'<p>보유 캐릭터가 없습니다.</p>'}<button type="button" class="myroom-equipment-done">닫기</button></div>`
+        dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-panel limit-break-panel"><button type="button" class="myroom-equipment-close">×</button><h2>연금술</h2><div class="alchemy-mode-tabs"><button data-mode="keyring">키링 합성</button><button class="active" data-mode="character">캐릭터 한계돌파</button></div><p class="alchemy-description">같은 캐릭터를 합쳐 최대 +10 · 성공률 100%</p><div class="alchemy-picker limit-break-picker">${choices.map(c=>`<button type="button" class="alchemy-pick limit-break-tier-${c.tier} ${c.id===selectedCharacter?'selected':''}" data-character="${c.id}"><span class="limit-break-level-badge">+${this.store.limitBreak[c.id]||0}</span><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt=""/><span>${fullName(c)}</span></button>`).join('')}</div>${char?`<div class="limit-break-preview"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt=""/><div class="limit-break-details"><h3>${fullName(char)} · +${level}/10</h3><p>본체 전투력 ${current.toLocaleString()} ${level<10?`→ ${next.toLocaleString()}`:''}</p><strong>전투력 +${level*10}% ${level<10?`→ +${(level+1)*10}%`:''}</strong></div></div><div class="limit-break-materials"><button type="button" data-material="duplicates" class="limit-break-material ${materialMode==='duplicates'?'active':''}"><b>중복 캐릭터 사용</b><span>보유 ${dupes}개 · 필요 ${required}개</span></button><button type="button" data-material="stones" class="limit-break-material ${materialMode==='stones'?'active':''}"><b>한계돌파석 사용</b><span>보유 ${stones}개 · 필요 ${required}개</span></button></div><button type="button" class="alchemy-recipe limit-break-upgrade" ${level>=10||(materialMode==='duplicates'?dupes<required:stones<required)?'disabled':''}>${level>=10?'+10 한계돌파 완료':(materialMode==='duplicates'?dupes<required:stones<required)?'재료 부족':`+${level+1} 한계돌파 · 합성하기`}</button>`:'<p>보유 캐릭터가 없습니다.</p>'}<button type="button" class="myroom-equipment-done">닫기</button></div>`
         dialog.querySelector('.myroom-equipment-close')?.addEventListener('click',()=>dialog.close())
         dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',()=>dialog.close())
         dialog.querySelector('[data-mode="keyring"]')?.addEventListener('click',()=>{alchemyMode='keyring';render()})
+        dialog.querySelectorAll<HTMLButtonElement>('[data-material]').forEach(b=>b.addEventListener('click',()=>{materialMode=b.dataset.material as 'duplicates'|'stones';render()}))
         dialog.querySelectorAll<HTMLButtonElement>('[data-character]').forEach(b=>b.addEventListener('click',()=>{selectedCharacter=b.dataset.character as CharacterId;render()}))
         dialog.querySelector<HTMLButtonElement>('.limit-break-upgrade')?.addEventListener('click',async()=>{
           if(!char||level>=10)return
@@ -729,7 +732,7 @@ export class GachaUi {
           confirmPanel.remove()
           if(!accepted)return
           try{
-            await this.store.upgradeCharacter(char.id)
+            await this.store.upgradeCharacter(char.id,materialMode)
             dialog.innerHTML=`<div class="myroom-equipment-panel alchemy-result"><h2 class="alchemy-result-status">합성 중...</h2><div class="alchemy-stage"><div class="alchemy-animation"><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt="재료"/><img src="${CHARACTER_IMAGE_URLS[char.id]}" alt="본체"/><span class="alchemy-impact"></span></div><div class="alchemy-reveal"><img class="alchemy-result-image" src="${CHARACTER_IMAGE_URLS[char.id]}" alt="강화 완료"/><h3>한계돌파 +${level+1} 성공!</h3><p>본체 전투력 +${(level+1)*10}%</p></div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
             window.setTimeout(()=>{const el=dialog.querySelector('.alchemy-result-status');if(el)el.textContent='한계돌파 성공!'},2250)
             dialog.querySelector('.myroom-equipment-done')?.addEventListener('click',render)
@@ -2951,7 +2954,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span>${m.me&&(this.store.limitBreak[m.characterId]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[m.characterId]}</span>`:''}<img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     // Position the first shots only after the expedition panel is laid out.
     // The original immediate measurement could read zero/stale coordinates on entry.
     if(party && boss && hp>0){
@@ -3485,7 +3488,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (picker) {
       picker.innerHTML = owned.length
         ? owned.map(character => `<button class="weed-pick${(this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id) ? ' is-active' : ''}${this.weedBusy(character.id) ? ' is-busy' : ''}" role="listitem" data-action="battle-pick" data-id="${character.id}" aria-pressed="${this.store.battle?.id === character.id || this.store.battle?.secondId === character.id || this.store.battle?.thirdId === character.id}">
-            <img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
+            ${(this.store.limitBreak[character.id]||0)>0?`<span class="limit-break-level-badge">+${this.store.limitBreak[character.id]}</span>`:''}<img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span class="battle-pick-name">${character.name}${character.variant ? ` (${character.variant})` : ''}</span><em class="is-power">전투력 ${battlePower(character.id)}</em>${this.weedBusy(character.id) ? '<em class="is-busy-tag">제초 중</em>' : ''}</button>`).join('')
         : '<p class="weed-empty">가챠에서 친구를 뽑으면 토벌을 보낼 수 있어요.</p>'
     }
     const fighter = this.store.battle?.id ? characterById(this.store.battle.id) : undefined
@@ -3495,19 +3498,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (thirdUnit) {
       thirdUnit.classList.toggle('is-empty', !third)
       const body = thirdUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = third ? `<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(third.id)}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
+      if (body) body.innerHTML = third ? `${(this.store.limitBreak[third.id]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[third.id]}</span>`:''}<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(third.id)}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
     }
     const secondUnit = this.root.querySelector<HTMLElement>('.bf-friend-second')
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = second ? `<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(second.id)}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
+      if (body) body.innerHTML = second ? `${(this.store.limitBreak[second.id]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[second.id]}</span>`:''}<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(second.id)}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second):not(.bf-friend-third)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = fighter ? `<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(fighter.id)}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `${(this.store.limitBreak[fighter.id]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[fighter.id]}</span>`:''}<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(fighter.id)}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {

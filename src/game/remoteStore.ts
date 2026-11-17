@@ -251,8 +251,8 @@ export class RemoteGachaStore {
     const r=await request<{market:MarketItems;save:GachaSave}>('market/items/buy',{item})
     this.market=r.market;this.data=r.save
   }
-  async upgradeCharacter(id:CharacterId):Promise<number>{
-    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id})
+  async upgradeCharacter(id:CharacterId,materialMode:'duplicates'|'stones'='duplicates'):Promise<number>{
+    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id,materialMode})
     this.dupes=r.dupes;this.limitBreak=r.limitBreak;this.market=r.market
     return r.level
   }
