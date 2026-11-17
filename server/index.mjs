@@ -340,6 +340,7 @@ async function prepareDatabase() {
     const [admins] = await pool.query('SELECT id FROM gm_accounts WHERE username = ? AND is_admin = 1', [adminUsername])
     for (const admin of admins) await grantAdminCollection(admin.id)
   }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_first_deploy_reset (account_id BIGINT UNSIGNED PRIMARY KEY, reset_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)` )
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_idle_migrations (account_id BIGINT UNSIGNED NOT NULL, revision VARCHAR(100) NOT NULL, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(account_id,revision))`)
   // One-time global battle progression reset; keep assigned characters and balances.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_battle_reset_migrations (
@@ -769,22 +770,23 @@ async function ensureIdleBattle(accountId) {
       await conn.query(`UPDATE gm_battle SET stage=1,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=?,boss_ready=0,retry_stage=0,max_cleared_stage=0 WHERE account_id=?`, [now,now,STAGE_LIMIT_MS,accountId])
       await conn.query('DELETE FROM gm_battle_saved_progress WHERE account_id=?', [accountId])
     }
+    // First login after production rollout: clear ONLY assignments, once per account.
+    const [resetMarker]=await conn.query('SELECT account_id FROM gm_first_deploy_reset WHERE account_id=? FOR UPDATE',[accountId])
+    if(!resetMarker.length){
+      await conn.query('INSERT INTO gm_first_deploy_reset (account_id) VALUES (?)',[accountId])
+      await conn.query('DELETE FROM gm_weed_slots WHERE account_id=?',[accountId])
+      await conn.query("UPDATE gm_weeding SET character_id='',since_ms=? WHERE account_id=?",[now,accountId])
+      const [oldBattle]=await conn.query('SELECT stage,boss_ready,retry_stage,max_cleared_stage FROM gm_battle WHERE account_id=? FOR UPDATE',[accountId])
+      if(oldBattle.length){
+        const b=oldBattle[0]
+        await conn.query(`INSERT INTO gm_battle_saved_progress(account_id,stage,boss_ready,retry_stage,max_cleared_stage) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE stage=VALUES(stage),boss_ready=VALUES(boss_ready),retry_stage=VALUES(retry_stage),max_cleared_stage=VALUES(max_cleared_stage)`,[accountId,b.stage,b.boss_ready,b.retry_stage,b.max_cleared_stage])
+      }
+      await conn.query('DELETE FROM gm_battle WHERE account_id=?',[accountId])
+      await conn.query('DELETE FROM gm_expedition_member WHERE account_id=?',[accountId])
+    }
     const [battles] = await conn.query(BATTLE_SELECT+' FOR UPDATE', [accountId])
     const existing = battleRow(battles[0])
-    // Existing assigned parties continue unattended. Empty parties get one owned, available character.
-    if (!existing?.id) {
-      const [saves] = await conn.query('SELECT owned FROM gm_saves WHERE account_id=?', [accountId])
-      const owned = saves.length ? normalizeOwned(parseJson(saves[0].owned)) : []
-      const [weeds] = await conn.query('SELECT character_id FROM gm_weed_slots WHERE account_id=?', [accountId])
-      const weedIds = new Set(weeds.map(r=>r.character_id))
-      const candidate = owned.find(id=>CHARACTER_IDS.includes(id) && !weedIds.has(id))
-      if (candidate) {
-        await conn.query(`INSERT INTO gm_battle (account_id,character_id,second_id,third_id,since_ms,damage,stage,stage_since,stage_damage,stage_limit_ms,boss_ready,retry_stage,max_cleared_stage)
-          VALUES (?,?,'','',?,0,1,?,0,?,0,0,0)
-          ON DUPLICATE KEY UPDATE character_id=VALUES(character_id),second_id='',third_id='',since_ms=VALUES(since_ms),damage=0,stage=IF(?,1,stage),stage_since=VALUES(stage_since),stage_damage=0,stage_limit_ms=VALUES(stage_limit_ms),boss_ready=0,retry_stage=0,max_cleared_stage=IF(?,0,max_cleared_stage)`,
-          [accountId,candidate,now,now,STAGE_LIMIT_MS,firstVisit?1:0,firstVisit?1:0])
-      }
-    }
+    // No automatic character placement; user must choose manually.
     await conn.commit()
   } catch(error) { await conn.rollback().catch(()=>{}); throw error }
   finally { conn.release() }
@@ -2020,6 +2022,17 @@ const routes = {
       if(result.error)await conn.rollback();else await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     send(res,result.error?409:200,result)
+  },
+  'GET /api/deployment-reset-status': async(req,res)=>{
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    await ensureIdleBattle(account.id)
+    const [[weed],[battle],[expedition]]=await Promise.all([
+      pool.query('SELECT 1 FROM gm_weed_slots WHERE account_id=? LIMIT 1',[account.id]),
+      pool.query("SELECT 1 FROM gm_battle WHERE account_id=? AND character_id<>'' LIMIT 1",[account.id]),
+      pool.query('SELECT 1 FROM gm_expedition_member WHERE account_id=? LIMIT 1',[account.id])
+    ])
+    send(res,200,{weed:weed.length===0,battle:battle.length===0,expedition:expedition.length===0})
   },
   'GET /api/me': async (req, res) => {
     const account = await currentAccount(req)
