@@ -2705,7 +2705,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   private characterReveal(result: PullResult): RevealItem {
     const character = characterById(result.id)
-    return { image: CHARACTER_IMAGE_URLS[character.id], name: character.name, variant: character.variant, rare: character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary', grade: tierTag(character), chance: character.probability, color: character.color, accent: character.accent,
+    return { image: CHARACTER_IMAGE_URLS[character.id], name: character.name, variant: character.variant, rare: character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary', grade: tierTag(character), chance: this.christmasPull ? (({christmas_chiikawa:0.04,christmas_hachiware:0.04,christmas_usagi:0.04,christmas_tree_usagi:0.04,pajama_chiikawa:4.70,siren_curry:0,kurimanju_bean:0,rakko_limited:0,beetle_berserk:0,usagi_orange:0} as Record<string,number>)[character.id] ?? character.probability) : character.probability, color: character.color, accent: character.accent,
       tag: result.duplicate ? '또 만났어요!' : `새 친구 등록 · +${result.bonus} 코인`, sub: result.duplicate ? '중복 · 이미 도감에 있어요' : `새 친구 · 도감 등록 +${result.bonus} 코인` }
   }
 
