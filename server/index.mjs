@@ -833,7 +833,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        const ticket = randomInt(400) < 3 ? 1 : 0
+        const ticket = randomInt(500) < 3 ? 1 : 0
         ticketsEarned += ticket
         diamondsEarned += reward.diamonds
         earned += reward.fragments
