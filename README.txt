@@ -1,1 +1,2 @@
-Railway Vite CSS 빌드 오류 수정: gacha.css 6075행의 문자 그대로 입력된 \n을 실제 줄바꿈으로 수정. geong-fix.zip 적용 후 덮어쓰기.
+연금술 한계돌파 등급 매핑 수정: 내부 mermaid=레어(파랑), rare=에픽(빨강). 기존 캐릭터 데이터 변경 없음.
+최신 staging 브랜치에 동일 경로 덮어쓰기.

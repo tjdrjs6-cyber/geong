@@ -6072,7 +6072,9 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 .combat-power-modal-rows b{color:#ae6c3c}
 .combat-power-modal-rows .combat-power-modal-total{border:0;margin-top:8px;font-size:16px;color:#a75d2b}
 .combat-power-modal-done{display:block;width:100%;margin-top:15px;border:0;border-radius:13px;padding:12px;background:#e9c5a1;color:#754622;font-weight:900;cursor:pointer}
-/* FIX: Alchemy dialog exists outside #ui *//* 한계돌파 재료 선택: 파스텔 인게임 카드 UI */
+
+/* FIX: Alchemy dialog exists outside #ui */
+/* 한계돌파 재료 선택: 파스텔 인게임 카드 UI */
 dialog.alchemy-dialog .limit-break-panel .limit-break-materials{display:flex;flex-direction:column;gap:9px;margin:14px 0 10px}
 dialog.alchemy-dialog .limit-break-panel .limit-break-material{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px;min-height:76px;padding:11px 13px;border:1.5px solid #e9d9e8;border-radius:17px;background:linear-gradient(115deg,#fff9fc,#fff);box-shadow:0 3px 10px #8e699019;color:#66516e;box-sizing:border-box}
 dialog.alchemy-dialog .limit-break-panel .limit-break-material-stones{border-color:#ddd4f1;background:linear-gradient(115deg,#faf6ff,#fff)}
@@ -6214,3 +6216,11 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-rare .limit-break-tier-name{color:#3988ed!important}
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker button.alchemy-pick.limit-break-tier-epic .limit-break-tier-name{color:#e54848!important}
 dialog.alchemy-dialog .limit-break-panel .limit-break-material-face{display:block!important;width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;min-height:40px!important;max-height:40px!important;object-fit:contain!important;flex:0 0 40px!important}
+
+/* Alchemy actual rarity mapping: mermaid = rare (blue), rare = epic (red) */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit-break-tier-mermaid {border:2px solid #3988ed!important;}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit-break-tier-rare,
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick.limit-break-tier-epic {border:2px solid #e54848!important;}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-mermaid .limit-break-tier-name {color:#3988ed!important;}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-rare .limit-break-tier-name,
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .limit-break-tier-epic .limit-break-tier-name {color:#e54848!important;}
