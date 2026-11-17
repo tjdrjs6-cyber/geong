@@ -6738,3 +6738,8 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-mobile-controls{min-height:88px!important;padding:2px 8px!important}
 #ui [data-screen="plaza"] .plaza-hint{margin:0!important}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-card{padding:8px!important;gap:4px!important}#ui [data-screen="plaza"] .plaza-player{width:92px!important;height:92px!important}#ui [data-screen="plaza"] .plaza-chat{flex-basis:54px!important;height:54px!important}#ui [data-screen="plaza"] .plaza-mobile-controls{min-height:82px!important}}
+
+/* Plaza 1.5: user-provided background; same scene for PC/mobile. */
+#ui [data-screen="plaza"] .plaza-world{background:#dce9c7 url('/assets/plaza/plaza_background.png') center center / 100% 100% no-repeat!important;}
+#ui [data-screen="plaza"] .plaza-path-h,#ui [data-screen="plaza"] .plaza-path-v,#ui [data-screen="plaza"] .plaza-fountain,#ui [data-screen="plaza"] .plaza-garden,#ui [data-screen="plaza"] .plaza-bench{display:none!important;}
+#ui [data-screen="plaza"] .plaza-players{position:absolute;inset:0;}

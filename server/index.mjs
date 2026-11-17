@@ -1915,17 +1915,17 @@ const routes = {
     const [mine]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=?',[account.id])
     let channel=Number(mine[0]?.channel||0)
     if(!channel){const [counts]=await pool.query('SELECT channel,COUNT(*) n FROM gm_plaza_presence GROUP BY channel ORDER BY channel');channel=1;while(counts.some(r=>Number(r.channel)===channel&&Number(r.n)>=20))channel++;
-      const [saved]=await pool.query('SELECT x,y FROM gm_plaza_spots WHERE account_id=?',[account.id]);const sx=Number(saved[0]?.x??50),sy=Number(saved[0]?.y??50);await pool.query('INSERT INTO gm_plaza_presence(account_id,channel,x,y,updated_ms) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),updated_ms=VALUES(updated_ms)',[account.id,channel,sx,sy,now])}
+      const [saved]=await pool.query('SELECT x,y FROM gm_plaza_spots WHERE account_id=?',[account.id]);const sx=Number(saved[0]?.x??50),sy=Math.max(24,Number(saved[0]?.y??50));await pool.query('INSERT INTO gm_plaza_presence(account_id,channel,x,y,updated_ms) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),updated_ms=VALUES(updated_ms)',[account.id,channel,sx,sy,now])}
     await pool.query('UPDATE gm_plaza_presence SET updated_ms=? WHERE account_id=?',[now,account.id])
     const [players]=await pool.query(`SELECT p.account_id id,p.x,p.y,p.emote,a.nickname,a.username,s.featured FROM gm_plaza_presence p JOIN gm_accounts a ON a.id=p.account_id LEFT JOIN gm_saves s ON s.account_id=p.account_id WHERE p.channel=? AND p.updated_ms>=?`,[channel,now-12000])
     const [offline]=await pool.query(`SELECT o.account_id id,o.x,o.y,a.nickname,a.username,s.featured FROM gm_plaza_spots o JOIN gm_accounts a ON a.id=o.account_id LEFT JOIN gm_saves s ON s.account_id=o.account_id LEFT JOIN gm_plaza_presence p ON p.account_id=o.account_id AND p.updated_ms>=? WHERE p.account_id IS NULL ORDER BY o.updated_ms DESC LIMIT 60`,[now-12000])
     const [messages]=await pool.query(`SELECT c.id,c.message,c.created_ms at,a.nickname,a.username FROM gm_plaza_chat c JOIN gm_accounts a ON a.id=c.account_id WHERE c.channel=? ORDER BY c.id DESC LIMIT 50`,[channel])
-    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),emote:'',nickname:x.nickname||x.username,featured:x.featured,online:false}))],onlineCount:players.length,messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
+    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,online:false}))],onlineCount:players.length,messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
   },
   'POST /api/plaza/move': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const body=await readJson(req),now=Date.now(),x=Number(body.x),y=Number(body.y)
-    if(!Number.isFinite(x)||!Number.isFinite(y)||x<3||x>97||y<3||y>97)return send(res,400,{error:'invalid_position'})
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x<3||x>97||y<24||y>97)return send(res,400,{error:'invalid_position'})
     const [rows]=await pool.query('SELECT x,y,updated_ms FROM gm_plaza_presence WHERE account_id=?',[account.id]);if(!rows.length)return send(res,409,{error:'plaza_not_joined'})
     const old=rows[0],elapsed=Math.max(0,(now-Number(old.updated_ms))/1000),distance=Math.hypot(x-Number(old.x),y-Number(old.y))
     if(distance>Math.max(2,elapsed*17+2))return send(res,429,{error:'invalid_movement'})
