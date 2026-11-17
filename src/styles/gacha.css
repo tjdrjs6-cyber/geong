@@ -6636,3 +6636,51 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .dopamine-confirm-actions button{border:0;border-radius:12px;padding:14px 8px;font-weight:900;font-size:15px;cursor:pointer;background:#e9dfd1;color:#61462f}
 #ui .dopamine-confirm-actions button:last-child{background:#c58339;color:#fff}
 @media(max-width:600px){#ui .dopamine-screen .dopamine-scene{padding:12px 12px 26px!important;gap:12px!important}#ui .dopamine-screen .dopamine-options{gap:6px}#ui .dopamine-screen .dopamine-options button{padding:12px 1px;font-size:13px}#ui .dopamine-screen .dopamine-panel{padding:16px 12px}#ui .dopamine-screen .dopamine-wheel-wrap{width:min(65vw,260px)}}
+
+/* Dopamine zone: fit the complete interaction into the available screen, no page scroll. */
+#ui .dopamine-screen .dopamine-scene{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-template-rows:auto auto minmax(0,1fr)!important;
+  gap:clamp(5px,1vh,12px)!important;align-content:stretch!important;
+  padding:clamp(5px,1vh,12px) clamp(8px,2vw,22px)!important;
+  overflow:hidden!important;height:auto!important;min-height:0!important;
+}
+#ui .dopamine-screen .dopamine-scene>.lottery-heading{grid-column:1/-1;grid-row:1;margin:0!important}
+#ui .dopamine-screen .dopamine-scene>.dopamine-card{grid-column:1;grid-row:2}
+#ui .dopamine-screen .dopamine-scene>.dopamine-roulette{grid-column:2;grid-row:2/4;min-height:0!important;justify-content:center!important}
+#ui .dopamine-screen .dopamine-scene>.dopamine-panel{grid-column:1;grid-row:3;min-height:0!important}
+#ui .dopamine-screen .dopamine-scene>.lottery-heading,
+#ui .dopamine-screen .dopamine-scene>.dopamine-card,
+#ui .dopamine-screen .dopamine-scene>.dopamine-roulette,
+#ui .dopamine-screen .dopamine-scene>.dopamine-panel{width:100%!important;max-width:none!important;margin:0!important;min-height:0;box-sizing:border-box}
+#ui .dopamine-screen .lottery-heading h2{margin:0!important;font-size:clamp(16px,2.5vh,23px)!important}
+#ui .dopamine-screen .lottery-heading p{margin:0!important;font-size:11px!important}
+#ui .dopamine-screen .lottery-balance{margin:3px auto 0!important;padding:3px 9px!important}
+#ui .dopamine-screen .dopamine-card{padding:clamp(6px,1.2vh,13px)!important;gap:2px!important}
+#ui .dopamine-screen .dopamine-card strong{font-size:clamp(19px,3.2vh,30px)!important}
+#ui .dopamine-screen .dopamine-roulette{padding:clamp(6px,1vh,12px)!important;gap:clamp(4px,1vh,10px)!important}
+#ui .dopamine-screen .dopamine-wheel-wrap{width:min(100%,34vh,310px)!important;max-height:100%;flex:0 1 auto}
+#ui .dopamine-screen .dopamine-panel{padding:clamp(7px,1.2vh,14px)!important;display:flex;flex-direction:column;justify-content:center}
+#ui .dopamine-screen .dopamine-panel h3{margin:0 0 7px!important;font-size:clamp(13px,2vh,18px)!important}
+#ui .dopamine-screen .dopamine-options{gap:clamp(3px,.7vh,8px)!important}
+#ui .dopamine-screen .dopamine-options button{padding:clamp(5px,1vh,10px) 1px!important;font-size:clamp(11px,1.6vh,14px)!important}
+#ui .dopamine-screen .dopamine-summary{gap:clamp(3px,.7vh,8px)!important;margin:clamp(5px,1vh,10px) 0!important}
+#ui .dopamine-screen .dopamine-summary span{font-size:clamp(11px,1.6vh,13px)!important}
+#ui .dopamine-screen .dopamine-track{height:8px!important}
+#ui .dopamine-screen .dopamine-play{padding:clamp(7px,1.2vh,12px)!important;font-size:clamp(12px,1.8vh,15px)!important}
+#ui .dopamine-screen .dopamine-status{margin:4px 0 0!important;font-size:11px!important}
+@media(max-width:650px){
+ #ui .dopamine-screen .dopamine-scene{grid-template-columns:1fr!important;grid-template-rows:auto auto minmax(0,.8fr) minmax(0,1.3fr)!important;gap:clamp(3px,.65vh,7px)!important;padding:clamp(3px,.6vh,7px) 8px!important}
+ #ui .dopamine-screen .dopamine-scene>.lottery-heading{grid-column:1;grid-row:1}
+ #ui .dopamine-screen .dopamine-scene>.dopamine-card{grid-column:1;grid-row:2;padding:4px 8px!important;gap:0!important}
+ #ui .dopamine-screen .dopamine-scene>.dopamine-card strong{font-size:clamp(16px,2.7vh,23px)!important}
+ #ui .dopamine-screen .dopamine-scene>.dopamine-roulette{grid-column:1;grid-row:3;padding:4px!important;gap:2px!important}
+ #ui .dopamine-screen .dopamine-wheel-wrap{width:min(24vh,145px)!important}
+ #ui .dopamine-screen .dopamine-wheel-legend{gap:9px;font-size:10px}
+ #ui .dopamine-screen .dopamine-scene>.dopamine-panel{grid-column:1;grid-row:4;padding:5px 9px!important}
+ #ui .dopamine-screen .dopamine-panel h3{margin:0 0 3px!important}
+ #ui .dopamine-screen .dopamine-options button{padding:clamp(3px,.65vh,7px) 1px!important}
+ #ui .dopamine-screen .dopamine-summary{margin:4px 0!important;gap:3px!important}
+ #ui .dopamine-screen .dopamine-play{padding:7px!important}
+ #ui .dopamine-screen .lottery-balance{margin:1px auto 0!important}
+}
