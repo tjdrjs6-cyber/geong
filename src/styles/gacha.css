@@ -6574,3 +6574,6 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .shop-panel .shop-bulk-fixed .shop-grade-choice-check{width:14px!important;height:14px!important;flex-basis:14px!important;font-size:10px!important}
 #ui .shop-panel .shop-bulk-fixed .shop-bulk-sell{display:block!important;width:100%!important;max-width:none!important;flex:0 0 auto!important;margin:0!important;box-sizing:border-box!important;min-height:40px!important}
 @media(max-width:390px){#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* Limit break character picker: show current weed-speed bonus without changing card geometry */
+#ui .limit-break-picker .limit-break-weed-value{display:block;font-size:10px;font-weight:700;color:#518c6a;line-height:1.2;white-space:nowrap}

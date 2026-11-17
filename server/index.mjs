@@ -965,7 +965,7 @@ async function updateWeed(accountId, op = {}) {
       const endMinute=Math.floor(now/60000)
       // Limit break increases each character's BASE weeding bonus by 10% per level.
       const weedLimitBreak = await getLimitBreak(accountId,conn)
-      const bonus=Math.max(0,1+members.reduce((v,m)=>v+Math.ceil((WEED_BONUS[m.id]||0)*(1+Math.min(10,Math.max(0,Number(weedLimitBreak[m.id]||0)))*0.1))/100,0))
+      const bonus=Math.max(0,1+members.reduce((v,m)=>v+Math.ceil((WEED_BONUS[m.id]||0)*(1+Math.min(10,Math.max(0,Number(weedLimitBreak[m.id]||0)))*0.03))/100,0))
       const perMinute=Math.floor(10*bonus*weedCoinMultiplier(beetle))
       earned+=Math.max(0,endMinute-startMinute)*perMinute
     }
