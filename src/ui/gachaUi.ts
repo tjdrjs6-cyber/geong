@@ -257,7 +257,7 @@ export class GachaUi {
               window.clearInterval(timer)
               setTimer()
               void (async () => {
-                try { await this.store.restore(); await draw() }
+                try { await draw(); try { await this.store.restore() } catch { /* Refresh again when the main store is available. */ } }
                 catch { const feedback = target.querySelector<HTMLElement>('.research-feedback'); if (feedback) feedback.textContent = '완료 확인에 실패했어요. 연구소를 다시 열어주세요.' }
               })()
             }
@@ -271,12 +271,17 @@ export class GachaUi {
             const result = await fetch('/api/research/upgrade', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' })
             const body = await result.json() as { error?: string }
             if (!result.ok) throw Error(body.error === 'insufficient_resources' ? '코인 또는 강화파편이 부족해요.' : body.error === 'research_in_progress' ? '이미 연구가 진행 중입니다.' : body.error === 'max_level' ? '최고 레벨입니다.' : '연구 시작에 실패했어요.')
-            await this.store.restore()
             await draw()
+            try { await this.store.restore() } catch { /* Research state is authoritative from /api/research. */ }
           } catch (error) {
             const feedback = target.querySelector<HTMLElement>('.research-feedback')
             if (feedback) feedback.textContent = error instanceof Error ? error.message : '오류가 발생했어요.'
-            upgrade.disabled = false
+            // An already-running research must show its countdown, not a clickable button.
+            if (error instanceof Error && error.message === '이미 연구가 진행 중입니다.') {
+              await draw()
+            } else {
+              upgrade.disabled = false
+            }
           }
         }
       } catch (error) {
