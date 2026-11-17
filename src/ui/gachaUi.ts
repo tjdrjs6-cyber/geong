@@ -11,7 +11,7 @@ const WEAPON_ACCESSORIES = [
   {id:'kani_keyring',name:'카니 키링',image:'/assets/accessories/kani_keyring.png?v=040'},
   {id:'rakko_keyring',name:'랏코 키링',image:'/assets/accessories/rakko_keyring.png?v=040'},
  ] as const
-const ALCHEMY_GRADES=[{id:'normal',name:'노말',power:10,color:'#aaa'},{id:'rare',name:'레어',power:30,cost:3,coins:2500,fragments:30,color:'#4ba7ff'},{id:'epic',name:'에픽',power:80,cost:3,coins:10000,fragments:50,color:'#ff5050'},{id:'unique',name:'유니크',power:160,cost:3,coins:30000,fragments:150,color:'#ad59ff'},{id:'legendary',name:'레전더리',power:300,cost:3,coins:100000,fragments:300,color:'#ffd337'},{id:'transcendent',name:'초월',power:500,cost:3,coins:300000,fragments:100000,color:'#ff8500'}] as const
+const ALCHEMY_GRADES=[{id:'normal',name:'노말',power:10,color:'#aaa'},{id:'rare',name:'레어',power:30,cost:3,coins:2500,fragments:700,color:'#4ba7ff'},{id:'epic',name:'에픽',power:80,cost:3,coins:10000,fragments:2500,color:'#ff5050'},{id:'unique',name:'유니크',power:160,cost:3,coins:30000,fragments:5000,color:'#ad59ff'},{id:'legendary',name:'레전더리',power:300,cost:3,coins:100000,fragments:20000,color:'#ffd337'},{id:'transcendent',name:'초월',power:500,cost:3,coins:300000,fragments:100000,color:'#ff8500'}] as const
 const accessoryInfo=(id:string|null)=>WEAPON_ACCESSORIES.find(item=>item.id===id)
 // Enhancement aura tiers are visual-only and never affect weapon stats.
 function equippedAccessoryPower(equipped: string | null | undefined, grade: string | null | undefined): number {
