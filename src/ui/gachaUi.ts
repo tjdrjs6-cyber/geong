@@ -371,7 +371,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title' && this.store.user) window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
+    if (screen === 'title' && this.store.user) window.setTimeout(() => { if (!this.showTutorialOnce()) this.showUpdateNoticeOnce() }, 200)
     if (screen === 'title') { this.prefetchQuickPanels(); void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
@@ -696,7 +696,7 @@ export class GachaUi {
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">MY PROFILE</div><h2 id="featured-title">내 프로필</h2>
           <div class="profile-card"><span class="profile-big"><img alt="" /></span><b class="profile-big-name"></b><small class="profile-stats"></small></div>
-          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">건의함</button><button class="modal-secondary" data-action="privacy">공개 설정</button></div>
+          <div class="profile-actions"><button class="modal-primary profile-mail" data-action="mail">우편함 <i class="mail-badge" hidden>0</i></button><button class="modal-secondary" data-action="users">우편 보내기</button><button class="modal-secondary admin-broadcast-entry" data-action="admin-broadcast" hidden>📢 전체 편지·코인 발송</button><button class="modal-secondary" data-action="suggest">건의함</button><button class="modal-secondary" data-action="privacy">공개 설정</button><button class="modal-secondary" data-action="tutorial-replay">튜토리얼 다시 보기</button></div>
           <h3 class="profile-sub">대표 사진 바꾸기</h3>
           <p class="collection-summary">내가 뽑은 친구 중에서 골라요. 대표 사진은 가챠 무대와 유저 목록에 보여요.</p>
           <div class="collection-grid featured-grid" role="list"></div>
@@ -1320,6 +1320,7 @@ export class GachaUi {
     if (action === 'result-collection') { this.show(this.resultKind === 'deco' ? 'decos' : 'collection'); return }
     if (action === 'retry') { this.actions.retry(); return }
     if (action === 'auth-login' || action === 'auth-register') { this.setAuthMode(action === 'auth-login' ? 'login' : 'register'); return }
+    if (action === 'tutorial-replay') { this.show('title'); this.openTutorial(true); return }
     if (action === 'logout') {
       this.clawToys = []; this.clawToysOwner = ''
       try { await this.store.logout() } catch { /* The session is cleared locally either way. */ }
@@ -3839,6 +3840,59 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       const seconds = Math.ceil(this.store.nextWeedCoinIn() / 1000)
       next.textContent = weeding ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : '--:--'
     }
+  }
+
+  /** Tutorial v1 is shown once per account on this browser, including existing accounts. */
+  private tutorialKey(): string | null {
+    const name = this.store.user?.username?.trim().toLowerCase()
+    return name ? `geongi-tutorial-v1-${name}` : null
+  }
+
+  private showTutorialOnce(): boolean {
+    if (this.screen !== 'title' || !this.store.user) return false
+    if (document.querySelector('.geongi-tutorial-overlay')) return true
+    const key = this.tutorialKey()
+    if (!key) return false
+    try { if (window.localStorage.getItem(key) === 'done') return false } catch { /* storage blocked */ }
+    this.openTutorial(false)
+    return true
+  }
+
+  private openTutorial(replay: boolean): void {
+    if (!this.store.user) return
+    document.querySelector('.geongi-tutorial-overlay')?.remove()
+    const steps = [
+      ['겅이마켓에 오신 것을 환영합니다!', '캐릭터를 수집하고 키우는 겅이마켓! 주요 기능을 차례대로 소개해 드릴게요.', '환영'],
+      ['캐릭터 뽑기', '다이아를 사용해 캐릭터를 뽑고 도감을 채워 보세요. 일반 뽑기와 이벤트 뽑기를 선택할 수 있습니다.', '캐릭터 뽑기'],
+      ['제초장', '캐릭터를 배치하면 코인을 자동으로 모읍니다. 생성된 잡초를 뽑아 추가 코인도 얻어 보세요.', '활동 > 제초장'],
+      ['토벌장', '캐릭터 최대 3명을 배치해 몬스터를 처치하세요. 단계별 보상과 복권 티켓을 얻을 수 있습니다.', '활동 > 토벌장'],
+      ['원정대', '다른 유저와 함께 강력한 몬스터를 처치해 보세요. 클리어 보상은 우편함으로 지급됩니다.', '원정대'],
+      ['대장간 · 연금술 · 연구소', '대장간에서 무기를 강화하고, 연금술에서 키링 합성과 캐릭터 한계돌파를 진행하세요. 연구소에서는 전투력을 높일 수 있습니다.', '상점 / 마이룸'],
+      ['준비 완료!', '이제 자유롭게 겅이마켓을 즐겨 보세요. 내 프로필에서 튜토리얼을 다시 볼 수 있습니다.', '완료'],
+    ] as const
+    const overlay = document.createElement('div')
+    overlay.className = 'geongi-tutorial-overlay'
+    overlay.setAttribute('role','dialog')
+    overlay.setAttribute('aria-modal','true')
+    overlay.setAttribute('aria-label','겅이마켓 튜토리얼')
+    let index = 0
+    const finish = (): void => {
+      if (!replay) {
+        const key = this.tutorialKey()
+        if (key) try { window.localStorage.setItem(key,'done') } catch { /* storage blocked */ }
+      }
+      overlay.remove()
+      if (this.screen === 'title') window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
+    }
+    const render = (): void => {
+      const [title, description, location] = steps[index]
+      overlay.innerHTML = `<section class="geongi-tutorial-card"><div class="geongi-tutorial-top"><strong>겅이마켓 가이드</strong><span>${index + 1} / ${steps.length}</span></div><div class="geongi-tutorial-progress" aria-hidden="true"><span style="width:${(index + 1) / steps.length * 100}%"></span></div><div class="geongi-tutorial-content"><small>메뉴 안내 · ${location}</small><h2>${title}</h2><p>${description}</p></div><div class="geongi-tutorial-controls"><button type="button" class="geongi-tutorial-skip">건너뛰기</button><div><button type="button" class="geongi-tutorial-prev" ${index === 0 ? 'disabled' : ''}>이전</button><button type="button" class="geongi-tutorial-next">${index === steps.length - 1 ? '시작하기' : '다음'}</button></div></div></section>`
+      overlay.querySelector<HTMLButtonElement>('.geongi-tutorial-skip')!.onclick = finish
+      overlay.querySelector<HTMLButtonElement>('.geongi-tutorial-prev')!.onclick = () => { if(index > 0) { index--; render() } }
+      overlay.querySelector<HTMLButtonElement>('.geongi-tutorial-next')!.onclick = () => { if (index === steps.length - 1) finish(); else { index++; render() } }
+    }
+    render()
+    document.body.appendChild(overlay)
   }
 
   private showUpdateNoticeOnce(): void {

@@ -6317,3 +6317,22 @@ body #geong-research-panel .research-card .research-cost strong.research-resourc
     padding:12px!important;
   }
 }
+
+/* First-login tutorial: shared PC/mobile layout with responsive sizing. */
+.geongi-tutorial-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(30,40,45,.58);box-sizing:border-box}
+.geongi-tutorial-card{box-sizing:border-box;width:min(460px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;background:#fffaf4;border:2px solid #e7d7c7;border-radius:22px;box-shadow:0 18px 60px #0004;padding:22px;color:#594a46;font-family:inherit}
+.geongi-tutorial-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px}
+.geongi-tutorial-top span{color:#8a8078;font-variant-numeric:tabular-nums}
+.geongi-tutorial-progress{height:7px;background:#ece7e2;border-radius:10px;overflow:hidden;margin-top:14px}
+.geongi-tutorial-progress span{display:block;height:100%;background:#92cbb8;border-radius:10px;transition:width .15s}
+.geongi-tutorial-content{min-height:190px;display:flex;flex-direction:column;justify-content:center;gap:14px;text-align:center;padding:22px 4px}
+.geongi-tutorial-content small{color:#6e9f91;font-size:12px;font-weight:700}
+.geongi-tutorial-content h2{font-size:23px;line-height:1.35;margin:0;color:#594a46}
+.geongi-tutorial-content p{font-size:15px;line-height:1.7;margin:0;color:#6b605a;overflow-wrap:anywhere}
+.geongi-tutorial-controls{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.geongi-tutorial-controls>div{display:flex;gap:8px}
+.geongi-tutorial-controls button{border:1px solid #d9c8bb;border-radius:12px;padding:11px 14px;min-height:42px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;background:white;color:#594a46;touch-action:manipulation}
+.geongi-tutorial-controls .geongi-tutorial-next{background:#91c8b7;color:#253e35;border-color:#91c8b7}
+.geongi-tutorial-controls .geongi-tutorial-skip{border:0;background:transparent;color:#84766f;padding-left:0}
+.geongi-tutorial-controls button:disabled{opacity:.4;cursor:default}
+@media(max-width:420px){.geongi-tutorial-card{padding:17px}.geongi-tutorial-content h2{font-size:20px}.geongi-tutorial-content{min-height:180px}.geongi-tutorial-controls button{padding:10px}}
