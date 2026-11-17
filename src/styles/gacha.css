@@ -6258,3 +6258,20 @@ dialog.alchemy-dialog .limit-break-panel img.limit-break-material-icon-dupes{wid
 /* Research resource icons: reuse existing game assets. */
 #ui .research-resource{display:flex;align-items:center;gap:7px}
 #ui .research-resource img{width:22px!important;height:22px!important;max-width:22px!important;max-height:22px!important;object-fit:contain;flex:none}
+
+/* Research resource icons: fixed compact inline size. */
+#ui .research-card .research-cost .research-resource img {
+ display:inline-block!important;width:16px!important;height:16px!important;
+ min-width:16px!important;min-height:16px!important;
+ max-width:16px!important;max-height:16px!important;
+ flex:0 0 16px!important;object-fit:contain!important;
+ margin:0!important;padding:0!important;transform:none!important;
+}
+/* Expedition limit-break level visible above fighter artwork. */
+#ui .expedition-party .expedition-combatant {position:relative!important;overflow:visible!important}
+#ui .expedition-party .expedition-combatant .limit-break-combat-badge {
+ position:absolute!important;top:0!important;right:0!important;left:auto!important;
+ z-index:30!important;display:inline-flex!important;min-width:23px!important;
+ height:19px!important;padding:1px 4px!important;font-size:11px!important;
+ line-height:1!important;transform:none!important;animation:none!important;pointer-events:none!important;
+}
