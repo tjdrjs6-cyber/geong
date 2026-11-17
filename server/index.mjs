@@ -8,6 +8,23 @@ import mysql from 'mysql2/promise'
 import { houseCoinFor, houseCoinSlot, HOUSE_COIN_MS, BEETLE_ID, weedCoinMultiplier, WEED_MAX } from './game.mjs'
 import { CHARACTER_IDS, STARTING_COINS, claimDaily, spinRoulette, normalizeOwned, pull, settleWeed, validateCredentials, validateNickname, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots, weedFieldEarnedBetweenSlots, WEED_HOUR_MS, WEED_BONUS, POWER, settleBattle, DECO_IDS, DECO_NEW_BONUS, normalizeDecos, pullDecos, validateHouse, normalizeHouse, validateMail, MAIL_DAILY_COINS, checkInDay, normalizeDupes, addDupes, sellCharacter, sellDeco, MAILBOX_MAX, newEntryBonus, validateSuggestion, SUGGEST_REPLY_MAX_CHARS, SUGGEST_DAILY_MAX } from './game.mjs'
 
+const kstMarketKeys = () => {
+  const d = new Date(Date.now()+9*3600000-9*3600000) // Use 09:00 KST as the daily boundary.
+  const shifted = new Date(Date.now());
+  const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(shifted)
+  const get = name => Number(parts.find(p=>p.type===name)?.value||0)
+  const day = new Date(Date.UTC(get('year'),get('month')-1,get('day')-(get('hour')<9?1:0)))
+  const daily = day.toISOString().slice(0,10)
+  const dow = (day.getUTCDay()+6)%7
+  const weekly = new Date(day.getTime()-dow*86400000).toISOString().slice(0,10)
+  return {daily,weekly}
+}
+async function marketState(accountId, conn=pool, lock=false){
+  await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[accountId])
+  const [rows]=await conn.query(`SELECT * FROM gm_market_items WHERE account_id=? ${lock?'FOR UPDATE':''}`,[accountId])
+  const r=rows[0], keys=kstMarketKeys()
+  return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
+}
 const SKILL_TIERS = {"rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
@@ -35,6 +52,7 @@ async function prepareDatabase() {
     connectionLimit: 5,
     waitForConnections: true,
   })
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_market_items (account_id BIGINT UNSIGNED PRIMARY KEY, breakthrough_stones INT UNSIGNED NOT NULL DEFAULT 0, weekly_key VARCHAR(16) NOT NULL DEFAULT '', weekly_bought TINYINT UNSIGNED NOT NULL DEFAULT 0, daily_key VARCHAR(16) NOT NULL DEFAULT '', daily_bought TINYINT UNSIGNED NOT NULL DEFAULT 0)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_research (account_id BIGINT UNSIGNED PRIMARY KEY, combat_level TINYINT UNSIGNED NOT NULL DEFAULT 0, pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0)` )
   try { await pool.query('ALTER TABLE gm_research ADD COLUMN pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch(e) { if(e.code !== 'ER_DUP_FIELDNAME') throw e }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_rilakkuma_event (
@@ -660,7 +678,7 @@ async function getForge(accountId) {
 }
 async function accountState(accountId) {
   const box = await mailbox(accountId)
-  return { accessory: await getAccessory(accountId), forge: await getForge(accountId), dupes: await getDupes(accountId), limitBreak: await getLimitBreak(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
+  return { accessory: await getAccessory(accountId), forge: await getForge(accountId), dupes: await getDupes(accountId), limitBreak: await getLimitBreak(accountId), market: await marketState(accountId), featured: await getFeatured(accountId), mailUnread: box.unread, save: await getSave(accountId), weed: await getWeed(accountId), battle: await getBattle(accountId), decos: await getDecos(accountId), house: await getHouse(accountId), now: Date.now() }
 }
 
 async function getWeed(accountId) {
@@ -1472,13 +1490,37 @@ const routes = {
       const owned=golden?weed.goldenCount:weed.count
       if(!Number.isSafeInteger(count)||count<1||count>owned)return {error:'not_enough_weeds'}
       await conn.query(`UPDATE gm_wild_weeds SET ${golden?'golden_inventory':'inventory'}=${golden?'golden_inventory':'inventory'}-? WHERE account_id=?`,[count,account.id])
-      await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[count*(golden?50:5),account.id])
+      await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[count*(golden?5000:500),account.id])
       return {weed:{...weed,...(golden?{goldenCount:owned-count}:{count:owned-count})}}
     })
     if(result.error)return send(res,409,result)
     send(res,200,{...result,save:await getSave(account.id)})
   },
 
+  'GET /api/market/items': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    send(res,200,await marketState(account.id))
+  },
+  'POST /api/market/items/buy': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {item}=await readJson(req)
+    if(item!=='stone'&&item!=='lottery')return send(res,400,{error:'invalid_item'})
+    const outcome=await inTransaction(async conn=>{
+      const [saves]=await conn.query('SELECT diamonds FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(!saves.length)return {error:'login_required'}
+      const state=await marketState(account.id,conn,true)
+      if(item==='stone'&&state.weeklyBought>=5)return {error:'weekly_limit'}
+      if(item==='lottery'&&state.dailyBought>=5)return {error:'daily_limit'}
+      const price=item==='stone'?5000:1000
+      if(Number(saves[0].diamonds)<price)return {error:'not_enough_diamonds'}
+      await conn.query('UPDATE gm_saves SET diamonds=diamonds-?,lottery_tickets=lottery_tickets+? WHERE account_id=?',[price,item==='lottery'?1:0,account.id])
+      if(item==='stone')await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+1,weekly_key=?,weekly_bought=? WHERE account_id=?',[state.weekly,state.weeklyBought+1,account.id])
+      else await conn.query('UPDATE gm_market_items SET daily_key=?,daily_bought=? WHERE account_id=?',[state.daily,state.dailyBought+1,account.id])
+      return {ok:true}
+    })
+    if(outcome.error)return send(res,409,outcome)
+    send(res,200,{ok:true,market:await marketState(account.id),save:await getSave(account.id)})
+  },
   'POST /api/shop/pepero': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -1544,14 +1586,18 @@ const routes = {
       const level=Number(levelRows[0]?.level||0)
       if(level>=10)return {error:'limit_break_max'}
       const required=BREAK_COSTS[level]
-      if((dupes[id]||0)<required)return {error:'not_enough_duplicates'}
-      dupes[id]-=required
+      const market=await marketState(account.id,conn,true)
+      const consumeDupes=Math.min(Number(dupes[id]||0),required)
+      const consumeStones=required-consumeDupes
+      if(market.stones<consumeStones)return {error:'not_enough_duplicates'}
+      dupes[id]-=consumeDupes
+      if(consumeStones)await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[consumeStones,account.id])
       await conn.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
       await conn.query('INSERT INTO gm_limit_break(account_id,character_id,level) VALUES(?,?,?) ON DUPLICATE KEY UPDATE level=VALUES(level)',[account.id,id,level+1])
       return {success:true,level:level+1,required}
     })
     if(result.error)return send(res,409,result)
-    send(res,200,{...result,dupes:await getDupes(account.id),limitBreak:await getLimitBreak(account.id),save:await getSave(account.id)})
+    send(res,200,{...result,dupes:await getDupes(account.id),limitBreak:await getLimitBreak(account.id),market:await marketState(account.id),save:await getSave(account.id)})
   },
   'POST /api/accessory/alchemy': async (req,res) => {
     const account=await currentAccount(req)
@@ -2448,14 +2494,14 @@ const routes = {
     const { kind, id, count } = await readJson(req)
     if (typeof id !== 'string' || (kind !== 'char' && kind !== 'deco')) return send(res, 400, { error: 'sell_invalid' })
     const outcome = await inTransaction(async conn => {
-      await conn.query('SELECT gems FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
+      await conn.query('SELECT diamonds FROM gm_saves WHERE account_id = ? FOR UPDATE', [account.id])
       let coins = 0
       if (kind === 'char') {
         const [rows] = await conn.query('SELECT items FROM gm_dupes WHERE account_id = ? FOR UPDATE', [account.id])
         const sold = sellCharacter(rows[0] ? parseJson(rows[0].items) : {}, id, count)
         if (sold.error) return sold
         await conn.query('INSERT INTO gm_dupes (account_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', [account.id, JSON.stringify(sold.dupes)])
-        coins = sold.coins
+        coins = count * 10
       } else {
         const [rows] = await conn.query('SELECT items FROM gm_decos WHERE account_id = ? FOR UPDATE', [account.id])
         const [house] = await conn.query('SELECT layout FROM gm_house WHERE account_id = ?', [account.id])
@@ -2463,9 +2509,9 @@ const routes = {
         const sold = sellDeco(rows[0] ? parseJson(rows[0].items) : {}, id, count, placed)
         if (sold.error) return sold
         await conn.query('UPDATE gm_decos SET items = ? WHERE account_id = ?', [JSON.stringify(sold.decos), account.id])
-        coins = sold.coins
+        coins = count * 20
       }
-      await conn.query('UPDATE gm_saves SET gems = gems + ? WHERE account_id = ?', [coins, account.id])
+      await conn.query('UPDATE gm_saves SET diamonds = diamonds + ? WHERE account_id = ?', [coins, account.id])
       return { coins }
     })
     if (outcome.error) return send(res, 400, { error: outcome.error })

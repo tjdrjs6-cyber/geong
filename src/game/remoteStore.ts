@@ -32,10 +32,11 @@ export type SentItem = { id: number; to: string; message: string; coins: number;
 export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
 export type Suggestion = { id: number; from: string; message: string; at: number; reply: string | null; replyAt: number | null; mine: boolean }
 export type SuggestBox = { items: Suggestion[]; admin: boolean; todayCount: number; dailyMax: number }
+export type MarketItems = {stones:number;weeklyBought:number;dailyBought:number;daily:string;weekly:string}
 export type LimitBreakLevels = Partial<Record<CharacterId,number>>
 export type CharDupes = Partial<Record<CharacterId, number>>
-export const CHAR_SELL_PRICES = { normal: 3, rare: 5, epic: 10, unique: 30 } as const
-export const DECO_SELL_PRICE = 5
+export const CHAR_SELL_PRICES = { normal: 10, rare: 10, epic: 10, unique: 10 } as const
+export const DECO_SELL_PRICE = 20
 export const SUGGEST_MAX_CHARS = 50
 export const SUGGEST_REPLY_MAX_CHARS = 100
 export const MAILBOX_MAX = 10
@@ -45,7 +46,7 @@ export type HouseCoin = { slot: number; coins: number; x: number; y: number }
 export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
 export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>> }
 export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
-type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; limitBreak?: LimitBreakLevels; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
+type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; limitBreak?: LimitBreakLevels; market?: MarketItems; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
 export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
 type ApiError = { error?: string }
 
@@ -70,6 +71,8 @@ export const ERROR_TEXT: Record<string, string> = {
   limited_sale_ended: '한정 판매가 종료되었습니다.',
   limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
   not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
+  weekly_limit: '이번 주 한계돌파석 구매 한도 5개를 모두 사용했어요.',
+  daily_limit: '오늘 겅이복권 구매 한도 5개를 모두 사용했어요.',
   not_enough_claw_tickets: '인형뽑기 쿠폰이 부족합니다. 다음 정각에 5개 충전됩니다.',
   not_enough_tickets: '겅이복권이 부족해요. 토벌장 처치 시 0.5% 확률로 획득해요!',
   mail_too_long: '편지는 30자까지 쓸 수 있어요.',
@@ -139,6 +142,7 @@ export class RemoteGachaStore {
   mailUnread = 0
   dupes: CharDupes = {}
   limitBreak: LimitBreakLevels = {}
+  market: MarketItems = {stones:0,weeklyBought:0,dailyBought:0,daily:'',weekly:''}
   /** Server clock minus local clock, so countdowns match the server's payout. */
   private clockOffset = 0
 
@@ -242,9 +246,14 @@ export class RemoteGachaStore {
     const r=await request<{forge:ForgeState|null;accessory:AccessoryState;save:GachaSave}>('accessory/equip',{id,grade})
     this.forge=r.forge;this.accessory=r.accessory;this.data=r.save
   }
+  async loadMarket():Promise<void>{this.market=await request<MarketItems>('market/items',{})}
+  async buyMarketItem(item:'stone'|'lottery'):Promise<void>{
+    const r=await request<{market:MarketItems;save:GachaSave}>('market/items/buy',{item})
+    this.market=r.market;this.data=r.save
+  }
   async upgradeCharacter(id:CharacterId):Promise<number>{
-    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels}>('character/limit-break',{id})
-    this.dupes=r.dupes;this.limitBreak=r.limitBreak
+    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id})
+    this.dupes=r.dupes;this.limitBreak=r.limitBreak;this.market=r.market
     return r.level
   }
   async synthesizeAccessory(id:string,grade:string):Promise<void>{
@@ -492,6 +501,7 @@ export class RemoteGachaStore {
     this.mailUnread = payload.mailUnread ?? 0
     this.dupes = payload.dupes ?? {}
     this.limitBreak = payload.limitBreak ?? {}
+    this.market = payload.market ?? this.market
     if (typeof payload.now === 'number') this.clockOffset = payload.now - Date.now()
     this.data = payload.save ?? { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
   }
