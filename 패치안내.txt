@@ -1,0 +1,1 @@
+업로드된 geong-staging (6)(1).zip 기준. 토벌장 다음 스테이지 버튼 부모 요소의 pointer-events:none 수정, 테스트 버튼 global busy 간섭 분리, 전투 갱신 주기 완화, 상세창 중복 열기 방지. 변경 파일 2개.
