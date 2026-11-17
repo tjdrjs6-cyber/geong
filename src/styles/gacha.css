@@ -6542,3 +6542,7 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
   .geongi-equipment-dot,.pepero-sale-dot
 ):not([hidden]) {display:none!important;}
 /* When tutorial is complete, the other pending alerts become visible again. */
+
+/* Menu guide + deployment notifications: a single dot at each top-level activity button. */
+#ui .nav-activity > .geongi-first-menu-dot:not([hidden]){display:block!important;}
+#ui .nav-activity > .geongi-first-menu-dot[hidden]{display:none!important;}

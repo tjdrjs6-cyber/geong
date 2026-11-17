@@ -174,7 +174,8 @@ export class GachaUi {
     this.root.addEventListener('click', event => { void this.onClick(event) })
     this.root.addEventListener('click', event => this.handleFirstMenuGuide(event), true)
     window.setInterval(() => this.refreshFirstMenuDots(), 2500)
-    window.setTimeout(() => this.refreshFirstMenuDots(), 300)
+    window.setTimeout(() => {this.refreshFirstMenuDots();void this.refreshDeploymentResetDots()}, 300)
+    window.setInterval(() => {if(this.store.user)this.refreshFirstMenuDots()}, 1000)
 
     window.setInterval(()=>void this.refreshDeploymentResetDots(),15000)
     this.root.addEventListener('click',()=>window.setTimeout(()=>void this.refreshDeploymentResetDots(),900))
@@ -1147,7 +1148,12 @@ export class GachaUi {
       if(!button)continue
       let dot=button.querySelector<HTMLElement>('.geongi-first-menu-dot')
       if(!dot){dot=document.createElement('i');dot.className='geongi-first-menu-dot';dot.setAttribute('aria-hidden','true');button.appendChild(dot)}
-      dot.hidden=!actions.some(action=>!this.firstMenuSeen(action))
+      const pendingGuide=actions.some(action=>!this.firstMenuSeen(action))
+      const pendingChild=actions.some(action=>{
+        const child=this.root.querySelector<HTMLElement>(`[data-action="${action}"]`)
+        return !!child && Array.from(child.querySelectorAll<HTMLElement>('.deployment-reset-dot,.geongi-keyring-dot,.wild-weed-alert-dot,.geongi-equipment-dot,.geongi-first-menu-dot')).some(b=>!b.hidden && getComputedStyle(b).display!=='none')
+      })
+      dot.hidden=!(pendingGuide||pendingChild)
     }
   }
   private handleFirstMenuGuide(event: MouseEvent): void {
@@ -3172,6 +3178,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       for(const key of ['weed','battle','expedition'] as const){
         this.root.querySelectorAll<HTMLElement>(`[data-deploy-dot="${key}"]`).forEach(el=>el.hidden=!state[key])
       }
+      this.refreshFirstMenuDots()
     }catch{/* retain previous badge state on network error */}
   }
   private mailCheckedAt = 0

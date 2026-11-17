@@ -1960,8 +1960,8 @@ const routes = {
       if (error && error.code === 'ER_DUP_ENTRY') return send(res, 409, { error: String(error.message).includes('nickname') ? 'nickname_taken' : 'username_taken' })
       throw error
     }
-    const save = { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
-    await pool.query('INSERT INTO gm_saves (account_id, gems, owned, last_daily) VALUES (?, ?, ?, ?)', [accountId, save.gems, '[]', ''])
+    const save = { version: 1, gems: 2000, diamonds: 1000, owned: [], lastDaily: '' }
+    await pool.query('INSERT INTO gm_saves (account_id, gems, diamonds, owned, last_daily) VALUES (?, ?, ?, ?, ?)', [accountId, save.gems, save.diamonds, '[]', ''])
     return startSession(res, accountId, username, nick, save)
   },
   'POST /api/auth/login': async (req, res) => {
