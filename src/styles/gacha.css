@@ -6057,3 +6057,17 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{display:block!important;position:static!important;width:43px!important;height:43px!important;min-width:43px!important;min-height:43px!important;max-width:43px!important;max-height:43px!important;flex:0 0 43px!important;object-fit:contain!important;box-sizing:border-box!important;margin:0!important;padding:4px!important;transform:none!important;}
 #ui .myroom-equipment-panel.limit-break-panel .limit-break-material-info{min-width:0!important;max-width:100%!important;}
 @media(max-width:390px){#ui .myroom-equipment-panel.limit-break-panel .limit-break-material-stones img.limit-break-material-icon{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;max-width:35px!important;max-height:35px!important;flex-basis:35px!important;}}
+
+/* 2026-11-17: alchemy dialog is mounted outside #ui; target its real DOM scope. */
+.alchemy-dialog .myroom-equipment-panel.limit-break-panel .limit-break-material-stones .limit-break-material-info > img.limit-break-material-icon {
+  display:block!important; position:static!important; width:43px!important; height:43px!important;
+  min-width:43px!important; min-height:43px!important; max-width:43px!important; max-height:43px!important;
+  flex:0 0 43px!important; padding:4px!important; margin:0!important; box-sizing:border-box!important;
+  object-fit:contain!important; object-position:center!important; transform:none!important;
+}
+@media (max-width:390px) {
+ .alchemy-dialog .myroom-equipment-panel.limit-break-panel .limit-break-material-stones .limit-break-material-info > img.limit-break-material-icon {
+  width:35px!important; height:35px!important; min-width:35px!important; min-height:35px!important;
+  max-width:35px!important; max-height:35px!important; flex-basis:35px!important;
+ }
+}
