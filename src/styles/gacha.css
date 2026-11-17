@@ -6482,7 +6482,7 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick img
 #ui .deployment-reset-dot:not([hidden]) { display:block!important;position:absolute!important;top:4px!important;right:5px!important;width:9px!important;height:9px!important;border-radius:50%!important;background:#e53935!important;border:1px solid white!important;z-index:9!important;pointer-events:none!important; }
 
 /* First-time menu guides: red dot at top right of each tab. */
-#ui [data-action] { position:relative; }
+#ui [data-action]:has(> .geongi-first-menu-dot) { position:relative; }
 #ui .geongi-first-menu-dot {
   position:absolute!important;top:3px!important;right:3px!important;
   width:9px!important;height:9px!important;min-width:9px!important;
@@ -6508,7 +6508,7 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 /* vNext: ONE unified top-right notification indicator per menu button.
    Existing reminder logic remains independent: hide only duplicate visuals.
    The first active indicator wins; when it becomes hidden the next one appears. */
-#ui button[data-action] {position:relative!important;}
+#ui button[data-action]:has(> :is(.geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,.global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot)) {position:relative!important;}
 #ui button[data-action] > :is(
   .geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,
   .global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,
