@@ -35,7 +35,8 @@ async function prepareDatabase() {
     connectionLimit: 5,
     waitForConnections: true,
   })
-  await pool.query(`CREATE TABLE IF NOT EXISTS gm_research (account_id BIGINT UNSIGNED PRIMARY KEY, combat_level TINYINT UNSIGNED NOT NULL DEFAULT 0)`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_research (account_id BIGINT UNSIGNED PRIMARY KEY, combat_level TINYINT UNSIGNED NOT NULL DEFAULT 0, pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0)` )
+  try { await pool.query('ALTER TABLE gm_research ADD COLUMN pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch(e) { if(e.code !== 'ER_DUP_FIELDNAME') throw e }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_rilakkuma_event (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     balance INT UNSIGNED NOT NULL DEFAULT 0,
@@ -700,8 +701,14 @@ async function getBattle(accountId) {
   return battleRow(rows[0])
 }
 // Combat research: level 0-100, +0.3% total combat power per level.
+const researchDuration = level => level<=10?level*10:level<=20?100+(level-10)*30:level<=40?400+(level-20)*60:level<=60?1600+(level-40)*90:level<=80?3400+(level-60)*120:5800+(level-80)*70
+const researchNow = () => Math.floor(Date.now()/1000)
+async function settleResearch(accountId,conn=pool) {
+  await conn.query('UPDATE gm_research SET combat_level=combat_level+1,pending_until=0 WHERE account_id=? AND pending_until>0 AND pending_until<=? AND combat_level<100',[accountId,researchNow()])
+}
 const researchCost = level => ({coins:2000+15*level*level,fragments:10*(5+Math.floor(level*level/4))})
 async function researchLevel(accountId, conn=pool) {
+  await settleResearch(accountId,conn)
   const [rows]=await conn.query('SELECT combat_level FROM gm_research WHERE account_id=?',[accountId])
   return Math.min(100,Math.max(0,Number(rows[0]?.combat_level||0)))
 }
@@ -1862,7 +1869,9 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const level=await researchLevel(account.id)
-    send(res,200,{level,maxLevel:100,bonusPercent:Number((level*0.3).toFixed(1)),nextCost:level<100?researchCost(level+1):null})
+    const [pendingRows]=await pool.query('SELECT pending_until FROM gm_research WHERE account_id=?',[account.id])
+    const pendingUntil=Number(pendingRows[0]?.pending_until||0)
+    send(res,200,{level,maxLevel:100,bonusPercent:Number((level*0.3).toFixed(1)),nextCost:level<100?researchCost(level+1):null,nextDuration:level<100?researchDuration(level+1):null,pendingUntil,pendingLevel:pendingUntil?level+1:null})
   },
   'POST /api/research/upgrade': async(req,res) => {
     const account=await currentAccount(req)
@@ -1872,16 +1881,23 @@ const routes = {
     try {
       await conn.beginTransaction()
       await conn.query('INSERT IGNORE INTO gm_research (account_id,combat_level) VALUES (?,0)',[account.id])
-      const [levels]=await conn.query('SELECT combat_level FROM gm_research WHERE account_id=? FOR UPDATE',[account.id])
+      const [levels]=await conn.query('SELECT combat_level,pending_until FROM gm_research WHERE account_id=? FOR UPDATE',[account.id])
+      if(Number(levels[0].pending_until)>0 && Number(levels[0].pending_until)<=researchNow()) {
+        await conn.query('UPDATE gm_research SET combat_level=combat_level+1,pending_until=0 WHERE account_id=?',[account.id])
+        levels[0].combat_level=Number(levels[0].combat_level)+1
+        levels[0].pending_until=0
+      }
       const level=Number(levels[0].combat_level)
       if(level>=100) result={error:'max_level'}
+      else if(Number(levels[0].pending_until)>0) result={error:'research_in_progress',pendingUntil:Number(levels[0].pending_until)}
       else {
         const cost=researchCost(level+1)
         const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-? WHERE account_id=? AND gems>=? AND fragments>=?', [cost.coins,cost.fragments,account.id,cost.coins,cost.fragments])
         if(!paid.affectedRows)result={error:'insufficient_resources'}
         else {
-          await conn.query('UPDATE gm_research SET combat_level=combat_level+1 WHERE account_id=?',[account.id])
-          result={level:level+1,maxLevel:100,bonusPercent:Number(((level+1)*0.3).toFixed(1)),spent:cost,nextCost:level+1<100?researchCost(level+2):null}
+          const pendingUntil=researchNow()+researchDuration(level+1)
+          await conn.query('UPDATE gm_research SET pending_until=? WHERE account_id=?',[pendingUntil,account.id])
+          result={level,maxLevel:100,bonusPercent:Number((level*0.3).toFixed(1)),spent:cost,nextCost:cost,pendingUntil,pendingLevel:level+1}
         }
       }
       if(result.error)await conn.rollback();else await conn.commit()
@@ -2508,6 +2524,39 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
+// Periodic authoritative battle settlement: progress stages without opening the arena.
+// A one-second scheduler settles active battles; persisted timestamps preserve exact
+// elapsed combat time when a tick is delayed or a batch must wait its turn.
+// The existing 1.5-second stage transition is accounted for by updateBattle().
+const BATTLE_BACKGROUND_INTERVAL_MS = 1000
+const BATTLE_BACKGROUND_BATCH = 50
+let battleBackgroundRunning = false
+let battleBackgroundCursor = 0
+async function battleBackgroundTick() {
+  if (!ready || battleBackgroundRunning) return
+  battleBackgroundRunning = true
+  try {
+    let [rows] = await pool.query(
+      'SELECT account_id FROM gm_battle WHERE account_id > ? AND character_id IS NOT NULL AND character_id <> ? ORDER BY account_id LIMIT ?',
+      [battleBackgroundCursor, '', BATTLE_BACKGROUND_BATCH]
+    )
+    if (!rows.length && battleBackgroundCursor) {
+      battleBackgroundCursor = 0
+      ;[rows] = await pool.query(
+        'SELECT account_id FROM gm_battle WHERE character_id IS NOT NULL AND character_id <> ? ORDER BY account_id LIMIT ?',
+        ['', BATTLE_BACKGROUND_BATCH]
+      )
+    }
+    for (const row of rows) {
+      battleBackgroundCursor = Number(row.account_id)
+      try { await updateBattle(row.account_id, null) }
+      catch (error) { console.error('[battle] background settle failed', row.account_id, error?.code || error) }
+    }
+    if (rows.length < BATTLE_BACKGROUND_BATCH) battleBackgroundCursor = 0
+  } catch (error) { console.error('[battle] background tick failed', error?.code || error) }
+  finally { battleBackgroundRunning = false }
+}
+
 server.listen(PORT, () => {
   console.log(`[api] listening on ${PORT}`)
   // Bind first, then prepare the database so health checks answer during startup.
@@ -2521,4 +2570,5 @@ server.listen(PORT, () => {
   attempt(20)
   // Server-side progression must not depend on an expedition page visit.
   setInterval(expeditionBackgroundTick, EXP_TICK)
+  setInterval(battleBackgroundTick, BATTLE_BACKGROUND_INTERVAL_MS)
 })
