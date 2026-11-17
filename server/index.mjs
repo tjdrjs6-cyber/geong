@@ -69,6 +69,7 @@ async function prepareDatabase() {
     PRIMARY KEY(account_id, day, mission)
   )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_presence (account_id BIGINT UNSIGNED PRIMARY KEY, channel INT NOT NULL, x DOUBLE NOT NULL, y DOUBLE NOT NULL, emote VARCHAR(16) NOT NULL DEFAULT '', updated_ms BIGINT NOT NULL, INDEX(channel,updated_ms))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_spots (account_id BIGINT UNSIGNED PRIMARY KEY, x DOUBLE NOT NULL DEFAULT 50, y DOUBLE NOT NULL DEFAULT 50, updated_ms BIGINT NOT NULL)` )
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_chat (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL, channel INT NOT NULL, message VARCHAR(100) NOT NULL, created_ms BIGINT NOT NULL, INDEX(channel,id))`)
   // Additive, repeatable migration; existing accounts and saves are preserved.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_dopamine (
@@ -1914,11 +1915,12 @@ const routes = {
     const [mine]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=?',[account.id])
     let channel=Number(mine[0]?.channel||0)
     if(!channel){const [counts]=await pool.query('SELECT channel,COUNT(*) n FROM gm_plaza_presence GROUP BY channel ORDER BY channel');channel=1;while(counts.some(r=>Number(r.channel)===channel&&Number(r.n)>=20))channel++;
-      await pool.query('INSERT INTO gm_plaza_presence(account_id,channel,x,y,updated_ms) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),updated_ms=VALUES(updated_ms)',[account.id,channel,50,50,now])}
+      const [saved]=await pool.query('SELECT x,y FROM gm_plaza_spots WHERE account_id=?',[account.id]);const sx=Number(saved[0]?.x??50),sy=Number(saved[0]?.y??50);await pool.query('INSERT INTO gm_plaza_presence(account_id,channel,x,y,updated_ms) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),updated_ms=VALUES(updated_ms)',[account.id,channel,sx,sy,now])}
     await pool.query('UPDATE gm_plaza_presence SET updated_ms=? WHERE account_id=?',[now,account.id])
     const [players]=await pool.query(`SELECT p.account_id id,p.x,p.y,p.emote,a.nickname,a.username,s.featured FROM gm_plaza_presence p JOIN gm_accounts a ON a.id=p.account_id LEFT JOIN gm_saves s ON s.account_id=p.account_id WHERE p.channel=? AND p.updated_ms>=?`,[channel,now-12000])
+    const [offline]=await pool.query(`SELECT o.account_id id,o.x,o.y,a.nickname,a.username,s.featured FROM gm_plaza_spots o JOIN gm_accounts a ON a.id=o.account_id LEFT JOIN gm_saves s ON s.account_id=o.account_id LEFT JOIN gm_plaza_presence p ON p.account_id=o.account_id AND p.updated_ms>=? WHERE p.account_id IS NULL ORDER BY o.updated_ms DESC LIMIT 60`,[now-12000])
     const [messages]=await pool.query(`SELECT c.id,c.message,c.created_ms at,a.nickname,a.username FROM gm_plaza_chat c JOIN gm_accounts a ON a.id=c.account_id WHERE c.channel=? ORDER BY c.id DESC LIMIT 50`,[channel])
-    send(res,200,{channel,me:account.id,players:players.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured})),messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
+    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),emote:'',nickname:x.nickname||x.username,featured:x.featured,online:false}))],onlineCount:players.length,messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
   },
   'POST /api/plaza/move': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
@@ -1927,7 +1929,7 @@ const routes = {
     const [rows]=await pool.query('SELECT x,y,updated_ms FROM gm_plaza_presence WHERE account_id=?',[account.id]);if(!rows.length)return send(res,409,{error:'plaza_not_joined'})
     const old=rows[0],elapsed=Math.max(0,(now-Number(old.updated_ms))/1000),distance=Math.hypot(x-Number(old.x),y-Number(old.y))
     if(distance>Math.max(2,elapsed*17+2))return send(res,429,{error:'invalid_movement'})
-    await pool.query('UPDATE gm_plaza_presence SET x=?,y=?,updated_ms=? WHERE account_id=?',[x,y,now,account.id]);send(res,200,{ok:true})
+    await pool.query('UPDATE gm_plaza_presence SET x=?,y=?,updated_ms=? WHERE account_id=?',[x,y,now,account.id]);await pool.query('INSERT INTO gm_plaza_spots(account_id,x,y,updated_ms) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE x=VALUES(x),y=VALUES(y),updated_ms=VALUES(updated_ms)',[account.id,x,y,now]);send(res,200,{ok:true})
   },
   'POST /api/plaza/chat': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
@@ -1937,7 +1939,7 @@ const routes = {
     const [last]=await pool.query('SELECT created_ms FROM gm_plaza_chat WHERE account_id=? ORDER BY id DESC LIMIT 1',[account.id]);if(now-Number(last[0]?.created_ms||0)<1000)return send(res,429,{error:'chat_cooldown'})
     await pool.query('INSERT INTO gm_plaza_chat(account_id,channel,message,created_ms) VALUES(?,?,?,?)',[account.id,rows[0].channel,message,now]);send(res,200,{ok:true})
   },
-  'POST /api/plaza/leave': async(req,res)=>{const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'});await pool.query('DELETE FROM gm_plaza_presence WHERE account_id=?',[account.id]);send(res,200,{ok:true})},
+  'POST /api/plaza/leave': async(req,res)=>{const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'});await pool.query('INSERT INTO gm_plaza_spots(account_id,x,y,updated_ms) SELECT account_id,x,y,? FROM gm_plaza_presence WHERE account_id=? ON DUPLICATE KEY UPDATE x=VALUES(x),y=VALUES(y),updated_ms=VALUES(updated_ms)',[Date.now(),account.id]);await pool.query('DELETE FROM gm_plaza_presence WHERE account_id=?',[account.id]);send(res,200,{ok:true})},
   'POST /api/plaza/emote': async(req,res)=>{const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'});const {emote}=await readJson(req);if(!['wave','jump','dance','sit',''].includes(emote))return send(res,400,{error:'invalid_emote'});await pool.query('UPDATE gm_plaza_presence SET emote=?,updated_ms=? WHERE account_id=?',[emote,Date.now(),account.id]);send(res,200,{ok:true})},
   'GET /api/global-chat': async (req, res) => {
     await ensureGlobalChatTables()
