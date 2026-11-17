@@ -6492,3 +6492,15 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick img
 }
 #ui .geongi-first-menu-dot[hidden]{display:none!important;}
 #ui .expedition-entry-label .geongi-first-menu-dot{top:3px!important;right:3px!important;}
+
+/* First-menu explanations: native modal top layer, above equipment/alchemy dialogs. */
+dialog.geongi-first-menu-guide {
+  position:fixed!important;inset:0!important;margin:0!important;
+  width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;
+  padding:18px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  overflow:auto!important;color:inherit!important;
+}
+dialog.geongi-first-menu-guide::backdrop{background:rgba(30,40,45,.58)!important;}
+dialog.geongi-first-menu-guide:not([open]){display:none!important;}

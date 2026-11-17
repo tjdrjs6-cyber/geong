@@ -1160,7 +1160,7 @@ export class GachaUi {
     // Allow the original click to open the menu before presenting its explanation.
     window.setTimeout(()=>{
       if(document.querySelector('.geongi-first-menu-guide'))return
-      const overlay=document.createElement('div')
+      const overlay=document.createElement('dialog')
       overlay.className='geongi-tutorial-overlay geongi-first-menu-guide'
       overlay.setAttribute('role','dialog')
       overlay.setAttribute('aria-modal','true')
@@ -1174,8 +1174,8 @@ export class GachaUi {
       content.append(title,description)
       const controls=document.createElement('div');controls.className='geongi-tutorial-controls'
       const close=document.createElement('button');close.type='button';close.className='geongi-tutorial-next';close.textContent='확인'
-      close.onclick=()=>overlay.remove();controls.append(close)
-      card.append(top,content,controls);overlay.append(card);document.body.append(overlay)
+      close.onclick=()=>{overlay.close();overlay.remove()};controls.append(close)
+      card.append(top,content,controls);overlay.append(card);document.body.append(overlay);overlay.showModal()
     },90)
   }
 

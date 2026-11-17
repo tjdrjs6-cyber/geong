@@ -784,6 +784,15 @@ async function ensureIdleBattle(accountId) {
       await conn.query('DELETE FROM gm_battle WHERE account_id=?',[accountId])
       await conn.query('DELETE FROM gm_expedition_member WHERE account_id=?',[accountId])
     }
+    // Production rollout: one-time reset to 1-1, including saved and best-clear progress.
+    // Separate revision so accounts that already ran the deployment-unassign migration are covered.
+    const stageRevision='production_stage_1_1_20261117_v2'
+    const [stageMarkers]=await conn.query('SELECT 1 FROM gm_battle_idle_migrations WHERE account_id=? AND revision=? FOR UPDATE',[accountId,stageRevision])
+    if(!stageMarkers.length){
+      await conn.query('INSERT IGNORE INTO gm_battle_idle_migrations(account_id,revision) VALUES(?,?)',[accountId,stageRevision])
+      await conn.query('DELETE FROM gm_battle_saved_progress WHERE account_id=?',[accountId])
+      await conn.query('UPDATE gm_battle SET stage=1,stage_since=?,since_ms=?,stage_damage=0,damage=0,stage_limit_ms=?,boss_ready=0,retry_stage=0,max_cleared_stage=0 WHERE account_id=?',[now,now,STAGE_LIMIT_MS,accountId])
+    }
     const [battles] = await conn.query(BATTLE_SELECT+' FOR UPDATE', [accountId])
     const existing = battleRow(battles[0])
     // No automatic character placement; user must choose manually.
