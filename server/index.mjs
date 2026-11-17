@@ -70,6 +70,10 @@ async function prepareDatabase() {
   )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_presence (account_id BIGINT UNSIGNED PRIMARY KEY, channel INT NOT NULL, x DOUBLE NOT NULL, y DOUBLE NOT NULL, emote VARCHAR(16) NOT NULL DEFAULT '', updated_ms BIGINT NOT NULL, INDEX(channel,updated_ms))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_spots (account_id BIGINT UNSIGNED PRIMARY KEY, x DOUBLE NOT NULL DEFAULT 50, y DOUBLE NOT NULL DEFAULT 50, updated_ms BIGINT NOT NULL)` )
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_shops (account_id BIGINT UNSIGNED PRIMARY KEY, channel INT NOT NULL, x DOUBLE NOT NULL, y DOUBLE NOT NULL, opened_ms BIGINT NOT NULL, expires_ms BIGINT NOT NULL, INDEX(channel,expires_ms))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_cosmetic_inventory (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT UNSIGNED NOT NULL, cosmetic_id VARCHAR(80) NOT NULL, cosmetic_name VARCHAR(100) NOT NULL, source VARCHAR(20) NOT NULL DEFAULT 'battle', listing_id BIGINT UNSIGNED NULL, INDEX(owner_id,listing_id))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_shop_listings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, seller_id BIGINT UNSIGNED NOT NULL, inventory_id BIGINT UNSIGNED NOT NULL UNIQUE, price BIGINT UNSIGNED NOT NULL, created_ms BIGINT NOT NULL, status VARCHAR(12) NOT NULL DEFAULT 'active', buyer_id BIGINT UNSIGNED NULL, sold_ms BIGINT NULL, INDEX(seller_id,status))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_shop_sales (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, listing_id BIGINT UNSIGNED NOT NULL UNIQUE, seller_id BIGINT UNSIGNED NOT NULL, buyer_id BIGINT UNSIGNED NOT NULL, price BIGINT UNSIGNED NOT NULL, fee BIGINT UNSIGNED NOT NULL, sold_ms BIGINT NOT NULL)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_chat (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL, channel INT NOT NULL, message VARCHAR(100) NOT NULL, created_ms BIGINT NOT NULL, INDEX(channel,id))`)
   // Additive, repeatable migration; existing accounts and saves are preserved.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_dopamine (
@@ -1909,6 +1913,43 @@ const routes = {
     await safeEventProgress(account.id,'expedition')
     send(res,200,await retryDbContention(()=>expeditionSnapshot(account.id)))
   },
+  'GET /api/plaza/shop': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const now=Date.now();await pool.query("UPDATE gm_cosmetic_inventory i JOIN gm_plaza_shop_listings l ON l.inventory_id=i.id LEFT JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? SET i.listing_id=NULL,l.status='expired' WHERE l.status='active' AND sh.account_id IS NULL",[now]);await pool.query('DELETE FROM gm_plaza_shops WHERE expires_ms<=?',[now])
+    const [shops]=await pool.query(`SELECT sh.account_id id,sh.channel,sh.x,sh.y,sh.expires_ms,a.nickname,a.username FROM gm_plaza_shops sh JOIN gm_accounts a ON a.id=sh.account_id WHERE sh.expires_ms>? ORDER BY sh.opened_ms DESC LIMIT 100`,[now])
+    const [inventory]=await pool.query(`SELECT id,cosmetic_id,cosmetic_name FROM gm_cosmetic_inventory WHERE owner_id=? AND source='battle' AND listing_id IS NULL`,[account.id])
+    const [listings]=await pool.query(`SELECT l.id,l.seller_id,l.price,l.status,i.cosmetic_name,i.cosmetic_id FROM gm_plaza_shop_listings l JOIN gm_cosmetic_inventory i ON i.id=l.inventory_id JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.status='active' ORDER BY l.created_ms DESC LIMIT 200`,[now])
+    send(res,200,{me:account.id,shops:shops.map(x=>({...x,id:Number(x.id),expires_ms:Number(x.expires_ms)})),inventory,listings,tradeEnabled:true})
+  },
+  'POST /api/plaza/shop/open': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const now=Date.now();const [presence]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=? AND updated_ms>=?',[account.id,now-12000]);if(!presence.length)return send(res,409,{error:'plaza_not_joined'})
+    const p=presence[0];const [other]=await pool.query('SELECT account_id FROM gm_plaza_shops WHERE channel=? AND expires_ms>? AND account_id<>? AND ABS(x-?)<6 AND ABS(y-?)<6 LIMIT 1',[p.channel,now,account.id,p.x,p.y]);if(other.length)return send(res,409,{error:'shop_too_close'})
+    const [count]=await pool.query('SELECT COUNT(*) n FROM gm_plaza_shops WHERE channel=? AND expires_ms>? AND account_id<>?',[p.channel,now,account.id]);if(Number(count[0].n)>=10)return send(res,409,{error:'shop_channel_full'})
+    const [existing]=await pool.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>?',[account.id,now]);if(existing.length)return send(res,409,{error:'shop_already_open'})
+    await pool.query('INSERT INTO gm_plaza_shops(account_id,channel,x,y,opened_ms,expires_ms) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),x=VALUES(x),y=VALUES(y),opened_ms=VALUES(opened_ms),expires_ms=VALUES(expires_ms)',[account.id,p.channel,p.x,p.y,now,now+86400000]);send(res,200,{ok:true,expires_ms:now+86400000})
+  },
+  'POST /api/plaza/shop/close': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const conn=await pool.getConnection();try{await conn.beginTransaction();await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? FOR UPDATE',[account.id]);await conn.query("UPDATE gm_cosmetic_inventory i JOIN gm_plaza_shop_listings l ON l.inventory_id=i.id SET i.listing_id=NULL WHERE l.seller_id=? AND l.status='active'",[account.id]);await conn.query("UPDATE gm_plaza_shop_listings SET status='cancelled' WHERE seller_id=? AND status='active'",[account.id]);await conn.query('DELETE FROM gm_plaza_shops WHERE account_id=?',[account.id]);await conn.commit();send(res,200,{ok:true})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+  },
+  'POST /api/plaza/shop/list': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {inventoryId,price}=await readJson(req);if(!Number.isSafeInteger(inventoryId)||!Number.isSafeInteger(price)||price<10||price>100000000)return send(res,400,{error:'invalid_listing'})
+    const conn=await pool.getConnection();try{await conn.beginTransaction();const [shop]=await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[account.id,Date.now()]);if(!shop.length){await conn.rollback();return send(res,409,{error:'shop_closed'})}
+    const [count]=await conn.query("SELECT COUNT(*) n FROM gm_plaza_shop_listings WHERE seller_id=? AND status='active'",[account.id]);if(Number(count[0].n)>=5){await conn.rollback();return send(res,409,{error:'listing_full'})}
+    const [items]=await conn.query("SELECT id FROM gm_cosmetic_inventory WHERE id=? AND owner_id=? AND source='battle' AND listing_id IS NULL FOR UPDATE",[inventoryId,account.id]);if(!items.length){await conn.rollback();return send(res,409,{error:'item_unavailable'})}
+    const [result]=await conn.query('INSERT INTO gm_plaza_shop_listings(seller_id,inventory_id,price,created_ms) VALUES(?,?,?,?)',[account.id,inventoryId,price,Date.now()]);await conn.query('UPDATE gm_cosmetic_inventory SET listing_id=? WHERE id=?',[result.insertId,inventoryId]);await conn.commit();send(res,200,{ok:true})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+  },
+  'POST /api/plaza/shop/buy': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'})
+    const conn=await pool.getConnection();try{await conn.beginTransaction();const [ls]=await conn.query("SELECT l.* FROM gm_plaza_shop_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);if(!ls.length){await conn.rollback();return send(res,409,{error:'sold_or_expired'})}
+    const l=ls[0];if(Number(l.seller_id)===Number(account.id)){await conn.rollback();return send(res,400,{error:'own_listing'})}
+    const ids=[Number(account.id),Number(l.seller_id)].sort((a,b)=>a-b);const [saves]=await conn.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(account.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await conn.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+    const [item]=await conn.query('SELECT id FROM gm_cosmetic_inventory WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE',[l.inventory_id,l.seller_id,l.id]);if(!item.length){await conn.rollback();return send(res,409,{error:'item_unavailable'})}
+    const fee=Math.floor(Number(l.price)*.1),net=Number(l.price)-fee;await conn.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,account.id]);await conn.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[net,l.seller_id]);await conn.query('UPDATE gm_cosmetic_inventory SET owner_id=?,listing_id=NULL WHERE id=?',[account.id,l.inventory_id]);await conn.query("UPDATE gm_plaza_shop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[account.id,Date.now(),l.id]);await conn.query('INSERT INTO gm_plaza_shop_sales(listing_id,seller_id,buyer_id,price,fee,sold_ms) VALUES(?,?,?,?,?,?)',[l.id,l.seller_id,account.id,l.price,fee,Date.now()]);await conn.commit();send(res,200,{ok:true,price:Number(l.price),fee})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+  },
   'GET /api/plaza': async (req,res) => {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const now=Date.now();await pool.query('DELETE FROM gm_plaza_presence WHERE updated_ms < ?',[now-12000])
@@ -1919,8 +1960,9 @@ const routes = {
     await pool.query('UPDATE gm_plaza_presence SET updated_ms=? WHERE account_id=?',[now,account.id])
     const [players]=await pool.query(`SELECT p.account_id id,p.x,p.y,p.emote,a.nickname,a.username,s.featured FROM gm_plaza_presence p JOIN gm_accounts a ON a.id=p.account_id LEFT JOIN gm_saves s ON s.account_id=p.account_id WHERE p.channel=? AND p.updated_ms>=?`,[channel,now-12000])
     const [offline]=await pool.query(`SELECT o.account_id id,o.x,o.y,a.nickname,a.username,s.featured FROM gm_plaza_spots o JOIN gm_accounts a ON a.id=o.account_id LEFT JOIN gm_saves s ON s.account_id=o.account_id LEFT JOIN gm_plaza_presence p ON p.account_id=o.account_id AND p.updated_ms>=? WHERE p.account_id IS NULL ORDER BY o.updated_ms DESC LIMIT 60`,[now-12000])
+    const [shopRows]=await pool.query('SELECT account_id id,channel,x,y,expires_ms FROM gm_plaza_shops WHERE expires_ms>? AND channel=?',[now,channel])
     const [messages]=await pool.query(`SELECT c.id,c.message,c.created_ms at,a.nickname,a.username FROM gm_plaza_chat c JOIN gm_accounts a ON a.id=c.account_id WHERE c.channel=? ORDER BY c.id DESC LIMIT 50`,[channel])
-    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,online:false}))],onlineCount:players.length,messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
+    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,online:false}))],onlineCount:players.length,shops:shopRows.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),expires_ms:Number(x.expires_ms)})),messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
   },
   'POST /api/plaza/move': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})

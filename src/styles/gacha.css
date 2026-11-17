@@ -6749,3 +6749,14 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-compose input,
 #ui [data-screen="plaza"] input.plaza-input{font-size:16px!important;line-height:1.35!important;min-height:40px;box-sizing:border-box}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-player{width:64.4px!important;height:64.4px!important}}
+
+/* Plaza personal shops: same UI on desktop and mobile, no new assets. */
+#ui [data-screen="plaza"] .plaza-shop-panel{flex:0 1 auto;max-height:38dvh;overflow:auto;border:1px solid #c8d9c3;background:#f8fbf5;border-radius:10px;padding:10px;color:#334a36;font-size:13px}
+#ui [data-screen="plaza"] .plaza-shop-panel[hidden]{display:none!important}
+#ui [data-screen="plaza"] .plaza-shop-panel button{padding:6px 9px;border:1px solid #b8cdb9;border-radius:7px;background:#fff;color:#344b3b;cursor:pointer}
+#ui [data-screen="plaza"] .plaza-shop-title{display:flex;justify-content:space-between;align-items:center}
+#ui [data-screen="plaza"] .plaza-shop-list{padding:6px 0;border-top:1px solid #dce7d6}
+#ui [data-screen="plaza"] .plaza-shop-list>div{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 0}
+#ui [data-screen="plaza"] .plaza-shop-panel input{font-size:16px;width:100px;min-width:0}
+
+#ui [data-screen="plaza"] .plaza-shop-sign{position:absolute;z-index:4;transform:translate(-50%,-115px);background:#fff9e8;border:1px solid #d8c69d;border-radius:8px;padding:3px 7px;font-size:11px;color:#55462c;cursor:pointer;white-space:nowrap;box-shadow:0 2px 4px #0002}
