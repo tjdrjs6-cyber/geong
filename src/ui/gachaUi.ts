@@ -1310,7 +1310,10 @@ export class GachaUi {
       if(this.busy)return
       const currentLevel=this.store.forge?.level
       if(currentLevel===undefined)return
-      if(currentLevel<25 && (!this.isForgeOperator && ((this.store.data.fragments??0)<(currentLevel<20?currentLevel+1:[25,30,40,50,60][currentLevel-20]) || this.store.data.gems<(currentLevel<20?(currentLevel+1)*5:[150,200,300,400,500][currentLevel-20])))){this.showForgeInsufficient();return}
+      const forgeCoins=[200,400,600,800,1000,1200,1400,1600,1800,2000,2500,2900,3300,3650,4000,4500,5100,5700,6350,7000,8000,9000,10000,11000,12000,13000,14500,16000,18000,20000]
+      const forgeFragments=[0,0,0,0,0,60,60,60,60,60,180,180,180,180,180,450,450,450,450,450,900,1050,1200,1500,1500,1800,1800,2250,2250,3000]
+      if(currentLevel>=forgeCoins.length)return
+      if(!this.isForgeOperator && ((this.store.data.fragments??0)<forgeFragments[currentLevel] || this.store.data.gems<forgeCoins[currentLevel])){this.showForgeInsufficient();return}
       this.busy=true
       try {
         const success = await this.store.upgradeForge()
