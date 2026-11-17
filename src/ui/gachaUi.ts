@@ -1036,7 +1036,11 @@ export class GachaUi {
     const button=this.root.querySelector<HTMLElement>('.achievement-lobby-tab')
     if(!button || !this.store.user)return
     try {
-      const data=await this.fetchAchievementsOnce()
+      // Badge checks must use fresh server data; a cached snapshot can miss newly collected keyrings/characters.
+      const response=await fetch('/api/achievements',{credentials:'include',cache:'no-store'})
+      if(!response.ok)throw new Error('achievement_badge_fetch_failed')
+      const data=await response.json() as NonNullable<typeof this.achievementSnapshot>
+      this.achievementSnapshot=data
       const ready=Boolean(data.items?.some(item=>!item.claimed && item.ids.every(id=>item.owned.includes(id))))
       button.classList.toggle('has-claimable-achievement',ready)
       button.setAttribute('aria-label',ready?'업적 - 수령 가능한 보상 있음':'업적')

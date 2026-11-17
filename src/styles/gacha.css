@@ -6460,3 +6460,19 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker > .alchemy-pick img
   width:36px!important;height:40px!important;flex:0 0 40px!important;
   object-fit:contain!important;
 }
+
+/* Restore claimable-achievement red notification dot on lobby button. */
+#ui .achievement-lobby-tab {position:relative!important;overflow:visible!important;}
+#ui .achievement-lobby-tab.has-claimable-achievement::after {
+  content:""!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  background:#f4434b!important;
+  box-shadow:0 0 0 2px #fff!important;
+  pointer-events:none!important;
+  z-index:5!important;
+}
