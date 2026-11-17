@@ -250,7 +250,7 @@ export class GachaUi {
     const setTimer = (timer?: number): void => { (target as HTMLDivElement & { researchTimer?: number }).researchTimer = timer }
     setTimer()
     target.hidden = false
-    target.innerHTML = '<div class="research-card"><p>연구소 정보를 불러오는 중...</p><button type="button" class="research-close">닫기</button></div>'
+    target.innerHTML = '<div class="research-card"><p>연구소 정보를 불러오는 중... 잠시만 기다려 주세요.</p><button type="button" class="research-close">닫기</button></div>'
     const close = (): void => {
       target.hidden = true
       const timer = (target as HTMLDivElement & { researchTimer?: number }).researchTimer
@@ -284,7 +284,7 @@ export class GachaUi {
         const pendingHtml = pending
           ? `<div class="research-cost"><span>🧪 Lv.${data.pendingLevel ?? data.level + 1} 연구 진행 중</span><strong class="research-countdown" role="timer">남은 시간 ${formatRemaining(remaining())}</strong><small>연구 중에는 추가 강화를 할 수 없습니다.</small></div><button type="button" class="research-upgrade" disabled>연구 진행 중</button>`
           : next
-            ? `<div class="research-cost"><span>다음 연구 Lv.${data.level + 1}</span><strong class="research-resource"><img src="/assets/coin.png" alt="" />${next.coins.toLocaleString()} 코인</strong><strong class="research-resource"><img src="/assets/enhancement_fragment.png" alt="" />${next.fragments.toLocaleString()} 강화파편</strong><small>연구시간 ${formatRemaining(Number(data.nextDuration) || 0)}</small></div><button type="button" class="research-upgrade">연구 시작하기 · 성공률 100%</button>`
+            ? `<div class="research-cost"><span>다음 연구 Lv.${data.level + 1}</span><strong class="research-resource"><img src="/assets/coin.png" alt="" width="18" height="18" style="display:inline-block!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;object-fit:contain!important;flex:0 0 18px!important;vertical-align:middle!important" />${next.coins.toLocaleString()} 코인</strong><strong class="research-resource"><img src="/assets/enhancement_fragment.png" alt="" width="18" height="18" style="display:inline-block!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;object-fit:contain!important;flex:0 0 18px!important;vertical-align:middle!important" />${next.fragments.toLocaleString()} 강화파편</strong><small>연구시간 ${formatRemaining(Number(data.nextDuration) || 0)}</small></div><button type="button" class="research-upgrade">연구 시작하기 · 성공률 100%</button>`
             : '<p class="research-max">🎉 최고 레벨 달성! 전투력 +30%</p>'
         target.innerHTML = `<div class="research-card" role="dialog" aria-modal="true" aria-label="연구소"><button type="button" class="research-close" aria-label="닫기">×</button><div class="research-sparkles">✦ ✧ ✦</div><div class="research-illustration">🧪<span>✨</span>🔮</div><h2>마법 연구소</h2><p class="research-subtitle">전투력 영구 연구</p><div class="research-level">Lv.${data.level} <small>/ 100</small></div><div class="research-track"><span style="width:${data.level}%"></span></div><p class="research-bonus">총전투력 <strong>+${data.bonusPercent.toFixed(1)}%</strong></p><p class="research-hint">토벌장 · 원정대 · 총전투력에 적용</p>${pendingHtml}<p class="research-feedback" aria-live="polite"></p></div>`
         target.querySelector<HTMLButtonElement>('.research-close')!.onclick = close

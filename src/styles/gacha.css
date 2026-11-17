@@ -6273,3 +6273,14 @@ body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action
   opacity:1!important; margin:0 auto!important;
   filter:none!important; pointer-events:none!important;
 }
+
+/* Research dialog is attached to BODY, not #ui. Keep actual item icons small. */
+body #geong-research-panel .research-card .research-cost strong.research-resource {
+ display:inline-flex!important;align-items:center!important;gap:6px!important;justify-content:flex-start!important;
+}
+body #geong-research-panel .research-card .research-cost strong.research-resource > img {
+ display:inline-block!important;position:static!important;
+ width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;
+ max-width:18px!important;max-height:18px!important;flex:0 0 18px!important;
+ object-fit:contain!important;transform:none!important;margin:0!important;padding:0!important;
+}
