@@ -6254,3 +6254,7 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-picker{grid-auto-rows:112p
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick{height:112px!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
 dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick img{width:48px!important;height:48px!important;object-fit:contain!important;flex-shrink:0!important}
 dialog.alchemy-dialog .limit-break-panel img.limit-break-material-icon-dupes{width:40px!important;height:40px!important;max-width:40px!important;max-height:40px!important;object-fit:contain!important;flex:0 0 40px!important}
+
+/* Research resource icons: reuse existing game assets. */
+#ui .research-resource{display:flex;align-items:center;gap:7px}
+#ui .research-resource img{width:22px!important;height:22px!important;max-width:22px!important;max-height:22px!important;object-fit:contain;flex:none}
