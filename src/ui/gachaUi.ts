@@ -107,6 +107,7 @@ export class GachaUi {
   private shopTab: 'buy' | 'sell' = 'buy'
   private storageTab: 'char' | 'deco' | 'accessory' | 'inventory' = 'char'
   private shopSellTab: 'char' | 'deco' | 'inventory' = 'char'
+  private bulkSellGrades = new Set<string>(['normal', 'mermaid', 'rare', 'super', 'legendary', 'transcendent'])
   private noticeTimer = 0
   private chatTimer = 0
   private chatBadgeTimer = 0
@@ -172,6 +173,13 @@ export class GachaUi {
     const drawDialog=this.root.querySelector<HTMLElement>('.pull-popup')
     if(drawDialog) this.root.append(drawDialog)
     this.root.addEventListener('click', event => { void this.onClick(event) })
+    this.root.addEventListener('change', event => {
+      const input=(event.target as HTMLElement).closest<HTMLInputElement>('input[data-action="shop-grade-toggle"]')
+      if (!input?.dataset.grade) return
+      if (input.checked) this.bulkSellGrades.add(input.dataset.grade)
+      else this.bulkSellGrades.delete(input.dataset.grade)
+      this.renderShop()
+    })
     this.root.addEventListener('click', event => this.handleFirstMenuGuide(event), true)
     window.setInterval(() => this.refreshFirstMenuDots(), 2500)
     window.setTimeout(() => this.refreshFirstMenuDots(), 300)
@@ -968,11 +976,19 @@ export class GachaUi {
       items.innerHTML = balance + (weeds.filter(x => x[1] > 0).map(([type,count,name,price,img]) => `<div class="shop-product"><img src="${img}" alt="${name}"/><div><strong>${name} ${count}개</strong><small>개당 ${price}코인</small></div><button data-action="wild-weed-sell" data-weed-type="${type}">판매</button></div>`).join('') || '<div class="shop-empty-note">판매할 기타 아이템이 없어요.</div>')
       return
     }
+    const gradeOptions = [
+      {id:'normal',name:'노말'}, {id:'mermaid',name:'레어'}, {id:'rare',name:'에픽'},
+      {id:'super',name:'유니크'}, {id:'legendary',name:'레전더리'}, {id:'transcendent',name:'초월'}
+    ]
+    const gradeSelector = this.shopSellTab === 'char'
+      ? `<div class="shop-grade-bulk"><b>등급별 중복 일괄 판매</b><div class="shop-grade-bulk-options">${gradeOptions.map(g=>`<label><input type="checkbox" data-action="shop-grade-toggle" data-grade="${g.id}" ${this.bulkSellGrades.has(g.id)?'checked':''}/>${g.name}</label>`).join('')}</div><small>선택한 등급의 중복 캐릭터만 판매합니다. 캐릭터별 마지막 1개는 보존됩니다.</small></div>`
+      : ''
     const bulk = this.getBulkSellItems(this.shopSellTab === 'char' ? 'char' : 'deco')
-    const bulkCount = bulk.reduce((sum, item) => sum + item.count, 0)
-    const bulkCoins = bulk.reduce((sum, item) => sum + item.count * item.price, 0)
+    const selectedBulk = this.shopSellTab === 'char' ? bulk.filter(item=>this.bulkSellGrades.has(CHARACTERS.find(c=>c.id===item.id)?.tier||'')) : bulk
+    const bulkCount = selectedBulk.reduce((sum, item) => sum + item.count, 0)
+    const bulkCoins = selectedBulk.reduce((sum, item) => sum + item.count * item.price, 0)
     const bulkButton = `<button class="shop-bulk-sell" data-action="storage-bulk-sell" data-kind="${this.shopSellTab === 'char' ? 'char' : 'deco'}" ${bulkCount ? '' : 'disabled'}>중복 일괄 판매 · ${bulkCount}개 (+${bulkCoins}다이아)</button>`
-    if (bulkFixed) { bulkFixed.innerHTML = bulkButton; bulkFixed.hidden = false }
+    if (bulkFixed) { bulkFixed.innerHTML = gradeSelector + bulkButton; bulkFixed.hidden = false }
     const sellButtons = (kind: 'char' | 'deco', id: string, count: number, price: number) => count > 0
       ? `<div class="storage-sell"><button class="storage-sell-btn" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="1">1개 판매 +${price}</button>${count > 1 ? `<button class="storage-sell-btn is-all" data-action="sell" data-kind="${kind}" data-id="${id}" data-count="${count}">중복 모두 판매 +${count * price}</button>` : ''}</div>`
       : '<small class="storage-keep">판매 가능한 중복 없음</small>'
@@ -3109,7 +3125,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const members=this.root.querySelector<HTMLElement>('.expedition-members')
     if(members){const html=(hp===0?[]:rankedMembers).map(m=>`<span>${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')} · ${fullName(characterById(m.characterId))} · 전투력 ${(m.power??(battlePower(m.characterId)+weaponPower(m.weaponLevel)))}</span>`).join('');if(members.innerHTML!==html)members.innerHTML=html}
     const party=this.root.querySelector<HTMLElement>('.expedition-party')
-    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span>${(m.limitBreakLevel??(m.me?this.store.limitBreak[m.characterId]:0)??0)>0?`<span class="limit-break-combat-badge">+${m.limitBreakLevel??this.store.limitBreak[m.characterId]??0}</span>`:''}<img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
+    if(party){const html=(hp===0?[]:rankedMembers).map((m,i)=>`<div class="expedition-combatant" style="--n:${i};--shot-x:${(2.5-(i%5))*72}px;--shot-y:${i<5?-110:-175}px"><span class="expedition-name">${m.me?'⭐ ':''}${m.name.replace(/[&<>"']/g,'')}</span><img class="expedition-fighter" style="${this.deploymentTransform(m.characterId)}" src="${CHARACTER_IMAGE_URLS[m.characterId]}" alt="" /><span class="expedition-projectile"></span></div>`).join('');if(party.innerHTML!==html)party.innerHTML=html}
     // Position the first shots only after the expedition panel is laid out.
     // The original immediate measurement could read zero/stale coordinates on entry.
     if(party && boss && hp>0){
@@ -3410,7 +3426,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       return
     }
     button.disabled = true
-    const items = this.getBulkSellItems(category).filter(item => item.kind === category)
+    const items = this.getBulkSellItems(category).filter(item => item.kind === category && (category !== 'char' || this.bulkSellGrades.has(CHARACTERS.find(c=>c.id===item.id)?.tier||'')))
     if (!items.length) { button.disabled = false; this.toast('판매할 중복 아이템이 없어요.'); return }
     const count = items.reduce((sum, item) => sum + item.count, 0)
     const expected = items.reduce((sum, item) => sum + item.count * item.price, 0)
@@ -3677,19 +3693,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (thirdUnit) {
       thirdUnit.classList.toggle('is-empty', !third)
       const body = thirdUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = third ? `${(this.store.limitBreak[third.id]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[third.id]}</span>`:''}<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(third.id)}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
+      if (body) body.innerHTML = third ? `<img class="${this.battleFlipCharacter(third.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(third.id)}" src="${CHARACTER_IMAGE_URLS[third.id]}" alt="토벌 중인 ${fullName(third)}" />` : ''
     }
     const secondUnit = this.root.querySelector<HTMLElement>('.bf-friend-second')
     if (secondUnit) {
       secondUnit.classList.toggle('is-empty', !second)
       const body = secondUnit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = second ? `${(this.store.limitBreak[second.id]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[second.id]}</span>`:''}<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(second.id)}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
+      if (body) body.innerHTML = second ? `<img class="${this.battleFlipCharacter(second.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(second.id)}" src="${CHARACTER_IMAGE_URLS[second.id]}" alt="토벌 중인 ${fullName(second)}" />` : '' 
     }
     const unit = this.root.querySelector<HTMLElement>('.bf-friend:not(.bf-friend-second):not(.bf-friend-third)')
     if (unit) {
       unit.classList.toggle('is-empty', !fighter)
       const body = unit.querySelector<HTMLElement>('.bf-friend-body')
-      if (body) body.innerHTML = fighter ? `${(this.store.limitBreak[fighter.id]||0)>0?`<span class="limit-break-combat-badge">+${this.store.limitBreak[fighter.id]}</span>`:''}<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(fighter.id)}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
+      if (body) body.innerHTML = fighter ? `<img class="${this.battleFlipCharacter(fighter.id)?'battle-facing-flipped':''}" style="${this.deploymentTransform(fighter.id)}" src="${CHARACTER_IMAGE_URLS[fighter.id]}" alt="토벌 중인 ${fullName(fighter)}" />` : '' 
     }
     const battleField = this.root.querySelector<HTMLElement>('.battle-field')
     if (battleField) {
