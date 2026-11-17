@@ -6563,3 +6563,14 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .shop-grade-choice.grade-transcendent.is-selected{border-color:#eda878;background:#fff7ef}
 #ui .shop-grade-bulk-note{font-size:11px;color:#947d84;margin:10px 0 0}
 @media(max-width:360px){#ui .shop-grade-choice{padding:8px 6px;gap:4px}#ui .shop-grade-choice-name{font-size:12px}}
+
+/* Fix: market bulk controls must stack vertically, never in a narrow side-by-side flex row. */
+#ui .shop-panel .shop-bulk-fixed:not([hidden]){display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:9px!important;width:100%!important;box-sizing:border-box!important;padding:6px 4px 10px!important;min-width:0!important;max-height:46vh!important;overflow-y:auto!important;overflow-x:hidden!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk{width:100%!important;max-width:none!important;min-width:0!important;flex:none!important;margin:0!important;padding:11px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk-options{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;width:100%!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice{min-width:0!important;padding:9px 7px!important;gap:4px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice-name{font-size:12px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice-count{font-size:10px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-grade-choice-check{width:14px!important;height:14px!important;flex-basis:14px!important;font-size:10px!important}
+#ui .shop-panel .shop-bulk-fixed .shop-bulk-sell{display:block!important;width:100%!important;max-width:none!important;flex:0 0 auto!important;margin:0!important;box-sizing:border-box!important;min-height:40px!important}
+@media(max-width:390px){#ui .shop-panel .shop-bulk-fixed .shop-grade-bulk-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
