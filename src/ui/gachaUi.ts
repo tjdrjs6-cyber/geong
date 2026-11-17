@@ -193,41 +193,101 @@ export class GachaUi {
   }
 
   private async openResearch(): Promise<void> {
-    let panel=document.querySelector<HTMLDivElement>('#geong-research-panel')
-    if(!panel){
-      panel=document.createElement('div')
-      panel.id='geong-research-panel'
-      panel.className='research-overlay'
+    let panel = document.querySelector<HTMLDivElement>('#geong-research-panel')
+    if (!panel) {
+      panel = document.createElement('div')
+      panel.id = 'geong-research-panel'
+      panel.className = 'research-overlay'
       document.body.appendChild(panel)
     }
-    const target=panel
-    target.hidden=false
-    target.innerHTML='<div class="research-card"><p>연구소 정보를 불러오는 중...</p><button type="button" class="research-close">닫기</button></div>'
-    const close=()=>{target.hidden=true}
-    const draw=async()=>{
+    const target = panel
+    // Only one countdown may own this overlay at a time.
+    const previousTimer = (target as HTMLDivElement & { researchTimer?: number }).researchTimer
+    if (previousTimer !== undefined) window.clearInterval(previousTimer)
+    const setTimer = (timer?: number): void => { (target as HTMLDivElement & { researchTimer?: number }).researchTimer = timer }
+    setTimer()
+    target.hidden = false
+    target.innerHTML = '<div class="research-card"><p>연구소 정보를 불러오는 중...</p><button type="button" class="research-close">닫기</button></div>'
+    const close = (): void => {
+      target.hidden = true
+      const timer = (target as HTMLDivElement & { researchTimer?: number }).researchTimer
+      if (timer !== undefined) window.clearInterval(timer)
+      setTimer()
+    }
+    const formatRemaining = (seconds: number): string => {
+      const h = Math.floor(seconds / 3600)
+      const m = Math.floor((seconds % 3600) / 60)
+      const sec = seconds % 60
+      return [h, m, sec].map(v => String(v).padStart(2, '0')).join(':')
+    }
+    let loading = false
+    const draw = async (): Promise<void> => {
+      if (loading || target.hidden) return
+      loading = true
+      const oldTimer = (target as HTMLDivElement & { researchTimer?: number }).researchTimer
+      if (oldTimer !== undefined) window.clearInterval(oldTimer)
+      setTimer()
       try {
-        const response=await fetch('/api/research',{credentials:'include',cache:'no-store'})
-        if(!response.ok)throw Error('연구소 정보를 불러올 수 없어요.')
-        const data=await response.json() as {level:number;bonusPercent:number;nextCost:{coins:number;fragments:number}|null}
-        if(target.hidden)return
-        const next=data.nextCost
-        target.innerHTML=`<div class="research-card" role="dialog" aria-modal="true" aria-label="연구소"><button type="button" class="research-close" aria-label="닫기">×</button><div class="research-sparkles">✦ ✧ ✦</div><div class="research-illustration">🧪<span>✨</span>🔮</div><h2>마법 연구소</h2><p class="research-subtitle">전투력 영구 연구</p><div class="research-level">Lv.${data.level} <small>/ 100</small></div><div class="research-track"><span style="width:${data.level}%"></span></div><p class="research-bonus">총전투력 <strong>+${data.bonusPercent.toFixed(1)}%</strong></p><p class="research-hint">토벌장 · 원정대 · 총전투력에 적용</p>${next?`<div class="research-cost"><span>다음 연구 Lv.${data.level+1}</span><strong>🪙 ${next.coins.toLocaleString()} 코인</strong><strong>💎 ${next.fragments.toLocaleString()} 강화파편</strong></div><button type="button" class="research-upgrade">연구 강화하기 · 성공률 100%</button>`:'<p class="research-max">🎉 최고 레벨 달성! 전투력 +30%</p>'}<p class="research-feedback" aria-live="polite"></p></div>`
-        target.querySelector<HTMLButtonElement>('.research-close')!.onclick=close
-        const upgrade=target.querySelector<HTMLButtonElement>('.research-upgrade')
-        if(upgrade)upgrade.onclick=async()=>{
-          upgrade.disabled=true
-          try{
-            const result=await fetch('/api/research/upgrade',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:'{}'})
-            const body=await result.json() as {error?:string}
-            if(!result.ok)throw Error(body.error==='insufficient_resources'?'코인 또는 강화파편이 부족해요.':body.error==='max_level'?'최고 레벨입니다.':'연구 강화에 실패했어요.')
+        const response = await fetch('/api/research', { credentials: 'include', cache: 'no-store' })
+        if (!response.ok) throw Error('연구소 정보를 불러올 수 없어요.')
+        const data = await response.json() as {
+          level: number; bonusPercent: number; nextCost: { coins: number; fragments: number } | null;
+          nextDuration: number | null; pendingUntil: number; pendingLevel: number | null
+        }
+        if (target.hidden) return
+        const next = data.nextCost
+        const pending = Number(data.pendingUntil) > 0
+        const remaining = (): number => Math.max(0, Math.ceil(Number(data.pendingUntil) - Date.now() / 1000))
+        const pendingHtml = pending
+          ? `<div class="research-cost"><span>🧪 Lv.${data.pendingLevel ?? data.level + 1} 연구 진행 중</span><strong class="research-countdown" role="timer">남은 시간 ${formatRemaining(remaining())}</strong><small>연구 중에는 추가 강화를 할 수 없습니다.</small></div><button type="button" class="research-upgrade" disabled>연구 진행 중</button>`
+          : next
+            ? `<div class="research-cost"><span>다음 연구 Lv.${data.level + 1}</span><strong>🪙 ${next.coins.toLocaleString()} 코인</strong><strong>💎 ${next.fragments.toLocaleString()} 강화파편</strong><small>연구시간 ${formatRemaining(Number(data.nextDuration) || 0)}</small></div><button type="button" class="research-upgrade">연구 시작하기 · 성공률 100%</button>`
+            : '<p class="research-max">🎉 최고 레벨 달성! 전투력 +30%</p>'
+        target.innerHTML = `<div class="research-card" role="dialog" aria-modal="true" aria-label="연구소"><button type="button" class="research-close" aria-label="닫기">×</button><div class="research-sparkles">✦ ✧ ✦</div><div class="research-illustration">🧪<span>✨</span>🔮</div><h2>마법 연구소</h2><p class="research-subtitle">전투력 영구 연구</p><div class="research-level">Lv.${data.level} <small>/ 100</small></div><div class="research-track"><span style="width:${data.level}%"></span></div><p class="research-bonus">총전투력 <strong>+${data.bonusPercent.toFixed(1)}%</strong></p><p class="research-hint">토벌장 · 원정대 · 총전투력에 적용</p>${pendingHtml}<p class="research-feedback" aria-live="polite"></p></div>`
+        target.querySelector<HTMLButtonElement>('.research-close')!.onclick = close
+        if (pending) {
+          let completing = false
+          const timer = window.setInterval(() => {
+            if (target.hidden) { window.clearInterval(timer); setTimer(); return }
+            const countdown = target.querySelector<HTMLElement>('.research-countdown')
+            const seconds = remaining()
+            if (countdown) countdown.textContent = `남은 시간 ${formatRemaining(seconds)}`
+            if (seconds === 0 && !completing) {
+              completing = true
+              window.clearInterval(timer)
+              setTimer()
+              void (async () => {
+                try { await this.store.restore(); await draw() }
+                catch { const feedback = target.querySelector<HTMLElement>('.research-feedback'); if (feedback) feedback.textContent = '완료 확인에 실패했어요. 연구소를 다시 열어주세요.' }
+              })()
+            }
+          }, 1000)
+          setTimer(timer)
+        }
+        const upgrade = target.querySelector<HTMLButtonElement>('.research-upgrade')
+        if (upgrade && !pending) upgrade.onclick = async () => {
+          upgrade.disabled = true
+          try {
+            const result = await fetch('/api/research/upgrade', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+            const body = await result.json() as { error?: string }
+            if (!result.ok) throw Error(body.error === 'insufficient_resources' ? '코인 또는 강화파편이 부족해요.' : body.error === 'research_in_progress' ? '이미 연구가 진행 중입니다.' : body.error === 'max_level' ? '최고 레벨입니다.' : '연구 시작에 실패했어요.')
             await this.store.restore()
             await draw()
-          }catch(error){const feedback=target.querySelector<HTMLElement>('.research-feedback');if(feedback)feedback.textContent=error instanceof Error?error.message:'오류가 발생했어요.';upgrade.disabled=false}
+          } catch (error) {
+            const feedback = target.querySelector<HTMLElement>('.research-feedback')
+            if (feedback) feedback.textContent = error instanceof Error ? error.message : '오류가 발생했어요.'
+            upgrade.disabled = false
+          }
         }
-      }catch(error){target.innerHTML=`<div class="research-card"><button type="button" class="research-close">×</button><p>연구소를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p></div>`;target.querySelector<HTMLButtonElement>('.research-close')!.onclick=close}
+      } catch (error) {
+        if (!target.hidden) {
+          target.innerHTML = '<div class="research-card"><button type="button" class="research-close">×</button><p>연구소를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p></div>'
+          target.querySelector<HTMLButtonElement>('.research-close')!.onclick = close
+        }
+      } finally { loading = false }
     }
-    target.querySelector<HTMLButtonElement>('.research-close')!.onclick=close
-    target.onclick=event=>{if(event.target===target)close()}
+    target.querySelector<HTMLButtonElement>('.research-close')!.onclick = close
+    target.onclick = event => { if (event.target === target) close() }
     await draw()
   }
 
