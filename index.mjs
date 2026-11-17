@@ -2524,6 +2524,39 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
+// Periodic authoritative battle settlement: progress stages without opening the arena.
+// A one-second scheduler settles active battles; persisted timestamps preserve exact
+// elapsed combat time when a tick is delayed or a batch must wait its turn.
+// The existing 1.5-second stage transition is accounted for by updateBattle().
+const BATTLE_BACKGROUND_INTERVAL_MS = 1000
+const BATTLE_BACKGROUND_BATCH = 50
+let battleBackgroundRunning = false
+let battleBackgroundCursor = 0
+async function battleBackgroundTick() {
+  if (!ready || battleBackgroundRunning) return
+  battleBackgroundRunning = true
+  try {
+    let [rows] = await pool.query(
+      'SELECT account_id FROM gm_battle WHERE account_id > ? AND character_id IS NOT NULL AND character_id <> ? ORDER BY account_id LIMIT ?',
+      [battleBackgroundCursor, '', BATTLE_BACKGROUND_BATCH]
+    )
+    if (!rows.length && battleBackgroundCursor) {
+      battleBackgroundCursor = 0
+      ;[rows] = await pool.query(
+        'SELECT account_id FROM gm_battle WHERE character_id IS NOT NULL AND character_id <> ? ORDER BY account_id LIMIT ?',
+        ['', BATTLE_BACKGROUND_BATCH]
+      )
+    }
+    for (const row of rows) {
+      battleBackgroundCursor = Number(row.account_id)
+      try { await updateBattle(row.account_id, null) }
+      catch (error) { console.error('[battle] background settle failed', row.account_id, error?.code || error) }
+    }
+    if (rows.length < BATTLE_BACKGROUND_BATCH) battleBackgroundCursor = 0
+  } catch (error) { console.error('[battle] background tick failed', error?.code || error) }
+  finally { battleBackgroundRunning = false }
+}
+
 server.listen(PORT, () => {
   console.log(`[api] listening on ${PORT}`)
   // Bind first, then prepare the database so health checks answer during startup.
@@ -2537,4 +2570,5 @@ server.listen(PORT, () => {
   attempt(20)
   // Server-side progression must not depend on an expedition page visit.
   setInterval(expeditionBackgroundTick, EXP_TICK)
+  setInterval(battleBackgroundTick, BATTLE_BACKGROUND_INTERVAL_MS)
 })
