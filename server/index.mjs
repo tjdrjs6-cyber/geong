@@ -69,6 +69,13 @@ async function prepareDatabase() {
     PRIMARY KEY(account_id, day, mission)
   )`)
   // Additive, repeatable migration; existing accounts and saves are preserved.
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_dopamine (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    played_day VARCHAR(10) NOT NULL,
+    stake INT NOT NULL,
+    won TINYINT NOT NULL,
+    KEY ix_dopamine_day (played_day)
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_lottery_pool (
     id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -1413,6 +1420,34 @@ const routes = {
     }catch(error){await conn.rollback();throw error}finally{conn.release()}
   },
 
+  'GET /api/dopamine': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const [rows]=await pool.query('SELECT played_day, stake, won FROM gm_dopamine WHERE account_id=?',[account.id])
+    const [saves]=await pool.query('SELECT gems FROM gm_saves WHERE account_id=?',[account.id])
+    const played=rows[0]?.played_day===checkInDay(new Date(Date.now()-9*3600000))
+    send(res,200,{played,stake:played?Number(rows[0].stake):0,won:played?Boolean(rows[0].won):false,coins:Number(saves[0]?.gems||0)})
+  },
+  'POST /api/dopamine/play': async (req,res) => {
+    const account=await currentAccount(req)
+    if(!account)return send(res,401,{error:'login_required'})
+    const {stake}=await readJson(req)
+    if(!Number.isSafeInteger(stake)||stake<10000||stake>100000||stake%10000!==0)return send(res,400,{error:'dopamine_invalid_stake'})
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      const [saves]=await conn.query('SELECT gems FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
+      if(!saves.length||Number(saves[0].gems)<stake){await conn.rollback();return send(res,409,{error:'not_enough_coins'})}
+      const [prior]=await conn.query('SELECT played_day FROM gm_dopamine WHERE account_id=? FOR UPDATE',[account.id])
+      const day=checkInDay(new Date(Date.now()-9*3600000))
+      if(prior[0]?.played_day===day){await conn.rollback();return send(res,409,{error:'dopamine_already_played'})}
+      const won=randomInt(100000)<stake
+      await conn.query('UPDATE gm_saves SET gems=gems-?+? WHERE account_id=?',[stake,won?100000:0,account.id])
+      await conn.query('INSERT INTO gm_dopamine(account_id,played_day,stake,won) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE played_day=VALUES(played_day),stake=VALUES(stake),won=VALUES(won)',[account.id,day,stake,won?1:0])
+      await conn.commit()
+      send(res,200,{played:true,stake,won,coins:Number(saves[0].gems)-stake+(won?100000:0)})
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+  },
   'GET /api/lottery': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
