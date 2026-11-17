@@ -6007,3 +6007,48 @@ body > .pull-rates-dialog .pull-grade-normal { background:#f7f7f7!important; }
 #ui .limit-break-stepper strong{min-width:18px;text-align:center}
 #ui .limit-break-material-summary{text-align:center;margin:5px 0 10px;font-size:12px;color:#735787}
 #ui .geong-market-item small:first-of-type{font-weight:900;color:#7640a2;font-size:13px}
+
+/* 2026-11-17 battle power summary / details and compact stage recommendation */
+#ui .battle-screen .battle-recommended-power{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin:5px auto 0;padding:4px 9px;width:max-content;max-width:100%;border:1px solid #e4bb7e;border-radius:15px;background:rgba(255,249,231,.97);box-shadow:0 2px 5px #5b3b1830;color:#78542d;font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}
+#ui .battle-screen .battle-recommended-power strong{color:#a36c29;font-size:13px}
+#ui .battle-screen .battle-recommended-compare{color:#c06c3b;font-size:9px}
+#ui .battle-screen .battle-recommended-compare.is-enough{color:#438f69}
+#ui .battle-screen .battle-stage-center .battle-recommended-power{pointer-events:none}
+#ui .battle-screen .battle-panel .battle-status{margin:4px 0 5px;overflow:visible}
+#ui .battle-screen .battle-power-summary{display:flex;align-items:center;justify-content:center;gap:10px;position:relative;font-size:12px;font-weight:800;color:#674d35}
+#ui .battle-screen .battle-power-summary>span{white-space:nowrap}
+#ui .battle-screen .battle-power-summary>span b{font-size:16px;color:#ba6a31}
+#ui .battle-screen .battle-power-details{position:relative;z-index:70}
+#ui .battle-screen .battle-power-details>summary{list-style:none;cursor:pointer;border:1px solid #d9b893;background:#fff8ed;color:#8a623a;padding:4px 10px;border-radius:15px;font-size:11px;white-space:nowrap}
+#ui .battle-screen .battle-power-details>summary::-webkit-details-marker{display:none}
+#ui .battle-screen .battle-power-detail-card{position:absolute;right:0;bottom:calc(100% + 9px);width:min(290px,80vw);padding:12px 14px;border:1px solid #dcb88e;border-radius:14px;background:#fffdf8;box-shadow:0 7px 22px #3f2e2540;z-index:80;text-align:left;color:#66513e;font-size:12px}
+#ui .battle-screen .battle-power-detail-card>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0}
+#ui .battle-screen .battle-power-detail-card small{font-size:10px;color:#998675}
+#ui .battle-screen .battle-power-detail-card b{color:#a76b36}
+#ui .battle-screen .battle-power-detail-card .battle-power-detail-total{border-top:1px solid #e9d9c7;margin-top:5px;padding-top:10px;color:#ad6731}
+#ui .battle-screen .battle-panel .field-info-sticky{overflow:visible!important}
+
+/* 한계돌파 재료 선택: 파스텔 인게임 카드 UI */
+#ui .limit-break-panel .limit-break-materials{display:flex;flex-direction:column;gap:9px;margin:14px 0 10px}
+#ui .limit-break-panel .limit-break-material{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px;min-height:76px;padding:11px 13px;border:1.5px solid #e9d9e8;border-radius:17px;background:linear-gradient(115deg,#fff9fc,#fff);box-shadow:0 3px 10px #8e699019;color:#66516e;box-sizing:border-box}
+#ui .limit-break-panel .limit-break-material-stones{border-color:#ddd4f1;background:linear-gradient(115deg,#faf6ff,#fff)}
+#ui .limit-break-panel .limit-break-material-info{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+#ui .limit-break-panel .limit-break-material-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:43px;height:43px;object-fit:contain;border-radius:13px;background:#fce7f1;color:#d17aa2;font-size:27px;font-weight:800}
+#ui .limit-break-panel .limit-break-material-stones .limit-break-material-icon{background:#eee6fb;padding:3px;box-sizing:border-box}
+#ui .limit-break-panel .limit-break-material-label{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;text-align:left}
+#ui .limit-break-panel .limit-break-material-label b{font-size:13px;line-height:1.2;color:#69536d;white-space:nowrap}
+#ui .limit-break-panel .limit-break-material-label small{font-size:11px;color:#a18da5}
+#ui .limit-break-panel .limit-break-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;margin:0;padding:4px;background:#f8f0fa;border:1px solid #f0e5f4;border-radius:13px}
+#ui .limit-break-panel .limit-break-material-stones .limit-break-stepper{background:#f3edfc;border-color:#ebe1f9}
+#ui .limit-break-panel .limit-break-stepper button{display:flex;align-items:center;justify-content:center;width:31px;height:31px;min-width:31px;border:1px solid #e6d2e9;border-radius:10px;background:#fff;color:#9c72b4;font-size:21px;font-weight:700;line-height:1;box-shadow:0 2px 4px #80608a12;cursor:pointer;touch-action:manipulation}
+#ui .limit-break-panel .limit-break-stepper button:not(:disabled):active{transform:scale(.94);background:#f6eafa}
+#ui .limit-break-panel .limit-break-stepper button:disabled{opacity:.32;cursor:default}
+#ui .limit-break-panel .limit-break-stepper strong{min-width:22px;text-align:center;color:#674d7b;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+#ui .limit-break-panel .limit-break-material-progress{padding:12px 13px 10px;border:1px solid #e7dcef;border-radius:15px;background:#fcf9ff;margin-bottom:11px}
+#ui .limit-break-panel .limit-break-progress-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#745f85;font-weight:700}
+#ui .limit-break-panel .limit-break-progress-heading b{font-size:14px;color:#8561ad;font-variant-numeric:tabular-nums}
+#ui .limit-break-panel .limit-break-progress-track{height:9px;overflow:hidden;margin-top:9px;background:#eee6f2;border-radius:99px}
+#ui .limit-break-panel .limit-break-progress-fill{height:100%;background:linear-gradient(90deg,#c3a8e9,#a58be1);border-radius:99px;transition:width .2s ease}
+#ui .limit-break-panel .limit-break-progress-fill.ready{background:linear-gradient(90deg,#98d9bb,#62bf98)}
+#ui .limit-break-panel .limit-break-material-hint{text-align:center;margin:8px 0 0;font-size:11px;color:#8b7798}
+@media(max-width:390px){#ui .limit-break-panel .limit-break-material{padding:9px 8px;gap:5px}#ui .limit-break-panel .limit-break-material-info{gap:6px}#ui .limit-break-panel .limit-break-material-icon{width:35px;height:35px}#ui .limit-break-panel .limit-break-stepper{gap:3px}#ui .limit-break-panel .limit-break-stepper button{width:28px;min-width:28px;height:28px}#ui .limit-break-panel .limit-break-material-label b{font-size:12px}}
