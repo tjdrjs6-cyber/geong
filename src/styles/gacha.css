@@ -6546,3 +6546,53 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 /* Menu guide + deployment notifications: a single dot at each top-level activity button. */
 #ui .nav-activity > .geongi-first-menu-dot:not([hidden]){display:block!important;}
 #ui .nav-activity > .geongi-first-menu-dot[hidden]{display:none!important;}
+
+
+/* Fix first-visit notification: the earlier sibling rule could hide the
+   tutorial dot appended after deployment/weed/claw indicators. */
+#ui button[data-action] > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  z-index:30!important;
+}
+/* Only one visible indicator: when guide is pending, all other dots yield. */
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > :is(
+  .deployment-reset-dot,.announcement-dot,.global-chat-dot,
+  .wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,
+  .geongi-equipment-dot,.pepero-sale-dot
+):not([hidden]) {display:none!important;}
+/* Top-level activity button must remain visible while any child guide is unread. */
+#ui .nav-activity > .geongi-first-menu-dot:not([hidden]) {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+/* Parent navigation: exactly one first-visit dot, even when other alerts exist. */
+#ui :is(.nav-activity,.nav-market)[data-guide-pending] {
+  position:relative!important;
+}
+#ui :is(.nav-activity,.nav-market)[data-guide-pending]::after {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  top:3px!important;
+  right:3px!important;
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  background:#ec3949!important;
+  border:1px solid white!important;
+  z-index:20!important;
+  pointer-events:none!important;
+}
+#ui :is(.nav-activity,.nav-market)[data-guide-pending] > :is(.geongi-first-menu-dot,.deployment-reset-dot,.announcement-dot,.global-chat-dot,.wild-weed-alert-dot,.expedition-entry-dot,.geongi-keyring-dot,.geongi-equipment-dot,.pepero-sale-dot) {
+  display:none!important;
+}
+#ui :is(.nav-activity,.nav-market):not([data-guide-pending])::after {
+  content:none;
+}

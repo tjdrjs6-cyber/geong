@@ -1147,7 +1147,10 @@ export class GachaUi {
       if(!button)continue
       let dot=button.querySelector<HTMLElement>('.geongi-first-menu-dot')
       if(!dot){dot=document.createElement('i');dot.className='geongi-first-menu-dot';dot.setAttribute('aria-hidden','true');button.appendChild(dot)}
-      dot.hidden=!actions.some(action=>!this.firstMenuSeen(action))
+      const pending=actions.some(action=>!this.firstMenuSeen(action))
+      dot.hidden=!pending
+      // Parent navigation uses a single CSS-rendered dot, independent of child markup.
+      button.toggleAttribute('data-guide-pending',pending)
     }
   }
   private handleFirstMenuGuide(event: MouseEvent): void {
