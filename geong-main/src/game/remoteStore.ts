@@ -1,0 +1,501 @@
+const BATTLE_HP_ANCHORS: [number, number][] = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000]];
+const battleStageHp = (stage: number): number => {
+  const s = Math.max(1, Math.min(200, stage));
+  for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
+    const [end, endHp] = BATTLE_HP_ANCHORS[i];
+    if (s <= end) {
+      const [start, startHp] = BATTLE_HP_ANCHORS[i - 1];
+      return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
+    }
+  }
+  return 465000;
+};
+
+import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
+import type { CharacterId, GachaSave, PullCount, PullResult } from './collection'
+import { STARTING_COINS } from './collection'
+import type { DecoCounts, DecoPullCount, DecoPullResult, HouseLayout } from './decos'
+
+export type RpsState = { nextAt?:number; admin?:boolean; used:boolean; stage:number; phase:string; deadline:number; choice?:string; result?:string; opponent?:string; reward?:number; coins?:number; save?:GachaSave }
+export type ExpeditionState = { day:string; next:number; now:number; mine:{serverId:number;characterId:CharacterId}|null; servers:{id:number;hp:number;stage:number;maxHp:number;members:{name:string;characterId:CharacterId;me:boolean;limitBreakLevel?:number;power?:number;powerBreakdown?:{character:number;equipment:number;collection:number;research:number;researchPercent:number;total:number};weapon?:string|null;weaponLevel?:number|null}[]}[] }
+export type AnnouncementBox = { items: { id: number; message: string; at: number }[]; unread: boolean }
+export type AuthUser = { username: string; nickname: string | null; admin?: boolean }
+export type WeedMember = { id: CharacterId; since: number }
+/** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
+export type WeedState = { members: WeedMember[]; beetle?: boolean }
+export const WEED_MAX = 3
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; power?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number; powerBreakdown?:{character:number;equipment:number;collection:number;research:number;researchPercent:number;total:number} }
+export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
+export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
+export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
+export type SentItem = { id: number; to: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }
+export type Mailbox = { mail: MailItem[]; sent: SentItem[]; max: number; unread: number; sentToday: number; dailyLimit: number }
+export type Suggestion = { id: number; from: string; message: string; at: number; reply: string | null; replyAt: number | null; mine: boolean }
+export type SuggestBox = { items: Suggestion[]; admin: boolean; todayCount: number; dailyMax: number }
+export type MarketItems = {stones:number;weeklyBought:number;dailyBought:number;daily:string;weekly:string}
+export type LimitBreakLevels = Partial<Record<CharacterId,number>>
+export type CharDupes = Partial<Record<CharacterId, number>>
+export const CHAR_SELL_PRICES = { normal: 10, rare: 10, epic: 10, unique: 10 } as const
+export const DECO_SELL_PRICE = 20
+export const SUGGEST_MAX_CHARS = 50
+export const SUGGEST_REPLY_MAX_CHARS = 100
+export const MAILBOX_MAX = 10
+export const MAIL_MAX_CHARS = 30
+export const MAIL_DAILY_COINS = 100
+export type HouseCoin = { slot: number; coins: number; x: number; y: number }
+export type HouseCoinState = { coin: HouseCoin | null; nextAt: number; now: number }
+export type AccessoryState = { count: number; counts: Record<string,number>; equipped: string | null; equippedGrade?: string; grades?: Record<string,Record<string,number>> }
+export type ForgeState = { weapon: 'pink' | 'blue' | 'yellow'; level: number; bonus: number }
+type AccountPayload = { accessory?: AccessoryState; forge?: ForgeState | null; user: AuthUser | null; dupes?: CharDupes; limitBreak?: LimitBreakLevels; market?: MarketItems; save?: GachaSave; weed?: WeedState | null; battle?: BattleState | null; decos?: DecoCounts; house?: HouseLayout; now?: number; featured?: CharacterId | null; mailUnread?: number }
+export const NICKNAME_RULE = /^[가-힣A-Za-z0-9]{2,6}$/
+type ApiError = { error?: string }
+
+export const ERROR_TEXT: Record<string, string> = {
+  invalid_username: '아이디는 3~20자의 한글, 영문, 숫자, 밑줄(_)만 쓸 수 있어요.',
+  invalid_password: '비밀번호는 6~72자로 입력해 주세요.',
+  username_taken: '이미 사용 중인 아이디예요.',
+  invalid_credentials: '아이디 또는 비밀번호가 맞지 않아요.',
+  too_many_attempts: '로그인 시도가 너무 많아요. 10분 뒤에 다시 시도해 주세요.',
+  invalid_nickname: '닉네임은 2~6글자의 한글, 영문, 숫자로 정해 주세요.',
+  nickname_taken: '이미 누가 쓰고 있는 닉네임이에요.',
+  not_owned: '도감에 등록한 친구만 제초를 보낼 수 있어요.',
+  not_weeding: '먼저 제초할 친구를 골라 주세요.',
+  not_fighting: '먼저 토벌할 친구를 골라 주세요.',
+  busy_battle: '토벌장에 있는 친구는 제초장에 보낼 수 없어요.',
+  busy_weed: '제초장에 있는 친구는 토벌장에 보낼 수 없어요.',
+  deco_not_owned: '가지고 있는 데코만 배치할 수 있어요.',
+  house_full: '데코는 최대 20개까지 놓을 수 있어요.',
+  house_friends_full: '친구는 최대 3명까지 데려올 수 있어요.',
+  invalid_house: '배치를 저장하지 못했어요. 다시 시도해 주세요.',
+  not_enough_coins: '코인이 부족해요. 출석 체크로 코인을 받아보세요!',
+  dopamine_already_played: '오늘은 이미 도파민존에 도전했습니다. 내일 오전 9시에 다시 참여할 수 있습니다.',
+  dopamine_invalid_stake: '10,000코인 단위로 100,000코인까지 선택해 주세요.',
+  limited_sale_ended: '한정 판매가 종료되었습니다.',
+  limited_already_owned: '이미 구매한 한정판 캐릭터입니다.',
+  not_enough_diamonds: '다이아가 부족해요. 토벌장에서 획득할 수 있어요!',
+  weekly_limit: '이번 주 한계돌파석 구매 한도 5개를 모두 사용했어요.',
+  daily_limit: '오늘 겅이복권 구매 한도 5개를 모두 사용했어요.',
+  not_enough_claw_tickets: '인형뽑기 쿠폰이 부족합니다. 다음 정각에 5개 충전됩니다.',
+  not_enough_tickets: '겅이복권이 부족해요. 토벌장 처치 시 0.5% 확률로 획득해요!',
+  mail_too_long: '편지는 30자까지 쓸 수 있어요.',
+  mail_bad_coins: '보낼 코인은 0 이상의 정수로 적어 주세요.',
+  mail_empty: '편지 내용이나 보낼 코인을 적어 주세요.',
+  mail_daily_limit: '코인은 하루에 최대 100코인까지만 보낼 수 있어요.',
+  mail_no_user: '받는 사람을 찾을 수 없어요.',
+  mail_self: '나에게는 편지를 보낼 수 없어요.',
+  weed_full: '제초장에는 최대 3명까지 배치할 수 있어요. 다른 친구를 먼저 쉬게 해 주세요.',
+  already_weeding: '이미 제초 중인 친구예요.',
+  beetle_is_weeder: '풍뎅이가 이미 제초 중이에요. 다른 친구에게 제초를 맡기고 풍뎅이를 도우미로 배치해 주세요.',
+  house_coin_gone: '앗, 코인이 사라졌어요. 새 코인이 떴는지 확인해 보세요!',
+  house_coin_taken: '이번 시간 코인은 이미 받았어요.',
+  mail_not_found: '이미 지워진 우편이에요.',
+  sell_invalid: '팔 수 없는 아이템이에요.',
+  not_enough_duplicates: '한계돌파에 필요한 중복 캐릭터가 부족해요.',
+  limit_break_max: '이미 +10 한계돌파를 완료했어요.',
+  invalid_character: '올바른 캐릭터를 선택해 주세요.',
+  sell_not_enough: '팔 수 있는 중복 아이템이 부족해요.',
+  sell_placed: '하우스에 놓인 데코는 팔 수 없어요. 먼저 하우스에서 넣어 주세요.',
+  suggest_empty: '건의 내용을 적어 주세요.',
+  suggest_too_long: '건의는 50자까지 쓸 수 있어요.',
+  reply_too_long: '답변은 100자까지 쓸 수 있어요.',
+  suggest_daily_limit: '건의는 하루에 5개까지 쓸 수 있어요.',
+  suggest_not_found: '이미 지워진 건의예요.',
+  admin_only: '운영자만 할 수 있어요.',
+  announcement_invalid: '공지사항은 1~100자까지 작성할 수 있어요.',
+  house_private: '이 유저의 하우스는 비공개예요.',
+  exp_already_joined: '오늘은 이미 원정대에 배치했어요.',
+  exp_full: '이 서버는 10명이 모두 찼어요.',
+  exp_boss_dead: '이 서버의 보스는 이미 처치됐어요.',
+  login_required: '다시 로그인해 주세요.',
+  starting: '서버를 준비하고 있어요. 잠시 후 다시 시도해 주세요.',
+  network: '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',
+}
+
+export class RequestError extends Error {
+  constructor(readonly code: string) { super(code) }
+}
+
+async function request<T>(path: string, body?: unknown): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(`/api/${path}`, body === undefined
+      ? { credentials: 'include', cache: 'no-store' }
+      : { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  } catch {
+    throw new RequestError('network')
+  }
+  const data = await response.json().catch(() => ({})) as T & ApiError
+  if (!response.ok) throw new RequestError(data.error || 'network')
+  return data
+}
+
+/** Server-backed coins and collection for the signed-in account. */
+export type WildWeed = { weeds:{id:number;x:number;y:number;type:'normal'|'golden'}[]; visible:boolean; x:number; y:number; count:number; goldenCount:number; type:'normal'|'golden'; slot:number; nextAt:number }
+export class RemoteGachaStore {
+  data: GachaSave = { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+  user: AuthUser | null = null
+  weed: WeedState | null = null
+  battle: BattleState | null = null
+  decos: DecoCounts = {}
+  house: HouseLayout = { pieces: [], friends: [] }
+  forge: ForgeState | null = null
+  accessory: AccessoryState = {count:0,counts:{},equipped:null}
+  featured: CharacterId | null = null
+  mailUnread = 0
+  dupes: CharDupes = {}
+  limitBreak: LimitBreakLevels = {}
+  market: MarketItems = {stones:0,weeklyBought:0,dailyBought:0,daily:'',weekly:''}
+  /** Server clock minus local clock, so countdowns match the server's payout. */
+  private clockOffset = 0
+
+  serverNow(): number { return Date.now() + this.clockOffset }
+
+  /** Coins ready to collect from weeding right now. */
+  pendingWeedCoins(): number {
+    if (!this.weed) return 0
+    const now = this.serverNow()
+    return this.weed.members.length && Math.floor(now / 60000) > Math.floor(Math.max(...this.weed.members.map(m=>m.since)) / 60000) ? 1 : 0
+  }
+
+  /** Milliseconds until the next weeding coin. */
+  nextWeedCoinIn(): number {
+    if (!this.weed) return WEED_HOUR_MS
+    const now = this.serverNow()
+    return WEED_HOUR_MS - (now % WEED_HOUR_MS)
+  }
+
+  /** Server-verified, claimed collection bonus shared by combat previews. */
+  collectionCombatPower = 0
+
+  /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
+  battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
+    const battle=this.battle
+    if (!battle) return { kills:0,hp:1200,maxHp:1200,nextIn:BATTLE_TICK_MS,power:0,stage:1,remaining:60000 }
+    const power=battle.power ?? (battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower)
+    const elapsed=Math.max(0,this.serverNow()-(battle.stageSince || battle.since))
+    const seconds=Math.min(60,Math.floor(elapsed/BATTLE_TICK_MS))
+    const stage=Math.min(200,battle.stage??1)
+    const maxHp=battleStageHp(stage)
+    const damage=Math.min(maxHp,Math.max(0,power)*seconds)
+    return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:Math.max(0,60000-elapsed)}
+  }
+
+  /** Exact passive coins per minute, matching server settlement. */
+  weedHourlyRate(): number {
+    const members = this.weed?.members ?? []
+    if (!members.length) return 0
+    const bonus = Math.max(0, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
+    const multiplier = this.weed?.beetle ? 2 : 1
+    return Math.floor(10 * bonus * multiplier)
+  }
+  hourlyRate(): number { return this.weedHourlyRate() }
+  /** Server credits weeding + battle coins without opening those screens. */
+  async autoSettle(): Promise<number> {
+    const result = await request<{ earned: number; save: GachaSave; weed: WeedState | null; battle: BattleState | null; now: number }>('settle', {})
+    this.data = result.save
+    this.weed = result.weed
+    this.battle = result.battle
+    this.clockOffset = result.now - Date.now()
+    return result.earned
+  }
+  lastAutoEarned = 0
+  async startBattle(id: CharacterId): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/start', { id }))
+  }
+
+  async retryBattleStage(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/retry-stage', {})) }
+  async challengeBattleBoss(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/challenge-boss', {})) }
+  async testBattleTime5(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-time5', {})) }
+  async testBattleHp500(): Promise<number> { return this.applyBattle(await request<BattleResult>('battle/test-hp500', {})) }
+  async testResetBattle(): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/test-reset', {}))
+  }
+
+  async testClearBattle(): Promise<number> {
+    return this.applyBattle(await request<BattleResult>('battle/test-clear', {}))
+  }
+
+  async claimBattle(): Promise<{earned:number;cleared:{stage:number;coins:number;diamonds:number;fragments:number;tickets?:number}[];failedStage:number}> {
+    const result=await request<BattleResult>('battle/claim', {})
+    const earned=this.applyBattle(result)
+    return {earned,cleared:result.cleared??[],failedStage:result.failedStage??0}
+  }
+
+  private applyBattle(result: BattleResult): number {
+    this.data = result.save
+    this.battle = result.battle
+    this.clockOffset = result.now - Date.now()
+    return result.earned
+  }
+
+  wildWeed: WildWeed | null = null
+  async loadWildWeed(): Promise<void> { this.wildWeed=(await request<{weed:WildWeed}>('wild-weed/state',{})).weed }
+  async pickWildWeed(id:number): Promise<void> { this.wildWeed=(await request<{weed:WildWeed}>('wild-weed/pick',{id})).weed }
+  async sellWildWeed(count:number,type:'normal'|'golden'='normal'): Promise<void> {
+    const result=await request<{weed:WildWeed;save:GachaSave}>('wild-weed/sell',{count,type})
+    this.wildWeed=result.weed;this.data=result.save
+  }
+  async buyPeperoChiikawa(): Promise<void> {
+    const result=await request<{save:GachaSave}>('shop/pepero',{})
+    this.data=result.save
+  }
+  async buyShopFragments(quantity: 1 | 10): Promise<void> {
+    const result=await request<{save:GachaSave}>('shop/buy',{quantity})
+    this.data=result.save
+  }
+  async loadForge(): Promise<void> { const r=await request<{forge:ForgeState|null;accessory:AccessoryState}>('forge');this.forge=r.forge;this.accessory=r.accessory ?? this.accessory ?? {count:0,counts:{},equipped:null} }
+  async equipAccessory(id: string|null,grade='normal'): Promise<void> {
+    const r=await request<{forge:ForgeState|null;accessory:AccessoryState;save:GachaSave}>('accessory/equip',{id,grade})
+    this.forge=r.forge;this.accessory=r.accessory;this.data=r.save
+  }
+  async loadMarket():Promise<void>{this.market=await request<MarketItems>('market/items',{})}
+  async buyMarketItem(item:'stone'|'lottery'):Promise<void>{
+    const r=await request<{market:MarketItems;save:GachaSave}>('market/items/buy',{item})
+    this.market=r.market;this.data=r.save
+  }
+  async upgradeCharacter(id:CharacterId,consumeDupes:number,consumeStones:number):Promise<number>{
+    const r=await request<{level:number;dupes:CharDupes;limitBreak:LimitBreakLevels;market:MarketItems}>('character/limit-break',{id,consumeDupes,consumeStones})
+    this.dupes=r.dupes;this.limitBreak=r.limitBreak;this.market=r.market
+    return r.level
+  }
+  async synthesizeAccessory(id:string,grade:string):Promise<void>{
+    const r=await request<{accessory:AccessoryState;forge:ForgeState|null;save:GachaSave}>('accessory/alchemy',{id,grade})
+    this.accessory=r.accessory;this.forge=r.forge;this.data=r.save
+  }
+  async selectForge(weapon: ForgeState['weapon']): Promise<void> {
+    this.forge=(await request<{forge:ForgeState}>('forge/select',{weapon})).forge
+  }
+  async upgradeForge(): Promise<boolean> {
+    const result=await request<{forge:ForgeState;save:GachaSave;success:boolean}>('forge/upgrade',{})
+    this.forge=result.forge
+    this.data=result.save
+    // The forge upgrade endpoint does not return accessory data.
+    // Preserve the existing accessory state instead of overwriting it with undefined.
+    return result.success
+  }
+  async diamondRecharge(): Promise<{ diamonds: number; nextAt: number | null; now: number; max: number }> {
+    return request('diamonds/recharge')
+  }
+  async restore(): Promise<AuthUser | null> {
+    const payload = await request<AccountPayload & { autoEarned?: number }>('me')
+    this.lastAutoEarned = payload.autoEarned ?? 0
+    this.apply(payload)
+    return this.user
+  }
+
+  async register(username: string, password: string, nickname: string): Promise<void> {
+    this.apply(await request<AccountPayload>('auth/register', { username, password, nickname }))
+  }
+
+  async setNickname(nickname: string): Promise<void> {
+    const result = await request<{ user: AuthUser }>('nickname', { nickname })
+    this.user = result.user
+  }
+
+  async setFeatured(id: CharacterId): Promise<void> {
+    this.featured = (await request<{ featured: CharacterId }>('featured', { id })).featured
+  }
+  async mailbox(): Promise<Mailbox> {
+    const box = await request<Mailbox>('mail')
+    this.mailUnread = box.unread
+    return box
+  }
+  async markMailSeen(): Promise<void> {
+    await request('mail/seen', {})
+    this.mailUnread = 0
+  }
+  async sendMail(to: string, message: string, coins: number, diamonds = 0, fragments = 0): Promise<Mailbox> {
+    const result = await request<Mailbox & { save: GachaSave }>('mail/send', { to, message, coins, diamonds, fragments })
+    this.data = result.save
+    return result
+  }
+  async broadcastMail(message: string, coins: number, diamonds: number, fragments: number): Promise<{ count: number; coins: number }> {
+    return request<{ count: number; coins: number }>('admin/mail/broadcast', { message, coins, diamonds, fragments })
+  }
+  async deleteMail(id: number, box: 'in' | 'sent'): Promise<{ claimed: number; box: Mailbox }> {
+    const result = await request<Mailbox & { claimed: number; save: GachaSave }>('mail/delete', { id, box })
+    this.data = result.save
+    this.mailUnread = result.unread
+    return { claimed: result.claimed, box: result }
+  }
+  async sell(kind: 'char' | 'deco', id: string, count: number): Promise<number> {
+    const result = await request<{ coins: number; save: GachaSave; dupes: CharDupes; decos: DecoCounts }>('sell', { kind, id, count })
+    this.data = result.save
+    this.dupes = result.dupes
+    this.decos = result.decos
+    return result.coins
+  }
+  async suggestions(): Promise<SuggestBox> { return request<SuggestBox>('suggest') }
+  async suggest(message: string): Promise<SuggestBox> { return request<SuggestBox>('suggest', { message }) }
+  async replySuggestion(id: number, reply: string): Promise<SuggestBox> { return request<SuggestBox>('suggest/reply', { id, reply }) }
+  async deleteSuggestion(id: number): Promise<SuggestBox> { return request<SuggestBox>('suggest/delete', { id }) }
+  async claimMail(id?: number): Promise<{ claimed: number; box: Mailbox }> {
+    const result = await request<Mailbox & { claimed: number; save: GachaSave }>('mail/claim', id == null ? {} : { id })
+    this.data = result.save
+    this.mailUnread = result.unread
+    return { claimed: result.claimed, box: result }
+  }
+  /** This hour's house coin (null once taken); it disappears when the next one appears at nextAt. */
+  async houseCoin(): Promise<HouseCoinState> {
+    return request<HouseCoinState>('house/coin')
+  }
+  async claimHouseCoin(slot: number): Promise<{ coins: number; nextAt: number; now: number }> {
+    const result = await request<{ coins: number; save: GachaSave; nextAt: number; now: number }>('house/coin', { slot })
+    this.data = result.save
+    return result
+  }
+  /** Read-only look at another user's house. */
+  async userHouse(nickname: string): Promise<HouseLayout> {
+    return (await request<{ house: HouseLayout }>('users/house', { nickname })).house
+  }
+  async globalChat(): Promise<{ items: { id: number; message: string; nickname: string; at: number }[]; nextAt: number; now: number; unread: boolean }> { return request('global-chat') }
+  async globalChatSeen(): Promise<{ ok: boolean }> { return request('global-chat-seen', {}) }
+  async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
+  async dopamine():Promise<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>{return request('dopamine')}
+  async dopaminePlay(stake:number):Promise<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>{const result=await request<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>('dopamine/play',{stake});this.data.gems=result.coins;return result}
+  async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
+  async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
+  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
+    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
+    this.data=result.save
+    this.accessory=result.accessory
+    return result
+  }
+  private async rpsRequest(path:string,body:object):Promise<RpsState> {
+    const controller=new AbortController()
+    const timeout=setTimeout(()=>controller.abort(),10000)
+    try {
+      const response=await fetch(`/api/${path}`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal})
+      const result=await response.json().catch(()=>({error:'invalid_response'})) as RpsState & {error?:string}
+      if(!response.ok)throw new RequestError(result.error||`http_${response.status}`)
+      return result
+    }catch(error){if(error instanceof RequestError)throw error;throw new RequestError('network_timeout')}
+    finally{clearTimeout(timeout)}
+  }
+  async rps():Promise<RpsState> {
+    const controller=new AbortController()
+    const timeout=setTimeout(()=>controller.abort(),5000)
+    try {
+      const response=await fetch('/api/rps',{credentials:'include',cache:'no-store',signal:controller.signal})
+      const data=await response.json().catch(()=>({error:'invalid_response'})) as RpsState & {error?:string}
+      if(!response.ok)throw new RequestError(data.error||`http_${response.status}`)
+      return data
+    }catch(error){if(error instanceof RequestError)throw error;throw new RequestError('rps_load_timeout')}
+    finally{clearTimeout(timeout)}
+  }
+  async rpsStart():Promise<RpsState> {return this.rpsRequest('rps/start',{})}
+  async rpsChoose(move:string):Promise<RpsState> {return request<RpsState>('rps/choose',{move})}
+  async rpsResolve():Promise<RpsState> {return request<RpsState>('rps/resolve',{})}
+  async rpsNext():Promise<RpsState> {return request<RpsState>('rps/next',{})}
+  async rpsClaim():Promise<RpsState> {
+    const result=await request<RpsState>('rps/claim',{})
+    if(result.save)this.data=result.save
+    this.accessory=result.accessory
+    return result
+  }
+  async expeditionBadge():Promise<{day:string;deployed:boolean}> {return request('expedition/badge')}
+  async expeditionTestControl(serverId:number,action:'hp100'|'respawn'):Promise<void> {await request('expedition/test-control',{serverId,action})}
+  async expedition():Promise<ExpeditionState> {return request<ExpeditionState>('expedition')}
+  async joinExpedition(serverId:number,characterId:CharacterId):Promise<ExpeditionState> {return request<ExpeditionState>('expedition/join',{serverId,characterId})}
+  async announcements(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements') }
+  async announcementsSeen(): Promise<AnnouncementBox> { return request<AnnouncementBox>('announcements/seen', {}) }
+  async editAnnouncement(id: number, message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements/edit', { id, message }) }
+  async postAnnouncement(message: string): Promise<AnnouncementBox> { return request<AnnouncementBox>('admin/announcements', { message }) }
+  async profilePrivacy(): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy')).privacy }
+  async setProfilePrivacy(privacy: ProfilePrivacy): Promise<ProfilePrivacy> { return (await request<{ privacy: ProfilePrivacy }>('profile/privacy', privacy)).privacy }
+  async users(): Promise<PublicUser[]> {
+    return (await request<{ users: PublicUser[] }>('users')).users
+  }
+
+  async startWeeding(id: CharacterId): Promise<number> {
+    return this.applyWeed(await request<WeedResult>('weed/start', { id }))
+  }
+
+  isWeeding(id: CharacterId): boolean {
+    return Boolean(this.weed?.members.some(m => m.id === id))
+  }
+  async stopWeeding(id: CharacterId): Promise<number> {
+    return this.applyWeed(await request<WeedResult>('weed/stop', { id }))
+  }
+  /** 풍뎅이 helper in the weeding field (doubles weeding coins while placed). */
+  async setBeetle(on: boolean): Promise<number> {
+    return this.applyWeed(await request<WeedResult>('weed/beetle', { on }))
+  }
+  async claimWeeding(): Promise<number> {
+    return this.applyWeed(await request<WeedResult>('weed/claim', {}))
+  }
+
+  private applyWeed(result: WeedResult): number {
+    this.data = result.save
+    this.weed = result.weed
+    this.clockOffset = result.now - Date.now()
+    return result.earned
+  }
+
+  async login(username: string, password: string): Promise<void> {
+    this.apply(await request<AccountPayload>('auth/login', { username, password }))
+  }
+
+  async logout(): Promise<void> {
+    await request('auth/logout', {})
+    this.apply({ user: null })
+  }
+
+  async pull(count: PullCount, free = false, banner: 'standard'|'christmas' = 'standard'): Promise<PullResult[]> {
+    const result = await request<{ save: GachaSave; dupes?: CharDupes; results: { id: CharacterId; duplicate: boolean; bonus: number }[] }>('pull', { count, free, banner })
+    this.data = result.save
+    if (result.dupes) this.dupes = result.dupes
+    return result.results
+  }
+
+  async refreshClaw(): Promise<void> {
+    const result = await request<{ save: GachaSave }>('claw/refresh', {})
+    this.data = result.save
+  }
+
+  async playClaw(aligned: boolean, x: number, y: number, mode: 'manual' | 'auto' = 'manual'): Promise<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number }> {
+    const result = await request<{ won: boolean; chance: number; dropAt: number; segments: number; prize: string | null; bonus: number; save: GachaSave; decos: DecoCounts; accessory: AccessoryState }>('claw/play', { aligned, x, y, mode })
+    this.data = result.save
+    this.decos = result.decos
+    if(result.accessory)this.accessory=result.accessory
+    return { won: result.won, chance: result.chance, dropAt: result.dropAt, segments: result.segments, prize: result.prize }
+  }
+
+  async pullDecos(count: DecoPullCount): Promise<DecoPullResult[]> {
+    const result = await request<{ save: GachaSave; decos: DecoCounts; results: DecoPullResult[] }>('deco/pull', { count })
+    this.data = result.save
+    this.decos = result.decos
+    return result.results
+  }
+
+  async saveHouse(layout: HouseLayout): Promise<void> {
+    this.house = (await request<{ house: HouseLayout }>('house/save', { layout })).house
+  }
+
+  async claimDaily(): Promise<{ claimed: boolean; coins: number; diamonds: number; boxes: number }> {
+    const result = await request<{ claimed: boolean; coins: number; diamonds: number; boxes: number; save: GachaSave }>('daily', {})
+    this.data = result.save
+    return { claimed: result.claimed, coins: result.coins ?? 0, diamonds: result.diamonds ?? 0, boxes: result.boxes ?? 0 }
+  }
+
+  private apply(payload: AccountPayload): void {
+    this.forge = payload.forge ?? null
+    this.accessory = payload.accessory ?? {count:0,counts:{},equipped:null}
+    this.user = payload.user
+    this.weed = payload.weed ?? null
+    this.battle = payload.battle ?? null
+    this.decos = payload.decos ?? {}
+    this.house = payload.house ?? { pieces: [], friends: [] }
+    this.featured = payload.featured ?? null
+    this.mailUnread = payload.mailUnread ?? 0
+    this.dupes = payload.dupes ?? {}
+    this.limitBreak = payload.limitBreak ?? {}
+    this.market = payload.market ?? this.market
+    if (typeof payload.now === 'number') this.clockOffset = payload.now - Date.now()
+    this.data = payload.save ?? { version: 1, gems: STARTING_COINS, owned: [], lastDaily: '' }
+  }
+}
+
+type WeedResult = { save: GachaSave; weed: WeedState | null; earned: number; now: number }
+type BattleResult = { cleared?: {stage:number;coins:number;fragments:number}[]; failedStage?:number; save: GachaSave; battle: BattleState; earned: number; now: number }

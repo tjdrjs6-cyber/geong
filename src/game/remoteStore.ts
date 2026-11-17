@@ -304,8 +304,8 @@ export class RemoteGachaStore {
     await request('mail/seen', {})
     this.mailUnread = 0
   }
-  async sendMail(to: string, message: string, coins: number): Promise<Mailbox> {
-    const result = await request<Mailbox & { save: GachaSave }>('mail/send', { to, message, coins })
+  async sendMail(to: string, message: string, coins: number, diamonds = 0, fragments = 0): Promise<Mailbox> {
+    const result = await request<Mailbox & { save: GachaSave }>('mail/send', { to, message, coins, diamonds, fragments })
     this.data = result.save
     return result
   }

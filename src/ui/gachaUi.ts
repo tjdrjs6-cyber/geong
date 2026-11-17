@@ -3342,7 +3342,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       list.innerHTML = box.sent.length ? box.sent.map(item => `<article class="mail-item is-sent" role="listitem">
         <div class="mail-head"><b>To. ${escapeHtml(item.to)}</b><small>${mailTime(item.at)}</small><em class="mail-read">${item.seen ? '읽음' : '안 읽음'}</em>${del(item.id, 'sent')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${item.coins > 0 ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 보냄${item.claimed ? ' · 받음' : ''}</span>` : ''}
+        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 보냄${item.claimed ? ' · 받음' : ''}</span>` : ''}
       </article>`).join('') : '<p class="users-empty">아직 보낸 편지가 없어요.</p>'
     }
   }
@@ -3657,6 +3657,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         <input id="mail-text" class="mail-text-input" maxlength="${MAIL_MAX_CHARS}" placeholder="${MAIL_MAX_CHARS}자 이내로 적어 주세요" autocomplete="off" />
         <label for="mail-coins">함께 보낼 코인 <small>${admin ? '운영자 코인 무제한' : '내 코인에서 빠져요'}</small></label>
         <div class="mail-coin-row"><input id="mail-coins" class="mail-coin-input" type="number" inputmode="numeric" min="0" max="${max}" step="1" value="0" />${[10, 50].map(n => `<button type="button" class="soft-button mail-quick" data-add="${n}">+${n}</button>`).join('')}</div>
+        ${admin ? `<label for="mail-diamonds">함께 보낼 다이아</label><input id="mail-diamonds" class="mail-coin-input" type="number" inputmode="numeric" min="0" max="1000000" step="1" value="0" />
+        <label for="mail-fragments">함께 보낼 강화파편</label><input id="mail-fragments" class="mail-coin-input" type="number" inputmode="numeric" min="0" max="1000000" step="1" value="0" />` : ''}
         <p class="mail-limit">${admin ? '오늘 보낼 수 있는 코인 무제한' : `오늘 더 보낼 수 있는 코인 <b>${left}</b> / ${MAIL_DAILY_COINS} · 보유 ${this.store.data.gems}코인`}</p>
         <button type="button" class="modal-primary" data-action="mail-send" data-nickname="${nick}">보내기</button>
       </form>`
@@ -3679,15 +3681,18 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const body = this.root.querySelector<HTMLElement>('.users-body')
     const message = body?.querySelector<HTMLInputElement>('.mail-text-input')?.value.trim() ?? ''
     const coins = Number(body?.querySelector<HTMLInputElement>('.mail-coin-input')?.value || 0)
-    if (!message && !coins) { this.toast('편지 내용이나 보낼 코인을 적어 주세요.'); return }
+    const diamonds = Number(body?.querySelector<HTMLInputElement>('#mail-diamonds')?.value || 0)
+    const fragments = Number(body?.querySelector<HTMLInputElement>('#mail-fragments')?.value || 0)
+    if (!message && !coins && !diamonds && !fragments) { this.toast('편지 내용이나 보낼 재화를 적어 주세요.'); return }
+    if (![diamonds, fragments].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 1000000)) { this.toast('다이아와 강화파편은 0~1,000,000개의 정수로 입력해 주세요.'); return }
     if (!Number.isInteger(coins) || coins < 0) { this.toast('보낼 코인은 0 이상의 정수로 적어 주세요.'); return }
     const button = body?.querySelector<HTMLButtonElement>('[data-action="mail-send"]')
     if (button) button.disabled = true
     try {
-      const box = await this.store.sendMail(nickname, message, coins)
+      const box = await this.store.sendMail(nickname, message, coins, diamonds, fragments)
       this.lastBox = box
       this.renderWallet()
-      this.notice('우편을 보냈어요!', coins ? `${nickname} 님에게 편지와 ${coins}코인을 보냈어요. 보낸 편지함에서 확인할 수 있어요.` : `${nickname} 님에게 편지를 보냈어요. 보낸 편지함에서 확인할 수 있어요.`)
+      this.notice('우편을 보냈어요!', `${nickname} 님에게 우편을 보냈어요.${[coins ? ` 코인 ${coins}` : '', diamonds ? ` 다이아 ${diamonds}` : '', fragments ? ` 강화파편 ${fragments}` : ''].filter(Boolean).join(' · ')} 보낸 편지함에서 확인할 수 있어요.`)
       this.audio.play('win')
       this.renderUserDetail(nickname)
     } catch (error) { this.handleError(error); if (button) button.disabled = false }
