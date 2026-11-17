@@ -24,7 +24,7 @@ export type WeedMember = { id: CharacterId; since: number }
 /** Up to 3 weeding friends (each on its own timer) plus the 풍뎅이 helper flag. */
 export type WeedState = { members: WeedMember[]; beetle?: boolean }
 export const WEED_MAX = 3
-export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; power?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number }
+export type BattleState = { id: CharacterId; secondId?: CharacterId | null; thirdId?: CharacterId | null; stage?: number; stageSince?: number; power?: number; stageDamage?: number; stageLimitMs?: number; bossReady?: boolean; retryStage?: number; since: number; damage: number; powerBreakdown?:{character:number;equipment:number;collection:number;research:number;researchPercent:number;total:number} }
 export type ProfilePrivacy = { char: boolean; deco: boolean; accessory: boolean; house: boolean }
 export type PublicUser = { nickname: string; owned: CharacterId[]; decos: string[]; featured: CharacterId | null; me: boolean; privacy: ProfilePrivacy; accessories?: { counts: Record<string,number>; grades: Record<string,Record<string,number>> }; weapon?: string | null; weaponLevel?: number | null }
 export type MailItem = { id: number; from: string; message: string; coins: number; diamonds: number; fragments: number; at: number; seen: boolean; claimed: boolean }

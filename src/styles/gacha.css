@@ -6133,3 +6133,12 @@ dialog.alchemy-dialog .limit-break-panel .limit-break-stepper{
   max-width:35px!important;max-height:35px!important;flex-basis:35px!important;
  }
 }
+
+/* Mobile alchemy: wrap names rather than clipping */
+dialog.alchemy-dialog .limit-break-picker{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+dialog.alchemy-dialog .limit-break-picker .alchemy-pick{min-width:0!important;max-width:100%!important;height:auto!important}
+dialog.alchemy-dialog .limit-break-picker .alchemy-pick > span:not(.limit-break-level-badge){display:block!important;width:100%!important;max-width:100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important;word-break:keep-all!important;line-height:1.35!important;text-align:center!important}
+dialog.alchemy-dialog .limit-break-picker .alchemy-pick .limit-break-tier-name{display:block!important;white-space:normal!important;line-height:1.3!important}
+@media(min-width:480px){dialog.alchemy-dialog .limit-break-picker{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+.combat-power-modal{touch-action:manipulation}
+.combat-power-modal button{touch-action:manipulation;pointer-events:auto!important}
