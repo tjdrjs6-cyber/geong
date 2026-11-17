@@ -6743,3 +6743,9 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-world{background:#dce9c7 url('/assets/plaza/plaza_background.png') center center / 100% 100% no-repeat!important;}
 #ui [data-screen="plaza"] .plaza-path-h,#ui [data-screen="plaza"] .plaza-path-v,#ui [data-screen="plaza"] .plaza-fountain,#ui [data-screen="plaza"] .plaza-garden,#ui [data-screen="plaza"] .plaza-bench{display:none!important;}
 #ui [data-screen="plaza"] .plaza-players{position:absolute;inset:0;}
+
+/* Plaza 1.6: identical avatar size across desktop/mobile, prevent iOS input focus zoom. */
+#ui [data-screen="plaza"] .plaza-player{width:64.4px!important;height:64.4px!important}
+#ui [data-screen="plaza"] .plaza-compose input,
+#ui [data-screen="plaza"] input.plaza-input{font-size:16px!important;line-height:1.35!important;min-height:40px;box-sizing:border-box}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-player{width:64.4px!important;height:64.4px!important}}
