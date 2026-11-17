@@ -6248,3 +6248,9 @@ body>dialog.combat-power-modal button{pointer-events:auto!important;touch-action
 .christmas-showcase-characters{display:flex;align-items:end;justify-content:center;gap:4px;margin:10px auto;max-width:620px}
 .christmas-showcase-characters img{width:24%;max-width:145px;min-width:0;object-fit:contain;aspect-ratio:1}
 .pull-showcase-char .pull-event-copy[hidden],.pull-showcase-char .pull-event-hero-image[hidden]{display:none!important}
+
+/* Limit break selector: two visible rows and internal scrolling. */
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker{grid-auto-rows:112px!important;height:230px!important;max-height:230px!important;overflow-y:auto!important;overflow-x:hidden!important;align-content:start!important;overscroll-behavior:contain;scrollbar-gutter:stable}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick{height:112px!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
+dialog.alchemy-dialog .limit-break-panel .limit-break-picker .alchemy-pick img{width:48px!important;height:48px!important;object-fit:contain!important;flex-shrink:0!important}
+dialog.alchemy-dialog .limit-break-panel img.limit-break-material-icon-dupes{width:40px!important;height:40px!important;max-width:40px!important;max-height:40px!important;object-fit:contain!important;flex:0 0 40px!important}
