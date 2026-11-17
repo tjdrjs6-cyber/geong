@@ -57,7 +57,7 @@ function equippedAccessoryPower(equipped: string | null | undefined, grade: stri
   return equipped ? (ALCHEMY_GRADES.find(g => g.id === (grade || 'normal'))?.power ?? 0) : 0
 }
 function weaponAuraClass(level: number): string {
-  return level >= 25 ? 'aura-25' : level >= 23 ? 'aura-23' : level >= 20 ? 'aura-20' : level >= 17 ? 'aura-17' : level >= 15 ? 'aura-15' : level >= 13 ? 'aura-13' : level >= 10 ? 'aura-10' : ''
+  return level >= 30 ? 'aura-30' : level >= 25 ? 'aura-25' : level >= 20 ? 'aura-20' : level >= 15 ? 'aura-15' : level >= 10 ? 'aura-10' : ''
 }
 import type { Mailbox, SuggestBox } from '../game/remoteStore'
 import type { Audio } from '../engine/audio'

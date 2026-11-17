@@ -6416,3 +6416,22 @@ body #geong-research-panel .research-card .research-cost strong.research-resourc
   filter:drop-shadow(0 7px 10px #8e5b4730)!important;
   pointer-events:none!important;
 }
+
+/* Weapon aura tiers (2026-11-17): blue 10, red 15, purple 20, yellow 25, orange 30.
+   No sparkle glyphs or sparkle animations on weapon auras. */
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::before,
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::after,
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::before,
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)::after {
+  content:none!important;display:none!important;animation:none!important;
+}
+.forge-aura.aura-10 {--aura-color:#328df6!important}
+.forge-aura.aura-15 {--aura-color:#f04a55!important}
+.forge-aura.aura-20 {--aura-color:#a05bf2!important}
+.forge-aura.aura-25 {--aura-color:#f5c83c!important}
+.forge-aura.aura-30 {--aura-color:#ff8a22!important}
+.forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)>img:not(.weapon-keyring),
+#ui .forge-aura:is(.aura-10,.aura-15,.aura-20,.aura-25,.aura-30)>img:not(.weapon-keyring) {
+  filter:drop-shadow(0 0 5px var(--aura-color)) drop-shadow(0 0 12px var(--aura-color))!important;
+  animation:none!important;
+}
