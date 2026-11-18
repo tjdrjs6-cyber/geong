@@ -8,7 +8,7 @@ const PET_NAMES:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만�
 const safe=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))
 async function api<T>(path:string,body?:object):Promise<T>{const r=await fetch('/api/plaza'+path,{credentials:'include',cache:'no-store',...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});if(!r.ok)throw new Error('서버 연결 또는 요청 오류');return r.json()}
 export class Plaza {
- private vy=0;private grounded=true;private jumpRequested=false;private timer=0;private moveTimer=0;private state:State|null=null;private x=50;private y=50;private keys=new Set<string>();private joy={x:0,y:0};private active=false;private syncing=false;private lastMove=0;private bound=false
+ private vy=0;private grounded=true;private timer=0;private moveTimer=0;private state:State|null=null;private x=50;private y=50;private keys=new Set<string>();private joy={x:0,y:0};private active=false;private syncing=false;private lastMove=0;private bound=false
  constructor(private root:HTMLElement,private featured:()=>string|null){this.setupWorld();this.bind()}
  private notice(message:string){
   const card=this.panel.querySelector<HTMLElement>('.plaza-card')!;
@@ -18,7 +18,7 @@ export class Plaza {
  private confirmGame(message:string):Promise<boolean>{
   return new Promise(resolve=>{const card=this.panel.querySelector<HTMLElement>('.plaza-card')!;const overlay=document.createElement('div');overlay.className='plaza-game-overlay';overlay.innerHTML=`<div class="plaza-game-dialog" role="dialog" aria-modal="true"><h3>확인</h3><p>${safe(message)}</p><div><button data-choice="no">취소</button><button data-choice="yes">확인</button></div></div>`;card.append(overlay);overlay.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.addEventListener('click',()=>{const yes=b.dataset.choice==='yes';overlay.remove();resolve(yes)}));overlay.querySelector<HTMLButtonElement>('[data-choice="no"]')?.focus()})
  }
- private setupWorld(){const map=this.panel.querySelector<HTMLElement>('.plaza-map');if(!map||map.querySelector('.plaza-world'))return;const world=document.createElement('div');world.className='plaza-world';const controls=map.querySelector('.plaza-mobile-controls');while(map.firstChild)world.appendChild(map.firstChild);map.appendChild(world);if(controls)map.appendChild(controls);
+ private setupWorld(){const map=this.panel.querySelector<HTMLElement>('.plaza-map');if(!map||map.querySelector('.plaza-world'))return;const world=document.createElement('div');world.className='plaza-world';const controls=map.querySelector('.plaza-mobile-controls');while(map.firstChild)world.appendChild(map.firstChild);map.appendChild(world);if(controls){const chat=this.panel.querySelector<HTMLElement>('.plaza-chat');if(chat){const row=document.createElement('div');row.className='plaza-chat-row';chat.parentElement?.insertBefore(row,chat);row.append(controls,chat)}else map.appendChild(controls)}
   for(const y of [24,52,82]){const ledge=document.createElement('div');ledge.className='plaza-platform';ledge.style.top=y+'%';world.append(ledge)}
   for(const x of [28,72]){const ladder=document.createElement('div');ladder.className='plaza-ladder';ladder.style.left=x+'%';ladder.style.top='24%';ladder.style.height='58%';world.append(ladder)}
   for(const [x,y] of [[12,24],[48,24],[84,24],[12,52],[48,52],[84,52],[18,82],[82,82]]){
@@ -34,12 +34,11 @@ export class Plaza {
  }
  private get panel(){return this.root.querySelector<HTMLElement>('[data-screen="plaza"]')!}
  private bind(){if(this.bound)return;this.bound=true
-  window.addEventListener('keydown',e=>{if(!this.active||!(this.panel.contains(document.activeElement)||document.activeElement===document.body))return;if((e.target as HTMLElement).matches('input,textarea,[contenteditable]'))return;const key=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){this.keys.add(key);e.preventDefault()}if((key===' '||key==='space')&&!e.repeat){this.jumpRequested=true;e.preventDefault()}if(key==='enter'){this.panel.querySelector<HTMLInputElement>('.plaza-input')?.focus()}})
+  window.addEventListener('keydown',e=>{if(!this.active||!(this.panel.contains(document.activeElement)||document.activeElement===document.body))return;if((e.target as HTMLElement).matches('input,textarea,[contenteditable]'))return;const key=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){this.keys.add(key);e.preventDefault()}if(key==='enter'){this.panel.querySelector<HTMLInputElement>('.plaza-input')?.focus()}})
   window.addEventListener('keyup',e=>this.keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{this.keys.clear();this.joy={x:0,y:0}})
   const stick=this.panel.querySelector<HTMLElement>('.plaza-joystick')!;const knob=stick.querySelector<HTMLElement>('.plaza-stick')!;
   const update=(e:PointerEvent)=>{const rect=stick.getBoundingClientRect(),dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2),length=Math.max(1,Math.hypot(dx,dy));this.joy={x:dx/Math.max(32,length),y:dy/Math.max(32,length)};knob.style.transform=`translate(${this.joy.x*25}px,${this.joy.y*25}px)`}
   stick.addEventListener('pointerdown',e=>{stick.setPointerCapture(e.pointerId);update(e);e.preventDefault()});stick.addEventListener('pointermove',e=>{if(stick.hasPointerCapture(e.pointerId))update(e)});const end=()=>{this.joy={x:0,y:0};knob.style.transform=''};stick.addEventListener('pointerup',end);stick.addEventListener('pointercancel',end)
-  this.panel.querySelector<HTMLButtonElement>('.plaza-jump')?.addEventListener('pointerdown',e=>{this.jumpRequested=true;e.preventDefault()});
   this.panel.querySelector<HTMLElement>('.plaza-shop-panel')?.addEventListener('click',e=>{const button=(e.target as HTMLElement).closest<HTMLButtonElement>('button[data-shop-action]');if(!button)return;void this.shopAction(button.dataset.shopAction||'',Number(button.dataset.id||0))})
   this.panel.querySelector<HTMLInputElement>('.plaza-input')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void this.send()}})
  }
@@ -53,18 +52,16 @@ export class Plaza {
   let dx=this.joy.x,dy=this.joy.y;
   for(const k of this.keys){if(k==='a'||k==='arrowleft')dx--;if(k==='d'||k==='arrowright')dx++;if(k==='w'||k==='arrowup')dy--;if(k==='s'||k==='arrowdown')dy++}
   const oldY=this.y,ladder=this.onLadder();
-  this.x=Math.max(3,Math.min(97,this.x+Math.max(-1,Math.min(1,dx))*.65));
+  this.x=Math.max(3,Math.min(97,this.x+Math.max(-1,Math.min(1,dx))*.975));
   if(ladder&&Math.abs(dy)>.18){
-   this.vy=0;this.grounded=false;this.y=Math.max(24,Math.min(82,this.y+Math.max(-1,Math.min(1,dy))*.8));
+   this.vy=0;this.grounded=false;this.y=Math.max(24,Math.min(82,this.y+Math.max(-1,Math.min(1,dy))*1.2));
   }else{
-   if(this.jumpRequested&&this.grounded){this.vy=-2.05;this.grounded=false}
    this.vy=Math.min(1.15,this.vy+.14);this.y=Math.max(14,Math.min(82,this.y+this.vy));
    if(this.vy>=0){
     const floor=[24,52,82].find(y=>oldY<=y&&this.y>=y);
     if(floor!==undefined){this.y=floor;this.vy=0;this.grounded=true}
    }
   }
-  this.jumpRequested=false;
   const mine=this.panel.querySelector<HTMLElement>(`.plaza-player[data-id="${this.state.me}"]`);
   if(mine){mine.style.left=this.x+'%';mine.style.top=this.y+'%';mine.classList.toggle('is-airborne',!this.grounded)}
   this.camera();

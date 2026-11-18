@@ -7364,3 +7364,14 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
   touch-action:manipulation!important;
 }
 #ui .battle-drop-done { display:none!important; }
+
+/* 5.0: mobile joystick beside left edge of chat, shop management at far right */
+#ui [data-screen="plaza"] .plaza-jump{display:none!important}
+#ui [data-screen="plaza"] .plaza-actions{display:flex!important;justify-content:flex-end!important;align-items:center!important;width:100%!important;gap:8px!important}
+#ui [data-screen="plaza"] .plaza-actions [data-action="plaza-shop"]{margin-left:auto!important;flex:0 0 auto!important}
+#ui [data-screen="plaza"] .plaza-chat-row{display:flex!important;align-items:stretch!important;gap:8px!important;min-width:0!important;width:100%!important}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat{flex:1 1 auto!important;width:auto!important;min-width:0!important;height:auto!important;max-height:100%!important}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls{position:relative!important;inset:auto!important;left:auto!important;bottom:auto!important;right:auto!important;top:auto!important;flex:0 0 82px!important;width:82px!important;height:82px!important;min-height:0!important;padding:0!important;display:none!important;pointer-events:auto!important;align-items:center!important;justify-content:center!important}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-joystick{width:76px!important;height:76px!important;opacity:.55!important;touch-action:none!important}
+@media(pointer:coarse){#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls{display:flex!important}}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat{flex-basis:auto!important;height:82px!important}#ui [data-screen="plaza"] .plaza-actions{justify-content:flex-end!important}}
