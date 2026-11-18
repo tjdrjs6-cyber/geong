@@ -2074,6 +2074,37 @@ const routes = {
       await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
+  'POST /api/pets/cancel-quantity': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingIds,quantity}=await readJson(req);
+    if(!Array.isArray(listingIds)||!listingIds.length||listingIds.length>1000||new Set(listingIds).size!==listingIds.length||!listingIds.every(x=>Number.isSafeInteger(x)&&x>0)||!Number.isSafeInteger(quantity)||quantity<1||quantity>listingIds.length)return send(res,400,{error:'invalid_quantity'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const ids=[...listingIds].sort((a,b)=>a-b);
+      const [rows]=await c.query(`SELECT l.*,b.grade FROM gm_pet_listings l JOIN gm_pet_boxes b ON b.id=l.item_id WHERE l.id IN (${ids.map(()=>'?').join(',')}) AND l.seller_id=? AND l.item_type='box' AND l.status='active' ORDER BY l.id FOR UPDATE`,[...ids,a.id]);
+      if(rows.length!==ids.length||rows.some(x=>x.grade!==rows[0].grade||Number(x.price)!==Number(rows[0].price))){await c.rollback();return send(res,409,{error:'listing_changed'})}
+      for(const l of rows.slice(0,quantity)){
+        await c.query('UPDATE gm_pet_boxes SET listing_id=NULL WHERE id=? AND owner_id=? AND listing_id=?',[l.item_id,a.id,l.id]);
+        await c.query("UPDATE gm_pet_listings SET status='cancelled' WHERE id=? AND status='active'",[l.id]);
+      }
+      await c.commit();send(res,200,{ok:true,quantity});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/plaza/drops/cancel-quantity': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingIds,quantity}=await readJson(req);
+    if(!Array.isArray(listingIds)||!listingIds.length||listingIds.length>1000||new Set(listingIds).size!==listingIds.length||!listingIds.every(x=>Number.isSafeInteger(x)&&x>0)||!Number.isSafeInteger(quantity)||quantity<1)return send(res,400,{error:'invalid_quantity'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const ids=[...listingIds].sort((a,b)=>a-b);
+      const [rows]=await c.query(`SELECT * FROM gm_drop_listings WHERE id IN (${ids.map(()=>'?').join(',')}) AND seller_id=? AND status='active' ORDER BY id FOR UPDATE`,[...ids,a.id]);
+      if(rows.length!==ids.length||rows.some(x=>x.kind!==rows[0].kind||Number(x.unit_price)!==Number(rows[0].unit_price))||quantity>rows.reduce((n,x)=>n+Number(x.quantity),0)){await c.rollback();return send(res,409,{error:'listing_changed'})}
+      let remaining=quantity;
+      for(const l of rows){if(!remaining)break;const take=Math.min(remaining,Number(l.quantity));if(take===Number(l.quantity))await c.query("UPDATE gm_drop_listings SET status='cancelled' WHERE id=?",[l.id]);else await c.query('UPDATE gm_drop_listings SET quantity=quantity-? WHERE id=?',[take,l.id]);remaining-=take}
+      await c.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[a.id]);
+      const col=rows[0].kind==='stone'?'stone_qty':'ticket_qty';
+      await c.query(`UPDATE gm_tradeable_drops SET ${col}=${col}+? WHERE account_id=?`,[quantity,a.id]);
+      await c.commit();send(res,200,{ok:true,quantity});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
   'POST /api/pets/cancel': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
