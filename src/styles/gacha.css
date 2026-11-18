@@ -7279,3 +7279,12 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 @media(max-width:600px){
   #ui [data-screen="plaza"] .plaza-player{width:96.6px!important;height:96.6px!important;}
 }
+
+/* 3.9: user-supplied plaza artwork, softened without fading avatars or controls */
+#ui [data-screen="plaza"] .plaza-world {
+ background-color:#f8f5f0!important;
+ background-image:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)),url('/assets/plaza/plaza_user_background.png')!important;
+ background-position:center center!important;
+ background-size:100% 100%!important;
+ background-repeat:no-repeat!important;
+}
