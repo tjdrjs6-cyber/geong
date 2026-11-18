@@ -6749,3 +6749,662 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-compose input,
 #ui [data-screen="plaza"] input.plaza-input{font-size:16px!important;line-height:1.35!important;min-height:40px;box-sizing:border-box}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-player{width:64.4px!important;height:64.4px!important}}
+
+/* Plaza personal shops: same UI on desktop and mobile, no new assets. */
+#ui [data-screen="plaza"] .plaza-shop-panel{flex:0 1 auto;max-height:38dvh;overflow:auto;border:1px solid #c8d9c3;background:#f8fbf5;border-radius:10px;padding:10px;color:#334a36;font-size:13px}
+#ui [data-screen="plaza"] .plaza-shop-panel[hidden]{display:none!important}
+#ui [data-screen="plaza"] .plaza-shop-panel button{padding:6px 9px;border:1px solid #b8cdb9;border-radius:7px;background:#fff;color:#344b3b;cursor:pointer}
+#ui [data-screen="plaza"] .plaza-shop-title{display:flex;justify-content:space-between;align-items:center}
+#ui [data-screen="plaza"] .plaza-shop-list{padding:6px 0;border-top:1px solid #dce7d6}
+#ui [data-screen="plaza"] .plaza-shop-list>div{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 0}
+#ui [data-screen="plaza"] .plaza-shop-panel input{font-size:16px;width:100px;min-width:0}
+
+#ui [data-screen="plaza"] .plaza-shop-sign{position:absolute;z-index:4;transform:translate(-50%,-115px);background:#fff9e8;border:1px solid #d8c69d;border-radius:8px;padding:3px 7px;font-size:11px;color:#55462c;cursor:pointer;white-space:nowrap;box-shadow:0 2px 4px #0002}
+
+/* Pet system: one shared PC/mobile layout, pet 20% of player width */
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{position:absolute!important;width:20%!important;height:20%!important;max-width:none!important;object-fit:contain!important;left:83%!important;top:78%!important;z-index:3;pointer-events:none;transition:transform .12s linear}
+#ui [data-screen="plaza"] .pet-item-image{width:38px;height:38px;object-fit:contain;flex:none}
+#ui [data-screen="plaza"] .plaza-shop-list>div{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:8px}
+#ui [data-screen="plaza"] .plaza-shop-list>div>span{flex:1;min-width:100px}
+
+/* Community: shared PC/mobile flyout, same visual system as My Room. */
+.gacha-screen .community-menu { position:relative; width:100%; flex-shrink:0; overflow:visible !important; z-index:90; }
+.gacha-screen .community-menu > .nav-button { width:100%; }
+.gacha-screen .community-menu:has(.community-options:not([hidden])) { z-index:910 !important; }
+.gacha-screen .community-options[hidden] { display:none !important; }
+.gacha-screen .community-options:not([hidden]) { display:flex !important; flex-direction:column; gap:4px !important; position:absolute !important; left:calc(100% + 7px) !important; right:auto !important; top:0 !important; width:70px !important; z-index:950 !important; filter:drop-shadow(0 3px 5px #394b3a35); }
+.gacha-screen .community-options .nav-button { display:flex; align-items:center; justify-content:center; width:100% !important; min-height:24px !important; height:25px !important; padding:3px 2px !important; font-size:9px !important; line-height:1 !important; border-radius:11px !important; gap:2px !important; white-space:nowrap !important; background:linear-gradient(145deg,#fffdfa,#e9f9f0) !important; border-color:#b9e6d0 !important; box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25 !important; }
+.gacha-screen .community-options .chiikawa-tab-icon { display:inline-flex !important; width:15px !important; height:15px !important; flex:0 0 15px !important; align-items:center; justify-content:center; }
+.gacha-screen .community-options .chiikawa-tab-icon img { display:block; width:100% !important; height:100% !important; object-fit:contain; }
+.gacha-screen .nav-community { position:relative; }
+.gacha-screen .nav-community:has(+ .community-options .announcement-dot:not([hidden])) .community-notice-dot,
+.gacha-screen .nav-community:has(+ .community-options .global-chat-dot:not([hidden])) .community-notice-dot { display:block !important; position:absolute; right:5px; top:4px; width:6px; height:6px; border-radius:50%; background:#ef647b; }
+
+
+/* Pet menu and dedicated pet screen — same layout on desktop and mobile. */
+.gacha-screen .nav-pets {order:100; width:100%; flex-shrink:0}
+.gacha-screen .nav-pets .chiikawa-tab-icon img {width:100%;height:100%;object-fit:contain}
+.pets-card {width:min(540px,calc(100vw - 24px));max-height:calc(100dvh - 36px);overflow-y:auto}
+.pets-heading {display:flex;align-items:center;gap:14px;margin:0 0 20px}
+.pets-heading > img {width:70px;height:70px;object-fit:contain}
+.pets-heading h2 {margin:0 0 5px}
+.pets-heading p {margin:0;opacity:.7;font-size:13px}
+.pets-tab-content {display:grid;gap:14px}
+.pets-section {border:1px solid rgba(120,120,120,.2);border-radius:14px;padding:16px}
+.pets-section-title {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.pets-section-title span {font-size:12px;opacity:.7}
+.pets-box-info {display:flex;align-items:center;gap:14px}
+.pets-box-info img {width:86px;height:86px;object-fit:contain;flex:none}
+.pets-box-info p {margin:6px 0;font-size:13px}
+.pets-box-info small {opacity:.7}
+.pets-box-actions {display:flex;flex-wrap:wrap;gap:8px;max-height:180px;overflow-y:auto;margin-top:14px}
+.pets-box-actions button {border:1px solid #cda9c1;border-radius:9px;background:#f7e6f1;padding:9px 13px;color:#4e3547;cursor:pointer;font:inherit}
+.pets-coming p {font-size:13px;opacity:.75;margin:0}
+
+/* Pet management and batch-opening controls, shared across PC and mobile */
+.pets-owned-list{display:grid;gap:9px;max-height:340px;overflow-y:auto}
+.pets-owned-card{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid rgba(120,120,120,.2);border-radius:12px;min-width:0}
+.pets-owned-card>img{width:60px;height:60px;object-fit:contain;flex:none}
+.pets-owned-info{display:grid;gap:5px;flex:1;min-width:0}
+.pets-owned-info small,.pets-muted{opacity:.7;font-size:12px}
+.pets-owned-card button{border:1px solid #cda9c1;border-radius:9px;background:#f7e6f1;padding:9px 13px;color:#4e3547;cursor:pointer;flex:none}
+.pets-owned-card button:disabled,.pets-box-actions button:disabled{opacity:.5;cursor:not-allowed}
+.pets-bonus-note{font-size:13px;margin:0 0 12px}
+.pets-open-result{font-size:13px;margin:8px 0 0}
+
+/* Pet 1.4: fixed-size tab panel and scrollable inventory, shared PC/mobile */
+.pets-card{width:min(560px,calc(100vw - 24px));height:min(620px,calc(100dvh - 32px));max-height:calc(100dvh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.pets-heading{margin:0 0 10px;flex:none}.pets-heading>img{width:48px;height:48px}
+.pets-tab-content{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1;overflow:hidden}
+.pets-switch,.pets-groups{display:flex;gap:6px;flex:none}
+.pets-switch button,.pets-groups button{flex:1;border:1px solid rgba(120,120,120,.2);border-radius:9px;padding:10px 6px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.pets-switch button.active,.pets-groups button.active{background:#f7e6f1;color:#4e3547;border-color:#cda9c1;font-weight:700}
+.pets-section.pets-compact{padding:12px;min-height:0;display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden}
+.pets-box-info img{width:74px;height:74px}.pets-box-info p{margin:3px 0}
+.pets-box-actions{margin-top:0;max-height:none;overflow:visible;align-items:center}
+.pets-open-count{width:70px;min-width:0;padding:8px;border:1px solid #cda9c1;border-radius:8px;font-size:16px}
+.pets-owned-list{max-height:none;overflow-y:auto;min-height:0;flex:1;overscroll-behavior:contain}
+.pets-owned-card{padding:7px}.pets-owned-card>img{width:48px;height:48px}
+.pets-equipped-status{font-size:13px;margin:0}.pets-empty{font-size:13px;opacity:.7}
+
+.toon-hero .toon-equipped-pet{position:absolute;right:5%;bottom:4%;width:20%;height:auto;object-fit:contain;z-index:5;pointer-events:none}
+.pets-result-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.pets-result-dialog{width:min(440px,100%);max-height:85dvh;overflow:auto;background:#fffafc;color:#43313b;border:2px solid #e7c8da;border-radius:18px;padding:20px;text-align:center;box-shadow:0 14px 45px #0004}
+.pets-result-dialog h3{margin:0 0 8px}.pets-result-dialog p{margin:0 0 16px}
+.pets-result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:18px}
+.pets-result-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:12px;background:#f8eaf2;padding:12px;font-size:13px}
+.pets-result-item img{width:62px;height:62px;object-fit:contain}
+.pets-result-dialog>button{border:0;background:#edc3dc;color:#493044;border-radius:10px;padding:10px 28px;font:inherit;font-weight:bold;cursor:pointer}
+
+/* Pet-box reveal: reuse existing box/pet artwork; no extra assets or layout shifts. */
+.pets-reveal-dialog{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:310px;overflow:hidden}
+.pets-reveal-stage{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:185px;overflow:hidden;isolation:isolate}
+.pets-reveal-box{width:140px;height:140px;object-fit:contain;animation:pets-box-bounce .55s ease-in-out infinite alternate;will-change:transform}
+.pets-reveal-opening .pets-reveal-box{animation:pets-box-open .8s ease-in forwards}
+.pets-reveal-stage::before{content:'';position:absolute;inset:15px 10%;border-radius:50%;background:radial-gradient(circle,rgba(255,221,117,.7),rgba(255,221,117,0) 65%);opacity:0;transform:scale(.4);pointer-events:none}
+.pets-reveal-opening::before{animation:pets-box-glow .8s ease-out forwards}
+.pets-reveal-finished{height:auto;min-height:185px;max-height:45dvh;overflow:auto}
+.pets-reveal-finished::before{display:none}
+.pets-reveal-hint{font-size:14px;margin:10px 0!important}
+.pets-reveal-prizes{width:100%;max-height:42dvh;overflow-y:auto;animation:pets-prize-appear .35s ease-out both}
+.pets-win{animation:pets-prize-appear .45s ease-out both}
+.pets-miss strong{font-size:24px;color:#8a7280}
+@keyframes pets-box-bounce{from{transform:translateY(3px) rotate(-5deg)}to{transform:translateY(-7px) rotate(5deg)}}
+@keyframes pets-box-open{0%{transform:scale(1) rotate(0)}35%{transform:scale(1.08) rotate(-12deg)}60%{transform:scale(1.18) rotate(12deg);opacity:1}100%{transform:scale(1.6) rotate(0);opacity:0}}
+@keyframes pets-box-glow{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.7)}}
+@keyframes pets-prize-appear{from{opacity:0;transform:translateY(12px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.pets-reveal-box,.pets-reveal-opening .pets-reveal-box,.pets-reveal-opening::before,.pets-reveal-prizes,.pets-win{animation:none!important}}
+
+/* Pet 1.9: compact two-panel layout, doubled equipped pet, reliable result dialog */
+.toon-hero .toon-equipped-pet{width:40%;right:-4%;bottom:1%;max-width:none}
+.pets-card{height:auto;min-height:0;max-height:min(580px,calc(100dvh - 24px));padding:16px!important;gap:8px;overflow:hidden}
+.pets-heading{margin:0 0 4px;gap:9px}.pets-heading>img{width:44px;height:44px}
+.pets-tab-content{flex:0 1 auto;min-height:0;gap:8px}
+.pets-section.pets-compact{flex:0 1 auto;gap:8px;padding:12px;min-height:0;overflow:hidden}
+.pets-box-info{gap:10px}.pets-box-info img{width:70px;height:70px}
+.pets-box-actions{margin-top:4px;gap:8px}.pets-box-actions button{flex:1;white-space:nowrap}
+.pets-owned-list{max-height:min(330px,42dvh);overflow:auto;overscroll-behavior:contain}
+.pets-result-overlay{z-index:2147483647;pointer-events:auto}
+.pets-result-dialog{position:relative;pointer-events:auto;max-height:calc(100dvh - 32px);overflow:auto}
+.pets-result-dismiss{position:relative;z-index:3;min-height:44px;touch-action:manipulation;pointer-events:auto}
+@media(max-width:480px){.pets-card{padding:12px!important}.pets-section.pets-compact{padding:10px}.pets-box-info img{width:62px;height:62px}.pets-box-actions button{padding:9px 7px}}
+
+.pet-catalog-locked .friend-portrait{filter:grayscale(1);opacity:.5}.pet-catalog-grid{overflow-y:auto;min-height:0}.pets-confirm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}.pets-confirm-actions button{padding:10px 18px;border-radius:10px;border:1px solid #cda9c1;background:#f7e6f1;color:#4e3547;font:inherit;cursor:pointer}.weed-detail-button{margin:8px auto;display:block}
+
+.pet-catalog-grid .friend-card{min-width:0}.pet-catalog-grid .friend-portrait img{max-width:100%;max-height:100%;object-fit:contain}
+
+/* 2.1: plaza pet is the same 40% relative size as the lobby pet. */
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{width:40%!important;height:40%!important;left:96%!important;top:67%!important;z-index:3;transform:none!important;animation:none!important;pointer-events:none}
+#ui [data-screen="plaza"] .plaza-player[data-emote] img.plaza-pet{animation:none!important;transform:none!important}
+/* Personal shop is an independent floating panel: opening it must not shrink the walking map. */
+#ui [data-screen="plaza"] .plaza-card{position:relative}
+#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){position:absolute;z-index:25;top:64px;right:12px;width:min(365px,calc(100% - 24px));max-height:min(65dvh,510px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;background:#fffdf8;border:1px solid #dcc8b3;border-radius:16px;box-shadow:0 8px 32px #3c35283d;padding:14px;display:flex;flex-direction:column;gap:10px}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-title{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #e8ddd1;position:sticky;top:-14px;background:#fffdf8;z-index:1}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-title b{font-size:16px}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list{display:flex;flex-direction:column;gap:6px;border:1px solid #eae1d6;border-radius:12px;padding:10px;background:#fff}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list>div{display:flex;align-items:center;flex-wrap:wrap;gap:7px;border-bottom:1px solid #f1ebe3;padding:7px 0}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list>div:last-child{border-bottom:0}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list>div>span{flex:1;min-width:95px}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list input{width:110px;max-width:100%}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list img{width:36px;height:36px;object-fit:contain}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:50px;right:7px;width:min(320px,calc(100% - 14px));max-height:48dvh;padding:10px}}
+
+/* Pet grade borders; preserve one shared layout on PC and mobile */
+.pet-grade-rare{--pet-grade-color:#3b82f6}.pet-grade-epic{--pet-grade-color:#ef4444}.pet-grade-unique{--pet-grade-color:#a855f7}.pet-grade-normal{--pet-grade-color:#b4b4b4}
+.pets-owned-card[class*="pet-grade-"],.pets-result-item[class*="pet-grade-"],.pet-catalog-grade-grid .friend-card{border:2px solid var(--pet-grade-color,#b4b4b4);border-radius:12px}
+.pets-box-grade-select{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.pets-box-grade-select button{min-width:0;padding:8px 2px;font-size:12px;border:1px solid var(--pet-grade-color,#bbb);border-radius:8px;background:transparent;color:inherit;cursor:pointer}.pets-box-grade-select button.active{border-width:2px;background:rgba(150,150,150,.10);font-weight:700}
+.pet-catalog-grade-title{font-weight:700;border-left:4px solid var(--pet-grade-color);padding:5px 9px;margin-top:8px}.pet-catalog-grade-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.pet-catalog-grade-grid .friend-card{min-width:0;padding:6px}.pet-catalog-grade-grid .friend-portrait{max-width:100%;min-height:44px}.pet-catalog-grade-grid .friend-portrait img{max-width:100%;max-height:75px;object-fit:contain}.pet-catalog-grid{display:block;overflow-y:auto}
+
+/* 2.3: collection uses the same card-based language as the character catalog */
+#ui .pet-catalog-grid{display:flex;flex-direction:column;gap:15px;overflow-y:auto;padding:8px 3px 14px}
+#ui .pet-collection-section{--pet-grade-color:#b4b4b4;min-width:0}
+#ui .pet-collection-section.pet-grade-rare{--pet-grade-color:#3b82f6}
+#ui .pet-collection-section.pet-grade-epic{--pet-grade-color:#ef4444}
+#ui .pet-collection-section.pet-grade-unique{--pet-grade-color:#a855f7}
+#ui .pet-collection-heading{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 9px;padding:8px 11px;background:#fff9f0;border:1px solid #e8ddcc;border-left:5px solid var(--pet-grade-color);border-radius:10px;color:#554638}
+#ui .pet-collection-heading strong{font-size:15px}
+#ui .pet-collection-heading span{font-size:11px;color:#806c5c;flex:1}
+#ui .pet-collection-heading small{font-size:12px;font-weight:800}
+#ui .pet-collection-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+#ui .pet-collection-card{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;min-width:0;padding:10px 5px;border:2px solid var(--pet-grade-color);border-radius:14px;background:linear-gradient(165deg,#fffefb,#fff4e8);box-shadow:0 3px 7px #72533d19;text-align:center;box-sizing:border-box}
+#ui .pet-collection-card.is-locked{border-color:#d9d5d0;background:#f5f3ef;color:#9b9791}
+#ui .pet-collection-portrait{width:100%;height:92px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:#fff9f2}
+#ui .pet-collection-portrait img{max-width:100%;max-height:100%;object-fit:contain}
+#ui .pet-collection-portrait span{font-size:34px;color:#c8c3be;font-weight:800}
+#ui .pet-collection-card b{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+#ui .pet-collection-card small{font-size:10px;color:#88796c}
+@media(max-width:600px){#ui .pet-collection-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}#ui .pet-collection-portrait{height:76px}#ui .pet-collection-card{padding:8px 4px}}
+/* Move companion directly beside the player's feet, preserving the 40% pet size. */
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{left:68%!important;top:62%!important;width:40%!important;height:40%!important}
+/* In-game feedback replaces browser alert/confirm in the plaza. */
+#ui [data-screen="plaza"] .plaza-card{position:relative}
+#ui [data-screen="plaza"] .plaza-game-notice{position:absolute;z-index:70;left:50%;bottom:108px;transform:translate(-50%,12px);opacity:0;pointer-events:none;max-width:min(440px,90%);padding:11px 17px;background:#fff9e9;border:1px solid #d7bc95;border-radius:13px;box-shadow:0 6px 24px #44342333;color:#57402c;font-size:13px;font-weight:700;text-align:center;transition:opacity .18s,transform .18s}
+#ui [data-screen="plaza"] .plaza-game-notice.is-visible{opacity:1;transform:translate(-50%,0)}
+#ui [data-screen="plaza"] .plaza-game-overlay{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:#27211b66;border-radius:18px;padding:15px}
+#ui [data-screen="plaza"] .plaza-game-dialog{width:min(340px,100%);padding:22px;background:#fffaf1;border:2px solid #d9c4a5;border-radius:17px;box-shadow:0 12px 38px #21190f55;color:#534536;text-align:center}
+#ui [data-screen="plaza"] .plaza-game-dialog h3{margin:0 0 9px;font-size:18px}
+#ui [data-screen="plaza"] .plaza-game-dialog p{margin:0 0 20px;line-height:1.6}
+#ui [data-screen="plaza"] .plaza-game-dialog>div{display:flex;justify-content:center;gap:10px}
+#ui [data-screen="plaza"] .plaza-game-dialog button{min-width:90px;padding:10px 13px;border:1px solid #c9ad86;border-radius:10px;background:#fff;color:#54412d;font-weight:700;cursor:pointer}
+#ui [data-screen="plaza"] .plaza-game-dialog button[data-choice="yes"]{background:#dcebd9;border-color:#9dbb9c}
+/* Larger, readable community and shop dropdowns on the same PC/mobile layout. */
+#ui .community-options:not([hidden]),#ui .market-options:not([hidden]){width:124px!important;gap:7px!important;padding:9px!important;border:1px solid #d8e5d6!important;border-radius:13px!important;background:#fffdf8!important;box-shadow:0 7px 23px #243a292b!important;filter:none!important;box-sizing:border-box}
+#ui .community-options .nav-button,#ui .market-options .nav-button{width:100%!important;min-height:38px!important;height:auto!important;padding:7px 8px!important;border-radius:9px!important;font-size:12px!important;line-height:1.25!important;justify-content:flex-start!important;gap:7px!important}
+#ui .community-options .chiikawa-tab-icon,#ui .market-options .chiikawa-tab-icon{width:20px!important;height:20px!important;flex-basis:20px!important}
+
+/* 2.6: compact menu popovers and equal-height pet tabs (shared desktop/mobile). */
+#ui .community-options:not([hidden]),#ui .market-options:not([hidden]){
+  width:94px!important;max-width:94px!important;padding:5px!important;gap:4px!important;
+  border-radius:11px!important;box-sizing:border-box!important;
+}
+#ui .community-options .nav-button,#ui .market-options .nav-button{
+  width:100%!important;min-height:28px!important;height:30px!important;
+  padding:4px 5px!important;font-size:10px!important;gap:4px!important;
+  line-height:1.1!important;border-radius:8px!important;
+}
+#ui .community-options .chiikawa-tab-icon,#ui .market-options .chiikawa-tab-icon{
+  width:16px!important;height:16px!important;flex-basis:16px!important;
+}
+#ui .pets-card{height:min(690px,calc(100dvh - 24px))!important;min-height:0!important;max-height:calc(100dvh - 24px)!important;display:flex!important;flex-direction:column!important}
+#ui .pets-tab-content{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+#ui .pets-section.pets-compact{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;justify-content:flex-start!important}
+#ui .pets-owned-list{flex:1 1 auto!important;max-height:none!important;min-height:0!important;overflow-y:auto!important}
+.pets-result-dismiss:disabled{opacity:.5!important;cursor:wait!important;pointer-events:none!important}
+
+/* 2.9: restore the original My Room-style flyouts for Community and Shop.
+   Override the oversized 2.3/2.6 popover rules without affecting My Room. */
+#ui.gacha-screen .community-options:not([hidden]),
+#ui.gacha-screen .market-options:not([hidden]),
+#ui .gacha-screen .community-options:not([hidden]),
+#ui .gacha-screen .market-options:not([hidden]){
+  display:flex!important;flex-direction:column!important;position:absolute!important;
+  left:calc(100% + 7px)!important;right:auto!important;top:0!important;
+  width:70px!important;max-width:70px!important;padding:0!important;
+  gap:4px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+  filter:drop-shadow(0 3px 5px #394b3a35)!important;z-index:950!important;
+}
+#ui.gacha-screen .community-options .nav-button,
+#ui.gacha-screen .market-options .nav-button,
+#ui .gacha-screen .community-options .nav-button,
+#ui .gacha-screen .market-options .nav-button{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-height:25px!important;height:25px!important;
+  padding:3px 2px!important;font-size:9px!important;line-height:1!important;
+  gap:2px!important;border-radius:11px!important;white-space:nowrap!important;
+  background:linear-gradient(145deg,#fffdfa,#e9f9f0)!important;
+  border:1px solid #b9e6d0!important;
+  box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon,
+#ui.gacha-screen .market-options .chiikawa-tab-icon,
+#ui .gacha-screen .community-options .chiikawa-tab-icon,
+#ui .gacha-screen .market-options .chiikawa-tab-icon{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:15px!important;height:15px!important;flex:0 0 15px!important;
+}
+
+/* 2.9: use the fixed pet panel height for a larger box preview and balanced
+   vertical layout; Pet Management keeps the exact same outer panel height. */
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-section.pets-compact{
+  display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+  gap:clamp(12px,2.5dvh,24px)!important;padding:clamp(14px,3dvh,24px)!important;
+  overflow-y:auto!important;
+  background:linear-gradient(180deg,#fffafc 0%,#fffdf9 100%);
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-grade-select{
+  flex:none!important;gap:6px!important;
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info{
+  flex:1 1 auto!important;min-height:160px!important;
+  display:flex!important;flex-direction:column!important;justify-content:center!important;
+  align-items:center!important;text-align:center!important;gap:12px!important;
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info img{
+  width:clamp(118px,21dvh,180px)!important;
+  height:clamp(118px,21dvh,180px)!important;
+  max-width:65%!important;object-fit:contain!important;
+  filter:drop-shadow(0 7px 9px #a96c8c29);
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info strong{font-size:16px!important}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info p{margin:7px 0 5px!important;line-height:1.5!important}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info small{display:block;line-height:1.5!important}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-actions{
+  flex:none!important;width:100%!important;justify-content:center!important;
+  padding:10px 0 2px!important;gap:8px!important;
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-actions button{min-height:42px!important}
+@media(max-height:550px){
+  #ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info{min-height:100px!important;gap:5px!important}
+  #ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info img{width:100px!important;height:100px!important}
+}
+
+/* Plaza market redesign 3.0: original game artwork retained */
+#ui [data-screen="plaza"] .plaza-card{background:#fffaf3!important;border-radius:20px!important;gap:8px!important}
+#ui [data-screen="plaza"] .plaza-head{padding:2px 36px 4px 4px!important}
+#ui [data-screen="plaza"] .plaza-head h2{font-size:19px!important;color:#594839}
+#ui [data-screen="plaza"] .plaza-status{font-size:11px!important;color:#89735d}
+#ui [data-screen="plaza"] .plaza-map{border:2px solid #e3d0b7!important;border-radius:16px!important;box-shadow:inset 0 0 0 3px #fff8,0 3px 12px #7e65421a!important}
+#ui [data-screen="plaza"] .plaza-actions{display:flex!important;align-items:center;gap:12px;flex-wrap:wrap}
+#ui [data-screen="plaza"] .plaza-actions button{background:#f6dfd9!important;border:1px solid #dcaeaa!important;color:#6b4546!important;font-weight:800!important;padding:10px 18px!important;border-radius:12px!important}
+#ui [data-screen="plaza"] .plaza-trade-caption{font-size:11px;color:#8e7b68}
+#ui [data-screen="plaza"] .plaza-chat{border:1px solid #e9dcca;background:#fffefa!important}
+#ui [data-screen="plaza"] .plaza-shop-sign{background:#fff5d9!important;border:1px solid #cbb48a!important;border-radius:12px!important;padding:6px 9px!important;font-weight:800!important;transform:translate(-50%,-104px)!important}
+#ui [data-screen="plaza"] .plaza-player[data-emote] img{animation:none!important;transform:none!important}
+#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:48px!important;right:10px!important;width:min(600px,calc(100% - 20px))!important;max-height:min(76dvh,690px)!important;padding:0!important;gap:0!important;border-radius:19px!important;background:#fffaf4!important;border:1px solid #e3cbb7!important;box-shadow:0 14px 45px #47352655!important}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-title{position:sticky!important;top:0!important;display:flex;align-items:center;justify-content:space-between;padding:16px 17px!important;background:#fffaf4!important;border-bottom:1px solid #eadbd0!important;z-index:3}
+#ui [data-screen="plaza"] .plaza-shop-title strong{font-size:18px;color:#5a443b}
+#ui [data-screen="plaza"] .plaza-shop-title small{display:block;font-size:11px;color:#9a8574;margin-top:3px}
+#ui [data-screen="plaza"] .plaza-market-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:10px 14px;background:#fffaf4}
+#ui [data-screen="plaza"] .plaza-market-tabs button{padding:11px 5px!important;background:#fff!important;border:1px solid #e8d6c9!important;font-weight:700!important;border-radius:11px!important}
+#ui [data-screen="plaza"] .plaza-market-tabs button.is-selected{background:#f9e5e8!important;border-color:#dfaebb!important;color:#8c4e66!important}
+#ui [data-screen="plaza"] .plaza-market-body{overflow-y:auto;min-height:120px;padding:6px 14px 18px}
+#ui [data-screen="plaza"] .plaza-market-intro{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 13px}
+#ui [data-screen="plaza"] .plaza-market-intro b{color:#56473c;font-size:14px}
+#ui [data-screen="plaza"] .plaza-market-intro em{font-style:normal;color:#b45d77}
+#ui [data-screen="plaza"] .plaza-market-intro span{color:#978475;font-size:11px}
+#ui [data-screen="plaza"] .plaza-market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#ui [data-screen="plaza"] .plaza-market-item{min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:8px;background:white;border:1px solid #edddd0;border-radius:14px;padding:10px;box-shadow:0 2px 7px #604c3510}
+#ui [data-screen="plaza"] .plaza-market-art{width:60px;height:66px;flex:0 0 60px;background:#fff1f1;border-radius:12px;display:grid;place-items:center}
+#ui [data-screen="plaza"] .plaza-market-art img{width:55px;height:55px;object-fit:contain}
+#ui [data-screen="plaza"] .plaza-market-item-info{display:flex;flex:1 1 90px;min-width:0;flex-direction:column;gap:4px}
+#ui [data-screen="plaza"] .plaza-market-item-info strong{font-size:13px;color:#544437}
+#ui [data-screen="plaza"] .plaza-market-item-info small{font-size:10px;color:#9b8979}
+#ui [data-screen="plaza"] .plaza-market-item-info b{font-size:12px;color:#a75c78}
+#ui [data-screen="plaza"] .plaza-market-item>button{margin-left:auto;background:#f9e6eb!important;border-color:#e6b9c7!important;color:#8e4e66!important;font-weight:800}
+#ui [data-screen="plaza"] .plaza-market-own{font-size:11px;color:#9b8271}
+#ui [data-screen="plaza"] .plaza-market-status{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8efe5;border:1px solid #e9d9c9;border-radius:14px;padding:13px;margin-bottom:14px}
+#ui [data-screen="plaza"] .plaza-market-status strong{display:block;font-size:14px}
+#ui [data-screen="plaza"] .plaza-market-status small{display:block;font-size:11px;color:#9b8271;margin-top:4px}
+#ui [data-screen="plaza"] .plaza-market-status button{white-space:nowrap;background:#e6f0df!important;font-weight:800}
+#ui [data-screen="plaza"] .plaza-market-section{background:#fff;border:1px solid #ecdfd2;border-radius:14px;padding:12px;margin-bottom:12px}
+#ui [data-screen="plaza"] .plaza-market-section h3{font-size:14px;margin:0 0 10px;color:#5b493c}
+#ui [data-screen="plaza"] .plaza-market-section h3 span{font-size:11px;font-weight:400;color:#9c8878}
+#ui [data-screen="plaza"] .plaza-market-tip{font-size:11px;line-height:1.5;color:#9b7e6e}
+#ui [data-screen="plaza"] .plaza-market-register,#ui [data-screen="plaza"] .plaza-market-myitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f2e8e1}
+#ui [data-screen="plaza"] .plaza-market-register img,#ui [data-screen="plaza"] .plaza-market-myitem img{width:37px;height:37px;object-fit:contain}
+#ui [data-screen="plaza"] .plaza-market-register span,#ui [data-screen="plaza"] .plaza-market-myitem span{flex:1;min-width:66px;font-size:12px;font-weight:700}
+#ui [data-screen="plaza"] .plaza-market-register input{width:105px!important;max-width:25%;padding:7px;border:1px solid #dec8b9;border-radius:9px}
+#ui [data-screen="plaza"] .plaza-market-register button{white-space:nowrap;background:#f7e5e9!important}
+#ui [data-screen="plaza"] .plaza-market-myitem b{font-size:12px;color:#a45b73}
+#ui [data-screen="plaza"] .plaza-market-empty{font-size:12px;color:#947e70;text-align:center;padding:20px 9px;line-height:1.6}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:38px!important;right:5px!important;width:calc(100% - 10px)!important;max-height:72dvh!important}#ui [data-screen="plaza"] .plaza-market-grid{grid-template-columns:1fr 1fr;gap:6px}#ui [data-screen="plaza"] .plaza-market-item{padding:7px;gap:5px}#ui [data-screen="plaza"] .plaza-market-art{width:45px;height:48px;flex-basis:45px}#ui [data-screen="plaza"] .plaza-market-art img{width:42px;height:42px}#ui [data-screen="plaza"] .plaza-market-item-info{flex-basis:65px}#ui [data-screen="plaza"] .plaza-market-register{flex-wrap:wrap}#ui [data-screen="plaza"] .plaza-market-register input{max-width:none;width:100px!important}#ui [data-screen="plaza"] .plaza-trade-caption{display:none}}
+
+/* 3.1: All three submenu flyouts use the original My Room layout.
+   Overrides the older broad #ui rules and the 3.0 visual regression. */
+#ui.gacha-screen .community-options:not([hidden]),
+#ui.gacha-screen .market-options:not([hidden]),
+#ui.gacha-screen .myroom-options:not([hidden]),
+#ui .gacha-screen .community-options:not([hidden]),
+#ui .gacha-screen .market-options:not([hidden]),
+#ui .gacha-screen .myroom-options:not([hidden]){
+  display:flex!important;flex-direction:column!important;position:absolute!important;
+  left:calc(100% + 7px)!important;right:auto!important;top:0!important;
+  width:70px!important;max-width:70px!important;padding:0!important;gap:4px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;filter:drop-shadow(0 3px 5px #394b3a35)!important;
+}
+#ui.gacha-screen .community-options .nav-button,
+#ui.gacha-screen .market-options .nav-button,
+#ui.gacha-screen .myroom-options .nav-button,
+#ui .gacha-screen .community-options .nav-button,
+#ui .gacha-screen .market-options .nav-button,
+#ui .gacha-screen .myroom-options .nav-button{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-height:25px!important;height:25px!important;
+  padding:3px 2px!important;font-size:9px!important;line-height:1!important;
+  gap:2px!important;border-radius:11px!important;white-space:nowrap!important;
+  background:linear-gradient(145deg,#fffdfa,#e9f9f0)!important;
+  border:1px solid #b9e6d0!important;
+  box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon,
+#ui.gacha-screen .market-options .chiikawa-tab-icon,
+#ui.gacha-screen .myroom-options .chiikawa-tab-icon,
+#ui .gacha-screen .community-options .chiikawa-tab-icon,
+#ui .gacha-screen .market-options .chiikawa-tab-icon,
+#ui .gacha-screen .myroom-options .chiikawa-tab-icon{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:15px!important;height:15px!important;flex:0 0 15px!important;
+  margin:0!important;padding:0!important;position:static!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon img,
+#ui.gacha-screen .market-options .chiikawa-tab-icon img,
+#ui .gacha-screen .community-options .chiikawa-tab-icon img,
+#ui .gacha-screen .market-options .chiikawa-tab-icon img{
+  display:block!important;position:static!important;inset:auto!important;
+  width:100%!important;height:100%!important;max-width:100%!important;
+  object-fit:contain!important;transform:none!important;
+}
+
+/* 3.2 player shops */
+#ui [data-screen="plaza"] .plaza-shop-sign{display:flex;flex-direction:column;align-items:center;gap:2px;width:112px;max-width:112px;min-height:114px;box-sizing:border-box;transform:translate(-50%,-100%);padding:7px 6px 6px;border:2px solid #e8bc91;border-radius:15px;background:linear-gradient(180deg,#fff6e9,#ffe8d5);box-shadow:0 5px 0 #cfa885,0 7px 13px #4a33242a;color:#6b4552;cursor:pointer;z-index:5;white-space:normal}
+#ui [data-screen="plaza"] .plaza-stall-art{position:relative;display:block;width:66px;height:62px}
+#ui [data-screen="plaza"] .plaza-stall-art>img{width:60px;height:60px;object-fit:contain;display:block}
+#ui [data-screen="plaza"] .plaza-stall-art>img.plaza-stall-pet{position:absolute;right:-6px;bottom:0;width:25px;height:25px}
+#ui [data-screen="plaza"] .plaza-stall-title{display:block;max-width:100%;font-size:11px;font-weight:800;line-height:1.3;text-align:center;overflow-wrap:anywhere}
+#ui [data-screen="plaza"] .plaza-stall-hint{font-size:10px;color:#946c74;line-height:1.2}
+#ui [data-screen="plaza"] .plaza-shop-sign:focus-visible{outline:3px solid #8e74dc;outline-offset:3px}
+
+/* 3.3: battle rewards button inside lower controls; modal above all UI */
+.battle-screen .battle-bottom-tools{display:flex;justify-content:flex-end;align-items:center;padding:7px 10px;position:relative;z-index:1}
+.battle-screen .battle-bottom-tools .battle-drop-open{position:static!important;inset:auto!important;transform:none!important;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 15px;border:1.5px solid #e3b8ca;border-radius:14px;background:#fff6fa;color:#765163;font-size:13px;font-weight:800;cursor:pointer;max-width:100%}
+.battle-drop-overlay:not([hidden]){position:fixed!important;inset:0!important;z-index:2147483000!important;display:flex!important;align-items:center;justify-content:center;background:#241a2c99;padding:16px;box-sizing:border-box;overflow-y:auto}
+.battle-drop-overlay[hidden]{display:none!important}
+.battle-drop-dialog{position:relative;width:min(100%,420px);max-height:min(85dvh,720px);overflow-y:auto;box-sizing:border-box;padding:18px;border-radius:20px;border:2px solid #f0c5d4;background:#fffdfb;box-shadow:0 16px 55px #23172360;color:#674e5d}
+.battle-drop-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.battle-drop-head h2{margin:3px 0 10px;font-size:21px}.battle-drop-close,.battle-drop-done{border:1px solid #e7bfd0;background:#fff1f7;color:#765163;border-radius:12px;padding:9px 14px;cursor:pointer}.battle-drop-item{display:flex;justify-content:space-between;gap:12px;padding:11px 4px;border-bottom:1px solid #f1e6e9}.battle-drop-item>div{display:flex;flex-direction:column;gap:3px}.battle-drop-item small{color:#947c8b}.battle-drop-item strong{white-space:nowrap}.battle-drop-done{display:block;margin:15px 0 0 auto}.battle-drop-note{font-size:12px;line-height:1.5}
+
+/* 3.3.1 targeted navigation alignment fix. Keep original dimensions and artwork. */
+#ui.gacha-screen .community-options .nav-button,
+#ui.gacha-screen .market-options .nav-button,
+#ui.gacha-screen .myroom-options .nav-button,
+#ui .gacha-screen .community-options .nav-button,
+#ui .gacha-screen .market-options .nav-button,
+#ui .gacha-screen .myroom-options .nav-button{
+  justify-content:flex-start!important;
+  text-align:left!important;
+  flex-direction:row!important;
+  padding-left:7px!important;
+  padding-right:3px!important;
+  gap:4px!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon,
+#ui.gacha-screen .market-options .chiikawa-tab-icon,
+#ui.gacha-screen .myroom-options .chiikawa-tab-icon,
+#ui .gacha-screen .community-options .chiikawa-tab-icon,
+#ui .gacha-screen .market-options .chiikawa-tab-icon,
+#ui .gacha-screen .myroom-options .chiikawa-tab-icon{
+  flex-shrink:0!important;
+  order:-1!important;
+}
+
+/* 3.4 Plaza: larger vertical play area, overlay joystick, designated shop slots */
+#ui [data-screen="plaza"] .plaza-card{height:min(96dvh,1040px)!important;max-height:96dvh!important;min-height:min(720px,90dvh);display:flex;flex-direction:column;overflow:hidden!important;}
+#ui [data-screen="plaza"] .plaza-map{position:relative!important;flex:1 1 auto!important;min-height:440px!important;max-height:none!important;overflow:hidden!important;isolation:isolate;}
+#ui [data-screen="plaza"] .plaza-world{height:100%!important;}
+#ui [data-screen="plaza"] .plaza-actions{flex:0 0 auto!important;}
+#ui [data-screen="plaza"] .plaza-actions button[data-action="plaza-emote"]{display:none!important;}
+#ui [data-screen="plaza"] .plaza-mobile-controls{position:absolute!important;left:14px!important;bottom:14px!important;z-index:22!important;display:none!important;width:86px;height:86px;pointer-events:none;}
+#ui [data-screen="plaza"] .plaza-mobile-controls .plaza-joystick{display:block!important;position:relative!important;width:86px!important;height:86px!important;opacity:.55!important;background:rgba(255,255,255,.38)!important;backdrop-filter:blur(2px);pointer-events:auto;touch-action:none;}
+#ui [data-screen="plaza"] .plaza-shop-zones{position:absolute;inset:0;z-index:2;pointer-events:none;}
+#ui [data-screen="plaza"] .plaza-shop-zone{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:70px;height:32px;border:2px dashed rgba(137,99,65,.6);border-radius:10px;background:rgba(255,247,223,.65);color:#715a4a;font-size:10px;font-weight:700;box-sizing:border-box;}
+#ui [data-screen="plaza"] .plaza-shop-sign{z-index:9!important;}
+@media(pointer:coarse){#ui [data-screen="plaza"] .plaza-mobile-controls{display:block!important;}}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-card{height:96dvh!important;min-height:0!important;}#ui [data-screen="plaza"] .plaza-map{min-height:340px!important;}#ui [data-screen="plaza"] .plaza-shop-zone{width:53px;height:27px;font-size:9px;}}
+
+/* 3.5 narrow-scope market stall corrections */
+#ui [data-screen="plaza"] .plaza-shop-sign{width:90px!important;max-width:90px!important;min-height:88px!important;padding:4px!important;transform:translate(-50%,-82%)!important;box-shadow:0 3px 0 #cfa885,0 4px 8px #4a332422!important;}
+#ui [data-screen="plaza"] .plaza-stall-art{width:48px!important;height:43px!important;}
+#ui [data-screen="plaza"] .plaza-stall-art>img{width:43px!important;height:43px!important;}
+#ui [data-screen="plaza"] .plaza-stall-art>img.plaza-stall-pet{width:19px!important;height:19px!important;}
+#ui [data-screen="plaza"] .plaza-stall-title{font-size:10px!important;}
+#ui [data-screen="plaza"] .plaza-stall-hint{font-size:9px!important;}
+
+/* 3.6 side-view platform plaza */
+#ui [data-screen="plaza"] .plaza-map{position:relative!important;overflow:hidden!important;min-height:440px!important;isolation:isolate}
+#ui [data-screen="plaza"] .plaza-world{width:210%!important;height:185%!important;position:absolute!important;left:0!important;top:0!important;transform-origin:top left!important;background:linear-gradient(#bfe5fc 0%,#f7f3ff 65%,#d5edc4 100%)!important;background-image:linear-gradient(#bfe5fc 0%,#f7f3ff 65%,#d5edc4 100%)!important}
+#ui [data-screen="plaza"] .plaza-platform{position:absolute;left:0;width:100%;height:13px;border-top:6px solid #78b778;border-bottom:5px solid #9b856c;background:#c3a78b;box-shadow:0 6px 0 #b1a08d}
+#ui [data-screen="plaza"] .plaza-ladder{position:absolute;width:32px;transform:translateX(-50%);background:repeating-linear-gradient(to bottom,transparent 0 14px,#c28a53 14px 20px);border-left:6px solid #aa784a;border-right:6px solid #aa784a;box-sizing:border-box;z-index:1}
+#ui [data-screen="plaza"] .plaza-platform-shop{position:absolute;transform:translate(-50%,-120%);background:#fff5dfeb;border:2px dashed #caa576;border-radius:9px;padding:3px 6px;font-size:11px;color:#785b45;z-index:2}
+#ui [data-screen="plaza"] .plaza-player{transform:translate(-50%,-100%)!important;z-index:4}
+#ui [data-screen="plaza"] .plaza-player.is-airborne{filter:drop-shadow(0 5px 3px #0002)}
+#ui [data-screen="plaza"] .plaza-shop-sign{transform:translate(-50%,-110%)!important;z-index:5}
+#ui [data-screen="plaza"] .plaza-mobile-controls{position:absolute!important;inset:auto 12px 14px 12px!important;display:flex!important;justify-content:space-between!important;align-items:end!important;z-index:12!important;pointer-events:none!important;background:none!important}
+#ui [data-screen="plaza"] .plaza-mobile-controls .plaza-joystick{pointer-events:auto!important;opacity:.48!important}
+#ui [data-screen="plaza"] .plaza-jump{pointer-events:auto;border-radius:50%;width:68px;height:68px;background:#fff9e9c9;border:2px solid #cda9a4;color:#76575c;font-weight:800;touch-action:none}
+@media(pointer:fine){#ui [data-screen="plaza"] .plaza-mobile-controls{display:none!important}}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-map{min-height:380px!important}}
+
+/* 3.7 user-supplied background and compact side-view market */
+#ui [data-screen="plaza"] .plaza-world{
+ width:160%!important;height:145%!important;
+ background:#ccecff url('/assets/plaza/plaza_user_background.png') center center / 100% 100% no-repeat!important;
+ background-image:url('/assets/plaza/plaza_user_background.png')!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit{
+ position:absolute;transform:translate(-50%,-100%);z-index:7;
+ width:56px;height:65px;pointer-events:none;display:block;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img{
+ display:block;width:56px;height:65px;object-fit:contain;
+ filter:drop-shadow(0 2px 3px #6a5a4a55);
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img.plaza-shop-spirit-pet{
+ position:absolute;bottom:0;right:-10px;width:23px;height:26px;
+}
+#ui [data-screen="plaza"] .plaza-shop-sign{
+ transform:translate(-50%,-185%)!important;min-height:0!important;
+ width:108px!important;max-width:108px!important;padding:5px 6px!important;
+ gap:2px!important;z-index:8!important;white-space:normal!important;
+}
+#ui [data-screen="plaza"] .plaza-stall-title{font-size:11px!important}
+#ui [data-screen="plaza"] .plaza-stall-hint{font-size:9px!important}
+
+
+/* 3.8: larger visible shop slots and non-overlapping shop owner portraits */
+#ui [data-screen="plaza"] .plaza-platform-shop{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;width:142px!important;min-height:48px!important;
+  padding:8px 12px!important;
+  border:3px solid #b98055!important;border-radius:14px!important;
+  background:linear-gradient(180deg,#fff7dc 0%,#ffdfad 100%)!important;
+  color:#6b4539!important;font-size:15px!important;font-weight:900!important;
+  letter-spacing:.2px!important;line-height:1.2!important;
+  box-shadow:0 4px 0 #c59464,0 7px 12px #513e3029!important;
+  transform:translate(-50%,-105%)!important;
+  z-index:2!important;pointer-events:none!important;
+}
+/* The base avatar was 64.4px. Increase it to 150% (96.6px). */
+#ui [data-screen="plaza"] .plaza-player{
+  width:96.6px!important;height:96.6px!important;
+  overflow:visible!important;
+}
+#ui [data-screen="plaza"] .plaza-player>img:not(.plaza-pet){
+  width:100%!important;height:100%!important;object-fit:contain!important;
+}
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{
+  width:40%!important;height:40%!important;
+  left:68%!important;top:62%!important;object-fit:contain!important;
+}
+/* Shop spirit scales by the same 150%, with overflow visible for pets. */
+#ui [data-screen="plaza"] .plaza-shop-spirit{
+  width:84px!important;height:97.5px!important;
+  overflow:visible!important;transform:translate(-50%,-100%)!important;
+  z-index:7!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img:not(.plaza-shop-spirit-pet){
+  width:84px!important;height:97.5px!important;
+  max-width:none!important;object-fit:contain!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img.plaza-shop-spirit-pet{
+  width:34.5px!important;height:39px!important;
+  right:-15px!important;bottom:0!important;
+}
+/* Place the shop title fully above the owner's portrait, not over the face. */
+#ui [data-screen="plaza"] .plaza-shop-sign{
+  transform:translate(-50%,-100%)!important;
+  margin-top:-99px!important;
+  min-height:0!important;
+  width:130px!important;max-width:130px!important;
+  padding:7px 8px!important;
+  z-index:8!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+#ui [data-screen="plaza"] .plaza-stall-title{
+  font-size:12px!important;line-height:1.35!important;
+  overflow-wrap:anywhere!important;
+}
+#ui [data-screen="plaza"] .plaza-stall-hint{font-size:10px!important;}
+@media(max-width:600px){
+  #ui [data-screen="plaza"] .plaza-player{width:96.6px!important;height:96.6px!important;}
+}
+
+/* 3.9: user-supplied plaza artwork, softened without fading avatars or controls */
+#ui [data-screen="plaza"] .plaza-world {
+ background-color:#f8f5f0!important;
+ background-image:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)),url('/assets/plaza/plaza_user_background.png')!important;
+ background-position:center center!important;
+ background-size:100% 100%!important;
+ background-repeat:no-repeat!important;
+}
+
+/* 4.0: remove the supplied plaza photo, retain a simple clean background */
+#ui [data-screen="plaza"] .plaza-world{
+ background:#d9eef8!important;
+ background-image:none!important;
+}
+/* Large, quiet square dashed markers. Hide occupied slots explicitly. */
+#ui [data-screen="plaza"] .plaza-platform-shop{
+ box-sizing:border-box!important;
+ width:108px!important;height:108px!important;min-height:108px!important;
+ padding:8px!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ border:2px dashed #b8a69b!important;
+ border-radius:12px!important;
+ background:rgba(255,249,236,.33)!important;
+ color:#806f66!important;font-size:12px!important;font-weight:700!important;
+ box-shadow:none!important;
+ transform:translate(-50%,-100%)!important;
+ pointer-events:none!important;
+}
+#ui [data-screen="plaza"] .plaza-platform-shop[hidden]{display:none!important;}
+
+/* 4.3: shop management only, tidy registration cards; plaza-only scope */
+#ui [data-screen="plaza"] .plaza-shop-panel{border-radius:18px!important;overflow:auto!important;box-shadow:0 12px 32px #493d4424!important}
+#ui [data-screen="plaza"] .plaza-market-status,#ui [data-screen="plaza"] .plaza-market-section{border-radius:14px!important}
+#ui [data-screen="plaza"] .plaza-market-register{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px!important;padding:12px!important;margin:8px 0!important;border:1px solid #e6d8d6!important;border-radius:13px!important;background:#fffdfb!important}
+#ui [data-screen="plaza"] .plaza-market-register>span{flex:1 1 135px!important;min-width:125px!important;display:flex!important;flex-direction:column!important;gap:3px!important}
+#ui [data-screen="plaza"] .plaza-market-register>span small{font-size:11px!important;color:#967b82!important}
+#ui [data-screen="plaza"] .plaza-market-register>input{width:110px!important;min-width:90px!important;max-width:140px!important;box-sizing:border-box!important}
+#ui [data-screen="plaza"] .plaza-market-register>button{white-space:nowrap!important}
+#ui [data-screen="plaza"] .plaza-market-item{border-radius:13px!important;overflow:hidden!important}
+@media(max-width:540px){#ui [data-screen="plaza"] .plaza-market-register>input{flex:1 1 92px!important;width:92px!important}}
+
+/* 4.4 community open state and compact listing cancellation */
+.gacha-screen .nav-community[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1) !important; }
+#ui .plaza-market-cancel-list { display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;max-width:55%; }
+#ui .plaza-market-cancel-list button {border:1px solid #d8c1b3;background:#fff9f4;color:#77534a;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;}
+#ui .plaza-market-myitem span small {display:block;font-size:11px;color:#806d65;margin-top:3px;}
+
+/* 4.5: taller white owner shop label; leave avatars, pets and stall positioning unchanged. */
+#ui [data-screen="plaza"] .plaza-shop-sign{
+  background:#ffffff!important;
+  background-image:none!important;
+  min-height:66px!important;
+  height:auto!important;
+  padding:11px 8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  border:2px solid #e1bd91!important;
+  border-radius:13px!important;
+  box-shadow:0 3px 0 #cfa885,0 5px 9px #4a332422!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-sign .plaza-stall-title,
+#ui [data-screen="plaza"] .plaza-shop-sign .plaza-stall-hint{
+  text-align:center!important;
+}
+
+/* 4.9: keep plaza world scale consistent between desktop and mobile.
+   The camera still follows the player; mobile shows a smaller viewport into the same-size world. */
+#ui [data-screen="plaza"] .plaza-world {
+  width:max(160%, 1200px)!important;
+  height:max(145%, 650px)!important;
+}
+#ui [data-screen="plaza"] .plaza-map {
+  min-height:440px!important;
+}
+#ui .battle-drop-overlay:not([hidden]) .battle-drop-close {
+  position:relative!important;
+  z-index:10!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+#ui .battle-drop-done { display:none!important; }
+
+/* 5.0: mobile joystick beside left edge of chat, shop management at far right */
+#ui [data-screen="plaza"] .plaza-jump{display:none!important}
+#ui [data-screen="plaza"] .plaza-actions{display:flex!important;justify-content:flex-end!important;align-items:center!important;width:100%!important;gap:8px!important}
+#ui [data-screen="plaza"] .plaza-actions [data-action="plaza-shop"]{margin-left:auto!important;flex:0 0 auto!important}
+#ui [data-screen="plaza"] .plaza-chat-row{display:flex!important;align-items:stretch!important;gap:8px!important;min-width:0!important;width:100%!important}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat{flex:1 1 auto!important;width:auto!important;min-width:0!important;height:auto!important;max-height:100%!important}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls{position:relative!important;inset:auto!important;left:auto!important;bottom:auto!important;right:auto!important;top:auto!important;flex:0 0 82px!important;width:82px!important;height:82px!important;min-height:0!important;padding:0!important;display:none!important;pointer-events:auto!important;align-items:center!important;justify-content:center!important}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-joystick{width:76px!important;height:76px!important;opacity:.55!important;touch-action:none!important}
+@media(pointer:coarse){#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls{display:flex!important}}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat{flex-basis:auto!important;height:82px!important}#ui [data-screen="plaza"] .plaza-actions{justify-content:flex-end!important}}
+
+/* 5.1: fixed shop button inside plaza viewport, not in chat area */
+#ui [data-screen="plaza"] .plaza-map > .plaza-actions {
+  position:absolute!important;bottom:12px!important;right:12px!important;left:auto!important;
+  width:auto!important;z-index:20!important;display:flex!important;pointer-events:auto!important;
+  margin:0!important;padding:0!important;
+}
+#ui [data-screen="plaza"] .plaza-map > .plaza-actions [data-action="plaza-shop"] {
+  margin:0!important;white-space:nowrap!important;box-shadow:0 2px 8px #0002!important;
+}
+/* Reserve a full-height chat strip so chat content is never cropped by the map. */
+#ui [data-screen="plaza"] .plaza-chat-row {
+  flex:0 0 92px!important;height:92px!important;min-height:92px!important;
+  overflow:visible!important;box-sizing:border-box!important;align-items:stretch!important;
+}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat {
+  flex:1 1 0!important;height:92px!important;min-height:0!important;max-height:none!important;
+  overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;
+}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls {
+  flex:0 0 82px!important;min-width:82px!important;max-width:82px!important;
+  height:82px!important;align-self:center!important;
+}
+@media(max-width:600px) {
+  #ui [data-screen="plaza"] .plaza-map {min-height:170px!important;flex-shrink:1!important;}
+  #ui [data-screen="plaza"] .plaza-chat-row {flex:0 0 96px!important;height:96px!important;min-height:96px!important;}
+  #ui [data-screen="plaza"] .plaza-chat-row .plaza-chat {height:96px!important;}
+  #ui [data-screen="plaza"] .plaza-map > .plaza-actions {bottom:8px!important;right:8px!important;}
+}
+
+/* 5.3: diamond balance beside the plaza heading */
+#ui [data-screen="plaza"] .plaza-head {display:flex;align-items:center;flex-wrap:wrap;column-gap:10px;row-gap:5px}
+#ui [data-screen="plaza"] .plaza-diamond-balance {display:inline-flex;align-items:center;border:1px solid #dfcbb0;border-radius:999px;background:#fffaf0;color:#74513e;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap}

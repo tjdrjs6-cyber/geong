@@ -166,6 +166,8 @@ export class RemoteGachaStore {
 
   /** Server-verified, claimed collection bonus shared by combat previews. */
   collectionCombatPower = 0
+  /** Verified from /api/pets, not from the UI checkbox. */
+  petEquipped = false
 
   /** Live hunting view: enemies defeated since the last settle, enemy HP left and time to the next attack. */
   battleView(): { kills: number; hp: number; maxHp: number; nextIn: number; power: number; stage: number; remaining: number } {
@@ -186,7 +188,7 @@ export class RemoteGachaStore {
     if (!members.length) return 0
     const bonus = Math.max(0, 1 + members.reduce((sum,m) => sum + (characterById(m.id).weedBonus || 0) / 100, 0))
     const multiplier = this.weed?.beetle ? 2 : 1
-    return Math.floor(10 * bonus * multiplier)
+    return Math.floor(10 * (bonus + (this.petEquipped ? 0.30 : 0)) * multiplier)
   }
   hourlyRate(): number { return this.weedHourlyRate() }
   /** Server credits weeding + battle coins without opening those screens. */

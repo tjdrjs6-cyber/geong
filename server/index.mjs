@@ -52,6 +52,23 @@ async function prepareDatabase() {
     connectionLimit: 5,
     waitForConnections: true,
   })
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_tradeable_drops (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    stone_qty INT UNSIGNED NOT NULL DEFAULT 0,
+    ticket_qty INT UNSIGNED NOT NULL DEFAULT 0
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_drop_listings (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    seller_id BIGINT UNSIGNED NOT NULL,
+    buyer_id BIGINT UNSIGNED DEFAULT NULL,
+    kind VARCHAR(12) NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    unit_price INT UNSIGNED NOT NULL,
+    status VARCHAR(12) NOT NULL DEFAULT 'active',
+    created_ms BIGINT NOT NULL,
+    sold_ms BIGINT DEFAULT NULL,
+    INDEX(status,seller_id)
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_market_items (account_id BIGINT UNSIGNED PRIMARY KEY, breakthrough_stones INT UNSIGNED NOT NULL DEFAULT 0, weekly_key VARCHAR(16) NOT NULL DEFAULT '', weekly_bought TINYINT UNSIGNED NOT NULL DEFAULT 0, daily_key VARCHAR(16) NOT NULL DEFAULT '', daily_bought TINYINT UNSIGNED NOT NULL DEFAULT 0)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_research (account_id BIGINT UNSIGNED PRIMARY KEY, combat_level TINYINT UNSIGNED NOT NULL DEFAULT 0, pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0)` )
   try { await pool.query('ALTER TABLE gm_research ADD COLUMN pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch(e) { if(e.code !== 'ER_DUP_FIELDNAME') throw e }
@@ -70,6 +87,23 @@ async function prepareDatabase() {
   )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_presence (account_id BIGINT UNSIGNED PRIMARY KEY, channel INT NOT NULL, x DOUBLE NOT NULL, y DOUBLE NOT NULL, emote VARCHAR(16) NOT NULL DEFAULT '', updated_ms BIGINT NOT NULL, INDEX(channel,updated_ms))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_spots (account_id BIGINT UNSIGNED PRIMARY KEY, x DOUBLE NOT NULL DEFAULT 50, y DOUBLE NOT NULL DEFAULT 50, updated_ms BIGINT NOT NULL)` )
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_shops (account_id BIGINT UNSIGNED PRIMARY KEY, channel INT NOT NULL, x DOUBLE NOT NULL, y DOUBLE NOT NULL, opened_ms BIGINT NOT NULL, expires_ms BIGINT NOT NULL, INDEX(channel,expires_ms))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_cosmetic_inventory (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT UNSIGNED NOT NULL, cosmetic_id VARCHAR(80) NOT NULL, cosmetic_name VARCHAR(100) NOT NULL, source VARCHAR(20) NOT NULL DEFAULT 'battle', listing_id BIGINT UNSIGNED NULL, INDEX(owner_id,listing_id))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_shop_listings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, seller_id BIGINT UNSIGNED NOT NULL, inventory_id BIGINT UNSIGNED NOT NULL UNIQUE, price BIGINT UNSIGNED NOT NULL, created_ms BIGINT NOT NULL, status VARCHAR(12) NOT NULL DEFAULT 'active', buyer_id BIGINT UNSIGNED NULL, sold_ms BIGINT NULL, INDEX(seller_id,status))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_shop_sales (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, listing_id BIGINT UNSIGNED NOT NULL UNIQUE, seller_id BIGINT UNSIGNED NOT NULL, buyer_id BIGINT UNSIGNED NOT NULL, price BIGINT UNSIGNED NOT NULL, fee BIGINT UNSIGNED NOT NULL, sold_ms BIGINT NOT NULL)`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_boxes (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT UNSIGNED NOT NULL, listing_id BIGINT UNSIGNED NULL, INDEX(owner_id,listing_id))`)
+  const [boxTradeColumns] = await pool.query("SHOW COLUMNS FROM gm_pet_boxes LIKE 'trades'")
+  if (!boxTradeColumns.length) await pool.query('ALTER TABLE gm_pet_boxes ADD COLUMN trades TINYINT UNSIGNED NOT NULL DEFAULT 0')
+  const [boxGradeColumns] = await pool.query("SHOW COLUMNS FROM gm_pet_boxes LIKE 'grade'")
+  if (!boxGradeColumns.length) await pool.query("ALTER TABLE gm_pet_boxes ADD COLUMN grade VARCHAR(16) NOT NULL DEFAULT 'normal'")
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pets (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT UNSIGNED NOT NULL, kind VARCHAR(24) NOT NULL, grade VARCHAR(16) NOT NULL DEFAULT 'normal', trades TINYINT UNSIGNED NOT NULL DEFAULT 0, used TINYINT(1) NOT NULL DEFAULT 0, listing_id BIGINT UNSIGNED NULL, INDEX(owner_id,listing_id))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_equipped (account_id BIGINT UNSIGNED PRIMARY KEY, pet_id BIGINT UNSIGNED NOT NULL)`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_collection (account_id BIGINT UNSIGNED NOT NULL,kind VARCHAR(24) NOT NULL,grade VARCHAR(16) NOT NULL,PRIMARY KEY(account_id,kind,grade))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_listings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,seller_id BIGINT UNSIGNED NOT NULL,item_type VARCHAR(8) NOT NULL,item_id BIGINT UNSIGNED NOT NULL,price BIGINT UNSIGNED NOT NULL,status VARCHAR(12) NOT NULL DEFAULT 'active',buyer_id BIGINT UNSIGNED NULL,created_ms BIGINT NOT NULL,sold_ms BIGINT NULL,INDEX(seller_id,status),INDEX(item_type,item_id,status))`)
+  // All opened pets are permanently non-tradeable, including legacy pets.
+  // Cancel any old pet sale listings before clearing their listing pointers.
+  await pool.query("UPDATE gm_pet_listings SET status='expired' WHERE item_type='pet' AND status='active'")
+  await pool.query('UPDATE gm_pets SET used=1, listing_id=NULL WHERE used=0 OR listing_id IS NOT NULL')
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_chat (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL, channel INT NOT NULL, message VARCHAR(100) NOT NULL, created_ms BIGINT NOT NULL, INDEX(channel,id))`)
   // Additive, repeatable migration; existing accounts and saves are preserved.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_dopamine (
@@ -747,6 +781,21 @@ async function getBattle(accountId) {
   battle.power=battle.powerBreakdown.total
   return battle
 }
+const PET_KINDS=['momonga','kurimanju','usagi','chiikawa','hachiware']
+const PET_GRADES=['normal','rare','epic','unique']
+const PET_COMBAT={normal:0.10,rare:0.15,epic:0.20,unique:0.30}
+const PET_WEED={normal:0.30,rare:0.40,epic:0.50,unique:0.70}
+const petBoxGrade=stage=>stage>=20?'unique':stage>=15?'epic':stage>=10?'rare':stage>=5?'normal':null
+const petRoll=boxGrade=>{const r=randomInt(1000);let cursor=0;for(const [grade,chance] of [['normal',100],['rare',50],['epic',30],['unique',20]]){if(PET_GRADES.indexOf(grade)>PET_GRADES.indexOf(boxGrade))break;if(r<cursor+chance){const kind=PET_KINDS[randomInt(PET_KINDS.length)];return {kind,grade}}cursor+=chance}return null}
+async function equippedPet(accountId,db=pool){const [r]=await db.query('SELECT p.id,p.grade FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id AND p.owner_id=e.account_id AND p.used=1 WHERE e.account_id=?',[accountId]);return r[0]||null}
+const PET_NAMES={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
+async function equippedPetId(accountId,db=pool){return Number((await equippedPet(accountId,db))?.id||0)}
+async function petSnapshot(accountId){
+ const [boxes]=await pool.query('SELECT id,listing_id,trades,grade FROM gm_pet_boxes WHERE owner_id=? ORDER BY id DESC',[accountId]);
+ const [pets]=await pool.query('SELECT id,kind,grade,trades,used,listing_id FROM gm_pets WHERE owner_id=? ORDER BY id DESC',[accountId]);
+ const [collection]=await pool.query('SELECT kind,grade FROM gm_pet_collection WHERE account_id=?',[accountId]);
+ return {boxes,pets,collection,equipped:await equippedPetId(accountId)}
+}
 async function getBattlePowerBreakdown(accountId,battle,conn=pool,known=null) {
   if(!battle?.id)return {character:0,equipment:0,collection:0,research:0,researchPercent:0,total:0}
   const levels=known?.levels??await getLimitBreak(accountId,conn)
@@ -754,8 +803,11 @@ async function getBattlePowerBreakdown(accountId,battle,conn=pool,known=null) {
   const character=[battle.id,battle.secondId,battle.thirdId].filter(Boolean).reduce((n,id)=>n+boostedCharacterPower(id,levels),0)
   const equipment=known?.equipment??await (async()=>{const [rows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[accountId]);return (rows.length?forgeBonus(Number(rows[0].level)):0)+accessoryPower(await getAccessory(accountId,conn))})()
   const collection=known?.collection??await achievementPower(accountId,conn)
-  const total=researchPower(character+equipment+collection,research)
-  return {character,equipment,collection,research:total-character-equipment-collection,researchPercent:Number((research*0.3).toFixed(1)),total}
+  const base=researchPower(character+equipment+collection,research)
+  const equipped=await equippedPet(accountId,conn)
+  const pet=equipped?Math.floor(base*(PET_COMBAT[equipped.grade]??0.10)):0
+  const total=base+pet
+  return {character,equipment,collection,research:base-character-equipment-collection,pet,researchPercent:Number((research*0.3).toFixed(1)),total}
 }
 // Combat research: level 0-100, +0.3% total combat power per level.
 const researchDuration = level => level<=10?level*10:level<=20?100+(level-10)*30:level<=40?400+(level-20)*60:level<=60?1600+(level-40)*90:level<=80?3400+(level-60)*120:5800+(level-80)*70
@@ -824,6 +876,9 @@ async function updateBattle(accountId, nextCharacter) {
     await conn.beginTransaction()
     const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], fragments: 0 }
+    const [petDropAccounts] = await conn.query('SELECT username, is_admin FROM gm_accounts WHERE id = ?', [accountId])
+    // Test and administrator accounts have a 50% pet-box drop chance.
+    const boostedPetDrop = Boolean(petDropAccounts[0]?.is_admin) || petDropAccounts[0]?.username === 'test'
     const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [accountId])
     const now = Date.now()
     let battle = battleRow(rows[0])
@@ -837,9 +892,11 @@ async function updateBattle(accountId, nextCharacter) {
     const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory) + await achievementPower(accountId,conn)
     const combatResearchLevel = await researchLevel(accountId,conn)
     const limitBreakLevels = await getLimitBreak(accountId,conn)
-    let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, cleared = [], failedStage = 0
+    let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, stonesEarned = 0, cleared = [], failedStage = 0
     if (battle) {
-      const power = !battle.id ? 0 : researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel)
+      const basePower = !battle.id ? 0 : researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel)
+      const activePet=await equippedPet(accountId,conn)
+      const power=basePower+(activePet?Math.floor(basePower*(PET_COMBAT[activePet.grade]??0.10)):0)
       // Settle each completed stage exactly once, using the persisted stage clock.
       // A 1.5s transition prevents the next enemy from receiving damage during the clear overlay.
       let cursor = Math.max(Number(battle.stageSince || battle.since), now - BATTLE_OFFLINE_CAP_MS)
@@ -861,11 +918,15 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        const ticket = randomInt(400) < 3 ? 1 : 0
+        const ticket = randomInt(10000) < 65 ? 1 : 0
         ticketsEarned += ticket
+        const stone = randomInt(10000) === 0 ? 1 : 0
+        stonesEarned += stone
         diamondsEarned += reward.diamonds
         earned += reward.fragments
-        cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket})
+        cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket,stones:stone})
+        const boxGrade=petBoxGrade(Math.floor((current-1)/10)+1)
+        if(boxGrade&&randomInt(1000)<(boostedPetDrop?500:1)) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[accountId,boxGrade])
         battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
         // Negative retryStage means the fallback stage has been cleared and manual
         // challenge is now available; keep farming this stage until clicked.
@@ -913,6 +974,14 @@ async function updateBattle(accountId, nextCharacter) {
       }
     }
     if (earned || diamondsEarned || ticketsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, diamonds = diamonds + ?, lottery_tickets=lottery_tickets+? WHERE account_id = ?', [earned, diamondsEarned, ticketsEarned, accountId])
+    if (stonesEarned || ticketsEarned) {
+      await conn.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[accountId])
+      await conn.query('UPDATE gm_tradeable_drops SET stone_qty=stone_qty+?,ticket_qty=ticket_qty+? WHERE account_id=?',[stonesEarned,ticketsEarned,accountId])
+    }
+    if (stonesEarned) {
+      await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[accountId])
+      await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[stonesEarned,accountId])
+    }
     state.fragments = (state.fragments ?? 0) + earned
     state.diamonds = (state.diamonds ?? 0) + diamondsEarned
     state.lotteryTickets = (state.lotteryTickets ?? 0) + ticketsEarned
@@ -983,7 +1052,9 @@ async function updateWeed(accountId, op = {}) {
       // Limit break increases each character's BASE weeding bonus by 10% per level.
       const weedLimitBreak = await getLimitBreak(accountId,conn)
       const bonus=Math.max(0,1+members.reduce((v,m)=>v+Math.ceil((WEED_BONUS[m.id]||0)*(1+Math.min(10,Math.max(0,Number(weedLimitBreak[m.id]||0)))*0.03))/100,0))
-      const perMinute=Math.floor(10*bonus*weedCoinMultiplier(beetle))
+      const activePet=await equippedPet(accountId,conn)
+      const petBonus=activePet?(PET_WEED[activePet.grade]??0.30):0
+      const perMinute=Math.floor(10*(bonus+petBonus)*weedCoinMultiplier(beetle))
       earned+=Math.max(0,endMinute-startMinute)*perMinute
     }
     members = members.map(m => ({ id: m.id, since: Math.floor(now / 60000) * 60000 }))
@@ -1040,7 +1111,7 @@ async function ensureGlobalChatTables() {
 }
 
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
-const EXP_HP = 4000000
+const EXP_HP = 300000000
 const EXP_TICK = 1000
 const expeditionMaxHp = stage => stage === 1 ? 300000000 : stage === 2 ? 600000000 : 900000000
 function expeditionWindow(now = Date.now()) {
@@ -1061,7 +1132,7 @@ async function expeditionMigrateHp(conn,day,serverId) {
     // Newly created bosses have full 4m HP. Existing old-cap bosses
     // can be distinguished only by persisted creation metadata; see below.
     const oldHp=Number(rows[0].hp)
-    if(true) await conn.query('UPDATE gm_expedition_boss SET hp=? WHERE raid_day=? AND server_id=?',[Math.max(0,oldHp-6000000),day,serverId])
+    // Do not subtract HP during migration: this previously damaged newly created bosses.
   }
 }
 async function expeditionSettle(conn, day, serverId, now) {
@@ -1075,7 +1146,8 @@ async function expeditionSettle(conn, day, serverId, now) {
     const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
     const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
     const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
-    const power=members.reduce((sum,m,i)=>sum+researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 10):0),researchLevels[i]),0)
+    const petEquipped=await Promise.all(members.map(m=>equippedPet(m.account_id,conn)))
+    const power=members.reduce((sum,m,i)=>{const base=researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 10):0),researchLevels[i]);return sum+base+(petEquipped[i]?Math.floor(base*(PET_COMBAT[petEquipped[i].grade]??0.10)):0)},0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
@@ -1168,8 +1240,9 @@ async function expeditionSnapshot(accountId) {
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level,wa.equipped AS accessory_equipped,wa.equipped_grade AS accessory_grade FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories wa ON wa.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
       const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
       const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
+    const petEquipped=await Promise.all(members.map(m=>equippedPet(m.account_id,conn)))
     const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
-      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,limitBreakLevel:Number(limitBreakLevels[i]?.[m.character_id]||0),weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]),powerBreakdown:(()=>{const character=boostedCharacterPower(m.character_id,limitBreakLevels[i]);const equipment=(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0);const collection=achievementBonuses[i];const total=researchPower(character+equipment+collection,researchLevels[i]);return {character,equipment,collection,research:total-character-equipment-collection,researchPercent:Number((researchLevels[i]*0.3).toFixed(1)),total}})(),me:String(m.account_id)===String(accountId)}))})
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,limitBreakLevel:Number(limitBreakLevels[i]?.[m.character_id]||0),weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:(()=>{const base=researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]);return base+(petEquipped[i]?Math.floor(base*(PET_COMBAT[petEquipped[i].grade]??0.10)):0)})(),powerBreakdown:(()=>{const character=boostedCharacterPower(m.character_id,limitBreakLevels[i]);const equipment=(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0);const collection=achievementBonuses[i];const total=researchPower(character+equipment+collection,researchLevels[i]);const pet=petEquipped[i]?Math.floor(total*(PET_COMBAT[petEquipped[i].grade]??0.10)):0;return {character,equipment,collection,research:total-character-equipment-collection,pet,researchPercent:Number((researchLevels[i]*0.3).toFixed(1)),total:total+pet}})(),me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -1536,6 +1609,7 @@ const routes = {
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
           await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[count,collectionBonus,JSON.stringify(owned),account.id])
+          await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=GREATEST(0,ticket_qty-?) WHERE account_id=?',[count,account.id])
           await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
           for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
           outcome={...lotteryView(remaining),tickets:Number(saves[0].lottery_tickets)-count,results}
@@ -1684,6 +1758,7 @@ const routes = {
       if(Number(dupes[id]||0)<consumeDupes||market.stones<consumeStones)return {error:'not_enough_materials'}
       dupes[id]-=consumeDupes
       if(consumeStones)await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[consumeStones,account.id])
+      if(consumeStones)await conn.query('UPDATE gm_tradeable_drops SET stone_qty=GREATEST(0,stone_qty-?) WHERE account_id=?',[consumeStones,account.id])
       await conn.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
       await conn.query('INSERT INTO gm_limit_break(account_id,character_id,level) VALUES(?,?,?) ON DUPLICATE KEY UPDATE level=VALUES(level)',[account.id,id,level+1])
       return {success:true,level:level+1,required}
@@ -1909,6 +1984,265 @@ const routes = {
     await safeEventProgress(account.id,'expedition')
     send(res,200,await retryDbContention(()=>expeditionSnapshot(account.id)))
   },
+  'GET /api/pets':async(req,res)=>{const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});send(res,200,await petSnapshot(a.id))},
+  'POST /api/pets/open-batch':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {count,grade='normal'}=await readJson(req);
+    if(!PET_GRADES.includes(grade))return send(res,400,{error:'invalid_grade'});
+    if(!Number.isSafeInteger(count)||count<1||count>100)return send(res,400,{error:'invalid_count'});
+    const c=await pool.getConnection();
+    try{
+      await c.beginTransaction();
+      const [boxes]=await c.query('SELECT id FROM gm_pet_boxes WHERE owner_id=? AND grade=? AND listing_id IS NULL ORDER BY id LIMIT ? FOR UPDATE',[a.id,grade,count]);
+      if(boxes.length<count){await c.rollback();return send(res,409,{error:'insufficient_boxes'})}
+      const ids=boxes.map(b=>b.id);
+      await c.query(`DELETE FROM gm_pet_boxes WHERE id IN (${ids.map(()=>'?').join(',')})`,ids);
+      const wins={};const pets=[];
+      for(let i=0;i<count;i++){
+        const reward=petRoll(grade);
+        if(reward){const key=reward.grade+':'+reward.kind;wins[key]=(wins[key]||0)+1;pets.push([a.id,reward.kind,reward.grade,1])}
+      }
+      if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES ?',[pets]);
+      await c.commit();return send(res,200,{ok:true,opened:count,wins});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/open':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {boxId}=await readJson(req);if(!Number.isSafeInteger(boxId))return send(res,400,{error:'invalid_box'});
+    const c=await pool.getConnection();try{await c.beginTransaction();const [b]=await c.query('SELECT id,grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[boxId,a.id]);if(!b.length){await c.rollback();return send(res,409,{error:'box_unavailable'})}
+      await c.query('DELETE FROM gm_pet_boxes WHERE id=?',[boxId]);const reward=petRoll(b[0].grade||'normal');let pet=null;
+      if(reward){const [r]=await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,?,1)',[a.id,reward.kind,reward.grade]);pet={id:r.insertId,...reward}}
+      await c.commit();send(res,200,{ok:true,pet});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/use':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {petId}=await readJson(req);if(!Number.isSafeInteger(petId))return send(res,400,{error:'invalid_pet'});
+    const c=await pool.getConnection();try{await c.beginTransaction();const [p]=await c.query('SELECT * FROM gm_pets WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[petId,a.id]);if(!p.length){await c.rollback();return send(res,409,{error:'pet_unavailable'})}
+      await c.query('UPDATE gm_pets SET used=1 WHERE id=?',[petId]);await c.query('INSERT IGNORE INTO gm_pet_collection(account_id,kind,grade) VALUES(?,?,?)',[a.id,p[0].kind,p[0].grade]);await c.query('INSERT INTO gm_pet_equipped(account_id,pet_id) VALUES(?,?) ON DUPLICATE KEY UPDATE pet_id=VALUES(pet_id)',[a.id,petId]);await c.commit();send(res,200,{ok:true})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/unequip':async(req,res)=>{const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});await pool.query('DELETE FROM gm_pet_equipped WHERE account_id=?',[a.id]);send(res,200,{ok:true})},
+  'GET /api/pets/market':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const now=Date.now();await pool.query("UPDATE gm_pet_listings l LEFT JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? SET l.status='expired' WHERE l.status='active' AND sh.account_id IS NULL",[now]);
+    await pool.query("UPDATE gm_pet_boxes b JOIN gm_pet_listings l ON l.item_type='box' AND l.item_id=b.id SET b.listing_id=NULL WHERE l.status='expired' AND b.listing_id=l.id");
+    await pool.query("UPDATE gm_pets p JOIN gm_pet_listings l ON l.item_type='pet' AND l.item_id=p.id SET p.listing_id=NULL WHERE l.status='expired' AND p.listing_id=l.id");
+    const [rows]=await pool.query("SELECT l.id,l.seller_id,l.item_type,l.item_id,l.price,b.grade,p.kind FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? LEFT JOIN gm_pets p ON l.item_type='pet' AND p.id=l.item_id LEFT JOIN gm_pet_boxes b ON l.item_type='box' AND b.id=l.item_id WHERE l.status='active' ORDER BY l.id DESC LIMIT 100",[now]);const [recent]=await pool.query("SELECT l.price,b.grade,l.sold_ms FROM gm_pet_listings l LEFT JOIN gm_pet_boxes b ON b.id=l.item_id AND b.trades>0 WHERE l.item_type='box' AND l.status='sold' ORDER BY l.sold_ms DESC LIMIT 20");send(res,200,{listings:rows,recentSales:recent})
+  },
+  'POST /api/pets/list':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {itemType,itemId,price}=await readJson(req);
+    if(!['box','pet'].includes(itemType)||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<1000||price>100000000)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
+      const [cnt]=await c.query("SELECT COUNT(*) n FROM gm_pet_listings WHERE seller_id=? AND status='active'",[a.id]);if(Number(cnt[0].n)>=5){await c.rollback();return send(res,409,{error:'listing_full'})}
+      if(itemType==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}const table=itemType==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE`,[itemId,a.id]);if(!items.length||(itemType==='box'&&Number(items[0].trades)>0)||(itemType==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      const [r]=await c.query('INSERT INTO gm_pet_listings(seller_id,item_type,item_id,price,created_ms) VALUES(?,?,?,?,?)',[a.id,itemType,itemId,price,Date.now()]);await c.query(`UPDATE ${table} SET listing_id=? WHERE id=?`,[r.insertId,itemId]);await c.commit();send(res,200,{ok:true})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/list-batch':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {itemType,itemId,price,quantity}=await readJson(req);
+    if(itemType!=='box'||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<1000||price>100000000||!Number.isSafeInteger(quantity)||quantity<1||quantity>1000)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);
+      if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
+      const [selected]=await c.query('SELECT grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL AND trades=0 FOR UPDATE',[itemId,a.id]);
+      if(!selected.length){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      const grade=selected[0].grade;
+      const [available]=await c.query('SELECT id FROM gm_pet_boxes WHERE owner_id=? AND grade=? AND listing_id IS NULL AND trades=0 ORDER BY id FOR UPDATE',[a.id,grade]);
+      if(available.length<quantity){await c.rollback();return send(res,409,{error:'not_enough_items'})}
+      const [active]=await c.query("SELECT b.grade,l.price FROM gm_pet_listings l JOIN gm_pet_boxes b ON b.id=l.item_id WHERE l.seller_id=? AND l.status='active' AND l.item_type='box' FOR UPDATE",[a.id]);
+      const groups=new Set(active.map(x=>String(x.grade)+'|'+String(x.price)));
+      if(!groups.has(String(grade)+'|'+String(price))&&groups.size>=5){await c.rollback();return send(res,409,{error:'listing_full'})}
+      const ids=available.slice(0,quantity).map(x=>x.id);
+      for(const id of ids){const [r]=await c.query('INSERT INTO gm_pet_listings(seller_id,item_type,item_id,price,created_ms) VALUES(?,?,?,?,?)',[a.id,'box',id,price,Date.now()]);await c.query('UPDATE gm_pet_boxes SET listing_id=? WHERE id=? AND owner_id=? AND listing_id IS NULL',[r.insertId,id,a.id])}
+      await c.commit();send(res,200,{ok:true,quantity})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/buy':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();const [ls]=await c.query("SELECT l.* FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}
+      const l=ls[0];if(l.item_type==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
+      const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);const [saves]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(a.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+      const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE`,[l.item_id,l.seller_id,l.id]);if(!items.length||(l.item_type==='box'&&Number(items[0].trades)>0)||(l.item_type==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'item_unavailable'})}
+      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);
+      const [buyerRows]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
+      const buyerName=String(buyerRows[0]?.nickname||'다른 유저').slice(0,32);
+      const gradeLabel={normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}[items[0].grade||'normal']||'노말';
+      const mailText=`[판매 완료] ${buyerName}님이 ${gradeLabel} 펫박스를 ${Number(l.price).toLocaleString('ko-KR')}다이아에 구매했습니다. (수수료 ${fee.toLocaleString('ko-KR')}다이아)`;
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,l.seller_id,mailText,0,checkInDay(),Date.now()]);
+      await trimInbox(c,l.seller_id);
+      await c.commit();send(res,200,{ok:true,fee})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/cancel-quantity': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingIds,quantity}=await readJson(req);
+    if(!Array.isArray(listingIds)||!listingIds.length||listingIds.length>1000||new Set(listingIds).size!==listingIds.length||!listingIds.every(x=>Number.isSafeInteger(x)&&x>0)||!Number.isSafeInteger(quantity)||quantity<1||quantity>listingIds.length)return send(res,400,{error:'invalid_quantity'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const ids=[...listingIds].sort((a,b)=>a-b);
+      const [rows]=await c.query(`SELECT l.*,b.grade FROM gm_pet_listings l JOIN gm_pet_boxes b ON b.id=l.item_id WHERE l.id IN (${ids.map(()=>'?').join(',')}) AND l.seller_id=? AND l.item_type='box' AND l.status='active' ORDER BY l.id FOR UPDATE`,[...ids,a.id]);
+      if(rows.length!==ids.length||rows.some(x=>x.grade!==rows[0].grade||Number(x.price)!==Number(rows[0].price))){await c.rollback();return send(res,409,{error:'listing_changed'})}
+      for(const l of rows.slice(0,quantity)){
+        await c.query('UPDATE gm_pet_boxes SET listing_id=NULL WHERE id=? AND owner_id=? AND listing_id=?',[l.item_id,a.id,l.id]);
+        await c.query("UPDATE gm_pet_listings SET status='cancelled' WHERE id=? AND status='active'",[l.id]);
+      }
+      await c.commit();send(res,200,{ok:true,quantity});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/plaza/drops/cancel-quantity': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingIds,quantity}=await readJson(req);
+    if(!Array.isArray(listingIds)||!listingIds.length||listingIds.length>1000||new Set(listingIds).size!==listingIds.length||!listingIds.every(x=>Number.isSafeInteger(x)&&x>0)||!Number.isSafeInteger(quantity)||quantity<1)return send(res,400,{error:'invalid_quantity'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const ids=[...listingIds].sort((a,b)=>a-b);
+      const [rows]=await c.query(`SELECT * FROM gm_drop_listings WHERE id IN (${ids.map(()=>'?').join(',')}) AND seller_id=? AND status='active' ORDER BY id FOR UPDATE`,[...ids,a.id]);
+      if(rows.length!==ids.length||rows.some(x=>x.kind!==rows[0].kind||Number(x.unit_price)!==Number(rows[0].unit_price))||quantity>rows.reduce((n,x)=>n+Number(x.quantity),0)){await c.rollback();return send(res,409,{error:'listing_changed'})}
+      let remaining=quantity;
+      for(const l of rows){if(!remaining)break;const take=Math.min(remaining,Number(l.quantity));if(take===Number(l.quantity))await c.query("UPDATE gm_drop_listings SET status='cancelled' WHERE id=?",[l.id]);else await c.query('UPDATE gm_drop_listings SET quantity=quantity-? WHERE id=?',[take,l.id]);remaining-=take}
+      await c.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[a.id]);
+      const col=rows[0].kind==='stone'?'stone_qty':'ticket_qty';
+      await c.query(`UPDATE gm_tradeable_drops SET ${col}=${col}+? WHERE account_id=?`,[quantity,a.id]);
+      await c.commit();send(res,200,{ok:true,quantity});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/pets/cancel': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT * FROM gm_pet_listings WHERE id=? AND seller_id=? AND status='active' FOR UPDATE",[listingId,a.id]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'listing_unavailable'})}
+      const l=ls[0];const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';
+      await c.query(`UPDATE ${table} SET listing_id=NULL WHERE id=? AND owner_id=? AND listing_id=?`,[l.item_id,a.id,listingId]);
+      await c.query("UPDATE gm_pet_listings SET status='cancelled' WHERE id=?",[listingId]);
+      await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/plaza/drops/cancel': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT * FROM gm_drop_listings WHERE id=? AND seller_id=? AND status='active' FOR UPDATE",[listingId,a.id]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'listing_unavailable'})}
+      const l=ls[0],col=l.kind==='stone'?'stone_qty':'ticket_qty';
+      await c.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[a.id]);
+      await c.query(`UPDATE gm_tradeable_drops SET ${col}=${col}+? WHERE account_id=?`,[l.quantity,a.id]);
+      await c.query("UPDATE gm_drop_listings SET status='cancelled' WHERE id=?",[listingId]);
+      await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/plaza/drops/list': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {kind,quantity,unitPrice}=await readJson(req);
+    const min=kind==='stone'?3000:kind==='ticket'?800:Infinity;
+    if(!Number.isSafeInteger(quantity)||quantity<1||quantity>10000||!Number.isSafeInteger(unitPrice)||unitPrice<min||unitPrice>100000000||quantity*unitPrice>Number.MAX_SAFE_INTEGER)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();
+    try{await c.beginTransaction();
+      const [shop]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);
+      if(!shop.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
+      await c.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[a.id]);
+      const [drop]=await c.query('SELECT * FROM gm_tradeable_drops WHERE account_id=? FOR UPDATE',[a.id]);
+      const col=kind==='stone'?'stone_qty':'ticket_qty';
+      const [total]=kind==='stone'?await c.query('SELECT breakthrough_stones amount FROM gm_market_items WHERE account_id=? FOR UPDATE',[a.id]):await c.query('SELECT lottery_tickets amount FROM gm_saves WHERE account_id=? FOR UPDATE',[a.id]);
+      if(quantity>Math.min(Number(drop[0][col]),Number(total[0]?.amount||0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      await c.query(`UPDATE gm_tradeable_drops SET ${col}=${col}-? WHERE account_id=?`,[quantity,a.id]);
+      await c.query('INSERT INTO gm_drop_listings(seller_id,kind,quantity,unit_price,created_ms) VALUES(?,?,?,?,?)',[a.id,kind,quantity,unitPrice,Date.now()]);
+      await c.commit();send(res,200,{ok:true})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/plaza/drops/buy': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();
+    try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT l.* FROM gm_drop_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}
+      const l=ls[0],seller=Number(l.seller_id),qty=Number(l.quantity),amount=qty*Number(l.unit_price);
+      if(seller===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
+      const ids=[Number(a.id),seller].sort((x,y)=>x-y);
+      const [balances]=await c.query('SELECT account_id,diamonds,lottery_tickets FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);
+      const buyer=balances.find(r=>Number(r.account_id)===Number(a.id)),owner=balances.find(r=>Number(r.account_id)===seller);
+      if(!buyer||!owner||Number(buyer.diamonds)<amount){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+      const isStone=l.kind==='stone';
+      const [stock]=isStone?await c.query('SELECT breakthrough_stones amount FROM gm_market_items WHERE account_id=? FOR UPDATE',[seller]):[{amount:owner.lottery_tickets}];
+      if(Number(stock[0]?.amount||0)<qty){await c.rollback();return send(res,409,{error:'item_unavailable'})}
+      const fee=Math.floor(amount*.1);
+      await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[amount,a.id]);
+      await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[amount-fee,seller]);
+      if(isStone){
+        await c.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[a.id]);
+        await c.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[qty,seller]);
+        await c.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[qty,a.id]);
+      }else{
+        await c.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-? WHERE account_id=?',[qty,seller]);
+        await c.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets+? WHERE account_id=?',[qty,a.id]);
+      }
+      await c.query("UPDATE gm_drop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),listingId]);
+      const [names]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
+      const buyerName=String(names[0]?.nickname||'다른 유저').slice(0,32);
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,seller,`[판매 완료] ${buyerName}님이 ${isStone?'한계돌파석':'겅이복권'} ${qty}개를 ${amount.toLocaleString('ko-KR')}다이아에 구매했습니다.`,0,checkInDay(),Date.now()]);
+      await trimInbox(c,seller);
+      await c.commit();send(res,200,{ok:true,fee})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'GET /api/plaza/shop': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const now=Date.now();await pool.query("UPDATE gm_cosmetic_inventory i JOIN gm_plaza_shop_listings l ON l.inventory_id=i.id LEFT JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? SET i.listing_id=NULL,l.status='expired' WHERE l.status='active' AND sh.account_id IS NULL",[now]);const [expired]=await pool.query('SELECT account_id FROM gm_plaza_shops WHERE expires_ms<=?',[now]);
+    for(const e of expired){const [items]=await pool.query("SELECT kind,SUM(quantity) qty FROM gm_drop_listings WHERE seller_id=? AND status='active' GROUP BY kind",[e.account_id]);await pool.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[e.account_id]);for(const item of items){const col=item.kind==='stone'?'stone_qty':'ticket_qty';await pool.query(`UPDATE gm_tradeable_drops SET ${col}=${col}+? WHERE account_id=?`,[item.qty,e.account_id])}await pool.query("UPDATE gm_drop_listings SET status='expired' WHERE seller_id=? AND status='active'",[e.account_id])}
+    await pool.query('DELETE FROM gm_plaza_shops WHERE expires_ms<=?',[now])
+    const [shops]=await pool.query(`SELECT sh.account_id id,sh.channel,sh.x,sh.y,sh.expires_ms,a.nickname,a.username FROM gm_plaza_shops sh JOIN gm_accounts a ON a.id=sh.account_id WHERE sh.expires_ms>? ORDER BY sh.opened_ms DESC LIMIT 100`,[now])
+    const [inventory]=await pool.query(`SELECT id,cosmetic_id,cosmetic_name FROM gm_cosmetic_inventory WHERE owner_id=? AND source='battle' AND listing_id IS NULL`,[account.id])
+    const [listings]=await pool.query(`SELECT l.id,l.seller_id,l.price,l.status,i.cosmetic_name,i.cosmetic_id FROM gm_plaza_shop_listings l JOIN gm_cosmetic_inventory i ON i.id=l.inventory_id JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.status='active' ORDER BY l.created_ms DESC LIMIT 200`,[now])
+    const [drops]=await pool.query('SELECT stone_qty,ticket_qty FROM gm_tradeable_drops WHERE account_id=?',[account.id])
+    const [ownedTotals]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
+    const [stoneTotals]=await pool.query('SELECT breakthrough_stones FROM gm_market_items WHERE account_id=?',[account.id])
+    const [dropListings]=await pool.query("SELECT l.id,l.seller_id,l.kind,l.quantity,l.unit_price,a.nickname FROM gm_drop_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.created_ms DESC LIMIT 100",[now])
+    const tradeable={stone:Math.max(0,Math.min(Number(drops[0]?.stone_qty||0),Number(stoneTotals[0]?.breakthrough_stones||0))),ticket:Math.max(0,Math.min(Number(drops[0]?.ticket_qty||0),Number(ownedTotals[0]?.lottery_tickets||0)))}
+    send(res,200,{me:account.id,shops:shops.map(x=>({...x,id:Number(x.id),expires_ms:Number(x.expires_ms)})),inventory,listings,dropListings,tradeable,tradeEnabled:true})
+  },
+  'POST /api/plaza/shop/open': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'});
+    const now=Date.now();const [presence]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=? AND updated_ms>=?',[account.id,now-12000]);
+    if(!presence.length)return send(res,409,{error:'plaza_not_joined'});
+    const p=presence[0];const spots=[[12,24],[48,24],[84,24],[12,52],[48,52],[84,52],[18,82],[82,82]];
+    const near=spots.map(([x,y])=>({x,y,d:Math.hypot(Number(p.x)-x,Number(p.y)-y)})).sort((a,b)=>a.d-b.d)[0];
+    if(!near||near.d>12)return send(res,409,{error:'shop_zone_only'});
+    const lockName='gm_plaza_shop_channel_'+Number(p.channel);const conn=await pool.getConnection();let locked=false;
+    try{
+      const [locks]=await conn.query('SELECT GET_LOCK(?,5) acquired',[lockName]);locked=Number(locks[0]?.acquired)===1;
+      if(!locked)return send(res,409,{error:'shop_busy_retry'});
+      const [existing]=await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>?',[account.id,now]);
+      if(existing.length)return send(res,409,{error:'shop_already_open'});
+      const [others]=await conn.query('SELECT x,y FROM gm_plaza_shops WHERE channel=? AND expires_ms>? AND account_id<>?',[p.channel,now,account.id]);
+      if(others.some(o=>Math.hypot(Number(o.x)-near.x,Number(o.y)-near.y)<12))return send(res,409,{error:'shop_spot_taken'});
+      await conn.query('INSERT INTO gm_plaza_shops(account_id,channel,x,y,opened_ms,expires_ms) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),x=VALUES(x),y=VALUES(y),opened_ms=VALUES(opened_ms),expires_ms=VALUES(expires_ms)',[account.id,p.channel,near.x,near.y,now,now+86400000]);
+      send(res,200,{ok:true,expires_ms:now+86400000,x:near.x,y:near.y});
+    }finally{if(locked)await conn.query('SELECT RELEASE_LOCK(?)',[lockName]);conn.release()}
+  },
+  'POST /api/plaza/shop/close': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const conn=await pool.getConnection();try{await conn.beginTransaction();await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? FOR UPDATE',[account.id]);await conn.query("UPDATE gm_cosmetic_inventory i JOIN gm_plaza_shop_listings l ON l.inventory_id=i.id SET i.listing_id=NULL WHERE l.seller_id=? AND l.status='active'",[account.id]);await conn.query("UPDATE gm_plaza_shop_listings SET status='cancelled' WHERE seller_id=? AND status='active'",[account.id]);await conn.query("UPDATE gm_pet_boxes b JOIN gm_pet_listings l ON l.item_type='box' AND l.item_id=b.id SET b.listing_id=NULL WHERE l.seller_id=? AND l.status='active'",[account.id]);await conn.query("UPDATE gm_pets p JOIN gm_pet_listings l ON l.item_type='pet' AND l.item_id=p.id SET p.listing_id=NULL WHERE l.seller_id=? AND l.status='active'",[account.id]);await conn.query("UPDATE gm_pet_listings SET status='cancelled' WHERE seller_id=? AND status='active'",[account.id]);const [escrow]=await conn.query("SELECT kind,SUM(quantity) qty FROM gm_drop_listings WHERE seller_id=? AND status='active' GROUP BY kind FOR UPDATE",[account.id]);
+      await conn.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[account.id]);
+      for(const e of escrow){const col=e.kind==='stone'?'stone_qty':'ticket_qty';await conn.query(`UPDATE gm_tradeable_drops SET ${col}=${col}+? WHERE account_id=?`,[e.qty,account.id])}
+      await conn.query("UPDATE gm_drop_listings SET status='cancelled' WHERE seller_id=? AND status='active'",[account.id]);
+      await conn.query('DELETE FROM gm_plaza_shops WHERE account_id=?',[account.id]);await conn.commit();send(res,200,{ok:true})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+  },
+  'POST /api/plaza/shop/list': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {inventoryId,price}=await readJson(req);if(!Number.isSafeInteger(inventoryId)||!Number.isSafeInteger(price)||price<10||price>100000000)return send(res,400,{error:'invalid_listing'})
+    const conn=await pool.getConnection();try{await conn.beginTransaction();const [shop]=await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[account.id,Date.now()]);if(!shop.length){await conn.rollback();return send(res,409,{error:'shop_closed'})}
+    const [count]=await conn.query("SELECT COUNT(*) n FROM gm_plaza_shop_listings WHERE seller_id=? AND status='active'",[account.id]);if(Number(count[0].n)>=5){await conn.rollback();return send(res,409,{error:'listing_full'})}
+    const [items]=await conn.query("SELECT id FROM gm_cosmetic_inventory WHERE id=? AND owner_id=? AND source='battle' AND listing_id IS NULL FOR UPDATE",[inventoryId,account.id]);if(!items.length){await conn.rollback();return send(res,409,{error:'item_unavailable'})}
+    const [result]=await conn.query('INSERT INTO gm_plaza_shop_listings(seller_id,inventory_id,price,created_ms) VALUES(?,?,?,?)',[account.id,inventoryId,price,Date.now()]);await conn.query('UPDATE gm_cosmetic_inventory SET listing_id=? WHERE id=?',[result.insertId,inventoryId]);await conn.commit();send(res,200,{ok:true})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+  },
+  'POST /api/plaza/shop/buy': async(req,res)=>{
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'})
+    const conn=await pool.getConnection();try{await conn.beginTransaction();const [ls]=await conn.query("SELECT l.* FROM gm_plaza_shop_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);if(!ls.length){await conn.rollback();return send(res,409,{error:'sold_or_expired'})}
+    const l=ls[0];if(Number(l.seller_id)===Number(account.id)){await conn.rollback();return send(res,400,{error:'own_listing'})}
+    const ids=[Number(account.id),Number(l.seller_id)].sort((a,b)=>a-b);const [saves]=await conn.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(account.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await conn.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+    const [item]=await conn.query('SELECT id FROM gm_cosmetic_inventory WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE',[l.inventory_id,l.seller_id,l.id]);if(!item.length){await conn.rollback();return send(res,409,{error:'item_unavailable'})}
+    const fee=Math.floor(Number(l.price)*.1),net=Number(l.price)-fee;await conn.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,account.id]);await conn.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[net,l.seller_id]);await conn.query('UPDATE gm_cosmetic_inventory SET owner_id=?,listing_id=NULL WHERE id=?',[account.id,l.inventory_id]);await conn.query("UPDATE gm_plaza_shop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[account.id,Date.now(),l.id]);await conn.query('INSERT INTO gm_plaza_shop_sales(listing_id,seller_id,buyer_id,price,fee,sold_ms) VALUES(?,?,?,?,?,?)',[l.id,l.seller_id,account.id,l.price,fee,Date.now()]);await conn.commit();send(res,200,{ok:true,price:Number(l.price),fee})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+  },
   'GET /api/plaza': async (req,res) => {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const now=Date.now();await pool.query('DELETE FROM gm_plaza_presence WHERE updated_ms < ?',[now-12000])
@@ -1917,15 +2251,16 @@ const routes = {
     if(!channel){const [counts]=await pool.query('SELECT channel,COUNT(*) n FROM gm_plaza_presence GROUP BY channel ORDER BY channel');channel=1;while(counts.some(r=>Number(r.channel)===channel&&Number(r.n)>=20))channel++;
       const [saved]=await pool.query('SELECT x,y FROM gm_plaza_spots WHERE account_id=?',[account.id]);const sx=Number(saved[0]?.x??50),sy=Math.max(24,Number(saved[0]?.y??50));await pool.query('INSERT INTO gm_plaza_presence(account_id,channel,x,y,updated_ms) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),updated_ms=VALUES(updated_ms)',[account.id,channel,sx,sy,now])}
     await pool.query('UPDATE gm_plaza_presence SET updated_ms=? WHERE account_id=?',[now,account.id])
-    const [players]=await pool.query(`SELECT p.account_id id,p.x,p.y,p.emote,a.nickname,a.username,s.featured FROM gm_plaza_presence p JOIN gm_accounts a ON a.id=p.account_id LEFT JOIN gm_saves s ON s.account_id=p.account_id WHERE p.channel=? AND p.updated_ms>=?`,[channel,now-12000])
-    const [offline]=await pool.query(`SELECT o.account_id id,o.x,o.y,a.nickname,a.username,s.featured FROM gm_plaza_spots o JOIN gm_accounts a ON a.id=o.account_id LEFT JOIN gm_saves s ON s.account_id=o.account_id LEFT JOIN gm_plaza_presence p ON p.account_id=o.account_id AND p.updated_ms>=? WHERE p.account_id IS NULL ORDER BY o.updated_ms DESC LIMIT 60`,[now-12000])
+    const [players]=await pool.query(`SELECT p.account_id id,p.x,p.y,p.emote,a.nickname,a.username,s.featured,pet.kind pet_kind FROM gm_plaza_presence p JOIN gm_accounts a ON a.id=p.account_id LEFT JOIN gm_saves s ON s.account_id=p.account_id LEFT JOIN gm_pet_equipped pe ON pe.account_id=p.account_id LEFT JOIN gm_pets pet ON pet.id=pe.pet_id AND pet.owner_id=p.account_id AND pet.used=1 WHERE p.channel=? AND p.updated_ms>=?`,[channel,now-12000])
+    const [offline]=await pool.query(`SELECT o.account_id id,o.x,o.y,a.nickname,a.username,s.featured,pet.kind pet_kind FROM gm_plaza_spots o JOIN gm_accounts a ON a.id=o.account_id LEFT JOIN gm_saves s ON s.account_id=o.account_id LEFT JOIN gm_pet_equipped pe ON pe.account_id=o.account_id LEFT JOIN gm_pets pet ON pet.id=pe.pet_id AND pet.owner_id=o.account_id AND pet.used=1 LEFT JOIN gm_plaza_presence p ON p.account_id=o.account_id AND p.updated_ms>=? WHERE p.account_id IS NULL ORDER BY o.updated_ms DESC LIMIT 60`,[now-12000])
+    const [shopRows]=await pool.query(`SELECT sh.account_id id,sh.channel,sh.x,sh.y,sh.expires_ms,a.nickname,a.username,s.featured,pet.kind pet_kind FROM gm_plaza_shops sh JOIN gm_accounts a ON a.id=sh.account_id LEFT JOIN gm_saves s ON s.account_id=sh.account_id LEFT JOIN gm_pet_equipped pe ON pe.account_id=sh.account_id LEFT JOIN gm_pets pet ON pet.id=pe.pet_id AND pet.owner_id=sh.account_id AND pet.used=1 WHERE sh.expires_ms>? AND sh.channel=?`,[now,channel])
     const [messages]=await pool.query(`SELECT c.id,c.message,c.created_ms at,a.nickname,a.username FROM gm_plaza_chat c JOIN gm_accounts a ON a.id=c.account_id WHERE c.channel=? ORDER BY c.id DESC LIMIT 50`,[channel])
-    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,online:false}))],onlineCount:players.length,messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
+    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,pet:x.pet_kind||null,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,pet:x.pet_kind||null,online:false}))],onlineCount:players.length,shops:shopRows.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),expires_ms:Number(x.expires_ms),nickname:x.nickname||x.username,featured:x.featured||null,pet:x.pet_kind||null})),messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
   },
   'POST /api/plaza/move': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const body=await readJson(req),now=Date.now(),x=Number(body.x),y=Number(body.y)
-    if(!Number.isFinite(x)||!Number.isFinite(y)||x<3||x>97||y<24||y>97)return send(res,400,{error:'invalid_position'})
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x<3||x>97||y<14||y>82)return send(res,400,{error:'invalid_position'})
     const [rows]=await pool.query('SELECT x,y,updated_ms FROM gm_plaza_presence WHERE account_id=?',[account.id]);if(!rows.length)return send(res,409,{error:'plaza_not_joined'})
     const old=rows[0],elapsed=Math.max(0,(now-Number(old.updated_ms))/1000),distance=Math.hypot(x-Number(old.x),y-Number(old.y))
     if(distance>Math.max(2,elapsed*17+2))return send(res,429,{error:'invalid_movement'})
