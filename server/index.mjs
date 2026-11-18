@@ -875,7 +875,7 @@ async function updateBattle(accountId, nextCharacter) {
     const weaponBonus = (forgeRows.length ? forgeBonus(Number(forgeRows[0].level)) : 0) + accessoryPower(accessory) + await achievementPower(accountId,conn)
     const combatResearchLevel = await researchLevel(accountId,conn)
     const limitBreakLevels = await getLimitBreak(accountId,conn)
-    let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, cleared = [], failedStage = 0
+    let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, stonesEarned = 0, cleared = [], failedStage = 0
     if (battle) {
       const basePower = !battle.id ? 0 : researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel)
       const activePet=await equippedPet(accountId,conn)
@@ -901,11 +901,13 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        const ticket = randomInt(400) < 3 ? 1 : 0
+        const ticket = randomInt(10000) < 65 ? 1 : 0
         ticketsEarned += ticket
+        const stone = randomInt(10000) === 0 ? 1 : 0
+        stonesEarned += stone
         diamondsEarned += reward.diamonds
         earned += reward.fragments
-        cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket})
+        cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket,stones:stone})
         const boxGrade=petBoxGrade(Math.floor((current-1)/10)+1)
         if(boxGrade&&randomInt(1000)<(boostedPetDrop?500:1)) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[accountId,boxGrade])
         battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
@@ -955,6 +957,10 @@ async function updateBattle(accountId, nextCharacter) {
       }
     }
     if (earned || diamondsEarned || ticketsEarned) await conn.query('UPDATE gm_saves SET fragments = fragments + ?, diamonds = diamonds + ?, lottery_tickets=lottery_tickets+? WHERE account_id = ?', [earned, diamondsEarned, ticketsEarned, accountId])
+    if (stonesEarned) {
+      await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[accountId])
+      await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[stonesEarned,accountId])
+    }
     state.fragments = (state.fragments ?? 0) + earned
     state.diamonds = (state.diamonds ?? 0) + diamondsEarned
     state.lotteryTickets = (state.lotteryTickets ?? 0) + ticketsEarned
