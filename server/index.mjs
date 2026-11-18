@@ -926,7 +926,7 @@ async function updateBattle(accountId, nextCharacter) {
         earned += reward.fragments
         cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket,stones:stone})
         const boxGrade=petBoxGrade(Math.floor((current-1)/10)+1)
-        if(boxGrade&&randomInt(1000)<(boostedPetDrop?500:1)) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[accountId,boxGrade])
+        if(boxGrade&&randomInt(1000)<(boostedPetDrop?500:3)) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[accountId,boxGrade])
         battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
         // Negative retryStage means the fallback stage has been cleared and manual
         // challenge is now available; keep farming this stage until clicked.
