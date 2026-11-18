@@ -79,6 +79,10 @@ async function prepareDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_equipped (account_id BIGINT UNSIGNED PRIMARY KEY, pet_id BIGINT UNSIGNED NOT NULL)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_collection (account_id BIGINT UNSIGNED NOT NULL,kind VARCHAR(24) NOT NULL,grade VARCHAR(16) NOT NULL,PRIMARY KEY(account_id,kind,grade))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_listings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,seller_id BIGINT UNSIGNED NOT NULL,item_type VARCHAR(8) NOT NULL,item_id BIGINT UNSIGNED NOT NULL,price BIGINT UNSIGNED NOT NULL,status VARCHAR(12) NOT NULL DEFAULT 'active',buyer_id BIGINT UNSIGNED NULL,created_ms BIGINT NOT NULL,sold_ms BIGINT NULL,INDEX(seller_id,status),INDEX(item_type,item_id,status))`)
+  // All opened pets are permanently non-tradeable, including legacy pets.
+  // Cancel any old pet sale listings before clearing their listing pointers.
+  await pool.query("UPDATE gm_pet_listings SET status='expired' WHERE item_type='pet' AND status='active'")
+  await pool.query('UPDATE gm_pets SET used=1, listing_id=NULL WHERE used=0 OR listing_id IS NOT NULL')
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_plaza_chat (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL, channel INT NOT NULL, message VARCHAR(100) NOT NULL, created_ms BIGINT NOT NULL, INDEX(channel,id))`)
   // Additive, repeatable migration; existing accounts and saves are preserved.
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_dopamine (
@@ -1952,9 +1956,9 @@ const routes = {
       const wins={};const pets=[];
       for(let i=0;i<count;i++){
         const roll=randomInt(100);
-        if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];wins[kind]=(wins[kind]||0)+1;pets.push([a.id,kind,'normal'])}
+        if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];wins[kind]=(wins[kind]||0)+1;pets.push([a.id,kind,'normal',1])}
       }
-      if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade) VALUES ?',[pets]);
+      if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES ?',[pets]);
       await c.commit();return send(res,200,{ok:true,opened:count,wins});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
@@ -1963,7 +1967,7 @@ const routes = {
     const {boxId}=await readJson(req);if(!Number.isSafeInteger(boxId))return send(res,400,{error:'invalid_box'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [b]=await c.query('SELECT id FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[boxId,a.id]);if(!b.length){await c.rollback();return send(res,409,{error:'box_unavailable'})}
       await c.query('DELETE FROM gm_pet_boxes WHERE id=?',[boxId]);const roll=randomInt(100);let pet=null;
-      if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];const [r]=await c.query("INSERT INTO gm_pets(owner_id,kind,grade) VALUES(?,?,'normal')",[a.id,kind]);pet={id:r.insertId,kind,grade:'normal'}}
+      if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];const [r]=await c.query("INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,'normal',1)",[a.id,kind]);pet={id:r.insertId,kind,grade:'normal'}}
       await c.commit();send(res,200,{ok:true,pet});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
@@ -1986,14 +1990,14 @@ const routes = {
     if(!['box','pet'].includes(itemType)||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<10||price>100000000)return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
       const [cnt]=await c.query("SELECT COUNT(*) n FROM gm_pet_listings WHERE seller_id=? AND status='active'",[a.id]);if(Number(cnt[0].n)>=5){await c.rollback();return send(res,409,{error:'listing_full'})}
-      const table=itemType==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE`,[itemId,a.id]);if(!items.length||(itemType==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      if(itemType==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}const table=itemType==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE`,[itemId,a.id]);if(!items.length||(itemType==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
       const [r]=await c.query('INSERT INTO gm_pet_listings(seller_id,item_type,item_id,price,created_ms) VALUES(?,?,?,?,?)',[a.id,itemType,itemId,price,Date.now()]);await c.query(`UPDATE ${table} SET listing_id=? WHERE id=?`,[r.insertId,itemId]);await c.commit();send(res,200,{ok:true})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
   'POST /api/pets/buy':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [ls]=await c.query("SELECT l.* FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}
-      const l=ls[0];if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
+      const l=ls[0];if(l.item_type==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
       const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);const [saves]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(a.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
       const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE`,[l.item_id,l.seller_id,l.id]);if(!items.length||(l.item_type==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'item_unavailable'})}
       const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);await c.commit();send(res,200,{ok:true,fee})

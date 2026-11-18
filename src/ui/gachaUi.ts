@@ -1315,17 +1315,17 @@ export class GachaUi {
       const available=data.boxes.filter(x=>!x.listing_id)
       const tradable=data.pets.filter(x=>!x.used && !Number(x.trades) && !x.listing_id)
       const locked=data.pets.filter(x=>!tradable.includes(x))
-      const selected=this.petGroup==='tradeable'?tradable:locked
+      const selected=data.pets
       const cards=selected.map(p=>{
         const equipped=Number(data.equipped)===Number(p.id)
-        const state=equipped?'배치 중':p.listing_id?'판매 등록 중':p.used?'사용 완료 · 거래 불가':p.trades?'거래 완료 · 재판매 불가':'미사용 · 거래 가능'
+        const state=equipped?'배치 중':p.listing_id?'판매 등록 중':'개봉 완료 · 거래 불가'
         const action=equipped?'<button data-action="pet-unequip">해제</button>':p.listing_id?'<span class="pets-muted">판매 중</span>':`<button data-action="pet-equip" data-id="${p.id}">배치</button>`
         return `<article class="pets-owned-card"><img src="/assets/pets/${names[p.kind]?p.kind:'momonga'}.png" alt="펫"/><div class="pets-owned-info"><strong>${names[p.kind]||'노말'} 펫</strong><small>노말 · ${state}</small></div>${action}</article>`
       }).join('')
       content.innerHTML=`<div class="pets-switch"><button data-action="pet-panel-boxes" class="${this.petPanel==='boxes'?'active':''}">펫박스</button><button data-action="pet-panel-manage" class="${this.petPanel==='manage'?'active':''}">펫 관리</button></div>`+
       (this.petPanel==='boxes'
       ? `<div class="pets-section pets-compact"><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>노말 펫박스</strong><p>보유 ${data.boxes.length}개 · 개봉 가능 ${available.length}개</p><small>꽝 90% · 펫 5종 각 2%</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
-      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><div class="pets-groups"><button data-action="pet-group-tradeable" class="${this.petGroup==='tradeable'?'active':''}">거래 가능 (${tradable.length})</button><button data-action="pet-group-locked" class="${this.petGroup==='locked'?'active':''}">거래 불가 (${locked.length})</button></div><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
+      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><p class="pets-muted">개봉한 모든 펫은 거래할 수 없습니다.</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
     }catch{this.toast('펫 정보를 불러오지 못했습니다.')}
   }
 
