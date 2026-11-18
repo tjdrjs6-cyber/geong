@@ -7375,3 +7375,32 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-chat-row .plaza-joystick{width:76px!important;height:76px!important;opacity:.55!important;touch-action:none!important}
 @media(pointer:coarse){#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls{display:flex!important}}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat{flex-basis:auto!important;height:82px!important}#ui [data-screen="plaza"] .plaza-actions{justify-content:flex-end!important}}
+
+/* 5.1: fixed shop button inside plaza viewport, not in chat area */
+#ui [data-screen="plaza"] .plaza-map > .plaza-actions {
+  position:absolute!important;bottom:12px!important;right:12px!important;left:auto!important;
+  width:auto!important;z-index:20!important;display:flex!important;pointer-events:auto!important;
+  margin:0!important;padding:0!important;
+}
+#ui [data-screen="plaza"] .plaza-map > .plaza-actions [data-action="plaza-shop"] {
+  margin:0!important;white-space:nowrap!important;box-shadow:0 2px 8px #0002!important;
+}
+/* Reserve a full-height chat strip so chat content is never cropped by the map. */
+#ui [data-screen="plaza"] .plaza-chat-row {
+  flex:0 0 92px!important;height:92px!important;min-height:92px!important;
+  overflow:visible!important;box-sizing:border-box!important;align-items:stretch!important;
+}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-chat {
+  flex:1 1 0!important;height:92px!important;min-height:0!important;max-height:none!important;
+  overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;
+}
+#ui [data-screen="plaza"] .plaza-chat-row .plaza-mobile-controls {
+  flex:0 0 82px!important;min-width:82px!important;max-width:82px!important;
+  height:82px!important;align-self:center!important;
+}
+@media(max-width:600px) {
+  #ui [data-screen="plaza"] .plaza-map {min-height:170px!important;flex-shrink:1!important;}
+  #ui [data-screen="plaza"] .plaza-chat-row {flex:0 0 96px!important;height:96px!important;min-height:96px!important;}
+  #ui [data-screen="plaza"] .plaza-chat-row .plaza-chat {height:96px!important;}
+  #ui [data-screen="plaza"] .plaza-map > .plaza-actions {bottom:8px!important;right:8px!important;}
+}
