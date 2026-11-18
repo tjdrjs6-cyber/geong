@@ -7194,3 +7194,28 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-jump{pointer-events:auto;border-radius:50%;width:68px;height:68px;background:#fff9e9c9;border:2px solid #cda9a4;color:#76575c;font-weight:800;touch-action:none}
 @media(pointer:fine){#ui [data-screen="plaza"] .plaza-mobile-controls{display:none!important}}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-map{min-height:380px!important}}
+
+/* 3.7 user-supplied background and compact side-view market */
+#ui [data-screen="plaza"] .plaza-world{
+ width:160%!important;height:145%!important;
+ background:#ccecff url('/assets/plaza/plaza_user_background.png') center center / 100% 100% no-repeat!important;
+ background-image:url('/assets/plaza/plaza_user_background.png')!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit{
+ position:absolute;transform:translate(-50%,-100%);z-index:7;
+ width:56px;height:65px;pointer-events:none;display:block;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img{
+ display:block;width:56px;height:65px;object-fit:contain;
+ filter:drop-shadow(0 2px 3px #6a5a4a55);
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img.plaza-shop-spirit-pet{
+ position:absolute;bottom:0;right:-10px;width:23px;height:26px;
+}
+#ui [data-screen="plaza"] .plaza-shop-sign{
+ transform:translate(-50%,-185%)!important;min-height:0!important;
+ width:108px!important;max-width:108px!important;padding:5px 6px!important;
+ gap:2px!important;z-index:8!important;white-space:normal!important;
+}
+#ui [data-screen="plaza"] .plaza-stall-title{font-size:11px!important}
+#ui [data-screen="plaza"] .plaza-stall-hint{font-size:9px!important}
