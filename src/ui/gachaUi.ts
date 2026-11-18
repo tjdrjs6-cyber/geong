@@ -3689,11 +3689,34 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         if (!Number.isFinite(count) || count <= 0) return
         miscItems.push(`<article class="storage-item" role="listitem"><img src="${image}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count.toLocaleString('ko-KR')}개 · ${detail}</small></article>`)
       }
-      addMisc('한계돌파석', this.store.market.stones, '/assets/items/breakthrough_stone.png', '캐릭터 한계돌파 재료')
-      addMisc('겅이복권', this.store.data.lotteryTickets ?? 0, '/assets/lottery_ticket_custom.png', '토벌장 0.65% 획득')
+      // 4.2: Provenance counts are resolved from the server below, not guessed from totals.
+      const stoneTotal = Number(this.store.market.stones||0)
+      const ticketTotal = Number(this.store.data.lotteryTickets||0)
       addMisc('잡초', this.store.wildWeed?.count ?? 0, '/field_wild_weed.png', '개당 500코인')
       addMisc('황금잡초', this.store.wildWeed?.goldenCount ?? 0, '/field_golden_weed.png', '개당 5,000코인')
       grid.innerHTML = miscItems.join('') || '<p class="users-empty misc-empty">보유한 기타 아이템이 없습니다.</p>'
+      // Fetch authoritative tradeable balance; purchased and legacy stock stays nontradeable.
+      const inventoryAtRequest=grid
+      void fetch('/api/plaza/shop',{credentials:'include',cache:'no-store'})
+        .then(r=>{if(!r.ok)throw Error('tradeable');return r.json() as Promise<{tradeable?:{stone:number;ticket:number}}>})
+        .then(data=>{
+          if(this.storageTab!=='inventory'||!inventoryAtRequest.isConnected)return
+          const amounts=[
+            ['한계돌파석',stoneTotal,Math.min(stoneTotal,Math.max(0,Number(data.tradeable?.stone||0))),'/assets/items/breakthrough_stone.png'],
+            ['겅이복권',ticketTotal,Math.min(ticketTotal,Math.max(0,Number(data.tradeable?.ticket||0))),'/assets/lottery_ticket_custom.png']
+          ] as const
+          inventoryAtRequest.querySelectorAll('.tradeable-storage-item').forEach(el=>el.remove())
+          for(const [name,total,tradeable,image] of amounts){
+            for(const [count,label] of [[tradeable,'1회 거래 가능'],[Math.max(0,total-tradeable),'거래 불가']] as const){
+              if(count<=0)continue
+              const card=document.createElement('article');card.className='storage-item tradeable-storage-item';card.setAttribute('role','listitem')
+              const img=document.createElement('img');img.src=image;img.alt=name;img.style.cssText='width:60px;height:60px;object-fit:contain'
+              const title=document.createElement('b');title.textContent=name
+              const desc=document.createElement('small');desc.textContent=`보유 ${count.toLocaleString('ko-KR')}개 · ${label}`
+              card.append(img,title,desc);inventoryAtRequest.prepend(card)
+            }
+          }
+        }).catch(()=>{if(this.storageTab==='inventory'&&inventoryAtRequest.isConnected){const note=document.createElement('small');note.className='tradeable-storage-item';note.textContent='거래 가능 수량을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.';inventoryAtRequest.prepend(note)}})
       // All pet box grades are separate 기타 items. Never render zero-quantity boxes.
       const inventoryGrid = grid
       void fetch('/api/pets', { credentials: 'include', cache: 'no-store' })
