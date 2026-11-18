@@ -1326,7 +1326,7 @@ export class GachaUi {
       const data=await r.json() as {pets?:{kind:string;grade?:string}[];collection?:{kind:string;grade?:string}[]}
       const known=new Set([...(data.collection||[]),...(data.pets||[])].map(x=>`${x.grade||'normal'}:${x.kind}`))
       const grid=this.root.querySelector<HTMLElement>('.pet-catalog-grid')
-      if(grid)grid.innerHTML=grades.map(grade=>`<section class="pet-collection-section pet-grade-${grade.id}"><div class="pet-collection-heading"><strong>${grade.name}</strong><span>전투력 +${grade.combat}% · 제초 +${grade.weed}%</span><small>${Object.keys(names).filter(k=>known.has(`${grade.id}:${k}`)).length} / 5</small></div><div class="pet-collection-cards">${Object.entries(names).map(([kind,name])=>{const owned=known.has(`${grade.id}:${kind}`);return `<article class="pet-collection-card pet-grade-${grade.id} ${owned?'is-owned':'is-locked'}"><div class="pet-collection-portrait">${owned?`<img src="/assets/pets/${kind}.png" alt="${name}" loading="lazy"/>`:'<span>?</span>'}</div><b>${owned?name:'미발견'}</b><small>${grade.name} 펫</small></article>`}).join('')}</div></section>`).join('')
+      if(grid)grid.innerHTML=grades.map(grade=>`<section class="pet-collection-section pet-grade-${grade.id}"><div class="pet-collection-heading"><strong>${grade.name}</strong><span>전투력 +${grade.combat}% · 제초 +${grade.weed}%</span><small>${Object.keys(names).filter(k=>known.has(`${grade.id}:${k}`)).length} / 5</small></div><div class="pet-collection-cards">${Object.entries(names).map(([kind,name])=>{const owned=known.has(`${grade.id}:${kind}`);return `<article class="pet-collection-card pet-grade-${grade.id} ${owned?'is-owned':'is-locked'}"><div class="pet-collection-portrait">${owned?`<img src="/assets/pets/${kind}.png" alt="${name}" loading="eager" decoding="async"/>`:'<span>?</span>'}</div><b>${owned?name:'미발견'}</b><small>${grade.name} 펫</small></article>`}).join('')}</div></section>`).join('')
       const total=grades.reduce((n,g)=>n+Object.keys(names).filter(k=>known.has(`${g.id}:${k}`)).length,0)
       if(counter)counter.textContent=`${total} / 20`
       const summary=this.root.querySelector<HTMLElement>('.pet-catalog-summary');if(summary)summary.textContent=`수집한 펫 ${total} / 20종 · 보유 펫 자동 반영`
@@ -1433,7 +1433,7 @@ export class GachaUi {
     const stage=document.createElement('div');stage.className='pets-reveal-stage'
     const box=document.createElement('img');box.className='pets-reveal-box';box.src='/assets/pets/box_normal.png';box.alt='열리는 노말 펫박스';stage.append(box)
     const hint=document.createElement('p');hint.className='pets-reveal-hint';hint.textContent='두근두근... 펫박스를 개봉하는 중!'
-    card.append(stage,hint);const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='pets-result-dismiss';dismiss.textContent='확인';dismiss.addEventListener('click',(event)=>{event.preventDefault();event.stopPropagation();overlay.remove()});card.append(dismiss);overlay.append(card);document.body.append(overlay)
+    card.append(stage,hint);const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='pets-result-dismiss';dismiss.textContent='결과 확인 중';dismiss.disabled=true;dismiss.addEventListener('click',(event)=>{event.preventDefault();event.stopPropagation();overlay.remove()});card.append(dismiss);overlay.append(card);document.body.append(overlay)
     // Keep the animation independent of the server response, and render all prizes in a single result grid.
     window.setTimeout(()=>{
       if(!overlay.isConnected)return
@@ -1457,6 +1457,8 @@ export class GachaUi {
           item.append(img,label);grid.append(item)
         }
         stage.replaceChildren(grid)
+        dismiss.disabled=false
+        dismiss.textContent='확인'
         dismiss.focus()
       },800)
     },450)

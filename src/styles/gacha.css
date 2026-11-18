@@ -6931,3 +6931,22 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .community-options:not([hidden]),#ui .market-options:not([hidden]){width:124px!important;gap:7px!important;padding:9px!important;border:1px solid #d8e5d6!important;border-radius:13px!important;background:#fffdf8!important;box-shadow:0 7px 23px #243a292b!important;filter:none!important;box-sizing:border-box}
 #ui .community-options .nav-button,#ui .market-options .nav-button{width:100%!important;min-height:38px!important;height:auto!important;padding:7px 8px!important;border-radius:9px!important;font-size:12px!important;line-height:1.25!important;justify-content:flex-start!important;gap:7px!important}
 #ui .community-options .chiikawa-tab-icon,#ui .market-options .chiikawa-tab-icon{width:20px!important;height:20px!important;flex-basis:20px!important}
+
+/* 2.6: compact menu popovers and equal-height pet tabs (shared desktop/mobile). */
+#ui .community-options:not([hidden]),#ui .market-options:not([hidden]){
+  width:94px!important;max-width:94px!important;padding:5px!important;gap:4px!important;
+  border-radius:11px!important;box-sizing:border-box!important;
+}
+#ui .community-options .nav-button,#ui .market-options .nav-button{
+  width:100%!important;min-height:28px!important;height:30px!important;
+  padding:4px 5px!important;font-size:10px!important;gap:4px!important;
+  line-height:1.1!important;border-radius:8px!important;
+}
+#ui .community-options .chiikawa-tab-icon,#ui .market-options .chiikawa-tab-icon{
+  width:16px!important;height:16px!important;flex-basis:16px!important;
+}
+#ui .pets-card{height:min(690px,calc(100dvh - 24px))!important;min-height:0!important;max-height:calc(100dvh - 24px)!important;display:flex!important;flex-direction:column!important}
+#ui .pets-tab-content{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+#ui .pets-section.pets-compact{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;justify-content:flex-start!important}
+#ui .pets-owned-list{flex:1 1 auto!important;max-height:none!important;min-height:0!important;overflow-y:auto!important}
+.pets-result-dismiss:disabled{opacity:.5!important;cursor:wait!important;pointer-events:none!important}
