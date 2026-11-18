@@ -4265,6 +4265,20 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.1%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
       + '<p class="battle-drop-note">각 보상은 스테이지 클리어 시 개별 판정됩니다. 펫박스 등급은 스테이지 구간에 따라 달라집니다.</p>'
     if (overlay.parentElement !== this.root) this.root.appendChild(overlay)
+    if (overlay.dataset.closeBound !== '1') {
+      overlay.dataset.closeBound = '1'
+      overlay.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement
+        if (target === overlay || target.closest('[data-action="battle-drop-close"]')) {
+          event.preventDefault()
+          event.stopPropagation()
+          overlay.hidden = true
+        }
+      })
+      overlay.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { event.preventDefault(); overlay.hidden = true }
+      })
+    }
     overlay.hidden = false
     overlay.querySelector<HTMLButtonElement>('.battle-drop-close')?.focus()
   }
