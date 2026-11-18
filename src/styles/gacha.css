@@ -6951,18 +6951,70 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .pets-owned-list{flex:1 1 auto!important;max-height:none!important;min-height:0!important;overflow-y:auto!important}
 .pets-result-dismiss:disabled{opacity:.5!important;cursor:wait!important;pointer-events:none!important}
 
-/* Battle drop-rate information (2.7) */
-.battle-screen .battle-drop-open{position:absolute;right:12px;top:10px;z-index:6;padding:8px 15px;border:1px solid #c9a6e5;border-radius:999px;background:#fff9ff;color:#73439c;font-size:13px;font-weight:800;box-shadow:0 2px 8px #76558b20;cursor:pointer}
-.battle-screen .weed-header{position:relative}
-.battle-drop-overlay[hidden]{display:none!important}
-.battle-drop-overlay{position:fixed;inset:0;z-index:9999;background:#231b2c99;display:flex;align-items:center;justify-content:center;padding:16px}
-.battle-drop-dialog{width:min(440px,100%);max-height:min(680px,90dvh);overflow:auto;border-radius:22px;background:#fffafc;border:2px solid #e7c8ef;box-shadow:0 18px 65px #27153255;padding:20px;color:#44324e}
-.battle-drop-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #eee1f0;padding-bottom:12px}
-.battle-drop-head small{font-size:11px;color:#9a74a9;font-weight:700}
-.battle-drop-head h2{margin:3px 0 0;font-size:21px;color:#67407f}
-.battle-drop-close{background:#f2e7f4;border:0;border-radius:50%;width:34px;height:34px;font-size:23px;cursor:pointer;color:#70547d}
-.battle-drop-stage{margin:16px 0 6px;font-size:14px}.battle-drop-subtitle{margin:0 0 10px;font-size:12px;color:#8a728f}
-.battle-drop-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px;margin:7px 0;background:white;border:1px solid #eee1ef;border-radius:13px}
-.battle-drop-item div{display:flex;flex-direction:column;gap:4px}.battle-drop-item b{font-size:14px}.battle-drop-item small{font-size:11px;color:#8d7d91}.battle-drop-item strong{font-size:15px;color:#8051a0;white-space:nowrap}
-.battle-drop-note{font-size:11px;line-height:1.6;color:#8c7b91;margin:13px 0}.battle-drop-done{width:100%;border:0;border-radius:12px;padding:12px;background:#9d6cc3;color:white;font-weight:800;cursor:pointer}
-@media(max-width:520px){.battle-screen .battle-drop-open{right:7px;top:7px;padding:7px 10px;font-size:12px}.battle-drop-dialog{padding:15px}}
+/* 2.9: restore the original My Room-style flyouts for Community and Shop.
+   Override the oversized 2.3/2.6 popover rules without affecting My Room. */
+#ui.gacha-screen .community-options:not([hidden]),
+#ui.gacha-screen .market-options:not([hidden]),
+#ui .gacha-screen .community-options:not([hidden]),
+#ui .gacha-screen .market-options:not([hidden]){
+  display:flex!important;flex-direction:column!important;position:absolute!important;
+  left:calc(100% + 7px)!important;right:auto!important;top:0!important;
+  width:70px!important;max-width:70px!important;padding:0!important;
+  gap:4px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+  filter:drop-shadow(0 3px 5px #394b3a35)!important;z-index:950!important;
+}
+#ui.gacha-screen .community-options .nav-button,
+#ui.gacha-screen .market-options .nav-button,
+#ui .gacha-screen .community-options .nav-button,
+#ui .gacha-screen .market-options .nav-button{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-height:25px!important;height:25px!important;
+  padding:3px 2px!important;font-size:9px!important;line-height:1!important;
+  gap:2px!important;border-radius:11px!important;white-space:nowrap!important;
+  background:linear-gradient(145deg,#fffdfa,#e9f9f0)!important;
+  border:1px solid #b9e6d0!important;
+  box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon,
+#ui.gacha-screen .market-options .chiikawa-tab-icon,
+#ui .gacha-screen .community-options .chiikawa-tab-icon,
+#ui .gacha-screen .market-options .chiikawa-tab-icon{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:15px!important;height:15px!important;flex:0 0 15px!important;
+}
+
+/* 2.9: use the fixed pet panel height for a larger box preview and balanced
+   vertical layout; Pet Management keeps the exact same outer panel height. */
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-section.pets-compact{
+  display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+  gap:clamp(12px,2.5dvh,24px)!important;padding:clamp(14px,3dvh,24px)!important;
+  overflow-y:auto!important;
+  background:linear-gradient(180deg,#fffafc 0%,#fffdf9 100%);
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-grade-select{
+  flex:none!important;gap:6px!important;
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info{
+  flex:1 1 auto!important;min-height:160px!important;
+  display:flex!important;flex-direction:column!important;justify-content:center!important;
+  align-items:center!important;text-align:center!important;gap:12px!important;
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info img{
+  width:clamp(118px,21dvh,180px)!important;
+  height:clamp(118px,21dvh,180px)!important;
+  max-width:65%!important;object-fit:contain!important;
+  filter:drop-shadow(0 7px 9px #a96c8c29);
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info strong{font-size:16px!important}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info p{margin:7px 0 5px!important;line-height:1.5!important}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info small{display:block;line-height:1.5!important}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-actions{
+  flex:none!important;width:100%!important;justify-content:center!important;
+  padding:10px 0 2px!important;gap:8px!important;
+}
+#ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-actions button{min-height:42px!important}
+@media(max-height:550px){
+  #ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info{min-height:100px!important;gap:5px!important}
+  #ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info img{width:100px!important;height:100px!important}
+}
