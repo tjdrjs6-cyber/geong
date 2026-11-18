@@ -7288,3 +7288,24 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
  background-size:100% 100%!important;
  background-repeat:no-repeat!important;
 }
+
+/* 4.0: remove the supplied plaza photo, retain a simple clean background */
+#ui [data-screen="plaza"] .plaza-world{
+ background:#d9eef8!important;
+ background-image:none!important;
+}
+/* Large, quiet square dashed markers. Hide occupied slots explicitly. */
+#ui [data-screen="plaza"] .plaza-platform-shop{
+ box-sizing:border-box!important;
+ width:108px!important;height:108px!important;min-height:108px!important;
+ padding:8px!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ border:2px dashed #b8a69b!important;
+ border-radius:12px!important;
+ background:rgba(255,249,236,.33)!important;
+ color:#806f66!important;font-size:12px!important;font-weight:700!important;
+ box-shadow:none!important;
+ transform:translate(-50%,-100%)!important;
+ pointer-events:none!important;
+}
+#ui [data-screen="plaza"] .plaza-platform-shop[hidden]{display:none!important;}
