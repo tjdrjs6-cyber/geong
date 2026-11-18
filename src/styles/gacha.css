@@ -6760,3 +6760,9 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-shop-panel input{font-size:16px;width:100px;min-width:0}
 
 #ui [data-screen="plaza"] .plaza-shop-sign{position:absolute;z-index:4;transform:translate(-50%,-115px);background:#fff9e8;border:1px solid #d8c69d;border-radius:8px;padding:3px 7px;font-size:11px;color:#55462c;cursor:pointer;white-space:nowrap;box-shadow:0 2px 4px #0002}
+
+/* Pet system: one shared PC/mobile layout, pet 20% of player width */
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{position:absolute!important;width:20%!important;height:20%!important;max-width:none!important;object-fit:contain!important;left:83%!important;top:78%!important;z-index:3;pointer-events:none;transition:transform .12s linear}
+#ui [data-screen="plaza"] .pet-item-image{width:38px;height:38px;object-fit:contain;flex:none}
+#ui [data-screen="plaza"] .plaza-shop-list>div{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:8px}
+#ui [data-screen="plaza"] .plaza-shop-list>div>span{flex:1;min-width:100px}
