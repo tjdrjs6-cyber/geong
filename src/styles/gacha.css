@@ -7416,3 +7416,32 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 /* 5.10: purchase errors are shown above all game panels on mobile and desktop */
 body > .plaza-game-notice.plaza-global-notice{position:fixed!important;top:max(16px,env(safe-area-inset-top,0px) + 12px)!important;bottom:auto!important;left:50%!important;z-index:2147483000!important;transform:translate(-50%,-12px)!important;opacity:0;pointer-events:none;box-sizing:border-box;max-width:min(440px,calc(100vw - 24px));width:max-content;padding:12px 18px;background:#fff9e9;border:1px solid #d7bc95;border-radius:13px;box-shadow:0 8px 28px #44342340;color:#57402c;font-size:13px;font-weight:700;text-align:center;transition:opacity .18s,transform .18s}
 body > .plaza-game-notice.plaza-global-notice.is-visible{opacity:1!important;transform:translate(-50%,0)!important}
+
+/* 5.11: the main market uses gachaUi's toast, not plaza's notice. */
+body > .market-global-shortage-notice {
+  position:fixed!important;
+  top:max(14px,env(safe-area-inset-top,0px) + 10px)!important;
+  left:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-10px)!important;
+  z-index:2147483000!important;
+  opacity:0;
+  pointer-events:none;
+  width:max-content;
+  max-width:calc(100vw - 24px);
+  box-sizing:border-box;
+  padding:12px 18px;
+  border:1px solid #d7bc95;
+  border-radius:13px;
+  background:#fff9e9;
+  box-shadow:0 8px 28px #44342340;
+  color:#57402c;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  transition:opacity .18s,transform .18s;
+}
+body > .market-global-shortage-notice.is-visible {
+  opacity:1!important;
+  transform:translate(-50%,0)!important;
+}

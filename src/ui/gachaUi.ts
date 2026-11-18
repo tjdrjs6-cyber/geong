@@ -4737,6 +4737,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private toast(text: string): void {
+    if (this.screen === 'title' && /다이아.*부족|코인.*부족|not_enough_diamonds|not_enough_coins/.test(text)) {
+      let banner = document.querySelector<HTMLElement>('.market-global-shortage-notice')
+      if (!banner) {
+        banner = document.createElement('div')
+        banner.className = 'market-global-shortage-notice'
+        banner.setAttribute('role', 'alert')
+        document.body.appendChild(banner)
+      }
+      banner.textContent = text
+      banner.classList.add('is-visible')
+      window.setTimeout(() => { if (banner?.textContent === text) banner.classList.remove('is-visible') }, 2800)
+      return
+    }
     const node = this.root.querySelector<HTMLElement>(this.screen === 'weed' ? '.weed-toast' : this.screen === 'battle' ? '.battle-toast' : this.screen === 'house' ? '.house-toast' : this.screen === 'claw' ? '.claw-toast' : '.gacha-screen .toast')
     if (!node) return
     node.textContent = text
