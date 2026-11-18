@@ -90,6 +90,15 @@ function mailTime(at: number): string {
 }
 
 export class GachaUi {
+  private weedPetBonusCache=0
+  private weedPetBonusFetchedAt=0
+  private weedPetBonusLoading=false
+  private async refreshWeedPetBonus():Promise<void>{
+    if(this.weedPetBonusLoading||Date.now()-this.weedPetBonusFetchedAt<12000)return
+    this.weedPetBonusLoading=true;this.weedPetBonusFetchedAt=Date.now()
+    try{const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'});if(r.ok){const d=await r.json() as {equipped:number;pets:{id:number;grade:string}[]};const pet=d.pets?.find(p=>p.id===d.equipped);const next=pet?({normal:30,rare:40,epic:50,unique:70} as Record<string,number>)[pet.grade||'normal']||30:0;if(next!==this.weedPetBonusCache){this.weedPetBonusCache=next;if(this.screen==='weed')this.renderWeedStatus()}}}catch{}finally{this.weedPetBonusLoading=false}
+  }
+
   screen: Screen = 'boot'
   private readonly root = document.getElementById('ui')!
   private battleAnimationKey = ''
@@ -452,6 +461,7 @@ export class GachaUi {
     window.clearInterval(this.lotteryTimer)
     if(screen==='dopamine')void this.openDopamine()
     if(screen==='rps'){void this.openLottery();window.clearInterval(this.lotteryRefreshing);this.lotteryRefreshing=window.setInterval(()=>{if(this.screen==='rps'&&!this.lotteryResults.length)void this.refreshLotteryLive()},5000)}else{window.clearInterval(this.lotteryRefreshing)}
+    if (screen === 'catalog' || screen === 'pet-catalog') void this.renderPetCatalog()
     if (screen === 'collection') this.renderCollection()
     if (screen === 'decos') this.renderDecoCollection()
     if (screen === 'claw') { this.restoreClawToys(); this.resetClawToExit(); this.renderClaw() }
@@ -698,7 +708,7 @@ export class GachaUi {
           <p class="collection-summary">확인할 도감을 선택해 주세요.</p>
           <div class="catalog-choice-list">
             <button type="button" class="catalog-choice-button" data-action="collection"><img src="/assets/chars/chiikawa_tab_icon.png" alt=""/><span><b>캐릭터 도감</b><small><span class="collection-count">0 / ${CHARACTERS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
-            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">0 / 20</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">확인 중</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="decos"><img src="/assets/chars/hachiware_face.png" alt=""/><span><b>데코 도감</b><small><span class="deco-count">0 / ${DECOS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 48</span> 수집</small></span><span aria-hidden="true">›</span></button>
           </div>
@@ -1307,25 +1317,27 @@ export class GachaUi {
   }
 
   private async renderPetCatalog():Promise<void>{
-    const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
-    const grades=[{id:'normal',name:'노말'},{id:'rare',name:'레어'},{id:'epic',name:'에픽'},{id:'unique',name:'유니크'}]
+    const names:Record<string,string>={chiikawa:'치이카와',hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬'}
+    const grades=[{id:'normal',name:'노말',combat:10,weed:30},{id:'rare',name:'레어',combat:15,weed:40},{id:'epic',name:'에픽',combat:20,weed:50},{id:'unique',name:'유니크',combat:30,weed:70}]
+    const counter=this.root.querySelector<HTMLElement>('.pet-catalog-count')
+    if(counter && counter.textContent?.trim()==='0 / 20')counter.textContent='확인 중'
     try{
       const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'});if(!r.ok)throw Error('load')
-      const data=await r.json() as {pets:{kind:string;grade:string}[];collection:{kind:string;grade:string}[]}
+      const data=await r.json() as {pets?:{kind:string;grade?:string}[];collection?:{kind:string;grade?:string}[]}
       const known=new Set([...(data.collection||[]),...(data.pets||[])].map(x=>`${x.grade||'normal'}:${x.kind}`))
       const grid=this.root.querySelector<HTMLElement>('.pet-catalog-grid')
-      if(grid)grid.innerHTML=grades.map(grade=>`<div class="pet-catalog-grade-title pet-grade-${grade.id}">${grade.name}</div><div class="pet-catalog-grade-grid">${Object.entries(names).map(([kind,name])=>{const owned=known.has(`${grade.id}:${kind}`);return `<article class="friend-card pet-grade-${grade.id} ${owned?'':'pet-catalog-locked'}"><div class="friend-portrait">${owned?`<img src="/assets/pets/${kind}.png" alt="${name}"/>`:'<strong>?</strong>'}</div><b>${owned?name:'미발견'}</b><small>${grade.name}</small></article>`}).join('')}</div>`).join('')
+      if(grid)grid.innerHTML=grades.map(grade=>`<section class="pet-collection-section pet-grade-${grade.id}"><div class="pet-collection-heading"><strong>${grade.name}</strong><span>전투력 +${grade.combat}% · 제초 +${grade.weed}%</span><small>${Object.keys(names).filter(k=>known.has(`${grade.id}:${k}`)).length} / 5</small></div><div class="pet-collection-cards">${Object.entries(names).map(([kind,name])=>{const owned=known.has(`${grade.id}:${kind}`);return `<article class="pet-collection-card pet-grade-${grade.id} ${owned?'is-owned':'is-locked'}"><div class="pet-collection-portrait">${owned?`<img src="/assets/pets/${kind}.png" alt="${name}" loading="lazy"/>`:'<span>?</span>'}</div><b>${owned?name:'미발견'}</b><small>${grade.name} 펫</small></article>`}).join('')}</div></section>`).join('')
       const total=grades.reduce((n,g)=>n+Object.keys(names).filter(k=>known.has(`${g.id}:${k}`)).length,0)
-      const count=this.root.querySelector<HTMLElement>('.pet-catalog-count');if(count)count.textContent=`${total} / 20`
-      const summary=this.root.querySelector<HTMLElement>('.pet-catalog-summary');if(summary)summary.textContent=`${total} / 20 수집`
-    }catch{this.toast('펫 도감을 불러오지 못했습니다.')}
+      if(counter)counter.textContent=`${total} / 20`
+      const summary=this.root.querySelector<HTMLElement>('.pet-catalog-summary');if(summary)summary.textContent=`수집한 펫 ${total} / 20종 · 보유 펫 자동 반영`
+    }catch{if(counter)counter.textContent='확인 실패';this.toast('펫 도감을 불러오지 못했습니다.')}
   }
 
   private async openWeedBonusDetail():Promise<void>{
     const members=this.store.weed?.members||[]
     const character=members.reduce((n,m)=>n+this.characterWeedBonus(m.id),0)
     let pet=0
-    try{const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'});if(r.ok){const d=await r.json() as {equipped:number};pet=d.equipped?30:0}}catch{}
+    try{const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'});if(r.ok){const d=await r.json() as {equipped:number;pets:{id:number;grade:string}[]};const equipped=d.pets?.find(p=>p.id===d.equipped);pet=equipped?({normal:30,rare:40,epic:50,unique:70} as Record<string,number>)[equipped.grade||'normal']||30:0}}catch{}
     const total=members.length?character+pet:0
     const dialog=document.createElement('dialog')
     dialog.className='combat-power-modal'
@@ -1473,7 +1485,7 @@ export class GachaUi {
       this.root.querySelector<HTMLButtonElement>('.nav-community')?.setAttribute('aria-expanded','false')
     }
     if (action === 'plaza') {this.show('plaza');return}
-    if (action === 'pet-catalog') {this.show('pet-catalog');void this.renderPetCatalog();return}
+    if (action === 'pet-catalog') {this.show('pet-catalog');return}
     if (action === 'weed-bonus-detail') {void this.openWeedBonusDetail();return}
     if (action === 'plaza-shop') {await this.plaza.shop();return}
     if (action === 'pets') { this.show('pets'); return }
@@ -4323,11 +4335,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     slot.classList.toggle('is-on', placed)
   }
   private renderWeedStatus(): void {
+    void this.refreshWeedPetBonus()
     const members = (this.store.weed?.members ?? []).map(m => characterById(m.id))
     const weeding = members[0]
     const status = this.root.querySelector<HTMLElement>('.weed-status')
     if (status) status.textContent = members.length
-      ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 캐릭터 제초 보너스 +${members.reduce((sum, c) => sum + this.characterWeedBonus(c.id), 0)}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
+      ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 총 제초 보너스 +${members.reduce((sum, c) => sum + this.characterWeedBonus(c.id), 0) + this.weedPetBonusCache}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
       : (this.store.data.owned.length ? `아래에서 제초할 친구를 골라 주세요. (최대 ${WEED_MAX}명)` : '친구를 뽑으면 제초를 맡길 수 있어요.')
     const rateNode = this.root.querySelector<HTMLElement>('.weed-rate')
     if (rateNode) rateNode.textContent = String(this.store.weedHourlyRate())
