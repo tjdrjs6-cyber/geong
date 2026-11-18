@@ -6800,3 +6800,14 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .pets-box-actions {display:flex;flex-wrap:wrap;gap:8px;max-height:180px;overflow-y:auto;margin-top:14px}
 .pets-box-actions button {border:1px solid #cda9c1;border-radius:9px;background:#f7e6f1;padding:9px 13px;color:#4e3547;cursor:pointer;font:inherit}
 .pets-coming p {font-size:13px;opacity:.75;margin:0}
+
+/* Pet management and batch-opening controls, shared across PC and mobile */
+.pets-owned-list{display:grid;gap:9px;max-height:340px;overflow-y:auto}
+.pets-owned-card{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid rgba(120,120,120,.2);border-radius:12px;min-width:0}
+.pets-owned-card>img{width:60px;height:60px;object-fit:contain;flex:none}
+.pets-owned-info{display:grid;gap:5px;flex:1;min-width:0}
+.pets-owned-info small,.pets-muted{opacity:.7;font-size:12px}
+.pets-owned-card button{border:1px solid #cda9c1;border-radius:9px;background:#f7e6f1;padding:9px 13px;color:#4e3547;cursor:pointer;flex:none}
+.pets-owned-card button:disabled,.pets-box-actions button:disabled{opacity:.5;cursor:not-allowed}
+.pets-bonus-note{font-size:13px;margin:0 0 12px}
+.pets-open-result{font-size:13px;margin:8px 0 0}
