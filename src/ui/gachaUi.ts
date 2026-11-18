@@ -1313,8 +1313,6 @@ export class GachaUi {
       const data=await r.json() as {boxes:{id:number;listing_id:number|null}[];pets:{id:number;kind:string;used:number;trades:number;listing_id:number|null}[];equipped:number}
       const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
       const available=data.boxes.filter(x=>!x.listing_id)
-      const tradable=data.pets.filter(x=>!x.used && !Number(x.trades) && !x.listing_id)
-      const locked=data.pets.filter(x=>!tradable.includes(x))
       const selected=data.pets
       const cards=selected.map(p=>{
         const equipped=Number(data.equipped)===Number(p.id)
@@ -1324,8 +1322,8 @@ export class GachaUi {
       }).join('')
       content.innerHTML=`<div class="pets-switch"><button data-action="pet-panel-boxes" class="${this.petPanel==='boxes'?'active':''}">펫박스</button><button data-action="pet-panel-manage" class="${this.petPanel==='manage'?'active':''}">펫 관리</button></div>`+
       (this.petPanel==='boxes'
-      ? `<div class="pets-section pets-compact"><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>노말 펫박스</strong><p>보유 ${data.boxes.length}개 · 개봉 가능 ${available.length}개</p><small>꽝 90% · 펫 5종 각 2%</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
-      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><p class="pets-muted">개봉한 모든 펫은 거래할 수 없습니다.</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
+      ? `<div class="pets-section pets-compact"><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>노말 펫박스</strong><p>보유 <b>${data.boxes.length}</b>개 · 개봉 가능 <b>${available.length}</b>개</p><small>꽝 90% · 펫 5종 각 2% · 미개봉 박스 최초 1회 거래</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
+      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><p class="pets-muted">펫은 거래 불가 · 1마리 배치 가능</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
     }catch{this.toast('펫 정보를 불러오지 못했습니다.')}
   }
 
@@ -1351,7 +1349,7 @@ export class GachaUi {
 
   private showPetOpenResult(opened:number,wins:Record<string,number>,partial:boolean):void{
     const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
-    this.root.querySelector('.pets-result-overlay')?.remove()
+    document.querySelector('.pets-result-overlay')?.remove()
     const overlay=document.createElement('div')
     overlay.className='pets-result-overlay'
     overlay.setAttribute('role','dialog')
@@ -1363,7 +1361,7 @@ export class GachaUi {
     const stage=document.createElement('div');stage.className='pets-reveal-stage'
     const box=document.createElement('img');box.className='pets-reveal-box';box.src='/assets/pets/box_normal.png';box.alt='열리는 노말 펫박스';stage.append(box)
     const hint=document.createElement('p');hint.className='pets-reveal-hint';hint.textContent='두근두근... 펫박스를 개봉하는 중!'
-    card.append(stage,hint);overlay.append(card);this.root.append(overlay)
+    card.append(stage,hint);const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='pets-result-dismiss';dismiss.textContent='확인';dismiss.addEventListener('click',(event)=>{event.preventDefault();event.stopPropagation();overlay.remove()});card.append(dismiss);overlay.append(card);document.body.append(overlay)
     // Keep the animation independent of the server response, and render all prizes in a single result grid.
     window.setTimeout(()=>{
       if(!overlay.isConnected)return
@@ -1386,10 +1384,7 @@ export class GachaUi {
           item.append(img,label);grid.append(item)
         }
         stage.replaceChildren(grid)
-        const close=document.createElement('button');close.type='button';close.textContent='확인'
-        close.addEventListener('click',()=>overlay.remove(),{once:true})
-        card.append(close)
-        close.focus()
+        dismiss.focus()
       },800)
     },450)
   }
