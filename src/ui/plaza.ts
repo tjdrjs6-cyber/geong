@@ -152,7 +152,14 @@ export class Plaza {
   }
   const button=panel.querySelector<HTMLButtonElement>(`button[data-shop-action="${action}"][data-id="${id}"]`);const type=button?.dataset.type||'';
   try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw Error('request');return r.json()};
-   if(action==='open'||action==='close'){try{await request('/api/plaza/shop/'+action)}catch{this.notice(action==='open'?'상점은 지정된 판매 구역에서만 열 수 있습니다. 빈 판매 자리로 이동해 주세요.':'상점을 닫지 못했습니다.');return}}
+   if(action==='open'||action==='close'){try{
+     if(action==='open'){
+      // The server validates the latest saved coordinates, not the client's visible position.
+      // Flush the final movement before requesting the shop slot.
+      await api('/move',{x:this.x,y:this.y});
+     }
+     await request('/api/plaza/shop/'+action)
+    }catch(e){this.notice(action==='open'?'판매 구역 중앙에서 다시 시도해 주세요. 다른 상점이 있거나 이동 정보가 갱신 중일 수 있습니다.':'상점을 닫지 못했습니다.');return}}
    else if(action==='listpet'){const price=Number(panel.querySelector<HTMLInputElement>(`[data-price-id="${type}-${id}"]`)?.value);const quantity=Number(panel.querySelector<HTMLInputElement>(`[data-qty-id="${type}-${id}"]`)?.value||1);if(!Number.isSafeInteger(quantity)||quantity<1){this.notice('판매 수량을 확인해 주세요.');return}if(type==='box'&&(!Number.isFinite(price)||price<1000)){this.notice('펫박스는 1,000다이아 이상부터 판매할 수 있습니다.');return}await request('/api/pets/list-batch',{itemType:type,itemId:id,price,quantity})}
    else if(action==='cancelpetgroup'||action==='canceldropgroup'){
     const ids=(button?.dataset.ids||'').split(',').map(Number).filter(Number.isSafeInteger);

@@ -2205,7 +2205,7 @@ const routes = {
     if(!presence.length)return send(res,409,{error:'plaza_not_joined'});
     const p=presence[0];const spots=[[12,24],[48,24],[84,24],[12,52],[48,52],[84,52],[18,82],[82,82]];
     const near=spots.map(([x,y])=>({x,y,d:Math.hypot(Number(p.x)-x,Number(p.y)-y)})).sort((a,b)=>a.d-b.d)[0];
-    if(!near||near.d>10)return send(res,409,{error:'shop_zone_only'});
+    if(!near||near.d>12)return send(res,409,{error:'shop_zone_only'});
     const lockName='gm_plaza_shop_channel_'+Number(p.channel);const conn=await pool.getConnection();let locked=false;
     try{
       const [locks]=await conn.query('SELECT GET_LOCK(?,5) acquired',[lockName]);locked=Number(locks[0]?.acquired)===1;
