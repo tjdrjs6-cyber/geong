@@ -460,6 +460,7 @@ export class GachaUi {
     if (screen === 'announcements') void this.loadAnnouncements()
     window.clearInterval(this.chatTimer)
     if (screen === 'pets') void this.loadPetTab()
+    if (screen === 'weed') void this.refreshHeroPet()
     if (screen === 'plaza') void this.plaza.enter()
     else this.plaza.leave()
     if (screen === 'global-chat') { void this.loadGlobalChat(); this.chatTimer = window.setInterval(() => void this.loadGlobalChat(true), 4000) }
@@ -1495,6 +1496,8 @@ export class GachaUi {
         if(action==='pet-equip' && Number(snapshot.equipped)!==id)throw Error('펫 배치가 저장되지 않았습니다.')
         if(action==='pet-unequip' && Number(snapshot.equipped)!==0)throw Error('펫 해제가 저장되지 않았습니다.')
         await this.store.restore()
+        this.store.petEquipped=Boolean(snapshot.equipped)
+        if(this.screen==='weed')this.renderWeedStatus()
         await this.loadPetTab()
         void this.refreshHeroPet()
         this.toast(action==='pet-equip'?'펫 배치 완료 · 전투력 +10%, 제초속도 +30%':'펫 배치 해제 완료')
@@ -1972,6 +1975,8 @@ export class GachaUi {
       const response=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
       if(!response.ok)return
       const data=await response.json() as {equipped:number;pets:{id:number;kind:string}[]}
+      this.store.petEquipped=Boolean(data.equipped)
+      if(this.screen==='weed')this.renderWeedStatus()
       const pet=data.pets.find(p=>Number(p.id)===Number(data.equipped))
       let img=stage.querySelector<HTMLImageElement>('.toon-equipped-pet')
       if(!pet){img?.remove();return}
@@ -2983,7 +2988,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private renderCollection(): void {
-    const grid = this.root.querySelector<HTMLElement>('.collection-grid')
+    const grid = this.root.querySelector<HTMLElement>('[data-screen="collection"] .collection-grid')
     if (grid) grid.innerHTML = this.collectionCards(this.store.data.owned, true)
   }
 

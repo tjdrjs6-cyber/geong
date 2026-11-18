@@ -6872,3 +6872,19 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .pet-catalog-locked .friend-portrait{filter:grayscale(1);opacity:.5}.pet-catalog-grid{overflow-y:auto;min-height:0}.pets-confirm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}.pets-confirm-actions button{padding:10px 18px;border-radius:10px;border:1px solid #cda9c1;background:#f7e6f1;color:#4e3547;font:inherit;cursor:pointer}.weed-detail-button{margin:8px auto;display:block}
 
 .pet-catalog-grid .friend-card{min-width:0}.pet-catalog-grid .friend-portrait img{max-width:100%;max-height:100%;object-fit:contain}
+
+/* 2.1: plaza pet is the same 40% relative size as the lobby pet. */
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{width:40%!important;height:40%!important;left:96%!important;top:67%!important;z-index:3;transform:none!important;animation:none!important;pointer-events:none}
+#ui [data-screen="plaza"] .plaza-player[data-emote] img.plaza-pet{animation:none!important;transform:none!important}
+/* Personal shop is an independent floating panel: opening it must not shrink the walking map. */
+#ui [data-screen="plaza"] .plaza-card{position:relative}
+#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){position:absolute;z-index:25;top:64px;right:12px;width:min(365px,calc(100% - 24px));max-height:min(65dvh,510px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;background:#fffdf8;border:1px solid #dcc8b3;border-radius:16px;box-shadow:0 8px 32px #3c35283d;padding:14px;display:flex;flex-direction:column;gap:10px}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-title{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #e8ddd1;position:sticky;top:-14px;background:#fffdf8;z-index:1}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-title b{font-size:16px}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list{display:flex;flex-direction:column;gap:6px;border:1px solid #eae1d6;border-radius:12px;padding:10px;background:#fff}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list>div{display:flex;align-items:center;flex-wrap:wrap;gap:7px;border-bottom:1px solid #f1ebe3;padding:7px 0}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list>div:last-child{border-bottom:0}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list>div>span{flex:1;min-width:95px}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list input{width:110px;max-width:100%}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list img{width:36px;height:36px;object-fit:contain}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:50px;right:7px;width:min(320px,calc(100% - 14px));max-height:48dvh;padding:10px}}
