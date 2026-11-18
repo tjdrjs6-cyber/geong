@@ -1609,7 +1609,7 @@ const routes = {
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
           await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[count,collectionBonus,JSON.stringify(owned),account.id])
-          await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=GREATEST(0,ticket_qty-?) WHERE account_id=?',[count,account.id])
+          await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=ticket_qty-LEAST(ticket_qty,?) WHERE account_id=?',[count,account.id])
           await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
           for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
           outcome={...lotteryView(remaining),tickets:Number(saves[0].lottery_tickets)-count,results}
@@ -1758,7 +1758,7 @@ const routes = {
       if(Number(dupes[id]||0)<consumeDupes||market.stones<consumeStones)return {error:'not_enough_materials'}
       dupes[id]-=consumeDupes
       if(consumeStones)await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[consumeStones,account.id])
-      if(consumeStones)await conn.query('UPDATE gm_tradeable_drops SET stone_qty=GREATEST(0,stone_qty-?) WHERE account_id=?',[consumeStones,account.id])
+      if(consumeStones)await conn.query('UPDATE gm_tradeable_drops SET stone_qty=stone_qty-LEAST(stone_qty,?) WHERE account_id=?',[consumeStones,account.id])
       await conn.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
       await conn.query('INSERT INTO gm_limit_break(account_id,character_id,level) VALUES(?,?,?) ON DUPLICATE KEY UPDATE level=VALUES(level)',[account.id,id,level+1])
       return {success:true,level:level+1,required}
