@@ -2043,7 +2043,7 @@ const routes = {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'});
     const now=Date.now();const [presence]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=? AND updated_ms>=?',[account.id,now-12000]);
     if(!presence.length)return send(res,409,{error:'plaza_not_joined'});
-    const p=presence[0];const spots=[[18,18],[39,18],[61,18],[82,18],[18,82],[39,82],[61,82],[82,82]];
+    const p=presence[0];const spots=[[12,24],[48,24],[84,24],[12,52],[48,52],[84,52],[18,82],[82,82]];
     const near=spots.map(([x,y])=>({x,y,d:Math.hypot(Number(p.x)-x,Number(p.y)-y)})).sort((a,b)=>a.d-b.d)[0];
     if(!near||near.d>10)return send(res,409,{error:'shop_zone_only'});
     const lockName='gm_plaza_shop_channel_'+Number(p.channel);const conn=await pool.getConnection();let locked=false;
@@ -2096,7 +2096,7 @@ const routes = {
   'POST /api/plaza/move': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const body=await readJson(req),now=Date.now(),x=Number(body.x),y=Number(body.y)
-    if(!Number.isFinite(x)||!Number.isFinite(y)||x<3||x>97||y<24||y>97)return send(res,400,{error:'invalid_position'})
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x<3||x>97||y<14||y>82)return send(res,400,{error:'invalid_position'})
     const [rows]=await pool.query('SELECT x,y,updated_ms FROM gm_plaza_presence WHERE account_id=?',[account.id]);if(!rows.length)return send(res,409,{error:'plaza_not_joined'})
     const old=rows[0],elapsed=Math.max(0,(now-Number(old.updated_ms))/1000),distance=Math.hypot(x-Number(old.x),y-Number(old.y))
     if(distance>Math.max(2,elapsed*17+2))return send(res,429,{error:'invalid_movement'})
