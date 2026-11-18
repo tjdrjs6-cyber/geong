@@ -1354,26 +1354,44 @@ export class GachaUi {
     this.root.querySelector('.pets-result-overlay')?.remove()
     const overlay=document.createElement('div')
     overlay.className='pets-result-overlay'
+    overlay.setAttribute('role','dialog')
+    overlay.setAttribute('aria-modal','true')
+    overlay.setAttribute('aria-label','펫박스 개봉 연출')
     const card=document.createElement('div')
-    card.className='pets-result-dialog'
-    const title=document.createElement('h3');title.textContent='펫박스 개봉 결과';card.append(title)
-    const sub=document.createElement('p')
-    sub.textContent=`총 ${opened}개 개봉${partial?' · 일부 개봉 실패':''}`
-    card.append(sub)
-    const grid=document.createElement('div');grid.className='pets-result-grid'
-    const won=Object.values(wins).reduce((a,b)=>a+b,0)
-    const empty=document.createElement('div');empty.className='pets-result-item';empty.textContent=`꽝 · ${opened-won}개`;grid.append(empty)
-    for(const [kind,count] of Object.entries(wins)){
-      if(!names[kind])continue
-      const item=document.createElement('div');item.className='pets-result-item'
-      const img=document.createElement('img');img.src=`/assets/pets/${kind}.png`;img.alt=names[kind]
-      const label=document.createElement('span');label.textContent=`${names[kind]} × ${count}`
-      item.append(img,label);grid.append(item)
-    }
-    card.append(grid)
-    const close=document.createElement('button');close.type='button';close.textContent='확인'
-    close.addEventListener('click',()=>overlay.remove(),{once:true})
-    card.append(close);overlay.append(card);this.root.append(overlay)
+    card.className='pets-result-dialog pets-reveal-dialog'
+    const title=document.createElement('h3');title.textContent='펫박스 개봉';card.append(title)
+    const stage=document.createElement('div');stage.className='pets-reveal-stage'
+    const box=document.createElement('img');box.className='pets-reveal-box';box.src='/assets/pets/box_normal.png';box.alt='열리는 노말 펫박스';stage.append(box)
+    const hint=document.createElement('p');hint.className='pets-reveal-hint';hint.textContent='두근두근... 펫박스를 개봉하는 중!'
+    card.append(stage,hint);overlay.append(card);this.root.append(overlay)
+    // Keep the animation independent of the server response, and render all prizes in a single result grid.
+    window.setTimeout(()=>{
+      if(!overlay.isConnected)return
+      stage.classList.add('pets-reveal-opening')
+      window.setTimeout(()=>{
+        if(!overlay.isConnected)return
+        stage.classList.add('pets-reveal-finished')
+        box.remove()
+        title.textContent='펫박스 개봉 결과'
+        hint.textContent=`총 ${opened}개 개봉${partial?' · 일부 개봉 실패':''}`
+        const grid=document.createElement('div');grid.className='pets-result-grid pets-reveal-prizes'
+        const won=Object.values(wins).reduce((a,b)=>a+b,0)
+        const misses=Math.max(0,opened-won)
+        if(misses){const item=document.createElement('div');item.className='pets-result-item pets-miss';const label=document.createElement('strong');label.textContent='꽝';const amount=document.createElement('span');amount.textContent=`${misses}개`;item.append(label,amount);grid.append(item)}
+        for(const [kind,count] of Object.entries(wins)){
+          if(!names[kind]||count<=0)continue
+          const item=document.createElement('div');item.className='pets-result-item pets-win'
+          const img=document.createElement('img');img.src=`/assets/pets/${kind}.png`;img.alt=names[kind]
+          const label=document.createElement('span');label.textContent=`${names[kind]} × ${count}`
+          item.append(img,label);grid.append(item)
+        }
+        stage.replaceChildren(grid)
+        const close=document.createElement('button');close.type='button';close.textContent='확인'
+        close.addEventListener('click',()=>overlay.remove(),{once:true})
+        card.append(close)
+        close.focus()
+      },800)
+    },450)
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
