@@ -3677,20 +3677,44 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       : '<small class="storage-keep">중복 없음</small>'
     if (this.storageTab === 'inventory') {
       if (summary) summary.textContent = '보유한 기타 아이템입니다. 판매는 장터에서 이용해 주세요.'
-      grid.innerHTML = `<article class="storage-item"><img src="/assets/items/breakthrough_stone.png" alt="한계돌파석" style="width:60px;height:60px;object-fit:contain"/><b>한계돌파석</b><small>보유 ${this.store.market.stones}개 · 캐릭터 한계돌파 재료</small></article><article class="storage-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권" style="width:60px;height:60px;object-fit:contain"/><b>겅이복권</b><small>보유 ${(this.store.data.lotteryTickets ?? 0).toLocaleString('ko-KR')}개 · 토벌장 0.6% 획득</small></article>` + ([['잡초',this.store.wildWeed?.count??0,500,'/field_wild_weed.png'],['황금잡초',this.store.wildWeed?.goldenCount??0,5000,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([name,count,price,img])=>`<article class="storage-item"><img src="${img}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count}개 · 개당 ${price}코인</small></article>`).join('')
-      // Pet boxes belong to 기타; the server remains the source of truth.
+      const miscItems: string[] = []
+      const addMisc = (name: string, rawCount: number, image: string, detail: string) => {
+        const count = Number(rawCount)
+        if (!Number.isFinite(count) || count <= 0) return
+        miscItems.push(`<article class="storage-item" role="listitem"><img src="${image}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count.toLocaleString('ko-KR')}개 · ${detail}</small></article>`)
+      }
+      addMisc('한계돌파석', this.store.market.stones, '/assets/items/breakthrough_stone.png', '캐릭터 한계돌파 재료')
+      addMisc('겅이복권', this.store.data.lotteryTickets ?? 0, '/assets/lottery_ticket_custom.png', '토벌장 0.6% 획득')
+      addMisc('잡초', this.store.wildWeed?.count ?? 0, '/field_wild_weed.png', '개당 500코인')
+      addMisc('황금잡초', this.store.wildWeed?.goldenCount ?? 0, '/field_golden_weed.png', '개당 5,000코인')
+      grid.innerHTML = miscItems.join('') || '<p class="users-empty misc-empty">보유한 기타 아이템이 없습니다.</p>'
+      // All pet box grades are separate 기타 items. Never render zero-quantity boxes.
       const inventoryGrid = grid
       void fetch('/api/pets', { credentials: 'include', cache: 'no-store' })
-        .then(r => { if (!r.ok) throw new Error('pets'); return r.json() as Promise<{ boxes: { id: number }[] }> })
+        .then(r => { if (!r.ok) throw new Error('pets'); return r.json() as Promise<{ boxes?: { id: number; grade?: string }[] }> })
         .then(pets => {
           if (this.storageTab !== 'inventory' || !inventoryGrid.isConnected) return
-          inventoryGrid.querySelector('.pet-box-storage-item')?.remove()
-          const card = document.createElement('article')
-          card.className = 'storage-item pet-box-storage-item'
-          card.innerHTML = `<img src="/assets/pets/box_normal.png" alt="노말 펫박스" style="width:60px;height:60px;object-fit:contain"/><b>노말 펫박스</b><small>보유 ${pets.boxes.length.toLocaleString('ko-KR')}개 · 개봉은 펫 탭에서 가능</small>`
-          inventoryGrid.append(card)
+          inventoryGrid.querySelectorAll('.pet-box-storage-item').forEach(card => card.remove())
+          const boxes = Array.isArray(pets.boxes) ? pets.boxes : []
+          const grades = [
+            { id: 'normal', label: '노말', color: '' },
+            { id: 'rare', label: '레어', color: '#3B82F6' },
+            { id: 'epic', label: '에픽', color: '#EF4444' },
+            { id: 'unique', label: '유니크', color: '#A855F7' }
+          ]
+          for (const grade of grades) {
+            const count = boxes.filter(box => (box.grade || 'normal') === grade.id).length
+            if (count <= 0) continue
+            const card = document.createElement('article')
+            card.className = 'storage-item pet-box-storage-item'
+            card.setAttribute('role', 'listitem')
+            if (grade.color) card.style.borderColor = grade.color
+            card.innerHTML = `<img src="/assets/pets/box_normal.png" alt="${grade.label} 펫박스" style="width:60px;height:60px;object-fit:contain;${grade.color ? `filter:drop-shadow(0 0 6px ${grade.color})` : ''}"/><b>펫박스(${grade.label})</b><small>보유 ${count.toLocaleString('ko-KR')}개 · 개봉은 펫 탭에서 가능</small>`
+            inventoryGrid.append(card)
+          }
+          if (inventoryGrid.querySelector('.pet-box-storage-item')) inventoryGrid.querySelector('.misc-empty')?.remove()
         })
-        .catch(() => { /* Leave the rest of 기타 intact if the pet API is unavailable. */ })
+        .catch(() => { /* Other 기타 items remain visible if pet data is unavailable. */ })
     } else if (this.storageTab === 'accessory') {
       const counts = this.store.accessory.counts || {}
       const cards = WEAPON_ACCESSORIES.flatMap(item => ALCHEMY_GRADES.map(grade => {
