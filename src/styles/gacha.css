@@ -7326,3 +7326,24 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .plaza-market-cancel-list { display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;max-width:55%; }
 #ui .plaza-market-cancel-list button {border:1px solid #d8c1b3;background:#fff9f4;color:#77534a;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;}
 #ui .plaza-market-myitem span small {display:block;font-size:11px;color:#806d65;margin-top:3px;}
+
+/* 4.5: taller white owner shop label; leave avatars, pets and stall positioning unchanged. */
+#ui [data-screen="plaza"] .plaza-shop-sign{
+  background:#ffffff!important;
+  background-image:none!important;
+  min-height:66px!important;
+  height:auto!important;
+  padding:11px 8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  border:2px solid #e1bd91!important;
+  border-radius:13px!important;
+  box-shadow:0 3px 0 #cfa885,0 5px 9px #4a332422!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-sign .plaza-stall-title,
+#ui [data-screen="plaza"] .plaza-shop-sign .plaza-stall-hint{
+  text-align:center!important;
+}
