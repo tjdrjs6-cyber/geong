@@ -597,6 +597,7 @@ export class GachaUi {
           <button class="weed-back" data-action="close">← 뒤로가기</button>
           <b id="battle-title" class="battle-visually-hidden">토벌장</b>
           <div class="battle-stage-rewards" aria-live="polite"><div class="battle-reward-caption">60초 자동 토벌 보상</div><div class="battle-reward-combined"><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/diamond.png" alt=""/><b class="battle-stage-coins">1</b><small>다이아</small></span><span class="battle-reward-piece"><img class="battle-reward-icon" src="/assets/enhancement_fragment.png" alt=""/><b class="battle-stage-fragments">0</b><small>강화파편</small></span></div></div>
+          <button type="button" class="battle-drop-open" data-action="battle-drop-open" aria-haspopup="dialog">드롭률</button>
           <div class="battle-stage-center"><div class="battle-stage-heading" aria-live="polite">1-1 STAGE</div><div class="battle-recommended-power"><span>⚔ 권장 전투력</span><strong class="battle-recommended-value">25</strong><small class="battle-recommended-compare"></small></div><div class="battle-stage-actions"><button type="button" class="battle-retry-challenge" data-action="battle-retry-challenge" hidden>다음 스테이지 도전하기</button><button type="button" class="battle-boss-challenge" data-action="battle-boss-challenge" hidden>⚔ 보스 도전하기</button></div></div>
         </header>
         <div class="battle-field">${battleFieldMarkup()}<div class="battle-stage-transition" aria-live="polite" aria-hidden="true"><div class="battle-stage-transition-card"><span class="battle-transition-title">STAGE CLEAR!</span><strong class="battle-stage-next">1-2 STAGE</strong></div></div></div>
@@ -609,6 +610,7 @@ export class GachaUi {
           <div class="battle-deployed-count" aria-live="polite">배치캐릭터 0/3</div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
+        <div class="battle-drop-overlay" hidden><div class="battle-drop-dialog" role="dialog" aria-modal="true" aria-labelledby="battle-drop-title"><div class="battle-drop-head"><div><small>토벌장 보상 정보</small><h2 id="battle-drop-title">드롭률</h2></div><button type="button" class="battle-drop-close" data-action="battle-drop-close" aria-label="닫기">×</button></div><div class="battle-drop-content"></div><button type="button" class="battle-drop-done" data-action="battle-drop-close">확인</button></div></div>
         <div class="battle-reward-popup" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         <div class="toast battle-toast" aria-live="polite"></div>
       </section>
@@ -1585,6 +1587,8 @@ export class GachaUi {
       if (menu) menu.hidden = true
       toggle?.setAttribute('aria-expanded','false')
     }
+    if (action === 'battle-drop-open') { this.openBattleDropRates(); return }
+    if (action === 'battle-drop-close') { this.root.querySelector<HTMLElement>('.battle-drop-overlay')?.setAttribute('hidden', ''); return }
     if (action === 'insufficient-close') { this.closeInsufficient(); return }
     if (action === 'rps') {this.show('rps');return}
     if (action === 'dopamine') {this.show('dopamine');return}
@@ -4239,6 +4243,28 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       dialog.showModal()
       dialog.style.setProperty('z-index','99999')
     })
+  }
+
+  private openBattleDropRates(): void {
+    const overlay = this.root.querySelector<HTMLElement>('.battle-drop-overlay')
+    const content = overlay?.querySelector<HTMLElement>('.battle-drop-content')
+    if (!overlay || !content) return
+    const stage = Math.max(1, Math.min(200, this.store.battle?.stage ?? 1))
+    const zone = Math.floor((stage - 1) / 10) + 1
+    const sub = ((stage - 1) % 10) + 1
+    const diamonds = [1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10][zone - 1]
+    const fragments = [1,2,2,3,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19,20][zone - 1]
+    const boxGrade = zone >= 20 ? '유니크' : zone >= 15 ? '에픽' : zone >= 10 ? '레어' : zone >= 5 ? '노말' : null
+    const special = this.store.user?.username?.toLowerCase() === 'test' || Boolean(this.store.user?.is_admin)
+    const item = (name: string, detail: string, chance: string) => `<div class="battle-drop-item"><div><b>${name}</b><small>${detail}</small></div><strong>${chance}</strong></div>`
+    content.innerHTML = `<p class="battle-drop-stage">현재 스테이지 <b>${zone}-${sub}</b></p><p class="battle-drop-subtitle">스테이지 클리어 기준 보상</p>`
+      + item('다이아', `${diamonds}개 지급`, '100%')
+      + item('강화파편', `${fragments}개 지급`, '100%')
+      + item('겅이복권', '1장 획득', '0.75%')
+      + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.1%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
+      + '<p class="battle-drop-note">각 보상은 스테이지 클리어 시 개별 판정됩니다. 펫박스 등급은 스테이지 구간에 따라 달라집니다.</p>'
+    overlay.hidden = false
+    overlay.querySelector<HTMLButtonElement>('.battle-drop-close')?.focus()
   }
 
   private renderBattleStatus(): void {

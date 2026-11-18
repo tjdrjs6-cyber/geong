@@ -6950,3 +6950,19 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui .pets-section.pets-compact{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;justify-content:flex-start!important}
 #ui .pets-owned-list{flex:1 1 auto!important;max-height:none!important;min-height:0!important;overflow-y:auto!important}
 .pets-result-dismiss:disabled{opacity:.5!important;cursor:wait!important;pointer-events:none!important}
+
+/* Battle drop-rate information (2.7) */
+.battle-screen .battle-drop-open{position:absolute;right:12px;top:10px;z-index:6;padding:8px 15px;border:1px solid #c9a6e5;border-radius:999px;background:#fff9ff;color:#73439c;font-size:13px;font-weight:800;box-shadow:0 2px 8px #76558b20;cursor:pointer}
+.battle-screen .weed-header{position:relative}
+.battle-drop-overlay[hidden]{display:none!important}
+.battle-drop-overlay{position:fixed;inset:0;z-index:9999;background:#231b2c99;display:flex;align-items:center;justify-content:center;padding:16px}
+.battle-drop-dialog{width:min(440px,100%);max-height:min(680px,90dvh);overflow:auto;border-radius:22px;background:#fffafc;border:2px solid #e7c8ef;box-shadow:0 18px 65px #27153255;padding:20px;color:#44324e}
+.battle-drop-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #eee1f0;padding-bottom:12px}
+.battle-drop-head small{font-size:11px;color:#9a74a9;font-weight:700}
+.battle-drop-head h2{margin:3px 0 0;font-size:21px;color:#67407f}
+.battle-drop-close{background:#f2e7f4;border:0;border-radius:50%;width:34px;height:34px;font-size:23px;cursor:pointer;color:#70547d}
+.battle-drop-stage{margin:16px 0 6px;font-size:14px}.battle-drop-subtitle{margin:0 0 10px;font-size:12px;color:#8a728f}
+.battle-drop-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px;margin:7px 0;background:white;border:1px solid #eee1ef;border-radius:13px}
+.battle-drop-item div{display:flex;flex-direction:column;gap:4px}.battle-drop-item b{font-size:14px}.battle-drop-item small{font-size:11px;color:#8d7d91}.battle-drop-item strong{font-size:15px;color:#8051a0;white-space:nowrap}
+.battle-drop-note{font-size:11px;line-height:1.6;color:#8c7b91;margin:13px 0}.battle-drop-done{width:100%;border:0;border-radius:12px;padding:12px;background:#9d6cc3;color:white;font-weight:800;cursor:pointer}
+@media(max-width:520px){.battle-screen .battle-drop-open{right:7px;top:7px;padding:7px 10px;font-size:12px}.battle-drop-dialog{padding:15px}}
