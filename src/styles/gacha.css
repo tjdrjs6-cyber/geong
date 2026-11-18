@@ -7219,3 +7219,63 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 }
 #ui [data-screen="plaza"] .plaza-stall-title{font-size:11px!important}
 #ui [data-screen="plaza"] .plaza-stall-hint{font-size:9px!important}
+
+
+/* 3.8: larger visible shop slots and non-overlapping shop owner portraits */
+#ui [data-screen="plaza"] .plaza-platform-shop{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;width:142px!important;min-height:48px!important;
+  padding:8px 12px!important;
+  border:3px solid #b98055!important;border-radius:14px!important;
+  background:linear-gradient(180deg,#fff7dc 0%,#ffdfad 100%)!important;
+  color:#6b4539!important;font-size:15px!important;font-weight:900!important;
+  letter-spacing:.2px!important;line-height:1.2!important;
+  box-shadow:0 4px 0 #c59464,0 7px 12px #513e3029!important;
+  transform:translate(-50%,-105%)!important;
+  z-index:2!important;pointer-events:none!important;
+}
+/* The base avatar was 64.4px. Increase it to 150% (96.6px). */
+#ui [data-screen="plaza"] .plaza-player{
+  width:96.6px!important;height:96.6px!important;
+  overflow:visible!important;
+}
+#ui [data-screen="plaza"] .plaza-player>img:not(.plaza-pet){
+  width:100%!important;height:100%!important;object-fit:contain!important;
+}
+#ui [data-screen="plaza"] .plaza-player img.plaza-pet{
+  width:40%!important;height:40%!important;
+  left:68%!important;top:62%!important;object-fit:contain!important;
+}
+/* Shop spirit scales by the same 150%, with overflow visible for pets. */
+#ui [data-screen="plaza"] .plaza-shop-spirit{
+  width:84px!important;height:97.5px!important;
+  overflow:visible!important;transform:translate(-50%,-100%)!important;
+  z-index:7!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img:not(.plaza-shop-spirit-pet){
+  width:84px!important;height:97.5px!important;
+  max-width:none!important;object-fit:contain!important;
+}
+#ui [data-screen="plaza"] .plaza-shop-spirit>img.plaza-shop-spirit-pet{
+  width:34.5px!important;height:39px!important;
+  right:-15px!important;bottom:0!important;
+}
+/* Place the shop title fully above the owner's portrait, not over the face. */
+#ui [data-screen="plaza"] .plaza-shop-sign{
+  transform:translate(-50%,-100%)!important;
+  margin-top:-99px!important;
+  min-height:0!important;
+  width:130px!important;max-width:130px!important;
+  padding:7px 8px!important;
+  z-index:8!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+#ui [data-screen="plaza"] .plaza-stall-title{
+  font-size:12px!important;line-height:1.35!important;
+  overflow-wrap:anywhere!important;
+}
+#ui [data-screen="plaza"] .plaza-stall-hint{font-size:10px!important;}
+@media(max-width:600px){
+  #ui [data-screen="plaza"] .plaza-player{width:96.6px!important;height:96.6px!important;}
+}
