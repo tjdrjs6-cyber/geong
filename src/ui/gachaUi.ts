@@ -2143,7 +2143,7 @@ export class GachaUi {
     const save = this.store.data as typeof this.store.data & {clawTickets?:number;clawLastHour?:number}
     const hour = Math.floor(Date.now() / 3600000)
     const lastHour = save.clawLastHour || hour
-    const tickets = Math.min(20, (save.clawTickets ?? 20) + Math.max(0, hour-lastHour)*5)
+    const tickets = Math.max(0, Math.min(20, save.clawTickets ?? 20))
     const display = this.root.querySelector<HTMLElement>('.claw-ticket-value')
     if (display) display.textContent = this.isAdmin ? '∞' : `${tickets} / 20`
   }

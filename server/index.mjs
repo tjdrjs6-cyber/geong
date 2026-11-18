@@ -1111,7 +1111,7 @@ async function ensureGlobalChatTables() {
 }
 
 // The expedition day starts at 09:00 Asia/Seoul, independent of server timezone.
-const EXP_HP = 4000000
+const EXP_HP = 300000000
 const EXP_TICK = 1000
 const expeditionMaxHp = stage => stage === 1 ? 300000000 : stage === 2 ? 600000000 : 900000000
 function expeditionWindow(now = Date.now()) {
@@ -1132,7 +1132,7 @@ async function expeditionMigrateHp(conn,day,serverId) {
     // Newly created bosses have full 4m HP. Existing old-cap bosses
     // can be distinguished only by persisted creation metadata; see below.
     const oldHp=Number(rows[0].hp)
-    if(true) await conn.query('UPDATE gm_expedition_boss SET hp=? WHERE raid_day=? AND server_id=?',[Math.max(0,oldHp-6000000),day,serverId])
+    // Do not subtract HP during migration: this previously damaged newly created bosses.
   }
 }
 async function expeditionSettle(conn, day, serverId, now) {
