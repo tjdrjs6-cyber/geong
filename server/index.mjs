@@ -844,6 +844,9 @@ async function updateBattle(accountId, nextCharacter) {
     await conn.beginTransaction()
     const [saves] = await conn.query('SELECT gems, diamonds, fragments, lottery_tickets, owned, last_daily, last_roulette, pending_random_boxes, attendance_week, attendance_count, free_pull_day, free_pull_used, claw_tickets, claw_last_hour FROM gm_saves WHERE account_id = ? FOR UPDATE', [accountId])
     const state = saves[0] ? saveView(saves[0]) : { version: 1, gems: STARTING_COINS, owned: [], fragments: 0 }
+    const [petDropAccounts] = await conn.query('SELECT username, is_admin FROM gm_accounts WHERE id = ?', [accountId])
+    // Test and administrator accounts have a 50% pet-box drop chance.
+    const boostedPetDrop = Boolean(petDropAccounts[0]?.is_admin) || petDropAccounts[0]?.username === 'test'
     const [rows] = await conn.query(BATTLE_SELECT + ' FOR UPDATE', [accountId])
     const now = Date.now()
     let battle = battleRow(rows[0])
@@ -887,7 +890,7 @@ async function updateBattle(accountId, nextCharacter) {
         diamondsEarned += reward.diamonds
         earned += reward.fragments
         cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket})
-        if(randomInt(1000)===0) await conn.query("INSERT INTO gm_pet_boxes(owner_id) VALUES(?)",[accountId])
+        if(randomInt(1000)<(boostedPetDrop?500:1)) await conn.query("INSERT INTO gm_pet_boxes(owner_id) VALUES(?)",[accountId])
         battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
         // Negative retryStage means the fallback stage has been cleared and manual
         // challenge is now available; keep farming this stage until clicked.

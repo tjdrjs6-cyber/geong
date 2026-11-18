@@ -3429,6 +3429,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (this.storageTab === 'inventory') {
       if (summary) summary.textContent = '보유한 기타 아이템입니다. 판매는 장터에서 이용해 주세요.'
       grid.innerHTML = `<article class="storage-item"><img src="/assets/items/breakthrough_stone.png" alt="한계돌파석" style="width:60px;height:60px;object-fit:contain"/><b>한계돌파석</b><small>보유 ${this.store.market.stones}개 · 캐릭터 한계돌파 재료</small></article><article class="storage-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권" style="width:60px;height:60px;object-fit:contain"/><b>겅이복권</b><small>보유 ${(this.store.data.lotteryTickets ?? 0).toLocaleString('ko-KR')}개 · 토벌장 0.6% 획득</small></article>` + ([['잡초',this.store.wildWeed?.count??0,500,'/field_wild_weed.png'],['황금잡초',this.store.wildWeed?.goldenCount??0,5000,'/field_golden_weed.png']] as const).filter(x=>x[1]>0).map(([name,count,price,img])=>`<article class="storage-item"><img src="${img}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count}개 · 개당 ${price}코인</small></article>`).join('')
+      // Pet boxes belong to 기타; the server remains the source of truth.
+      const inventoryGrid = grid
+      void fetch('/api/pets', { credentials: 'include', cache: 'no-store' })
+        .then(r => { if (!r.ok) throw new Error('pets'); return r.json() as Promise<{ boxes: { id: number }[] }> })
+        .then(pets => {
+          if (this.storageTab !== 'inventory' || !inventoryGrid.isConnected) return
+          inventoryGrid.querySelector('.pet-box-storage-item')?.remove()
+          const card = document.createElement('article')
+          card.className = 'storage-item pet-box-storage-item'
+          card.innerHTML = `<img src="/assets/pets/box_normal.png" alt="노말 펫박스" style="width:60px;height:60px;object-fit:contain"/><b>노말 펫박스</b><small>보유 ${pets.boxes.length.toLocaleString('ko-KR')}개 · 개봉은 광장 펫 메뉴에서 가능</small>`
+          inventoryGrid.append(card)
+        })
+        .catch(() => { /* Leave the rest of 기타 intact if the pet API is unavailable. */ })
     } else if (this.storageTab === 'accessory') {
       const counts = this.store.accessory.counts || {}
       const cards = WEAPON_ACCESSORIES.flatMap(item => ALCHEMY_GRADES.map(grade => {
