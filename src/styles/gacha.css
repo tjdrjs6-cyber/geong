@@ -7320,3 +7320,9 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-market-register>button{white-space:nowrap!important}
 #ui [data-screen="plaza"] .plaza-market-item{border-radius:13px!important;overflow:hidden!important}
 @media(max-width:540px){#ui [data-screen="plaza"] .plaza-market-register>input{flex:1 1 92px!important;width:92px!important}}
+
+/* 4.4 community open state and compact listing cancellation */
+.gacha-screen .nav-community[aria-expanded="true"] .menu-toggle-arrow { transform:scaleX(-1) !important; }
+#ui .plaza-market-cancel-list { display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;max-width:55%; }
+#ui .plaza-market-cancel-list button {border:1px solid #d8c1b3;background:#fff9f4;color:#77534a;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;}
+#ui .plaza-market-myitem span small {display:block;font-size:11px;color:#806d65;margin-top:3px;}

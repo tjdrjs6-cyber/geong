@@ -2074,6 +2074,31 @@ const routes = {
       await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
+  'POST /api/pets/cancel': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT * FROM gm_pet_listings WHERE id=? AND seller_id=? AND status='active' FOR UPDATE",[listingId,a.id]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'listing_unavailable'})}
+      const l=ls[0];const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';
+      await c.query(`UPDATE ${table} SET listing_id=NULL WHERE id=? AND owner_id=? AND listing_id=?`,[l.item_id,a.id,listingId]);
+      await c.query("UPDATE gm_pet_listings SET status='cancelled' WHERE id=?",[listingId]);
+      await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'POST /api/plaza/drops/cancel': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT * FROM gm_drop_listings WHERE id=? AND seller_id=? AND status='active' FOR UPDATE",[listingId,a.id]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'listing_unavailable'})}
+      const l=ls[0],col=l.kind==='stone'?'stone_qty':'ticket_qty';
+      await c.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[a.id]);
+      await c.query(`UPDATE gm_tradeable_drops SET ${col}=${col}+? WHERE account_id=?`,[l.quantity,a.id]);
+      await c.query("UPDATE gm_drop_listings SET status='cancelled' WHERE id=?",[listingId]);
+      await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
   'POST /api/plaza/drops/list': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const {kind,quantity,unitPrice}=await readJson(req);
