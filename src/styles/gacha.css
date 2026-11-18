@@ -6811,3 +6811,18 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .pets-owned-card button:disabled,.pets-box-actions button:disabled{opacity:.5;cursor:not-allowed}
 .pets-bonus-note{font-size:13px;margin:0 0 12px}
 .pets-open-result{font-size:13px;margin:8px 0 0}
+
+/* Pet 1.4: fixed-size tab panel and scrollable inventory, shared PC/mobile */
+.pets-card{width:min(560px,calc(100vw - 24px));height:min(620px,calc(100dvh - 32px));max-height:calc(100dvh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.pets-heading{margin:0 0 10px;flex:none}.pets-heading>img{width:48px;height:48px}
+.pets-tab-content{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1;overflow:hidden}
+.pets-switch,.pets-groups{display:flex;gap:6px;flex:none}
+.pets-switch button,.pets-groups button{flex:1;border:1px solid rgba(120,120,120,.2);border-radius:9px;padding:10px 6px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.pets-switch button.active,.pets-groups button.active{background:#f7e6f1;color:#4e3547;border-color:#cda9c1;font-weight:700}
+.pets-section.pets-compact{padding:12px;min-height:0;display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden}
+.pets-box-info img{width:74px;height:74px}.pets-box-info p{margin:3px 0}
+.pets-box-actions{margin-top:0;max-height:none;overflow:visible;align-items:center}
+.pets-open-count{width:70px;min-width:0;padding:8px;border:1px solid #cda9c1;border-radius:8px;font-size:16px}
+.pets-owned-list{max-height:none;overflow-y:auto;min-height:0;flex:1;overscroll-behavior:contain}
+.pets-owned-card{padding:7px}.pets-owned-card>img{width:48px;height:48px}
+.pets-equipped-status{font-size:13px;margin:0}.pets-empty{font-size:13px;opacity:.7}

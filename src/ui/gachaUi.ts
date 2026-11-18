@@ -1301,58 +1301,58 @@ export class GachaUi {
     },90)
   }
 
+  private petPanel: 'boxes' | 'manage' = 'boxes'
+  private petGroup: 'tradeable' | 'locked' = 'tradeable'
+
   private async loadPetTab(): Promise<void> {
-    const content = this.root.querySelector<HTMLElement>('.pets-tab-content')
-    if (!content) return
-    content.innerHTML = '<p>펫 정보를 불러오는 중...</p>'
+    const content=this.root.querySelector<HTMLElement>('.pets-tab-content')
+    if(!content)return
     try {
-      const response = await fetch('/api/pets', {credentials:'include',cache:'no-store'})
-      if (!response.ok) throw new Error('pets')
-      const data = await response.json() as {boxes:{id:number;listing_id:number|null}[];pets:{id:number;kind:string;grade:string;used:number;trades:number;listing_id:number|null}[];equipped:number}
-      const available = data.boxes.filter(box=>!box.listing_id)
-      const names:Record<string,string> = {momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
-      const cards = data.pets.map(pet => {
-        const equipped = Number(data.equipped) === Number(pet.id)
-        const listed = pet.listing_id != null
-        return `<article class="pets-owned-card"><img src="/assets/pets/${names[pet.kind] ? pet.kind : 'momonga'}.png" alt="펫 이미지"/><div class="pets-owned-info"><strong>${names[pet.kind]||'펫'} 펫</strong><small>노말 · ${equipped?'배치 중':listed?'판매 등록 중':pet.used?'사용 등록 완료':pet.trades?'거래 완료 · 사용 가능':'미사용 · 1회 거래 가능'}</small></div>${equipped?'<button type="button" data-action="pet-unequip">배치 해제</button>':listed?'<span class="pets-muted">판매 중</span>':`<button type="button" data-action="pet-equip" data-id="${pet.id}">배치</button>`}</article>`
+      const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
+      if(!r.ok)throw Error('펫 정보 조회 실패')
+      const data=await r.json() as {boxes:{id:number;listing_id:number|null}[];pets:{id:number;kind:string;used:number;trades:number;listing_id:number|null}[];equipped:number}
+      const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
+      const available=data.boxes.filter(x=>!x.listing_id)
+      const tradable=data.pets.filter(x=>!x.used && !Number(x.trades) && !x.listing_id)
+      const locked=data.pets.filter(x=>!tradable.includes(x))
+      const selected=this.petGroup==='tradeable'?tradable:locked
+      const cards=selected.map(p=>{
+        const equipped=Number(data.equipped)===Number(p.id)
+        const state=equipped?'배치 중':p.listing_id?'판매 등록 중':p.used?'사용 완료 · 거래 불가':p.trades?'거래 완료 · 재판매 불가':'미사용 · 거래 가능'
+        const action=equipped?'<button data-action="pet-unequip">해제</button>':p.listing_id?'<span class="pets-muted">판매 중</span>':`<button data-action="pet-equip" data-id="${p.id}">배치</button>`
+        return `<article class="pets-owned-card"><img src="/assets/pets/${names[p.kind]?p.kind:'momonga'}.png" alt="펫"/><div class="pets-owned-info"><strong>${names[p.kind]||'노말'} 펫</strong><small>노말 · ${state}</small></div>${action}</article>`
       }).join('')
-      content.innerHTML = `<div class="pets-section"><div class="pets-section-title"><b>노말 펫박스</b><span>보유 ${data.boxes.length}개 · 개봉 가능 ${available.length}개</span></div><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="노말 펫박스"/><div><strong>노말 펫박스</strong><p>꽝 90% · 노말 펫 5종 각 2%</p><small>판매 등록된 박스는 개봉할 수 없습니다.</small></div></div><div class="pets-box-actions"><button type="button" data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><button type="button" data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div><p class="pets-open-result" aria-live="polite"></p></div><div class="pets-section"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-bonus-note">배치 중인 노말 펫 1마리: 제초속도 +30% · 전투력 +10% (중복 적용 없음)</p><div class="pets-owned-list">${cards||'<p>보유한 펫이 없습니다. 펫박스를 개봉해 보세요.</p>'}</div></div>`
-    } catch {content.innerHTML = '<p>펫 정보를 불러오지 못했습니다. 다시 입장해 주세요.</p>' }
+      content.innerHTML=`<div class="pets-switch"><button data-action="pet-panel-boxes" class="${this.petPanel==='boxes'?'active':''}">펫박스</button><button data-action="pet-panel-manage" class="${this.petPanel==='manage'?'active':''}">펫 관리</button></div>`+
+      (this.petPanel==='boxes'
+      ? `<div class="pets-section pets-compact"><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>노말 펫박스</strong><p>보유 ${data.boxes.length}개 · 개봉 가능 ${available.length}개</p><small>꽝 90% · 펫 5종 각 2%</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
+      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><div class="pets-groups"><button data-action="pet-group-tradeable" class="${this.petGroup==='tradeable'?'active':''}">거래 가능 (${tradable.length})</button><button data-action="pet-group-locked" class="${this.petGroup==='locked'?'active':''}">거래 불가 (${locked.length})</button></div><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
+    }catch{this.toast('펫 정보를 불러오지 못했습니다.')}
   }
 
-  private async openPetBoxes(multiple:boolean):Promise<void> {
-    const response = await fetch('/api/pets',{credentials:'include',cache:'no-store'})
-    if (!response.ok) {window.alert('펫박스를 조회하지 못했습니다.');return}
-    const snapshot = await response.json() as {boxes:{id:number;listing_id:number|null}[]}
-    const available = snapshot.boxes.filter(box=>!box.listing_id)
-    if (!available.length) {window.alert('개봉 가능한 펫박스가 없습니다.');return}
-    let count = 1
-    if (multiple) {
-      const input = window.prompt(`몇 개를 개봉할까요? (1~${available.length}개)`,String(Math.min(available.length,10)))
-      if (input === null) return
-      count = Number(input)
-      if (!Number.isSafeInteger(count) || count < 1 || count > available.length) {window.alert('보유 수량 이내의 개수를 입력해주세요.');return}
-    }
-    if (!window.confirm(`노말 펫박스 ${count}개를 개봉하시겠습니까? (꽝 90%)`)) return
-    const controls = this.root.querySelectorAll<HTMLButtonElement>('.pets-box-actions button')
-    controls.forEach(button=>button.disabled=true)
-    const result = this.root.querySelector<HTMLElement>('.pets-open-result')
+  private async openPetBoxes(multiple:boolean):Promise<void>{
+    const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
+    if(!r.ok){this.toast('펫박스 조회 실패');return}
+    const data=await r.json() as {boxes:{id:number;listing_id:number|null}[]}
+    const boxes=data.boxes.filter(x=>!x.listing_id)
+    if(!boxes.length){this.toast('개봉 가능한 펫박스가 없습니다.');return}
+    const count=multiple?Number(this.root.querySelector<HTMLInputElement>('.pets-open-count')?.value):1
+    if(!Number.isSafeInteger(count)||count<1||count>boxes.length){this.toast('개봉 수량을 확인해주세요.');return}
+    this.root.querySelectorAll<HTMLButtonElement>('.pets-box-actions button').forEach(b=>b.disabled=true)
     const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
     const wins:Record<string,number>={}
     let opened=0
-    for (const box of available.slice(0,count)) {
-      try {
-        const r=await fetch('/api/pets/open',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({boxId:box.id})})
-        if (!r.ok) throw new Error('open_failed')
-        const data=await r.json() as {pet?:{kind:string}}
+    for(const box of boxes.slice(0,count)){
+      try{
+        const response=await fetch('/api/pets/open',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({boxId:box.id})})
+        if(!response.ok)break
+        const result=await response.json() as {pet?:{kind:string}}
         opened++
-        if (data.pet) wins[data.pet.kind]=(wins[data.pet.kind]||0)+1
-        if(result)result.textContent=`개봉 진행 중... ${opened}/${count}`
-      } catch {break}
+        if(result.pet)wins[result.pet.kind]=(wins[result.pet.kind]||0)+1
+      }catch{break}
     }
     await this.loadPetTab()
-    const summary=Object.entries(wins).map(([kind,n])=>`${names[kind]||kind} ${n}마리`).join(', ')
-    window.alert(`${opened}개 개봉 완료${opened<count?' (일부 개봉 실패)':''}\n${summary||'획득한 펫 없음 (꽝)'}\n꽝 ${opened-Object.values(wins).reduce((a,b)=>a+b,0)}개`)
+    const summary=Object.entries(wins).map(([k,n])=>`${names[k]||k} ${n}마리`).join(', ')
+    this.toast(`${opened}개 개봉 · ${summary||'획득 펫 없음'} · 꽝 ${opened-Object.values(wins).reduce((x,y)=>x+y,0)}개${opened<count?' · 일부 실패':''}`)
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
@@ -1380,21 +1380,34 @@ export class GachaUi {
     if (action === 'plaza') {this.show('plaza');return}
     if (action === 'plaza-shop') {await this.plaza.shop();return}
     if (action === 'pets') { this.show('pets'); return }
+    if (action === 'pet-panel-boxes' || action === 'pet-panel-manage') {
+      this.petPanel=action==='pet-panel-boxes'?'boxes':'manage';await this.loadPetTab();return
+    }
+    if (action === 'pet-group-tradeable' || action === 'pet-group-locked') {
+      this.petGroup=action==='pet-group-tradeable'?'tradeable':'locked';await this.loadPetTab();return
+    }
     if (action === 'pet-open-one' || action === 'pet-open-many') {
       try {await this.openPetBoxes(action === 'pet-open-many')}
-      catch {window.alert('펫박스 개봉 중 오류가 발생했습니다.');await this.loadPetTab()}
+      catch {this.toast('펫박스 개봉 중 오류가 발생했습니다.');await this.loadPetTab()}
       return
     }
     if (action === 'pet-equip' || action === 'pet-unequip') {
       const id = Number(button?.dataset.id)
       if (action === 'pet-equip' && (!Number.isSafeInteger(id)||id<=0)) return
-      if (action === 'pet-equip' && !window.confirm('이 펫을 사용하고 배치하시겠습니까? 사용하면 도감에 등록되며 영구적으로 거래할 수 없습니다.')) return
+      
       if (button) button.disabled=true
       try {
         const response = await fetch(action === 'pet-equip'?'/api/pets/use':'/api/pets/unequip',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(action === 'pet-equip'?{petId:id}:{})})
         if (!response.ok) throw new Error('pet_action_failed')
+        const verify=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
+        if(!verify.ok)throw Error('배치 확인 실패')
+        const snapshot=await verify.json() as {equipped:number}
+        if(action==='pet-equip' && Number(snapshot.equipped)!==id)throw Error('펫 배치가 저장되지 않았습니다.')
+        if(action==='pet-unequip' && Number(snapshot.equipped)!==0)throw Error('펫 해제가 저장되지 않았습니다.')
+        await this.store.restore()
         await this.loadPetTab()
-      } catch {window.alert('펫 배치 변경에 실패했습니다.');await this.loadPetTab()}
+        this.toast(action==='pet-equip'?'펫 배치 완료 · 전투력 +10%, 제초속도 +30%':'펫 배치 해제 완료')
+      } catch(error) {this.toast(error instanceof Error?error.message:'펫 배치 실패');await this.loadPetTab()}
       return
     }
 
