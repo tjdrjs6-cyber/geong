@@ -7157,3 +7157,17 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
   flex-shrink:0!important;
   order:-1!important;
 }
+
+/* 3.4 Plaza: larger vertical play area, overlay joystick, designated shop slots */
+#ui [data-screen="plaza"] .plaza-card{height:min(96dvh,1040px)!important;max-height:96dvh!important;min-height:min(720px,90dvh);display:flex;flex-direction:column;overflow:hidden!important;}
+#ui [data-screen="plaza"] .plaza-map{position:relative!important;flex:1 1 auto!important;min-height:440px!important;max-height:none!important;overflow:hidden!important;isolation:isolate;}
+#ui [data-screen="plaza"] .plaza-world{height:100%!important;}
+#ui [data-screen="plaza"] .plaza-actions{flex:0 0 auto!important;}
+#ui [data-screen="plaza"] .plaza-actions button[data-action="plaza-emote"]{display:none!important;}
+#ui [data-screen="plaza"] .plaza-mobile-controls{position:absolute!important;left:14px!important;bottom:14px!important;z-index:22!important;display:none!important;width:86px;height:86px;pointer-events:none;}
+#ui [data-screen="plaza"] .plaza-mobile-controls .plaza-joystick{display:block!important;position:relative!important;width:86px!important;height:86px!important;opacity:.55!important;background:rgba(255,255,255,.38)!important;backdrop-filter:blur(2px);pointer-events:auto;touch-action:none;}
+#ui [data-screen="plaza"] .plaza-shop-zones{position:absolute;inset:0;z-index:2;pointer-events:none;}
+#ui [data-screen="plaza"] .plaza-shop-zone{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:70px;height:32px;border:2px dashed rgba(137,99,65,.6);border-radius:10px;background:rgba(255,247,223,.65);color:#715a4a;font-size:10px;font-weight:700;box-sizing:border-box;}
+#ui [data-screen="plaza"] .plaza-shop-sign{z-index:9!important;}
+@media(pointer:coarse){#ui [data-screen="plaza"] .plaza-mobile-controls{display:block!important;}}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-card{height:96dvh!important;min-height:0!important;}#ui [data-screen="plaza"] .plaza-map{min-height:340px!important;}#ui [data-screen="plaza"] .plaza-shop-zone{width:53px;height:27px;font-size:9px;}}

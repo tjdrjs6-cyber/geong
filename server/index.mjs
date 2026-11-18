@@ -2040,12 +2040,23 @@ const routes = {
     send(res,200,{me:account.id,shops:shops.map(x=>({...x,id:Number(x.id),expires_ms:Number(x.expires_ms)})),inventory,listings,tradeEnabled:true})
   },
   'POST /api/plaza/shop/open': async(req,res)=>{
-    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
-    const now=Date.now();const [presence]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=? AND updated_ms>=?',[account.id,now-12000]);if(!presence.length)return send(res,409,{error:'plaza_not_joined'})
-    const p=presence[0];const [other]=await pool.query('SELECT account_id FROM gm_plaza_shops WHERE channel=? AND expires_ms>? AND account_id<>? AND ABS(x-?)<6 AND ABS(y-?)<6 LIMIT 1',[p.channel,now,account.id,p.x,p.y]);if(other.length)return send(res,409,{error:'shop_too_close'})
-    const [count]=await pool.query('SELECT COUNT(*) n FROM gm_plaza_shops WHERE channel=? AND expires_ms>? AND account_id<>?',[p.channel,now,account.id]);if(Number(count[0].n)>=10)return send(res,409,{error:'shop_channel_full'})
-    const [existing]=await pool.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>?',[account.id,now]);if(existing.length)return send(res,409,{error:'shop_already_open'})
-    await pool.query('INSERT INTO gm_plaza_shops(account_id,channel,x,y,opened_ms,expires_ms) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),x=VALUES(x),y=VALUES(y),opened_ms=VALUES(opened_ms),expires_ms=VALUES(expires_ms)',[account.id,p.channel,p.x,p.y,now,now+86400000]);send(res,200,{ok:true,expires_ms:now+86400000})
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'});
+    const now=Date.now();const [presence]=await pool.query('SELECT channel,x,y FROM gm_plaza_presence WHERE account_id=? AND updated_ms>=?',[account.id,now-12000]);
+    if(!presence.length)return send(res,409,{error:'plaza_not_joined'});
+    const p=presence[0];const spots=[[18,18],[39,18],[61,18],[82,18],[18,82],[39,82],[61,82],[82,82]];
+    const near=spots.map(([x,y])=>({x,y,d:Math.hypot(Number(p.x)-x,Number(p.y)-y)})).sort((a,b)=>a.d-b.d)[0];
+    if(!near||near.d>10)return send(res,409,{error:'shop_zone_only'});
+    const lockName='gm_plaza_shop_channel_'+Number(p.channel);const conn=await pool.getConnection();let locked=false;
+    try{
+      const [locks]=await conn.query('SELECT GET_LOCK(?,5) acquired',[lockName]);locked=Number(locks[0]?.acquired)===1;
+      if(!locked)return send(res,409,{error:'shop_busy_retry'});
+      const [existing]=await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>?',[account.id,now]);
+      if(existing.length)return send(res,409,{error:'shop_already_open'});
+      const [others]=await conn.query('SELECT x,y FROM gm_plaza_shops WHERE channel=? AND expires_ms>? AND account_id<>?',[p.channel,now,account.id]);
+      if(others.some(o=>Math.hypot(Number(o.x)-near.x,Number(o.y)-near.y)<12))return send(res,409,{error:'shop_spot_taken'});
+      await conn.query('INSERT INTO gm_plaza_shops(account_id,channel,x,y,opened_ms,expires_ms) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE channel=VALUES(channel),x=VALUES(x),y=VALUES(y),opened_ms=VALUES(opened_ms),expires_ms=VALUES(expires_ms)',[account.id,p.channel,near.x,near.y,now,now+86400000]);
+      send(res,200,{ok:true,expires_ms:now+86400000,x:near.x,y:near.y});
+    }finally{if(locked)await conn.query('SELECT RELEASE_LOCK(?)',[lockName]);conn.release()}
   },
   'POST /api/plaza/shop/close': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
