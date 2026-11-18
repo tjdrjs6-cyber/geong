@@ -7408,3 +7408,7 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 /* 5.3: diamond balance beside the plaza heading */
 #ui [data-screen="plaza"] .plaza-head {display:flex;align-items:center;flex-wrap:wrap;column-gap:10px;row-gap:5px}
 #ui [data-screen="plaza"] .plaza-diamond-balance {display:inline-flex;align-items:center;border:1px solid #dfcbb0;border-radius:999px;background:#fffaf0;color:#74513e;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+
+/* 5.4: existing diamond artwork in the plaza balance */
+#ui [data-screen="plaza"] .plaza-diamond-balance{gap:5px}
+#ui [data-screen="plaza"] .plaza-diamond-icon{display:block;width:17px;height:17px;object-fit:contain;flex:none}

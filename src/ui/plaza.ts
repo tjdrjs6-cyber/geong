@@ -26,7 +26,7 @@ export class Plaza {
    const head=this.panel.querySelector<HTMLElement>('.plaza-head');if(!head)return;
    let counter=head.querySelector<HTMLElement>('.plaza-diamond-balance');
    if(!counter){counter=document.createElement('span');counter.className='plaza-diamond-balance';head.querySelector('h2')?.insertAdjacentElement('afterend',counter)}
-   counter.textContent=`다이아 ${this.diamonds.toLocaleString('ko-KR')}개`;
+   counter.innerHTML=`<img class="plaza-diamond-icon" src="/assets/diamond.png" alt="" aria-hidden="true"/><span>다이아 ${this.diamonds.toLocaleString('ko-KR')}개</span>`;
   }catch{/* Keep the last confirmed balance on transient connection errors. */}
  }
  private setupWorld(){const map=this.panel.querySelector<HTMLElement>('.plaza-map');if(!map||map.querySelector('.plaza-world'))return;const world=document.createElement('div');world.className='plaza-world';const controls=map.querySelector('.plaza-mobile-controls');while(map.firstChild)world.appendChild(map.firstChild);map.appendChild(world);
