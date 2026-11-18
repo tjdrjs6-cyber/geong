@@ -7133,3 +7133,27 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .battle-drop-overlay[hidden]{display:none!important}
 .battle-drop-dialog{position:relative;width:min(100%,420px);max-height:min(85dvh,720px);overflow-y:auto;box-sizing:border-box;padding:18px;border-radius:20px;border:2px solid #f0c5d4;background:#fffdfb;box-shadow:0 16px 55px #23172360;color:#674e5d}
 .battle-drop-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.battle-drop-head h2{margin:3px 0 10px;font-size:21px}.battle-drop-close,.battle-drop-done{border:1px solid #e7bfd0;background:#fff1f7;color:#765163;border-radius:12px;padding:9px 14px;cursor:pointer}.battle-drop-item{display:flex;justify-content:space-between;gap:12px;padding:11px 4px;border-bottom:1px solid #f1e6e9}.battle-drop-item>div{display:flex;flex-direction:column;gap:3px}.battle-drop-item small{color:#947c8b}.battle-drop-item strong{white-space:nowrap}.battle-drop-done{display:block;margin:15px 0 0 auto}.battle-drop-note{font-size:12px;line-height:1.5}
+
+/* 3.3.1 targeted navigation alignment fix. Keep original dimensions and artwork. */
+#ui.gacha-screen .community-options .nav-button,
+#ui.gacha-screen .market-options .nav-button,
+#ui.gacha-screen .myroom-options .nav-button,
+#ui .gacha-screen .community-options .nav-button,
+#ui .gacha-screen .market-options .nav-button,
+#ui .gacha-screen .myroom-options .nav-button{
+  justify-content:flex-start!important;
+  text-align:left!important;
+  flex-direction:row!important;
+  padding-left:7px!important;
+  padding-right:3px!important;
+  gap:4px!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon,
+#ui.gacha-screen .market-options .chiikawa-tab-icon,
+#ui.gacha-screen .myroom-options .chiikawa-tab-icon,
+#ui .gacha-screen .community-options .chiikawa-tab-icon,
+#ui .gacha-screen .market-options .chiikawa-tab-icon,
+#ui .gacha-screen .myroom-options .chiikawa-tab-icon{
+  flex-shrink:0!important;
+  order:-1!important;
+}
