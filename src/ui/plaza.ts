@@ -8,7 +8,7 @@ const PET_NAMES:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만�
 const safe=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c))
 async function api<T>(path:string,body?:object):Promise<T>{const r=await fetch('/api/plaza'+path,{credentials:'include',cache:'no-store',...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});if(!r.ok)throw new Error('서버 연결 또는 요청 오류');return r.json()}
 export class Plaza {
- private vy=0;private grounded=true;private timer=0;private moveTimer=0;private state:State|null=null;private x=50;private y=50;private keys=new Set<string>();private joy={x:0,y:0};private active=false;private syncing=false;private lastMove=0;private bound=false
+ private diamonds=0;private diamondsLoaded=false;private lastDiamondRefresh=0;private vy=0;private grounded=true;private timer=0;private moveTimer=0;private state:State|null=null;private x=50;private y=50;private keys=new Set<string>();private joy={x:0,y:0};private active=false;private syncing=false;private lastMove=0;private bound=false
  constructor(private root:HTMLElement,private featured:()=>string|null){this.setupWorld();this.bind()}
  private notice(message:string){
   const card=this.panel.querySelector<HTMLElement>('.plaza-card')!;
@@ -17,6 +17,17 @@ export class Plaza {
  }
  private confirmGame(message:string):Promise<boolean>{
   return new Promise(resolve=>{const card=this.panel.querySelector<HTMLElement>('.plaza-card')!;const overlay=document.createElement('div');overlay.className='plaza-game-overlay';overlay.innerHTML=`<div class="plaza-game-dialog" role="dialog" aria-modal="true"><h3>확인</h3><p>${safe(message)}</p><div><button data-choice="no">취소</button><button data-choice="yes">확인</button></div></div>`;card.append(overlay);overlay.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.addEventListener('click',()=>{const yes=b.dataset.choice==='yes';overlay.remove();resolve(yes)}));overlay.querySelector<HTMLButtonElement>('[data-choice="no"]')?.focus()})
+ }
+ private async refreshDiamonds(force=false){
+  if(!force&&Date.now()-this.lastDiamondRefresh<10000)return;
+  this.lastDiamondRefresh=Date.now();
+  try{const r=await fetch('/api/diamonds/recharge',{credentials:'include',cache:'no-store'});if(!r.ok)return;
+   const data=await r.json() as {diamonds:number};this.diamonds=Math.max(0,Number(data.diamonds)||0);this.diamondsLoaded=true;
+   const head=this.panel.querySelector<HTMLElement>('.plaza-head');if(!head)return;
+   let counter=head.querySelector<HTMLElement>('.plaza-diamond-balance');
+   if(!counter){counter=document.createElement('span');counter.className='plaza-diamond-balance';head.querySelector('h2')?.insertAdjacentElement('afterend',counter)}
+   counter.textContent=`다이아 ${this.diamonds.toLocaleString('ko-KR')}개`;
+  }catch{/* Keep the last confirmed balance on transient connection errors. */}
  }
  private setupWorld(){const map=this.panel.querySelector<HTMLElement>('.plaza-map');if(!map||map.querySelector('.plaza-world'))return;const world=document.createElement('div');world.className='plaza-world';const controls=map.querySelector('.plaza-mobile-controls');while(map.firstChild)world.appendChild(map.firstChild);map.appendChild(world);
   // Keep the shop action fixed to the viewport, outside the scrolling world.
@@ -48,7 +59,7 @@ export class Plaza {
  }
  async enter(){if(this.active)return;this.active=true;this.state=null;await this.sync();if(!this.active)return;this.camera();this.timer=window.setInterval(()=>void this.sync(),1000);this.moveTimer=window.setInterval(()=>this.tick(),80)}
  leave(){if(!this.active)return;this.active=false;clearInterval(this.timer);clearInterval(this.moveTimer);this.keys.clear();this.joy={x:0,y:0};void api('/leave',{}).catch(()=>{})}
- private async sync(){if(this.syncing||!this.active)return;this.syncing=true;try{const data=await api<State>('');if(!this.active)return;if(!this.state){const me=data.players.find(p=>p.id===data.me);if(me){this.x=me.x;this.y=this.snapFloor(me.y)}}this.state=data;this.render()}catch{this.panel.querySelector<HTMLElement>('.plaza-status')!.textContent='연결 확인 중...'}finally{this.syncing=false}}
+ private async sync(){if(this.syncing||!this.active)return;this.syncing=true;try{const data=await api<State>('');if(!this.active)return;if(!this.state){const me=data.players.find(p=>p.id===data.me);if(me){this.x=me.x;this.y=this.snapFloor(me.y)}}this.state=data;this.render();void this.refreshDiamonds()}catch{this.panel.querySelector<HTMLElement>('.plaza-status')!.textContent='연결 확인 중...'}finally{this.syncing=false}}
  private snapFloor(y:number){return [24,52,82].reduce((a,b)=>Math.abs(y-b)<Math.abs(y-a)?b:a,82)}
  private onLadder(){return [28,72].some(x=>Math.abs(this.x-x)<4)}
  private tick(){
@@ -146,11 +157,21 @@ export class Plaza {
    panel.innerHTML=head+`<div class="plaza-market-body">${body}</div>`;
   }catch{panel.innerHTML='<div class="plaza-shop-title"><strong>거래 광장</strong><button data-shop-action="hide">닫기</button></div><p class="plaza-market-empty">상점 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>'}
  }
- private async shopAction(action:string,id:number){const panel=this.panel.querySelector<HTMLElement>('.plaza-shop-panel')!;if(action==='hide'){panel.hidden=true;return}if(action==='browse'||action==='mine'){if(this.selectedSeller!==null&&action==='mine')return;await this.openShop(action);return}if(['buypet','buydrop','openbox','usepet','close','cancelpetgroup','canceldropgroup'].includes(action)){
-    const msg=action==='cancelpetgroup'||action==='canceldropgroup'?'선택한 상품의 판매 등록을 취소하시겠습니까?':action==='buypet'?'다이아로 구매하시겠습니까?':action==='openbox'?'펫박스를 개봉하시겠습니까?':action==='usepet'?'이 펫을 장착하시겠습니까?':'상점을 닫고 미판매 상품을 반환하시겠습니까?';
-    if(!await this.confirmGame(msg))return
+ private async shopAction(action:string,id:number){const panel=this.panel.querySelector<HTMLElement>('.plaza-shop-panel')!;if(action==='hide'){panel.hidden=true;return}if(action==='browse'||action==='mine'){if(this.selectedSeller!==null&&action==='mine')return;await this.openShop(action);return}const button=panel.querySelector<HTMLButtonElement>(`button[data-shop-action="${action}"][data-id="${id}"]`);const type=button?.dataset.type||'';
+  if(action==='buypet'||action==='buydrop'){
+    await this.refreshDiamonds(true);
+    if(!this.diamondsLoaded){this.notice('보유 다이아를 확인하지 못했습니다. 다시 시도해 주세요.');return}
+    const card=button?.closest<HTMLElement>('.plaza-market-item');
+    const text=card?.querySelector<HTMLElement>('.plaza-market-item-info')?.textContent||'';
+    const priceMatch=action==='buydrop'?text.match(/총\s*([\d,]+)\s*다이아/):text.match(/개당\s*([\d,]+)\s*다이아/);
+    const required=priceMatch?Number(priceMatch[1].replace(/,/g,'')):NaN;
+    if(!Number.isSafeInteger(required)||required<1){this.notice('상품 가격을 확인할 수 없습니다. 다시 시도해 주세요.');return}
+    if(this.diamonds<required){this.notice(`보유한 다이아가 부족합니다. (보유 ${this.diamonds.toLocaleString('ko-KR')}개)`);return}
+    if(!await this.confirmGame(`${required.toLocaleString('ko-KR')}다이아로 구매하시겠습니까?`))return;
+  }else if(['openbox','usepet','close','cancelpetgroup','canceldropgroup'].includes(action)){
+    const msg=action==='cancelpetgroup'||action==='canceldropgroup'?'선택한 상품의 판매 등록을 취소하시겠습니까?':action==='openbox'?'펫박스를 개봉하시겠습니까?':action==='usepet'?'이 펫을 장착하시겠습니까?':'상점을 닫고 미판매 상품을 반환하시겠습니까?';
+    if(!await this.confirmGame(msg))return;
   }
-  const button=panel.querySelector<HTMLButtonElement>(`button[data-shop-action="${action}"][data-id="${id}"]`);const type=button?.dataset.type||'';
   try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw Error('request');return r.json()};
    if(action==='open'||action==='close'){try{
      if(action==='open'){
@@ -177,6 +198,7 @@ export class Plaza {
    else if(action==='usepet')await request('/api/pets/use',{petId:id});
    else if(action==='unequip')await request('/api/pets/unequip');
    if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop();
+   if(action==='buypet'||action==='buydrop')await this.refreshDiamonds(true);
    if(!['openbox'].includes(action))this.notice('처리가 완료되었습니다.')
   }catch{this.notice('요청을 처리하지 못했습니다. 아이템 상태·다이아·상점 위치를 확인해주세요.');if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop()}
  }
