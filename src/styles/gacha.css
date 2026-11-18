@@ -7309,3 +7309,14 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
  pointer-events:none!important;
 }
 #ui [data-screen="plaza"] .plaza-platform-shop[hidden]{display:none!important;}
+
+/* 4.3: shop management only, tidy registration cards; plaza-only scope */
+#ui [data-screen="plaza"] .plaza-shop-panel{border-radius:18px!important;overflow:auto!important;box-shadow:0 12px 32px #493d4424!important}
+#ui [data-screen="plaza"] .plaza-market-status,#ui [data-screen="plaza"] .plaza-market-section{border-radius:14px!important}
+#ui [data-screen="plaza"] .plaza-market-register{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px!important;padding:12px!important;margin:8px 0!important;border:1px solid #e6d8d6!important;border-radius:13px!important;background:#fffdfb!important}
+#ui [data-screen="plaza"] .plaza-market-register>span{flex:1 1 135px!important;min-width:125px!important;display:flex!important;flex-direction:column!important;gap:3px!important}
+#ui [data-screen="plaza"] .plaza-market-register>span small{font-size:11px!important;color:#967b82!important}
+#ui [data-screen="plaza"] .plaza-market-register>input{width:110px!important;min-width:90px!important;max-width:140px!important;box-sizing:border-box!important}
+#ui [data-screen="plaza"] .plaza-market-register>button{white-space:nowrap!important}
+#ui [data-screen="plaza"] .plaza-market-item{border-radius:13px!important;overflow:hidden!important}
+@media(max-width:540px){#ui [data-screen="plaza"] .plaza-market-register>input{flex:1 1 92px!important;width:92px!important}}

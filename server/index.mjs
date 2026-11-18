@@ -2038,6 +2038,26 @@ const routes = {
       const [r]=await c.query('INSERT INTO gm_pet_listings(seller_id,item_type,item_id,price,created_ms) VALUES(?,?,?,?,?)',[a.id,itemType,itemId,price,Date.now()]);await c.query(`UPDATE ${table} SET listing_id=? WHERE id=?`,[r.insertId,itemId]);await c.commit();send(res,200,{ok:true})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
+  'POST /api/pets/list-batch':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {itemType,itemId,price,quantity}=await readJson(req);
+    if(itemType!=='box'||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<1000||price>100000000||!Number.isSafeInteger(quantity)||quantity<1||quantity>1000)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);
+      if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
+      const [selected]=await c.query('SELECT grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL AND trades=0 FOR UPDATE',[itemId,a.id]);
+      if(!selected.length){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      const grade=selected[0].grade;
+      const [available]=await c.query('SELECT id FROM gm_pet_boxes WHERE owner_id=? AND grade=? AND listing_id IS NULL AND trades=0 ORDER BY id FOR UPDATE',[a.id,grade]);
+      if(available.length<quantity){await c.rollback();return send(res,409,{error:'not_enough_items'})}
+      const [active]=await c.query("SELECT b.grade,l.price FROM gm_pet_listings l JOIN gm_pet_boxes b ON b.id=l.item_id WHERE l.seller_id=? AND l.status='active' AND l.item_type='box' FOR UPDATE",[a.id]);
+      const groups=new Set(active.map(x=>String(x.grade)+'|'+String(x.price)));
+      if(!groups.has(String(grade)+'|'+String(price))&&groups.size>=5){await c.rollback();return send(res,409,{error:'listing_full'})}
+      const ids=available.slice(0,quantity).map(x=>x.id);
+      for(const id of ids){const [r]=await c.query('INSERT INTO gm_pet_listings(seller_id,item_type,item_id,price,created_ms) VALUES(?,?,?,?,?)',[a.id,'box',id,price,Date.now()]);await c.query('UPDATE gm_pet_boxes SET listing_id=? WHERE id=? AND owner_id=? AND listing_id IS NULL',[r.insertId,id,a.id])}
+      await c.commit();send(res,200,{ok:true,quantity})
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
   'POST /api/pets/buy':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [ls]=await c.query("SELECT l.* FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}
