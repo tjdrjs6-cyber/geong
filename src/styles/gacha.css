@@ -6888,3 +6888,9 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list input{width:110px;max-width:100%}
 #ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-list img{width:36px;height:36px;object-fit:contain}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:50px;right:7px;width:min(320px,calc(100% - 14px));max-height:48dvh;padding:10px}}
+
+/* Pet grade borders; preserve one shared layout on PC and mobile */
+.pet-grade-rare{--pet-grade-color:#3b82f6}.pet-grade-epic{--pet-grade-color:#ef4444}.pet-grade-unique{--pet-grade-color:#a855f7}.pet-grade-normal{--pet-grade-color:#b4b4b4}
+.pets-owned-card[class*="pet-grade-"],.pets-result-item[class*="pet-grade-"],.pet-catalog-grade-grid .friend-card{border:2px solid var(--pet-grade-color,#b4b4b4);border-radius:12px}
+.pets-box-grade-select{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.pets-box-grade-select button{min-width:0;padding:8px 2px;font-size:12px;border:1px solid var(--pet-grade-color,#bbb);border-radius:8px;background:transparent;color:inherit;cursor:pointer}.pets-box-grade-select button.active{border-width:2px;background:rgba(150,150,150,.10);font-weight:700}
+.pet-catalog-grade-title{font-weight:700;border-left:4px solid var(--pet-grade-color);padding:5px 9px;margin-top:8px}.pet-catalog-grade-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.pet-catalog-grade-grid .friend-card{min-width:0;padding:6px}.pet-catalog-grade-grid .friend-portrait{max-width:100%;min-height:44px}.pet-catalog-grade-grid .friend-portrait img{max-width:100%;max-height:75px;object-fit:contain}.pet-catalog-grid{display:block;overflow-y:auto}

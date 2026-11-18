@@ -77,6 +77,8 @@ async function prepareDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_boxes (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT UNSIGNED NOT NULL, listing_id BIGINT UNSIGNED NULL, INDEX(owner_id,listing_id))`)
   const [boxTradeColumns] = await pool.query("SHOW COLUMNS FROM gm_pet_boxes LIKE 'trades'")
   if (!boxTradeColumns.length) await pool.query('ALTER TABLE gm_pet_boxes ADD COLUMN trades TINYINT UNSIGNED NOT NULL DEFAULT 0')
+  const [boxGradeColumns] = await pool.query("SHOW COLUMNS FROM gm_pet_boxes LIKE 'grade'")
+  if (!boxGradeColumns.length) await pool.query("ALTER TABLE gm_pet_boxes ADD COLUMN grade VARCHAR(16) NOT NULL DEFAULT 'normal'")
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pets (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT UNSIGNED NOT NULL, kind VARCHAR(24) NOT NULL, grade VARCHAR(16) NOT NULL DEFAULT 'normal', trades TINYINT UNSIGNED NOT NULL DEFAULT 0, used TINYINT(1) NOT NULL DEFAULT 0, listing_id BIGINT UNSIGNED NULL, INDEX(owner_id,listing_id))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_equipped (account_id BIGINT UNSIGNED PRIMARY KEY, pet_id BIGINT UNSIGNED NOT NULL)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_pet_collection (account_id BIGINT UNSIGNED NOT NULL,kind VARCHAR(24) NOT NULL,grade VARCHAR(16) NOT NULL,PRIMARY KEY(account_id,kind,grade))`)
@@ -763,10 +765,16 @@ async function getBattle(accountId) {
   return battle
 }
 const PET_KINDS=['momonga','kurimanju','usagi','chiikawa','hachiware']
+const PET_GRADES=['normal','rare','epic','unique']
+const PET_COMBAT={normal:0.10,rare:0.15,epic:0.20,unique:0.30}
+const PET_WEED={normal:0.30,rare:0.40,epic:0.50,unique:0.70}
+const petBoxGrade=stage=>stage>=20?'unique':stage>=15?'epic':stage>=10?'rare':stage>=5?'normal':null
+const petRoll=boxGrade=>{const r=randomInt(1000);let cursor=0;for(const [grade,chance] of [['normal',100],['rare',50],['epic',30],['unique',20]]){if(PET_GRADES.indexOf(grade)>PET_GRADES.indexOf(boxGrade))break;if(r<cursor+chance){const kind=PET_KINDS[randomInt(PET_KINDS.length)];return {kind,grade}}cursor+=chance}return null}
+async function equippedPet(accountId,db=pool){const [r]=await db.query('SELECT p.id,p.grade FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id AND p.owner_id=e.account_id AND p.used=1 WHERE e.account_id=?',[accountId]);return r[0]||null}
 const PET_NAMES={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
-async function equippedPetId(accountId,db=pool){const [r]=await db.query('SELECT e.pet_id FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id AND p.owner_id=e.account_id AND p.used=1 WHERE e.account_id=?',[accountId]);return Number(r[0]?.pet_id||0)}
+async function equippedPetId(accountId,db=pool){return Number((await equippedPet(accountId,db))?.id||0)}
 async function petSnapshot(accountId){
- const [boxes]=await pool.query('SELECT id,listing_id,trades FROM gm_pet_boxes WHERE owner_id=? ORDER BY id DESC',[accountId]);
+ const [boxes]=await pool.query('SELECT id,listing_id,trades,grade FROM gm_pet_boxes WHERE owner_id=? ORDER BY id DESC',[accountId]);
  const [pets]=await pool.query('SELECT id,kind,grade,trades,used,listing_id FROM gm_pets WHERE owner_id=? ORDER BY id DESC',[accountId]);
  const [collection]=await pool.query('SELECT kind,grade FROM gm_pet_collection WHERE account_id=?',[accountId]);
  return {boxes,pets,collection,equipped:await equippedPetId(accountId)}
@@ -779,7 +787,8 @@ async function getBattlePowerBreakdown(accountId,battle,conn=pool,known=null) {
   const equipment=known?.equipment??await (async()=>{const [rows]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[accountId]);return (rows.length?forgeBonus(Number(rows[0].level)):0)+accessoryPower(await getAccessory(accountId,conn))})()
   const collection=known?.collection??await achievementPower(accountId,conn)
   const base=researchPower(character+equipment+collection,research)
-  const pet=await equippedPetId(accountId,conn)?Math.floor(base*.1):0
+  const equipped=await equippedPet(accountId,conn)
+  const pet=equipped?Math.floor(base*(PET_COMBAT[equipped.grade]??0.10)):0
   const total=base+pet
   return {character,equipment,collection,research:base-character-equipment-collection,pet,researchPercent:Number((research*0.3).toFixed(1)),total}
 }
@@ -869,7 +878,8 @@ async function updateBattle(accountId, nextCharacter) {
     let earned = 0, diamondsEarned = 0, coinsEarned = 0, ticketsEarned = 0, cleared = [], failedStage = 0
     if (battle) {
       const basePower = !battle.id ? 0 : researchPower((boostedCharacterPower(battle.id,limitBreakLevels)) + (battle.secondId ? boostedCharacterPower(battle.secondId,limitBreakLevels) : 0) + (battle.thirdId ? boostedCharacterPower(battle.thirdId,limitBreakLevels) : 0) + weaponBonus,combatResearchLevel)
-      const power=basePower+(await equippedPetId(accountId,conn)?Math.floor(basePower*.1):0)
+      const activePet=await equippedPet(accountId,conn)
+      const power=basePower+(activePet?Math.floor(basePower*(PET_COMBAT[activePet.grade]??0.10)):0)
       // Settle each completed stage exactly once, using the persisted stage clock.
       // A 1.5s transition prevents the next enemy from receiving damage during the clear overlay.
       let cursor = Math.max(Number(battle.stageSince || battle.since), now - BATTLE_OFFLINE_CAP_MS)
@@ -896,7 +906,8 @@ async function updateBattle(accountId, nextCharacter) {
         diamondsEarned += reward.diamonds
         earned += reward.fragments
         cleared.push({stage:current,diamonds:reward.diamonds,fragments:reward.fragments,coins:0,tickets:ticket})
-        if(randomInt(1000)<(boostedPetDrop?500:1)) await conn.query("INSERT INTO gm_pet_boxes(owner_id) VALUES(?)",[accountId])
+        const boxGrade=petBoxGrade(Math.floor((current-1)/10)+1)
+        if(boxGrade&&randomInt(1000)<(boostedPetDrop?500:1)) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[accountId,boxGrade])
         battle.maxClearedStage = Math.max(battle.maxClearedStage || 0, current)
         // Negative retryStage means the fallback stage has been cleared and manual
         // challenge is now available; keep farming this stage until clicked.
@@ -1014,7 +1025,8 @@ async function updateWeed(accountId, op = {}) {
       // Limit break increases each character's BASE weeding bonus by 10% per level.
       const weedLimitBreak = await getLimitBreak(accountId,conn)
       const bonus=Math.max(0,1+members.reduce((v,m)=>v+Math.ceil((WEED_BONUS[m.id]||0)*(1+Math.min(10,Math.max(0,Number(weedLimitBreak[m.id]||0)))*0.03))/100,0))
-      const petBonus=await equippedPetId(accountId,conn)?0.30:0
+      const activePet=await equippedPet(accountId,conn)
+      const petBonus=activePet?(PET_WEED[activePet.grade]??0.30):0
       const perMinute=Math.floor(10*(bonus+petBonus)*weedCoinMultiplier(beetle))
       earned+=Math.max(0,endMinute-startMinute)*perMinute
     }
@@ -1107,8 +1119,8 @@ async function expeditionSettle(conn, day, serverId, now) {
     const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
     const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
     const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
-    const petEquipped=await Promise.all(members.map(m=>equippedPetId(m.account_id,conn)))
-    const power=members.reduce((sum,m,i)=>{const base=researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 10):0),researchLevels[i]);return sum+base+(petEquipped[i]?Math.floor(base*.1):0)},0)
+    const petEquipped=await Promise.all(members.map(m=>equippedPet(m.account_id,conn)))
+    const power=members.reduce((sum,m,i)=>{const base=researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_level===null?0:forgeBonus(Number(m.forge_level)))+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power || 10):0),researchLevels[i]);return sum+base+(petEquipped[i]?Math.floor(base*(PET_COMBAT[petEquipped[i].grade]??0.10)):0)},0)
     hp=Math.max(0,hp-ticks*power)
     last+=ticks*EXP_TICK
     await conn.query('UPDATE gm_expedition_boss SET hp=?,last_tick=? WHERE raid_day=? AND server_id=?',[hp,last,day,serverId])
@@ -1201,9 +1213,9 @@ async function expeditionSnapshot(accountId) {
       const [members]=await conn.query('SELECT m.account_id,a.nickname,m.character_id,f.weapon AS forge_weapon,f.level AS forge_level,wa.equipped AS accessory_equipped,wa.equipped_grade AS accessory_grade FROM gm_expedition_member m JOIN gm_accounts a ON a.id=m.account_id LEFT JOIN gm_forge f ON f.account_id=m.account_id LEFT JOIN gm_weapon_accessories wa ON wa.account_id=m.account_id WHERE m.raid_day=? AND m.server_id=? ORDER BY m.joined_ms,m.account_id',[day,id])
       const achievementBonuses=await Promise.all(members.map(m=>achievementPower(m.account_id,conn)))
       const researchLevels=await Promise.all(members.map(m=>researchLevel(m.account_id,conn)))
-    const petEquipped=await Promise.all(members.map(m=>equippedPetId(m.account_id,conn)))
+    const petEquipped=await Promise.all(members.map(m=>equippedPet(m.account_id,conn)))
     const limitBreakLevels=await Promise.all(members.map(m=>getLimitBreak(m.account_id,conn)))
-      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,limitBreakLevel:Number(limitBreakLevels[i]?.[m.character_id]||0),weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:(()=>{const base=researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]);return base+(petEquipped[i]?Math.floor(base*.1):0)})(),powerBreakdown:(()=>{const character=boostedCharacterPower(m.character_id,limitBreakLevels[i]);const equipment=(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0);const collection=achievementBonuses[i];const total=researchPower(character+equipment+collection,researchLevels[i]);const pet=petEquipped[i]?Math.floor(total*.1):0;return {character,equipment,collection,research:total-character-equipment-collection,pet,researchPercent:Number((researchLevels[i]*0.3).toFixed(1)),total:total+pet}})(),me:String(m.account_id)===String(accountId)}))})
+      servers.push({id,hp:bossState.hp,stage:bossState.stage,maxHp:expeditionMaxHp(bossState.stage),members:members.map((m,i)=>({name:m.nickname||'유저',characterId:m.character_id,limitBreakLevel:Number(limitBreakLevels[i]?.[m.character_id]||0),weapon:m.forge_weapon||null,weaponLevel:m.forge_weapon?Number(m.forge_level):null,power:(()=>{const base=researchPower(achievementBonuses[i]+boostedCharacterPower(m.character_id,limitBreakLevels[i])+(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0),researchLevels[i]);return base+(petEquipped[i]?Math.floor(base*(PET_COMBAT[petEquipped[i].grade]??0.10)):0)})(),powerBreakdown:(()=>{const character=boostedCharacterPower(m.character_id,limitBreakLevels[i]);const equipment=(m.forge_weapon?forgeBonus(Number(m.forge_level)):0)+(ACCESSORY_IDS.includes(m.accessory_equipped)?(ACCESSORY_GRADES[m.accessory_grade]?.power||10):0);const collection=achievementBonuses[i];const total=researchPower(character+equipment+collection,researchLevels[i]);const pet=petEquipped[i]?Math.floor(total*(PET_COMBAT[petEquipped[i].grade]??0.10)):0;return {character,equipment,collection,research:total-character-equipment-collection,pet,researchPercent:Number((researchLevels[i]*0.3).toFixed(1)),total:total+pet}})(),me:String(m.account_id)===String(accountId)}))})
     }
     await conn.commit()
     return {day,next,servers,mine:mine.length?{serverId:mine[0].server_id,characterId:mine[0].character_id}:null,now}
@@ -1946,19 +1958,20 @@ const routes = {
   'GET /api/pets':async(req,res)=>{const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});send(res,200,await petSnapshot(a.id))},
   'POST /api/pets/open-batch':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
-    const {count}=await readJson(req);
+    const {count,grade='normal'}=await readJson(req);
+    if(!PET_GRADES.includes(grade))return send(res,400,{error:'invalid_grade'});
     if(!Number.isSafeInteger(count)||count<1||count>100)return send(res,400,{error:'invalid_count'});
     const c=await pool.getConnection();
     try{
       await c.beginTransaction();
-      const [boxes]=await c.query('SELECT id FROM gm_pet_boxes WHERE owner_id=? AND listing_id IS NULL ORDER BY id LIMIT ? FOR UPDATE',[a.id,count]);
+      const [boxes]=await c.query('SELECT id FROM gm_pet_boxes WHERE owner_id=? AND grade=? AND listing_id IS NULL ORDER BY id LIMIT ? FOR UPDATE',[a.id,grade,count]);
       if(boxes.length<count){await c.rollback();return send(res,409,{error:'insufficient_boxes'})}
       const ids=boxes.map(b=>b.id);
       await c.query(`DELETE FROM gm_pet_boxes WHERE id IN (${ids.map(()=>'?').join(',')})`,ids);
       const wins={};const pets=[];
       for(let i=0;i<count;i++){
-        const roll=randomInt(100);
-        if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];wins[kind]=(wins[kind]||0)+1;pets.push([a.id,kind,'normal',1])}
+        const reward=petRoll(grade);
+        if(reward){const key=reward.grade+':'+reward.kind;wins[key]=(wins[key]||0)+1;pets.push([a.id,reward.kind,reward.grade,1])}
       }
       if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES ?',[pets]);
       await c.commit();return send(res,200,{ok:true,opened:count,wins});
@@ -1967,9 +1980,9 @@ const routes = {
   'POST /api/pets/open':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const {boxId}=await readJson(req);if(!Number.isSafeInteger(boxId))return send(res,400,{error:'invalid_box'});
-    const c=await pool.getConnection();try{await c.beginTransaction();const [b]=await c.query('SELECT id FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[boxId,a.id]);if(!b.length){await c.rollback();return send(res,409,{error:'box_unavailable'})}
-      await c.query('DELETE FROM gm_pet_boxes WHERE id=?',[boxId]);const roll=randomInt(100);let pet=null;
-      if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];const [r]=await c.query("INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,'normal',1)",[a.id,kind]);pet={id:r.insertId,kind,grade:'normal'}}
+    const c=await pool.getConnection();try{await c.beginTransaction();const [b]=await c.query('SELECT id,grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[boxId,a.id]);if(!b.length){await c.rollback();return send(res,409,{error:'box_unavailable'})}
+      await c.query('DELETE FROM gm_pet_boxes WHERE id=?',[boxId]);const reward=petRoll(b[0].grade||'normal');let pet=null;
+      if(reward){const [r]=await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,?,1)',[a.id,reward.kind,reward.grade]);pet={id:r.insertId,...reward}}
       await c.commit();send(res,200,{ok:true,pet});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },

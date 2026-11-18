@@ -698,14 +698,14 @@ export class GachaUi {
           <p class="collection-summary">확인할 도감을 선택해 주세요.</p>
           <div class="catalog-choice-list">
             <button type="button" class="catalog-choice-button" data-action="collection"><img src="/assets/chars/chiikawa_tab_icon.png" alt=""/><span><b>캐릭터 도감</b><small><span class="collection-count">0 / ${CHARACTERS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
-            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">0 / 5</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">0 / 20</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="decos"><img src="/assets/chars/hachiware_face.png" alt=""/><span><b>데코 도감</b><small><span class="deco-count">0 / ${DECOS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 48</span> 수집</small></span><span aria-hidden="true">›</span></button>
           </div>
         </div>
       </section>
       <section class="gacha-modal" data-screen="pet-catalog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="pet-catalog-title">
-        <div class="modal-card collection-card"><button class="modal-close" data-action="catalog" aria-label="뒤로가기">×</button><div class="collection-info-sticky"><div class="modal-kicker">PET COLLECTION</div><h2 id="pet-catalog-title">펫 도감</h2><p class="collection-summary pet-catalog-summary">총 5종의 펫</p></div><div class="collection-grid pet-catalog-grid"></div></div>
+        <div class="modal-card collection-card"><button class="modal-close" data-action="catalog" aria-label="뒤로가기">×</button><div class="collection-info-sticky"><div class="modal-kicker">PET COLLECTION</div><h2 id="pet-catalog-title">펫 도감</h2><p class="collection-summary pet-catalog-summary">총 20종의 펫</p></div><div class="collection-grid pet-catalog-grid"></div></div>
       </section>
       <section class="gacha-modal" data-screen="collection" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="collection-title">
         <div class="modal-card collection-card">
@@ -1308,17 +1308,16 @@ export class GachaUi {
 
   private async renderPetCatalog():Promise<void>{
     const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
+    const grades=[{id:'normal',name:'노말'},{id:'rare',name:'레어'},{id:'epic',name:'에픽'},{id:'unique',name:'유니크'}]
     try{
-      const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
-      if(!r.ok)throw Error('load')
-      const data=await r.json() as {pets:{kind:string}[];collection?:{kind:string}[]}
-      const known=new Set([...(data.collection||[]).map(x=>x.kind),...(data.pets||[]).map(x=>x.kind)])
+      const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'});if(!r.ok)throw Error('load')
+      const data=await r.json() as {pets:{kind:string;grade:string}[];collection:{kind:string;grade:string}[]}
+      const known=new Set([...(data.collection||[]),...(data.pets||[])].map(x=>`${x.grade||'normal'}:${x.kind}`))
       const grid=this.root.querySelector<HTMLElement>('.pet-catalog-grid')
-      if(grid)grid.innerHTML=Object.entries(names).map(([kind,name])=>`<article class="friend-card ${known.has(kind)?'':'pet-catalog-locked'}"><div class="friend-portrait">${known.has(kind)?`<img src="/assets/pets/${kind}.png" alt="${name}"/>`:'<strong>?</strong>'}</div><b>${known.has(kind)?name:'미발견'}</b><small>${known.has(kind)?'도감 등록':'아직 만나지 못했어요'}</small></article>`).join('')
-      const count=this.root.querySelector<HTMLElement>('.pet-catalog-count')
-      if(count)count.textContent=`${Object.keys(names).filter(k=>known.has(k)).length} / 5`
-      const summary=this.root.querySelector<HTMLElement>('.pet-catalog-summary')
-      if(summary)summary.textContent=`${Object.keys(names).filter(k=>known.has(k)).length} / 5 수집`
+      if(grid)grid.innerHTML=grades.map(grade=>`<div class="pet-catalog-grade-title pet-grade-${grade.id}">${grade.name}</div><div class="pet-catalog-grade-grid">${Object.entries(names).map(([kind,name])=>{const owned=known.has(`${grade.id}:${kind}`);return `<article class="friend-card pet-grade-${grade.id} ${owned?'':'pet-catalog-locked'}"><div class="friend-portrait">${owned?`<img src="/assets/pets/${kind}.png" alt="${name}"/>`:'<strong>?</strong>'}</div><b>${owned?name:'미발견'}</b><small>${grade.name}</small></article>`}).join('')}</div>`).join('')
+      const total=grades.reduce((n,g)=>n+Object.keys(names).filter(k=>known.has(`${g.id}:${k}`)).length,0)
+      const count=this.root.querySelector<HTMLElement>('.pet-catalog-count');if(count)count.textContent=`${total} / 20`
+      const summary=this.root.querySelector<HTMLElement>('.pet-catalog-summary');if(summary)summary.textContent=`${total} / 20 수집`
     }catch{this.toast('펫 도감을 불러오지 못했습니다.')}
   }
 
@@ -1353,6 +1352,7 @@ export class GachaUi {
     })
   }
 
+  private petBoxGrade: 'normal'|'rare'|'epic'|'unique' = 'normal'
   private petPanel: 'boxes' | 'manage' = 'boxes'
   private petGroup: 'tradeable' | 'locked' = 'tradeable'
 
@@ -1362,30 +1362,35 @@ export class GachaUi {
     try {
       const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
       if(!r.ok)throw Error('펫 정보 조회 실패')
-      const data=await r.json() as {boxes:{id:number;listing_id:number|null}[];pets:{id:number;kind:string;used:number;trades:number;listing_id:number|null}[];equipped:number}
+      const data=await r.json() as {boxes:{id:number;grade:string;listing_id:number|null}[];pets:{id:number;kind:string;grade:string;used:number;trades:number;listing_id:number|null}[];equipped:number}
       const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
-      const available=data.boxes.filter(x=>!x.listing_id)
+      const available=data.boxes.filter(x=>!x.listing_id && (x.grade||'normal')===this.petBoxGrade)
+      const boxCounts={normal:0,rare:0,epic:0,unique:0};for(const box of data.boxes){const grade=(box.grade||'normal') as keyof typeof boxCounts;if(grade in boxCounts)boxCounts[grade]++}
+      const gradeNames:Record<string,string>={normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}
+      const miss={normal:90,rare:85,epic:82,unique:80}[this.petBoxGrade]
       const selected=data.pets
       const grouped=new Map<string,typeof selected>()
-      for(const pet of selected)grouped.set(pet.kind,[...(grouped.get(pet.kind)||[]),pet])
-      const cards=Array.from(grouped.entries()).map(([kind,pets])=>{
+      for(const pet of selected){const key=(pet.grade||'normal')+':'+pet.kind;grouped.set(key,[...(grouped.get(key)||[]),pet])}
+      const cards=Array.from(grouped.entries()).map(([key,pets])=>{
+        const [grade,kind]=key.split(':')
+        const gradeNames:Record<string,string>={normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}
         const equipped=pets.find(p=>Number(data.equipped)===Number(p.id))
         const candidate=pets.find(p=>!p.listing_id)
         const action=equipped?'<button data-action="pet-unequip">해제</button>':candidate?`<button data-action="pet-equip" data-id="${candidate.id}">배치</button>`:''
-        return `<article class="pets-owned-card"><img src="/assets/pets/${names[kind]?kind:'momonga'}.png" alt="펫"/><div class="pets-owned-info"><strong>${names[kind]||'노말'} 펫 ${pets.length>1?`× ${pets.length}`:''}</strong><small>${equipped?'배치 중':'노말'}</small></div>${action}</article>`
+        return `<article class="pets-owned-card pet-grade-${grade}"><img src="/assets/pets/${names[kind]?kind:'momonga'}.png" alt="펫"/><div class="pets-owned-info"><strong>${names[kind]||'노말'} 펫 ${pets.length>1?`× ${pets.length}`:''}</strong><small>${equipped?'배치 중 · ':''}${gradeNames[grade]||'노말'}</small></div>${action}</article>`
       }).join('')
       content.innerHTML=`<div class="pets-switch"><button data-action="pet-panel-boxes" class="${this.petPanel==='boxes'?'active':''}">펫박스</button><button data-action="pet-panel-manage" class="${this.petPanel==='manage'?'active':''}">펫 관리</button></div>`+
       (this.petPanel==='boxes'
-      ? `<div class="pets-section pets-compact"><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>노말 펫박스</strong><p>보유 <b>${data.boxes.length}</b>개 · 개봉 가능 <b>${available.length}</b>개</p><small>꽝 90% · 펫 5종 각 2% · 미개봉 박스 최초 1회 거래</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
-      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
+      ? `<div class="pets-section pets-compact"><div class="pets-box-grade-select">${(['normal','rare','epic','unique'] as const).map(g=>`<button data-action="pet-box-grade" data-grade="${g}" class="pet-grade-${g} ${this.petBoxGrade===g?'active':''}">${gradeNames[g]} (${boxCounts[g]})</button>`).join('')}</div><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>${gradeNames[this.petBoxGrade]} 펫박스</strong><p>보유 <b>${boxCounts[this.petBoxGrade]}</b>개 · 개봉 가능 <b>${available.length}</b>개</p><small>꽝 ${miss}% · 미개봉 박스 최초 1회 거래</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
+      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'펫 배치 중 · 등급별 능력치 적용':'배치된 펫 없음'}</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
     }catch{this.toast('펫 정보를 불러오지 못했습니다.')}
   }
 
   private async openPetBoxes(multiple:boolean):Promise<void>{
     const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
     if(!r.ok){this.toast('펫박스 조회 실패');return}
-    const data=await r.json() as {boxes:{id:number;listing_id:number|null}[]}
-    const boxes=data.boxes.filter(x=>!x.listing_id)
+    const data=await r.json() as {boxes:{id:number;grade:string;listing_id:number|null}[]}
+    const boxes=data.boxes.filter(x=>!x.listing_id && (x.grade||'normal')===this.petBoxGrade)
     if(!boxes.length){this.toast('개봉 가능한 펫박스가 없습니다.');return}
     const count=multiple?Number(this.root.querySelector<HTMLInputElement>('.pets-open-count')?.value):1
     if(!Number.isSafeInteger(count)||count<1||count>boxes.length){this.toast('개봉 수량을 확인해주세요.');return}
@@ -1393,7 +1398,7 @@ export class GachaUi {
     this.root.querySelectorAll<HTMLButtonElement>('.pets-box-actions button').forEach(b=>b.disabled=true)
     const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
     try {
-      const response=await fetch('/api/pets/open-batch',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({count})})
+      const response=await fetch('/api/pets/open-batch',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({count,grade:this.petBoxGrade})})
       if(!response.ok)throw Error('개봉 요청 실패')
       const result=await response.json() as {opened:number;wins:Record<string,number>}
       this.showPetOpenResult(result.opened,result.wins,false)
@@ -1432,10 +1437,11 @@ export class GachaUi {
         const misses=Math.max(0,opened-won)
         if(misses){const item=document.createElement('div');item.className='pets-result-item pets-miss';const label=document.createElement('strong');label.textContent='꽝';const amount=document.createElement('span');amount.textContent=`${misses}개`;item.append(label,amount);grid.append(item)}
         for(const [kind,count] of Object.entries(wins)){
-          if(!names[kind]||count<=0)continue
-          const item=document.createElement('div');item.className='pets-result-item pets-win'
-          const img=document.createElement('img');img.src=`/assets/pets/${kind}.png`;img.alt=names[kind]
-          const label=document.createElement('span');label.textContent=`${names[kind]} × ${count}`
+          const [grade,petKind]=kind.includes(':')?kind.split(':'):['normal',kind]
+          if(!names[petKind]||count<=0)continue
+          const item=document.createElement('div');item.className=`pets-result-item pets-win pet-grade-${grade}`
+          const img=document.createElement('img');img.src=`/assets/pets/${petKind}.png`;img.alt=names[petKind]
+          const label=document.createElement('span');label.textContent=`${{normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}[grade]||grade} ${names[petKind]} × ${count}`
           item.append(img,label);grid.append(item)
         }
         stage.replaceChildren(grid)
@@ -1471,6 +1477,7 @@ export class GachaUi {
     if (action === 'weed-bonus-detail') {void this.openWeedBonusDetail();return}
     if (action === 'plaza-shop') {await this.plaza.shop();return}
     if (action === 'pets') { this.show('pets'); return }
+    if (action === 'pet-box-grade') {const grade=button?.dataset.grade;if(grade&&['normal','rare','epic','unique'].includes(grade)){this.petBoxGrade=grade as typeof this.petBoxGrade;await this.loadPetTab()}return}
     if (action === 'pet-panel-boxes' || action === 'pet-panel-manage') {
       this.petPanel=action==='pet-panel-boxes'?'boxes':'manage';await this.loadPetTab();return
     }
