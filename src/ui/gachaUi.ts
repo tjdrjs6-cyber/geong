@@ -3093,7 +3093,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     document.querySelector('.pull-rates-dialog')?.remove()
   }
   private freePullRemaining(): number {
-    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now() - 9 * 60 * 60 * 1000))
     return this.store.data.freePullDay===day && (this.store.data.freePullUsed||0)>0 ? 0 : 10
   }
   private renderFreePullStatus(): void {

@@ -2826,7 +2826,8 @@ const routes = {
     // Operator accounts have unlimited coins: pulls never spend their balance.
     let dupes = {}
     const outcome = await withSave(account.id, state => {
-      const day = checkInDay()
+      // Free character pulls reset at 09:00 Asia/Seoul (not midnight).
+      const day = checkInDay(new Date(Date.now() - 9 * 60 * 60 * 1000))
       const used = state.freePullDay === day ? state.freePullUsed || 0 : 0
       if (free && (count !== 10 || used !== 0)) return {ok:false,error:'free_pull_limit'}
       const cost = count === 10 ? 500 : count * 50

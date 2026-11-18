@@ -7445,3 +7445,12 @@ body > .market-global-shortage-notice.is-visible {
   opacity:1!important;
   transform:translate(-50%,0)!important;
 }
+
+/* 5.12: same 2px solid stroke on all five top-right menu tabs. */
+#ui .gacha-screen > .collection-peek .reward-chip,
+#ui .gacha-screen > .top-rewards .reward-chip {
+  border-style:solid!important;
+  border-width:2px!important;
+  box-sizing:border-box!important;
+  background-clip:padding-box!important;
+}
