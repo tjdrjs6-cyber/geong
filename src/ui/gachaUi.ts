@@ -76,7 +76,7 @@ const MACHINE_SPIN_SECONDS = 1.6
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'plaza' | 'pets' | 'expedition' | 'rps' | 'dopamine' | 'shop' | 'forge'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'pet-catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'plaza' | 'pets' | 'expedition' | 'rps' | 'dopamine' | 'shop' | 'forge'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -573,7 +573,7 @@ export class GachaUi {
         <div class="weed-panel">
           <div class="field-info-sticky">
           <p class="weed-status"></p>
-          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 60초 보상까지</small></span><span><b class="weed-rate">0</b><small>분당 예상 코인 · 자동 지급</small></span></div>
+          <div class="weed-earn weed-earn-auto"><span><b class="weed-next">--:--</b><small>다음 60초 보상까지</small></span><span><b class="weed-rate">0</b><small>분당 예상 코인 · 자동 지급</small></span></div><button type="button" class="combat-detail-button weed-detail-button" data-action="weed-bonus-detail">제초 보너스 상세</button>
           <p class="weed-rule">친구를 최대 3명까지 보낼 수 있어요. 60초마다 일반 잡초 85%, 황금 잡초 15% 확률로 98% 조정된 코인을 자동 획득해요. 제초 보너스에 따라 지급 코인이 증가하고 풍뎅이를 배치하면 최종 코인 2배! 제초 중인 친구를 다시 누르면 쉬게 해요.</p>
           </div>
           <div class="weed-beetle-slot" hidden></div>
@@ -697,10 +697,14 @@ export class GachaUi {
           <p class="collection-summary">확인할 도감을 선택해 주세요.</p>
           <div class="catalog-choice-list">
             <button type="button" class="catalog-choice-button" data-action="collection"><img src="/assets/chars/chiikawa_tab_icon.png" alt=""/><span><b>캐릭터 도감</b><small><span class="collection-count">0 / ${CHARACTERS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">0 / 5</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="decos"><img src="/assets/chars/hachiware_face.png" alt=""/><span><b>데코 도감</b><small><span class="deco-count">0 / ${DECOS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
             <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 48</span> 수집</small></span><span aria-hidden="true">›</span></button>
           </div>
         </div>
+      </section>
+      <section class="gacha-modal" data-screen="pet-catalog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="pet-catalog-title">
+        <div class="modal-card collection-card"><button class="modal-close" data-action="catalog" aria-label="뒤로가기">×</button><div class="collection-info-sticky"><div class="modal-kicker">PET COLLECTION</div><h2 id="pet-catalog-title">펫 도감</h2><p class="collection-summary pet-catalog-summary">총 5종의 펫</p></div><div class="collection-grid pet-catalog-grid"></div></div>
       </section>
       <section class="gacha-modal" data-screen="collection" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="collection-title">
         <div class="modal-card collection-card">
@@ -1301,6 +1305,53 @@ export class GachaUi {
     },90)
   }
 
+  private async renderPetCatalog():Promise<void>{
+    const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
+    try{
+      const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
+      if(!r.ok)throw Error('load')
+      const data=await r.json() as {pets:{kind:string}[];collection?:{kind:string}[]}
+      const known=new Set([...(data.collection||[]).map(x=>x.kind),...(data.pets||[]).map(x=>x.kind)])
+      const grid=this.root.querySelector<HTMLElement>('.pet-catalog-grid')
+      if(grid)grid.innerHTML=Object.entries(names).map(([kind,name])=>`<article class="friend-card ${known.has(kind)?'':'pet-catalog-locked'}"><div class="friend-portrait">${known.has(kind)?`<img src="/assets/pets/${kind}.png" alt="${name}"/>`:'<strong>?</strong>'}</div><b>${known.has(kind)?name:'미발견'}</b><small>${known.has(kind)?'도감 등록':'아직 만나지 못했어요'}</small></article>`).join('')
+      const count=this.root.querySelector<HTMLElement>('.pet-catalog-count')
+      if(count)count.textContent=`${Object.keys(names).filter(k=>known.has(k)).length} / 5`
+      const summary=this.root.querySelector<HTMLElement>('.pet-catalog-summary')
+      if(summary)summary.textContent=`${Object.keys(names).filter(k=>known.has(k)).length} / 5 수집`
+    }catch{this.toast('펫 도감을 불러오지 못했습니다.')}
+  }
+
+  private async openWeedBonusDetail():Promise<void>{
+    const members=this.store.weed?.members||[]
+    const character=members.reduce((n,m)=>n+this.characterWeedBonus(m.id),0)
+    let pet=0
+    try{const r=await fetch('/api/pets',{credentials:'include',cache:'no-store'});if(r.ok){const d=await r.json() as {equipped:number};pet=d.equipped?30:0}}catch{}
+    const total=members.length?character+pet:0
+    const dialog=document.createElement('dialog')
+    dialog.className='combat-power-modal'
+    dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>제초 보너스 상세</strong><button class="combat-power-modal-close">×</button></div><div class="combat-power-modal-rows"><div><span>배치 캐릭터 제초 보너스</span><b>+${character}%</b></div><div><span>배치 펫 보너스</span><b>+${members.length?pet:0}%</b></div><div class="combat-power-modal-total"><strong>총 제초 보너스</strong><strong>+${total}%</strong></div><small>기본 제초 수입 100%에 합산 · 풍뎅이 2배 효과 별도</small></div><button class="combat-power-modal-done">확인</button></div>`
+    document.body.append(dialog)
+    dialog.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>dialog.close()))
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true})
+    dialog.showModal()
+  }
+
+  private confirmPetOpen(count:number):Promise<boolean>{
+    return new Promise(resolve=>{
+      const dialog=document.createElement('dialog')
+      dialog.className='combat-power-modal'
+      dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>펫박스 개봉</strong></div><p>펫박스 ${count}개를 개봉하시겠습니까?</p><div class="pets-confirm-actions"><button type="button" data-choice="no">취소</button><button type="button" data-choice="yes">개봉하기</button></div></div>`
+      document.body.append(dialog)
+      let settled=false
+      const done=(ok:boolean)=>{if(settled)return;settled=true;resolve(ok);dialog.close()}
+      dialog.querySelector<HTMLButtonElement>('[data-choice="no"]')!.onclick=()=>done(false)
+      dialog.querySelector<HTMLButtonElement>('[data-choice="yes"]')!.onclick=()=>done(true)
+      dialog.addEventListener('cancel',e=>{e.preventDefault();done(false)})
+      dialog.addEventListener('close',()=>{if(!settled)resolve(false);dialog.remove()},{once:true})
+      dialog.showModal()
+    })
+  }
+
   private petPanel: 'boxes' | 'manage' = 'boxes'
   private petGroup: 'tradeable' | 'locked' = 'tradeable'
 
@@ -1314,16 +1365,18 @@ export class GachaUi {
       const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
       const available=data.boxes.filter(x=>!x.listing_id)
       const selected=data.pets
-      const cards=selected.map(p=>{
-        const equipped=Number(data.equipped)===Number(p.id)
-        const state=equipped?'배치 중':p.listing_id?'판매 등록 중':'개봉 완료 · 거래 불가'
-        const action=equipped?'<button data-action="pet-unequip">해제</button>':p.listing_id?'<span class="pets-muted">판매 중</span>':`<button data-action="pet-equip" data-id="${p.id}">배치</button>`
-        return `<article class="pets-owned-card"><img src="/assets/pets/${names[p.kind]?p.kind:'momonga'}.png" alt="펫"/><div class="pets-owned-info"><strong>${names[p.kind]||'노말'} 펫</strong><small>노말 · ${state}</small></div>${action}</article>`
+      const grouped=new Map<string,typeof selected>()
+      for(const pet of selected)grouped.set(pet.kind,[...(grouped.get(pet.kind)||[]),pet])
+      const cards=Array.from(grouped.entries()).map(([kind,pets])=>{
+        const equipped=pets.find(p=>Number(data.equipped)===Number(p.id))
+        const candidate=pets.find(p=>!p.listing_id)
+        const action=equipped?'<button data-action="pet-unequip">해제</button>':candidate?`<button data-action="pet-equip" data-id="${candidate.id}">배치</button>`:''
+        return `<article class="pets-owned-card"><img src="/assets/pets/${names[kind]?kind:'momonga'}.png" alt="펫"/><div class="pets-owned-info"><strong>${names[kind]||'노말'} 펫 ${pets.length>1?`× ${pets.length}`:''}</strong><small>${equipped?'배치 중':'노말'}</small></div>${action}</article>`
       }).join('')
       content.innerHTML=`<div class="pets-switch"><button data-action="pet-panel-boxes" class="${this.petPanel==='boxes'?'active':''}">펫박스</button><button data-action="pet-panel-manage" class="${this.petPanel==='manage'?'active':''}">펫 관리</button></div>`+
       (this.petPanel==='boxes'
       ? `<div class="pets-section pets-compact"><div class="pets-box-info"><img src="/assets/pets/box_normal.png" alt="펫박스"/><div><strong>노말 펫박스</strong><p>보유 <b>${data.boxes.length}</b>개 · 개봉 가능 <b>${available.length}</b>개</p><small>꽝 90% · 펫 5종 각 2% · 미개봉 박스 최초 1회 거래</small></div></div><div class="pets-box-actions"><button data-action="pet-open-one" ${available.length?'':'disabled'}>1개 개봉</button><input class="pets-open-count" type="number" min="1" max="${available.length}" value="${Math.min(available.length,10)}" aria-label="개봉 수량"/><button data-action="pet-open-many" ${available.length?'':'disabled'}>여러 개 개봉</button></div></div>`
-      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><p class="pets-muted">펫은 거래 불가 · 1마리 배치 가능</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
+      : `<div class="pets-section pets-compact"><div class="pets-section-title"><b>펫 관리</b><span>보유 ${data.pets.length}마리</span></div><p class="pets-equipped-status">${data.equipped?'배치 중 · 전투력 +10% / 제초속도 +30%':'배치된 펫 없음'}</p><div class="pets-owned-list">${cards||'<p class="pets-empty">해당하는 펫이 없습니다.</p>'}</div></div>`)
     }catch{this.toast('펫 정보를 불러오지 못했습니다.')}
   }
 
@@ -1335,6 +1388,7 @@ export class GachaUi {
     if(!boxes.length){this.toast('개봉 가능한 펫박스가 없습니다.');return}
     const count=multiple?Number(this.root.querySelector<HTMLInputElement>('.pets-open-count')?.value):1
     if(!Number.isSafeInteger(count)||count<1||count>boxes.length){this.toast('개봉 수량을 확인해주세요.');return}
+    if(!await this.confirmPetOpen(count))return
     this.root.querySelectorAll<HTMLButtonElement>('.pets-box-actions button').forEach(b=>b.disabled=true)
     const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
     try {
@@ -1412,6 +1466,8 @@ export class GachaUi {
       this.root.querySelector<HTMLButtonElement>('.nav-community')?.setAttribute('aria-expanded','false')
     }
     if (action === 'plaza') {this.show('plaza');return}
+    if (action === 'pet-catalog') {this.show('pet-catalog');void this.renderPetCatalog();return}
+    if (action === 'weed-bonus-detail') {void this.openWeedBonusDetail();return}
     if (action === 'plaza-shop') {await this.plaza.shop();return}
     if (action === 'pets') { this.show('pets'); return }
     if (action === 'pet-panel-boxes' || action === 'pet-panel-manage') {
@@ -3341,7 +3397,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(document.querySelector<HTMLDialogElement>('dialog.combat-power-modal'))return
     const dialog=document.createElement('dialog')
     dialog.className='combat-power-modal'
-    const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
+    const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div><div><span>펫 배치 보너스 <small>(+10%)</small></span><b>+${fmt((breakdown as {pet?:number}).pet||0)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
     dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>${expedition?'원정대':'토벌장'} 전투력 상세</strong><button type="button" class="combat-power-modal-close" aria-label="닫기">×</button></div><div class="combat-power-modal-rows">${rows}<div class="combat-power-modal-total"><strong>총 전투력</strong><strong>${fmt(total)}</strong></div></div><button type="button" class="combat-power-modal-done">확인</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelectorAll('.combat-power-modal-close,.combat-power-modal-done').forEach(el=>el.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();if(dialog.open)dialog.close()}))
@@ -4259,7 +4315,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const weeding = members[0]
     const status = this.root.querySelector<HTMLElement>('.weed-status')
     if (status) status.textContent = members.length
-      ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 총 제초 보너스 +${members.reduce((sum, c) => sum + this.characterWeedBonus(c.id), 0)}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
+      ? `${members.length === 1 ? withJosa(members[0].name, '이', '가') : `${members.map(c => c.name).join('·')} ${members.length}명이`} 제초 중 (${members.length}/${WEED_MAX}) · 캐릭터 제초 보너스 +${members.reduce((sum, c) => sum + this.characterWeedBonus(c.id), 0)}%${this.store.weed?.beetle ? ' · 코인 2배' : ''}`
       : (this.store.data.owned.length ? `아래에서 제초할 친구를 골라 주세요. (최대 ${WEED_MAX}명)` : '친구를 뽑으면 제초를 맡길 수 있어요.')
     const rateNode = this.root.querySelector<HTMLElement>('.weed-rate')
     if (rateNode) rateNode.textContent = String(this.store.weedHourlyRate())

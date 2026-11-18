@@ -6868,3 +6868,7 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .pets-result-dialog{position:relative;pointer-events:auto;max-height:calc(100dvh - 32px);overflow:auto}
 .pets-result-dismiss{position:relative;z-index:3;min-height:44px;touch-action:manipulation;pointer-events:auto}
 @media(max-width:480px){.pets-card{padding:12px!important}.pets-section.pets-compact{padding:10px}.pets-box-info img{width:62px;height:62px}.pets-box-actions button{padding:9px 7px}}
+
+.pet-catalog-locked .friend-portrait{filter:grayscale(1);opacity:.5}.pet-catalog-grid{overflow-y:auto;min-height:0}.pets-confirm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}.pets-confirm-actions button{padding:10px 18px;border-radius:10px;border:1px solid #cda9c1;background:#f7e6f1;color:#4e3547;font:inherit;cursor:pointer}.weed-detail-button{margin:8px auto;display:block}
+
+.pet-catalog-grid .friend-card{min-width:0}.pet-catalog-grid .friend-portrait img{max-width:100%;max-height:100%;object-fit:contain}
