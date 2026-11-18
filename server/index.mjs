@@ -1542,7 +1542,7 @@ const routes = {
     await ensureLotteryNoticeTables()
     const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),tickets:Number(ticketRows[0]?.lottery_tickets||0),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
+    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
   },
   'POST /api/lottery/reset': async (req,res) => {
     const account=await currentAccount(req)
@@ -1559,7 +1559,7 @@ const routes = {
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,2,2,2,2,2,81]),tickets:Number(ticketRows[0]?.lottery_tickets||0),winners:[]})
+    send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,2,2,2,2,2,81]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
   },
   'POST /api/lottery/reset-seen': async (req,res) => {
     const account=await currentAccount(req)
@@ -1586,7 +1586,8 @@ const routes = {
       if(count>remaining.reduce((a,b)=>a+b,0)) {outcome={error:'sold_out'}}
       else {
         const [saves]=await conn.query('SELECT gems, lottery_tickets, owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
-        if(!saves.length||Number(saves[0].lottery_tickets)<count)outcome={error:'not_enough_tickets'}
+        const [reservedTickets]=await conn.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id])
+        if(!saves.length||Number(saves[0].lottery_tickets)-Number(reservedTickets[0]?.qty||0)<count)outcome={error:'not_enough_tickets'}
         else {
           const owned=normalizeOwned(parseJson(saves[0].owned))
           const [dupeRows]=await conn.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[account.id])
@@ -1755,7 +1756,8 @@ const routes = {
       const required=BREAK_COSTS[level]
       const market=await marketState(account.id,conn,true)
       if(consumeDupes+consumeStones!==required)return {error:'invalid_material_count'}
-      if(Number(dupes[id]||0)<consumeDupes||market.stones<consumeStones)return {error:'not_enough_materials'}
+      const [reservedStones]=await conn.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='stone' AND status='active'",[account.id])
+      if(Number(dupes[id]||0)<consumeDupes||market.stones-Number(reservedStones[0]?.qty||0)<consumeStones)return {error:'not_enough_materials'}
       dupes[id]-=consumeDupes
       if(consumeStones)await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[consumeStones,account.id])
       if(consumeStones)await conn.query('UPDATE gm_tradeable_drops SET stone_qty=stone_qty-LEAST(stone_qty,?) WHERE account_id=?',[consumeStones,account.id])
@@ -2137,13 +2139,14 @@ const routes = {
     if(!Number.isSafeInteger(quantity)||quantity<1||quantity>10000||!Number.isSafeInteger(unitPrice)||unitPrice<min||unitPrice>100000000||quantity*unitPrice>Number.MAX_SAFE_INTEGER)return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();
     try{await c.beginTransaction();
+      await c.query('SELECT account_id FROM gm_saves WHERE account_id=? FOR UPDATE',[a.id]);
       const [shop]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);
       if(!shop.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
       await c.query('INSERT IGNORE INTO gm_tradeable_drops(account_id) VALUES(?)',[a.id]);
       const [drop]=await c.query('SELECT * FROM gm_tradeable_drops WHERE account_id=? FOR UPDATE',[a.id]);
       const col=kind==='stone'?'stone_qty':'ticket_qty';
       const [total]=kind==='stone'?await c.query('SELECT breakthrough_stones amount FROM gm_market_items WHERE account_id=? FOR UPDATE',[a.id]):await c.query('SELECT lottery_tickets amount FROM gm_saves WHERE account_id=? FOR UPDATE',[a.id]);
-      if(quantity>Math.min(Number(drop[0][col]),Number(total[0]?.amount||0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      if(quantity>Math.min(Number(drop[0][col]),Number(total[0]?.amount||0)-Number((await c.query('SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind=? AND status=\'active\'',[a.id,kind]))[0][0]?.qty||0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
       await c.query(`UPDATE gm_tradeable_drops SET ${col}=${col}-? WHERE account_id=?`,[quantity,a.id]);
       await c.query('INSERT INTO gm_drop_listings(seller_id,kind,quantity,unit_price,created_ms) VALUES(?,?,?,?,?)',[a.id,kind,quantity,unitPrice,Date.now()]);
       await c.commit();send(res,200,{ok:true})
