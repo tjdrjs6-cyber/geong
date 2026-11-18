@@ -901,7 +901,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        const ticket = randomInt(2000) < 13 ? 1 : 0
+        const ticket = randomInt(400) < 3 ? 1 : 0
         ticketsEarned += ticket
         diamondsEarned += reward.diamonds
         earned += reward.fragments
@@ -1998,11 +1998,11 @@ const routes = {
     const now=Date.now();await pool.query("UPDATE gm_pet_listings l LEFT JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? SET l.status='expired' WHERE l.status='active' AND sh.account_id IS NULL",[now]);
     await pool.query("UPDATE gm_pet_boxes b JOIN gm_pet_listings l ON l.item_type='box' AND l.item_id=b.id SET b.listing_id=NULL WHERE l.status='expired' AND b.listing_id=l.id");
     await pool.query("UPDATE gm_pets p JOIN gm_pet_listings l ON l.item_type='pet' AND l.item_id=p.id SET p.listing_id=NULL WHERE l.status='expired' AND p.listing_id=l.id");
-    const [rows]=await pool.query("SELECT l.id,l.seller_id,l.item_type,l.item_id,l.price,p.kind FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? LEFT JOIN gm_pets p ON l.item_type='pet' AND p.id=l.item_id WHERE l.status='active' ORDER BY l.id DESC LIMIT 100",[now]);send(res,200,{listings:rows})
+    const [rows]=await pool.query("SELECT l.id,l.seller_id,l.item_type,l.item_id,l.price,b.grade,p.kind FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? LEFT JOIN gm_pets p ON l.item_type='pet' AND p.id=l.item_id LEFT JOIN gm_pet_boxes b ON l.item_type='box' AND b.id=l.item_id WHERE l.status='active' ORDER BY l.id DESC LIMIT 100",[now]);const [recent]=await pool.query("SELECT l.price,b.grade,l.sold_ms FROM gm_pet_listings l LEFT JOIN gm_pet_boxes b ON b.id=l.item_id AND b.trades>0 WHERE l.item_type='box' AND l.status='sold' ORDER BY l.sold_ms DESC LIMIT 20");send(res,200,{listings:rows,recentSales:recent})
   },
   'POST /api/pets/list':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {itemType,itemId,price}=await readJson(req);
-    if(!['box','pet'].includes(itemType)||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<10||price>100000000)return send(res,400,{error:'invalid_listing'});
+    if(!['box','pet'].includes(itemType)||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<1000||price>100000000)return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
       const [cnt]=await c.query("SELECT COUNT(*) n FROM gm_pet_listings WHERE seller_id=? AND status='active'",[a.id]);if(Number(cnt[0].n)>=5){await c.rollback();return send(res,409,{error:'listing_full'})}
       if(itemType==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}const table=itemType==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE`,[itemId,a.id]);if(!items.length||(itemType==='box'&&Number(items[0].trades)>0)||(itemType==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
@@ -2015,7 +2015,14 @@ const routes = {
       const l=ls[0];if(l.item_type==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
       const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);const [saves]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(a.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
       const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE`,[l.item_id,l.seller_id,l.id]);if(!items.length||(l.item_type==='box'&&Number(items[0].trades)>0)||(l.item_type==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'item_unavailable'})}
-      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);await c.commit();send(res,200,{ok:true,fee})
+      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);
+      const [buyerRows]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
+      const buyerName=String(buyerRows[0]?.nickname||'다른 유저').slice(0,32);
+      const gradeLabel={normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}[items[0].grade||'normal']||'노말';
+      const mailText=`[판매 완료] ${buyerName}님이 ${gradeLabel} 펫박스를 ${Number(l.price).toLocaleString('ko-KR')}다이아에 구매했습니다. (수수료 ${fee.toLocaleString('ko-KR')}다이아)`;
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,l.seller_id,mailText,0,checkInDay(),Date.now()]);
+      await trimInbox(c,l.seller_id);
+      await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
   'GET /api/plaza/shop': async(req,res)=>{
@@ -2065,9 +2072,9 @@ const routes = {
     await pool.query('UPDATE gm_plaza_presence SET updated_ms=? WHERE account_id=?',[now,account.id])
     const [players]=await pool.query(`SELECT p.account_id id,p.x,p.y,p.emote,a.nickname,a.username,s.featured,pet.kind pet_kind FROM gm_plaza_presence p JOIN gm_accounts a ON a.id=p.account_id LEFT JOIN gm_saves s ON s.account_id=p.account_id LEFT JOIN gm_pet_equipped pe ON pe.account_id=p.account_id LEFT JOIN gm_pets pet ON pet.id=pe.pet_id AND pet.owner_id=p.account_id AND pet.used=1 WHERE p.channel=? AND p.updated_ms>=?`,[channel,now-12000])
     const [offline]=await pool.query(`SELECT o.account_id id,o.x,o.y,a.nickname,a.username,s.featured,pet.kind pet_kind FROM gm_plaza_spots o JOIN gm_accounts a ON a.id=o.account_id LEFT JOIN gm_saves s ON s.account_id=o.account_id LEFT JOIN gm_pet_equipped pe ON pe.account_id=o.account_id LEFT JOIN gm_pets pet ON pet.id=pe.pet_id AND pet.owner_id=o.account_id AND pet.used=1 LEFT JOIN gm_plaza_presence p ON p.account_id=o.account_id AND p.updated_ms>=? WHERE p.account_id IS NULL ORDER BY o.updated_ms DESC LIMIT 60`,[now-12000])
-    const [shopRows]=await pool.query('SELECT account_id id,channel,x,y,expires_ms FROM gm_plaza_shops WHERE expires_ms>? AND channel=?',[now,channel])
+    const [shopRows]=await pool.query(`SELECT sh.account_id id,sh.channel,sh.x,sh.y,sh.expires_ms,a.nickname,a.username,s.featured,pet.kind pet_kind FROM gm_plaza_shops sh JOIN gm_accounts a ON a.id=sh.account_id LEFT JOIN gm_saves s ON s.account_id=sh.account_id LEFT JOIN gm_pet_equipped pe ON pe.account_id=sh.account_id LEFT JOIN gm_pets pet ON pet.id=pe.pet_id AND pet.owner_id=sh.account_id AND pet.used=1 WHERE sh.expires_ms>? AND sh.channel=?`,[now,channel])
     const [messages]=await pool.query(`SELECT c.id,c.message,c.created_ms at,a.nickname,a.username FROM gm_plaza_chat c JOIN gm_accounts a ON a.id=c.account_id WHERE c.channel=? ORDER BY c.id DESC LIMIT 50`,[channel])
-    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,pet:x.pet_kind||null,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,pet:x.pet_kind||null,online:false}))],onlineCount:players.length,shops:shopRows.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),expires_ms:Number(x.expires_ms)})),messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
+    send(res,200,{channel,me:account.id,players:[...players.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:x.emote,nickname:x.nickname||x.username,featured:x.featured,pet:x.pet_kind||null,online:true})),...offline.map(x=>({id:Number(x.id),x:Number(x.x),y:Math.max(24,Number(x.y)),emote:'',nickname:x.nickname||x.username,featured:x.featured,pet:x.pet_kind||null,online:false}))],onlineCount:players.length,shops:shopRows.map(x=>({id:Number(x.id),x:Number(x.x),y:Number(x.y),expires_ms:Number(x.expires_ms),nickname:x.nickname||x.username,featured:x.featured||null,pet:x.pet_kind||null})),messages:messages.reverse().map(x=>({id:Number(x.id),message:x.message,at:Number(x.at),nickname:x.nickname||x.username}))})
   },
   'POST /api/plaza/move': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
