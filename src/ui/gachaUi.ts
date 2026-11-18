@@ -985,6 +985,16 @@ export class GachaUi {
     const accessories=WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(g=>{const count=g.id==='normal'?(counts[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0);const has=count>0;const selected=this.store.accessory.equipped===item.id&&(this.store.accessory.equippedGrade||'normal')===g.id;return `<article class="friend-card accessory-card ${has?'is-owned':'is-locked'} ${selected?'is-equipped':''}" style="--friend:#fbe3ea;--accent:${g.color}"><div class="friend-avatar">${has?`<img src="${item.image}" style="filter:drop-shadow(0 0 8px ${g.color})" alt="${item.name}"/>`:'<span class="friend-unknown">?</span>'}</div><div class="friend-chance">${g.name}</div><b>${has?item.name:'???'}</b><small>전투력 +${g.power} · ${count}개</small><button type="button" class="accessory-equip-button" data-accessory="${item.id}" data-grade="${g.id}" ${!forge||!has?'disabled':''}>${selected?'장착 해제':has?'장착하기':'미획득'}</button></article>`})).join('')
     dialog.innerHTML = `<div class="myroom-equipment-panel"><button type="button" class="myroom-equipment-close" aria-label="닫기">×</button><h2><img src="/assets/forge/rakko_face.png" alt="" /> 내 장비</h2>${forge ? `<div class="forge-current"><span class="forge-aura accessory-weapon ${weaponAuraClass(forge.level)}"><img src="/assets/forge/${forge.weapon}.png" alt="장착 무기" />${equipped?`<img class="weapon-keyring" style="--keyring-glow:${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'};filter:drop-shadow(0 0 8px ${ALCHEMY_GRADES.find(g=>g.id===(this.store.accessory.equippedGrade||'normal'))?.color||'#aaa'})" src="${equipped.image}" alt="장착된 ${equipped.name}"/>`:``}</span><div><b>${names[forge.weapon] ?? '내 무기'}</b><strong>+${forge.level}강 / 최대 +30강</strong><span class="forge-power-breakdown">영구 전투력 보너스<br>무기 전투력 +${Math.max(0,forge.bonus-equippedAccessoryPower(this.store.accessory.equipped,this.store.accessory.equippedGrade))}<br>액세서리 전투력 +${equippedAccessoryPower(this.store.accessory.equipped,this.store.accessory.equippedGrade)}<br>총 전투력 +${forge.bonus}</span></div></div><p class="myroom-equipment-note">강화는 상점 → 대장간에서 할 수 있어요.</p>` : '<p class="myroom-equipment-note">아직 선택한 무기가 없어요.<br>상점 → 대장간에서 무기를 선택할 수 있어요.</p>'}<div class="accessory-equip-section"><b>무기 액세서리</b><div class="accessory-scroll collection-grid accessory-card-grid">${accessories}</div></div><button type="button" class="myroom-equipment-done">확인</button></div>`
     document.body.appendChild(dialog)
+    // Read the equipped pet grade from the server, not a hard-coded normal bonus.
+    if(breakdown){
+      void fetch('/api/pets',{credentials:'include',cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then((data:{equipped:number;pets?:{id:number;grade?:string}[]})=>{
+        if(!dialog.isConnected)return
+        const pet=data.pets?.find(p=>p.id===data.equipped)
+        const rates:Record<string,number>={normal:10,rare:15,epic:20,unique:30}
+        const label=dialog.querySelector('.pet-detail-bonus-rate')
+        if(label)label.textContent=pet?`(+${rates[pet.grade||'normal']||10}%)`:'(미배치)'
+      }).catch(()=>{const label=dialog.querySelector('.pet-detail-bonus-rate');if(label)label.textContent='(정보 확인 불가)'})
+    }
     dialog.querySelectorAll<HTMLButtonElement>('.accessory-equip-button').forEach(button=>button.addEventListener('click',async()=>{
       const id=button.dataset.accessory||null
       try {
@@ -1523,7 +1533,9 @@ export class GachaUi {
         if(this.screen==='weed')this.renderWeedStatus()
         await this.loadPetTab()
         void this.refreshHeroPet()
-        this.toast(action==='pet-equip'?'펫 배치 완료 · 전투력 +10%, 제초속도 +30%':'펫 배치 해제 완료')
+        const equippedPet=(snapshot as {equipped:number;pets?:{id:number;grade?:string}[]}).pets?.find(p=>p.id===snapshot.equipped)
+        const bonus=({normal:[10,30],rare:[15,40],epic:[20,50],unique:[30,70]} as Record<string,number[]>)[equippedPet?.grade||'normal']||[10,30]
+        this.toast(action==='pet-equip'?`펫 배치 완료 · 전투력 +${bonus[0]}%, 제초속도 +${bonus[1]}%`:'펫 배치 해제 완료')
       } catch(error) {this.toast(error instanceof Error?error.message:'펫 배치 실패');await this.loadPetTab()}
       return
     }
@@ -3427,7 +3439,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(document.querySelector<HTMLDialogElement>('dialog.combat-power-modal'))return
     const dialog=document.createElement('dialog')
     dialog.className='combat-power-modal'
-    const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div><div><span>펫 배치 보너스 <small>(+10%)</small></span><b>+${fmt((breakdown as {pet?:number}).pet||0)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
+    const rows=breakdown?`<div><span>캐릭터 전투력 <small>(한계돌파 포함)</small></span><b>${fmt(breakdown.character)}</b></div><div><span>장비 공격력 <small>(무기·키링)</small></span><b>+${fmt(breakdown.equipment)}</b></div><div><span>컬렉션 증가분</span><b>+${fmt(breakdown.collection)}</b></div><div><span>연구소 증가분 <small>(+${breakdown.researchPercent}%)</small></span><b>+${fmt(breakdown.research)}</b></div><div><span>펫 배치 보너스 <small class="pet-detail-bonus-rate">(확인 중)</small></span><b>+${fmt((breakdown as {pet?:number}).pet||0)}</b></div>`:'<p>상세 전투력 정보를 불러올 수 없습니다. 새로고침 후 다시 확인해 주세요.</p>'
     dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>${expedition?'원정대':'토벌장'} 전투력 상세</strong><button type="button" class="combat-power-modal-close" aria-label="닫기">×</button></div><div class="combat-power-modal-rows">${rows}<div class="combat-power-modal-total"><strong>총 전투력</strong><strong>${fmt(total)}</strong></div></div><button type="button" class="combat-power-modal-done">확인</button></div>`
     document.body.appendChild(dialog)
     dialog.querySelectorAll('.combat-power-modal-close,.combat-power-modal-done').forEach(el=>el.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();if(dialog.open)dialog.close()}))

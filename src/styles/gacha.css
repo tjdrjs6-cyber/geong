@@ -7069,3 +7069,50 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-market-myitem b{font-size:12px;color:#a45b73}
 #ui [data-screen="plaza"] .plaza-market-empty{font-size:12px;color:#947e70;text-align:center;padding:20px 9px;line-height:1.6}
 @media(max-width:600px){#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:38px!important;right:5px!important;width:calc(100% - 10px)!important;max-height:72dvh!important}#ui [data-screen="plaza"] .plaza-market-grid{grid-template-columns:1fr 1fr;gap:6px}#ui [data-screen="plaza"] .plaza-market-item{padding:7px;gap:5px}#ui [data-screen="plaza"] .plaza-market-art{width:45px;height:48px;flex-basis:45px}#ui [data-screen="plaza"] .plaza-market-art img{width:42px;height:42px}#ui [data-screen="plaza"] .plaza-market-item-info{flex-basis:65px}#ui [data-screen="plaza"] .plaza-market-register{flex-wrap:wrap}#ui [data-screen="plaza"] .plaza-market-register input{max-width:none;width:100px!important}#ui [data-screen="plaza"] .plaza-trade-caption{display:none}}
+
+/* 3.1: All three submenu flyouts use the original My Room layout.
+   Overrides the older broad #ui rules and the 3.0 visual regression. */
+#ui.gacha-screen .community-options:not([hidden]),
+#ui.gacha-screen .market-options:not([hidden]),
+#ui.gacha-screen .myroom-options:not([hidden]),
+#ui .gacha-screen .community-options:not([hidden]),
+#ui .gacha-screen .market-options:not([hidden]),
+#ui .gacha-screen .myroom-options:not([hidden]){
+  display:flex!important;flex-direction:column!important;position:absolute!important;
+  left:calc(100% + 7px)!important;right:auto!important;top:0!important;
+  width:70px!important;max-width:70px!important;padding:0!important;gap:4px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;filter:drop-shadow(0 3px 5px #394b3a35)!important;
+}
+#ui.gacha-screen .community-options .nav-button,
+#ui.gacha-screen .market-options .nav-button,
+#ui.gacha-screen .myroom-options .nav-button,
+#ui .gacha-screen .community-options .nav-button,
+#ui .gacha-screen .market-options .nav-button,
+#ui .gacha-screen .myroom-options .nav-button{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-height:25px!important;height:25px!important;
+  padding:3px 2px!important;font-size:9px!important;line-height:1!important;
+  gap:2px!important;border-radius:11px!important;white-space:nowrap!important;
+  background:linear-gradient(145deg,#fffdfa,#e9f9f0)!important;
+  border:1px solid #b9e6d0!important;
+  box-shadow:0 3px 0 #a4d7c0,0 5px 12px #7cba9b25!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon,
+#ui.gacha-screen .market-options .chiikawa-tab-icon,
+#ui.gacha-screen .myroom-options .chiikawa-tab-icon,
+#ui .gacha-screen .community-options .chiikawa-tab-icon,
+#ui .gacha-screen .market-options .chiikawa-tab-icon,
+#ui .gacha-screen .myroom-options .chiikawa-tab-icon{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:15px!important;height:15px!important;flex:0 0 15px!important;
+  margin:0!important;padding:0!important;position:static!important;
+}
+#ui.gacha-screen .community-options .chiikawa-tab-icon img,
+#ui.gacha-screen .market-options .chiikawa-tab-icon img,
+#ui .gacha-screen .community-options .chiikawa-tab-icon img,
+#ui .gacha-screen .market-options .chiikawa-tab-icon img{
+  display:block!important;position:static!important;inset:auto!important;
+  width:100%!important;height:100%!important;max-width:100%!important;
+  object-fit:contain!important;transform:none!important;
+}
