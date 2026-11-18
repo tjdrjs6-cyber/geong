@@ -1352,7 +1352,35 @@ export class GachaUi {
     }
     await this.loadPetTab()
     const summary=Object.entries(wins).map(([k,n])=>`${names[k]||k} ${n}마리`).join(', ')
-    this.toast(`${opened}개 개봉 · ${summary||'획득 펫 없음'} · 꽝 ${opened-Object.values(wins).reduce((x,y)=>x+y,0)}개${opened<count?' · 일부 실패':''}`)
+    this.showPetOpenResult(opened,wins,opened<count)
+
+  }
+
+  private showPetOpenResult(opened:number,wins:Record<string,number>,partial:boolean):void{
+    const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
+    this.root.querySelector('.pets-result-overlay')?.remove()
+    const overlay=document.createElement('div')
+    overlay.className='pets-result-overlay'
+    const card=document.createElement('div')
+    card.className='pets-result-dialog'
+    const title=document.createElement('h3');title.textContent='펫박스 개봉 결과';card.append(title)
+    const sub=document.createElement('p')
+    sub.textContent=`총 ${opened}개 개봉${partial?' · 일부 개봉 실패':''}`
+    card.append(sub)
+    const grid=document.createElement('div');grid.className='pets-result-grid'
+    const won=Object.values(wins).reduce((a,b)=>a+b,0)
+    const empty=document.createElement('div');empty.className='pets-result-item';empty.textContent=`꽝 · ${opened-won}개`;grid.append(empty)
+    for(const [kind,count] of Object.entries(wins)){
+      if(!names[kind])continue
+      const item=document.createElement('div');item.className='pets-result-item'
+      const img=document.createElement('img');img.src=`/assets/pets/${kind}.png`;img.alt=names[kind]
+      const label=document.createElement('span');label.textContent=`${names[kind]} × ${count}`
+      item.append(img,label);grid.append(item)
+    }
+    card.append(grid)
+    const close=document.createElement('button');close.type='button';close.textContent='확인'
+    close.addEventListener('click',()=>overlay.remove(),{once:true})
+    card.append(close);overlay.append(card);this.root.append(overlay)
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
@@ -1406,6 +1434,7 @@ export class GachaUi {
         if(action==='pet-unequip' && Number(snapshot.equipped)!==0)throw Error('펫 해제가 저장되지 않았습니다.')
         await this.store.restore()
         await this.loadPetTab()
+        void this.refreshHeroPet()
         this.toast(action==='pet-equip'?'펫 배치 완료 · 전투력 +10%, 제초속도 +30%':'펫 배치 해제 완료')
       } catch(error) {this.toast(error instanceof Error?error.message:'펫 배치 실패');await this.loadPetTab()}
       return
@@ -1870,6 +1899,23 @@ export class GachaUi {
     const label = this.root.querySelector<HTMLElement>('.toon-hero-name')
     if (label) label.textContent = owned.length ? fullName(character) : '첫 친구를 뽑아 보세요!'
     this.root.querySelector('.toon-stage')?.classList.toggle('is-empty', owned.length === 0)
+    void this.refreshHeroPet()
+  }
+
+  private async refreshHeroPet():Promise<void> {
+    const stage=this.root.querySelector<HTMLElement>('.toon-stage')
+    if(!stage || !this.store.user)return
+    try {
+      const response=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
+      if(!response.ok)return
+      const data=await response.json() as {equipped:number;pets:{id:number;kind:string}[]}
+      const pet=data.pets.find(p=>Number(p.id)===Number(data.equipped))
+      let img=stage.querySelector<HTMLImageElement>('.toon-equipped-pet')
+      if(!pet){img?.remove();return}
+      if(!['momonga','kurimanju','usagi','chiikawa','hachiware'].includes(pet.kind))return
+      if(!img){img=document.createElement('img');img.className='toon-equipped-pet';img.alt='배치된 펫';stage.append(img)}
+      img.src=`/assets/pets/${pet.kind}.png`
+    }catch{}
   }
 
   /** Cartoon machine: shake, turn the handle and drop a capsule; returns the animation length in seconds. */

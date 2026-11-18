@@ -6826,3 +6826,13 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .pets-owned-list{max-height:none;overflow-y:auto;min-height:0;flex:1;overscroll-behavior:contain}
 .pets-owned-card{padding:7px}.pets-owned-card>img{width:48px;height:48px}
 .pets-equipped-status{font-size:13px;margin:0}.pets-empty{font-size:13px;opacity:.7}
+
+.toon-stage{position:relative}
+.toon-equipped-pet{position:absolute;right:18%;bottom:8%;width:12%;max-width:50px;height:auto;object-fit:contain;z-index:5;pointer-events:none}
+.pets-result-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.pets-result-dialog{width:min(440px,100%);max-height:85dvh;overflow:auto;background:#fffafc;color:#43313b;border:2px solid #e7c8da;border-radius:18px;padding:20px;text-align:center;box-shadow:0 14px 45px #0004}
+.pets-result-dialog h3{margin:0 0 8px}.pets-result-dialog p{margin:0 0 16px}
+.pets-result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:18px}
+.pets-result-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:12px;background:#f8eaf2;padding:12px;font-size:13px}
+.pets-result-item img{width:62px;height:62px;object-fit:contain}
+.pets-result-dialog>button{border:0;background:#edc3dc;color:#493044;border-radius:10px;padding:10px 28px;font:inherit;font-weight:bold;cursor:pointer}
