@@ -6827,8 +6827,7 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 .pets-owned-card{padding:7px}.pets-owned-card>img{width:48px;height:48px}
 .pets-equipped-status{font-size:13px;margin:0}.pets-empty{font-size:13px;opacity:.7}
 
-.toon-stage{position:relative}
-.toon-equipped-pet{position:absolute;right:18%;bottom:8%;width:12%;max-width:50px;height:auto;object-fit:contain;z-index:5;pointer-events:none}
+.toon-hero .toon-equipped-pet{position:absolute;right:5%;bottom:4%;width:20%;height:auto;object-fit:contain;z-index:5;pointer-events:none}
 .pets-result-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .pets-result-dialog{width:min(440px,100%);max-height:85dvh;overflow:auto;background:#fffafc;color:#43313b;border:2px solid #e7c8da;border-radius:18px;padding:20px;text-align:center;box-shadow:0 14px 45px #0004}
 .pets-result-dialog h3{margin:0 0 8px}.pets-result-dialog p{margin:0 0 16px}

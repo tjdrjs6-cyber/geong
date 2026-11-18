@@ -1339,20 +1339,13 @@ export class GachaUi {
     if(!Number.isSafeInteger(count)||count<1||count>boxes.length){this.toast('개봉 수량을 확인해주세요.');return}
     this.root.querySelectorAll<HTMLButtonElement>('.pets-box-actions button').forEach(b=>b.disabled=true)
     const names:Record<string,string>={momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'}
-    const wins:Record<string,number>={}
-    let opened=0
-    for(const box of boxes.slice(0,count)){
-      try{
-        const response=await fetch('/api/pets/open',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({boxId:box.id})})
-        if(!response.ok)break
-        const result=await response.json() as {pet?:{kind:string}}
-        opened++
-        if(result.pet)wins[result.pet.kind]=(wins[result.pet.kind]||0)+1
-      }catch{break}
-    }
-    await this.loadPetTab()
-    const summary=Object.entries(wins).map(([k,n])=>`${names[k]||k} ${n}마리`).join(', ')
-    this.showPetOpenResult(opened,wins,opened<count)
+    try {
+      const response=await fetch('/api/pets/open-batch',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({count})})
+      if(!response.ok)throw Error('개봉 요청 실패')
+      const result=await response.json() as {opened:number;wins:Record<string,number>}
+      this.showPetOpenResult(result.opened,result.wins,false)
+      await this.loadPetTab()
+    }catch{this.toast('펫박스 개봉에 실패했습니다. 잠시 후 다시 시도해주세요.');await this.loadPetTab()}
 
   }
 
@@ -1899,11 +1892,12 @@ export class GachaUi {
     const label = this.root.querySelector<HTMLElement>('.toon-hero-name')
     if (label) label.textContent = owned.length ? fullName(character) : '첫 친구를 뽑아 보세요!'
     this.root.querySelector('.toon-stage')?.classList.toggle('is-empty', owned.length === 0)
-    void this.refreshHeroPet()
+    if(!this.heroPetLoaded){this.heroPetLoaded=true;void this.refreshHeroPet()}
   }
 
+  private heroPetLoaded=false
   private async refreshHeroPet():Promise<void> {
-    const stage=this.root.querySelector<HTMLElement>('.toon-stage')
+    const stage=this.root.querySelector<HTMLElement>('.toon-hero')
     if(!stage || !this.store.user)return
     try {
       const response=await fetch('/api/pets',{credentials:'include',cache:'no-store'})
@@ -1914,7 +1908,8 @@ export class GachaUi {
       if(!pet){img?.remove();return}
       if(!['momonga','kurimanju','usagi','chiikawa','hachiware'].includes(pet.kind))return
       if(!img){img=document.createElement('img');img.className='toon-equipped-pet';img.alt='배치된 펫';stage.append(img)}
-      img.src=`/assets/pets/${pet.kind}.png`
+      const url=`/assets/pets/${pet.kind}.png`
+      if(img.getAttribute('src')!==url)img.src=url
     }catch{}
   }
 

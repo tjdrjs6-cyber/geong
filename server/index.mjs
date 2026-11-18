@@ -1938,6 +1938,26 @@ const routes = {
     send(res,200,await retryDbContention(()=>expeditionSnapshot(account.id)))
   },
   'GET /api/pets':async(req,res)=>{const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});send(res,200,await petSnapshot(a.id))},
+  'POST /api/pets/open-batch':async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {count}=await readJson(req);
+    if(!Number.isSafeInteger(count)||count<1||count>100)return send(res,400,{error:'invalid_count'});
+    const c=await pool.getConnection();
+    try{
+      await c.beginTransaction();
+      const [boxes]=await c.query('SELECT id FROM gm_pet_boxes WHERE owner_id=? AND listing_id IS NULL ORDER BY id LIMIT ? FOR UPDATE',[a.id,count]);
+      if(boxes.length<count){await c.rollback();return send(res,409,{error:'insufficient_boxes'})}
+      const ids=boxes.map(b=>b.id);
+      await c.query(`DELETE FROM gm_pet_boxes WHERE id IN (${ids.map(()=>'?').join(',')})`,ids);
+      const wins={};const pets=[];
+      for(let i=0;i<count;i++){
+        const roll=randomInt(100);
+        if(roll>=90){const kind=PET_KINDS[Math.floor((roll-90)/2)];wins[kind]=(wins[kind]||0)+1;pets.push([a.id,kind,'normal'])}
+      }
+      if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade) VALUES ?',[pets]);
+      await c.commit();return send(res,200,{ok:true,opened:count,wins});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
   'POST /api/pets/open':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const {boxId}=await readJson(req);if(!Number.isSafeInteger(boxId))return send(res,400,{error:'invalid_box'});
