@@ -7018,3 +7018,54 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
   #ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info{min-height:100px!important;gap:5px!important}
   #ui .pets-tab-content:has(.pets-box-grade-select) .pets-box-info img{width:100px!important;height:100px!important}
 }
+
+/* Plaza market redesign 3.0: original game artwork retained */
+#ui [data-screen="plaza"] .plaza-card{background:#fffaf3!important;border-radius:20px!important;gap:8px!important}
+#ui [data-screen="plaza"] .plaza-head{padding:2px 36px 4px 4px!important}
+#ui [data-screen="plaza"] .plaza-head h2{font-size:19px!important;color:#594839}
+#ui [data-screen="plaza"] .plaza-status{font-size:11px!important;color:#89735d}
+#ui [data-screen="plaza"] .plaza-map{border:2px solid #e3d0b7!important;border-radius:16px!important;box-shadow:inset 0 0 0 3px #fff8,0 3px 12px #7e65421a!important}
+#ui [data-screen="plaza"] .plaza-actions{display:flex!important;align-items:center;gap:12px;flex-wrap:wrap}
+#ui [data-screen="plaza"] .plaza-actions button{background:#f6dfd9!important;border:1px solid #dcaeaa!important;color:#6b4546!important;font-weight:800!important;padding:10px 18px!important;border-radius:12px!important}
+#ui [data-screen="plaza"] .plaza-trade-caption{font-size:11px;color:#8e7b68}
+#ui [data-screen="plaza"] .plaza-chat{border:1px solid #e9dcca;background:#fffefa!important}
+#ui [data-screen="plaza"] .plaza-shop-sign{background:#fff5d9!important;border:1px solid #cbb48a!important;border-radius:12px!important;padding:6px 9px!important;font-weight:800!important;transform:translate(-50%,-104px)!important}
+#ui [data-screen="plaza"] .plaza-player[data-emote] img{animation:none!important;transform:none!important}
+#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:48px!important;right:10px!important;width:min(600px,calc(100% - 20px))!important;max-height:min(76dvh,690px)!important;padding:0!important;gap:0!important;border-radius:19px!important;background:#fffaf4!important;border:1px solid #e3cbb7!important;box-shadow:0 14px 45px #47352655!important}
+#ui [data-screen="plaza"] .plaza-shop-panel .plaza-shop-title{position:sticky!important;top:0!important;display:flex;align-items:center;justify-content:space-between;padding:16px 17px!important;background:#fffaf4!important;border-bottom:1px solid #eadbd0!important;z-index:3}
+#ui [data-screen="plaza"] .plaza-shop-title strong{font-size:18px;color:#5a443b}
+#ui [data-screen="plaza"] .plaza-shop-title small{display:block;font-size:11px;color:#9a8574;margin-top:3px}
+#ui [data-screen="plaza"] .plaza-market-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:10px 14px;background:#fffaf4}
+#ui [data-screen="plaza"] .plaza-market-tabs button{padding:11px 5px!important;background:#fff!important;border:1px solid #e8d6c9!important;font-weight:700!important;border-radius:11px!important}
+#ui [data-screen="plaza"] .plaza-market-tabs button.is-selected{background:#f9e5e8!important;border-color:#dfaebb!important;color:#8c4e66!important}
+#ui [data-screen="plaza"] .plaza-market-body{overflow-y:auto;min-height:120px;padding:6px 14px 18px}
+#ui [data-screen="plaza"] .plaza-market-intro{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 13px}
+#ui [data-screen="plaza"] .plaza-market-intro b{color:#56473c;font-size:14px}
+#ui [data-screen="plaza"] .plaza-market-intro em{font-style:normal;color:#b45d77}
+#ui [data-screen="plaza"] .plaza-market-intro span{color:#978475;font-size:11px}
+#ui [data-screen="plaza"] .plaza-market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#ui [data-screen="plaza"] .plaza-market-item{min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:8px;background:white;border:1px solid #edddd0;border-radius:14px;padding:10px;box-shadow:0 2px 7px #604c3510}
+#ui [data-screen="plaza"] .plaza-market-art{width:60px;height:66px;flex:0 0 60px;background:#fff1f1;border-radius:12px;display:grid;place-items:center}
+#ui [data-screen="plaza"] .plaza-market-art img{width:55px;height:55px;object-fit:contain}
+#ui [data-screen="plaza"] .plaza-market-item-info{display:flex;flex:1 1 90px;min-width:0;flex-direction:column;gap:4px}
+#ui [data-screen="plaza"] .plaza-market-item-info strong{font-size:13px;color:#544437}
+#ui [data-screen="plaza"] .plaza-market-item-info small{font-size:10px;color:#9b8979}
+#ui [data-screen="plaza"] .plaza-market-item-info b{font-size:12px;color:#a75c78}
+#ui [data-screen="plaza"] .plaza-market-item>button{margin-left:auto;background:#f9e6eb!important;border-color:#e6b9c7!important;color:#8e4e66!important;font-weight:800}
+#ui [data-screen="plaza"] .plaza-market-own{font-size:11px;color:#9b8271}
+#ui [data-screen="plaza"] .plaza-market-status{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8efe5;border:1px solid #e9d9c9;border-radius:14px;padding:13px;margin-bottom:14px}
+#ui [data-screen="plaza"] .plaza-market-status strong{display:block;font-size:14px}
+#ui [data-screen="plaza"] .plaza-market-status small{display:block;font-size:11px;color:#9b8271;margin-top:4px}
+#ui [data-screen="plaza"] .plaza-market-status button{white-space:nowrap;background:#e6f0df!important;font-weight:800}
+#ui [data-screen="plaza"] .plaza-market-section{background:#fff;border:1px solid #ecdfd2;border-radius:14px;padding:12px;margin-bottom:12px}
+#ui [data-screen="plaza"] .plaza-market-section h3{font-size:14px;margin:0 0 10px;color:#5b493c}
+#ui [data-screen="plaza"] .plaza-market-section h3 span{font-size:11px;font-weight:400;color:#9c8878}
+#ui [data-screen="plaza"] .plaza-market-tip{font-size:11px;line-height:1.5;color:#9b7e6e}
+#ui [data-screen="plaza"] .plaza-market-register,#ui [data-screen="plaza"] .plaza-market-myitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f2e8e1}
+#ui [data-screen="plaza"] .plaza-market-register img,#ui [data-screen="plaza"] .plaza-market-myitem img{width:37px;height:37px;object-fit:contain}
+#ui [data-screen="plaza"] .plaza-market-register span,#ui [data-screen="plaza"] .plaza-market-myitem span{flex:1;min-width:66px;font-size:12px;font-weight:700}
+#ui [data-screen="plaza"] .plaza-market-register input{width:105px!important;max-width:25%;padding:7px;border:1px solid #dec8b9;border-radius:9px}
+#ui [data-screen="plaza"] .plaza-market-register button{white-space:nowrap;background:#f7e5e9!important}
+#ui [data-screen="plaza"] .plaza-market-myitem b{font-size:12px;color:#a45b73}
+#ui [data-screen="plaza"] .plaza-market-empty{font-size:12px;color:#947e70;text-align:center;padding:20px 9px;line-height:1.6}
+@media(max-width:600px){#ui [data-screen="plaza"] .plaza-shop-panel:not([hidden]){top:38px!important;right:5px!important;width:calc(100% - 10px)!important;max-height:72dvh!important}#ui [data-screen="plaza"] .plaza-market-grid{grid-template-columns:1fr 1fr;gap:6px}#ui [data-screen="plaza"] .plaza-market-item{padding:7px;gap:5px}#ui [data-screen="plaza"] .plaza-market-art{width:45px;height:48px;flex-basis:45px}#ui [data-screen="plaza"] .plaza-market-art img{width:42px;height:42px}#ui [data-screen="plaza"] .plaza-market-item-info{flex-basis:65px}#ui [data-screen="plaza"] .plaza-market-register{flex-wrap:wrap}#ui [data-screen="plaza"] .plaza-market-register input{max-width:none;width:100px!important}#ui [data-screen="plaza"] .plaza-trade-caption{display:none}}
