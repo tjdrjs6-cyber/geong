@@ -610,7 +610,7 @@ export class GachaUi {
           <div class="battle-bottom-tools"><button type="button" class="battle-drop-open" data-action="battle-drop-open" aria-haspopup="dialog">보상 · 드롭률 보기</button></div><div class="battle-deployed-count" aria-live="polite">배치캐릭터 0/3</div>
           <div class="weed-picker battle-picker" role="list" aria-label="토벌할 친구 고르기"></div>
         </div>
-        <div class="battle-drop-overlay" hidden><div class="battle-drop-dialog" role="dialog" aria-modal="true" aria-labelledby="battle-drop-title"><div class="battle-drop-head"><div><small>토벌장 보상 정보</small><h2 id="battle-drop-title">드롭률</h2></div><button type="button" class="battle-drop-close" data-action="battle-drop-close" aria-label="닫기">×</button></div><div class="battle-drop-content"></div><button type="button" class="battle-drop-done" data-action="battle-drop-close">확인</button></div></div>
+        <div class="battle-drop-overlay" hidden><div class="battle-drop-dialog" role="dialog" aria-modal="true" aria-labelledby="battle-drop-title"><div class="battle-drop-head"><div><small>토벌장 보상 정보</small><h2 id="battle-drop-title">드롭률</h2></div><button type="button" class="battle-drop-close" data-action="battle-drop-close" aria-label="닫기">×</button></div><div class="battle-drop-content"></div></div></div>
         <div class="battle-reward-popup" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         <div class="toast battle-toast" aria-live="polite"></div>
       </section>
@@ -4303,7 +4303,21 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       })
     }
     overlay.hidden = false
-    overlay.querySelector<HTMLButtonElement>('.battle-drop-close')?.focus()
+    const closeButton = overlay.querySelector<HTMLButtonElement>('.battle-drop-close')
+    if (closeButton && closeButton.dataset.directCloseBound !== '1') {
+      closeButton.dataset.directCloseBound = '1'
+      closeButton.addEventListener('pointerdown', (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        overlay.hidden = true
+      })
+      closeButton.addEventListener('click', (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        overlay.hidden = true
+      })
+    }
+    closeButton?.focus()
   }
 
   private renderBattleStatus(): void {

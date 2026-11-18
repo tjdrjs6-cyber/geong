@@ -7347,3 +7347,20 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 #ui [data-screen="plaza"] .plaza-shop-sign .plaza-stall-hint{
   text-align:center!important;
 }
+
+/* 4.9: keep plaza world scale consistent between desktop and mobile.
+   The camera still follows the player; mobile shows a smaller viewport into the same-size world. */
+#ui [data-screen="plaza"] .plaza-world {
+  width:max(160%, 1200px)!important;
+  height:max(145%, 650px)!important;
+}
+#ui [data-screen="plaza"] .plaza-map {
+  min-height:440px!important;
+}
+#ui .battle-drop-overlay:not([hidden]) .battle-drop-close {
+  position:relative!important;
+  z-index:10!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+#ui .battle-drop-done { display:none!important; }
