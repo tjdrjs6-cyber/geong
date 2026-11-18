@@ -7454,3 +7454,18 @@ body > .market-global-shortage-notice.is-visible {
   box-sizing:border-box!important;
   background-clip:padding-box!important;
 }
+
+/* 5.13: unify visible border thickness, including shadows, on all five right-side tabs. */
+#ui .gacha-screen > .collection-peek > button.reward-chip,
+#ui .gacha-screen > .top-rewards > button.reward-chip {
+  border-width:2px!important;
+  border-style:solid!important;
+  box-shadow:none!important;
+  outline:0!important;
+  box-sizing:border-box!important;
+  background-clip:padding-box!important;
+}
+#ui .gacha-screen > .collection-peek > button.reward-chip::before,
+#ui .gacha-screen > .top-rewards > button.reward-chip::before {
+  box-shadow:none!important;
+}
