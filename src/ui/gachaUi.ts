@@ -4285,7 +4285,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       + item('강화파편', `${fragments}개 지급`, '100%')
       + item('겅이복권', '1장 획득', '0.65%')
       + item('한계돌파석', '1개 획득', '0.01%')
-      + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.1%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
+      + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.3%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
       + '<p class="battle-drop-note">각 보상은 스테이지 클리어 시 개별 판정됩니다. 펫박스 등급은 스테이지 구간에 따라 달라집니다.</p>'
     if (overlay.parentElement !== this.root) this.root.appendChild(overlay)
     if (overlay.dataset.closeBound !== '1') {
