@@ -3690,7 +3690,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         miscItems.push(`<article class="storage-item" role="listitem"><img src="${image}" alt="${name}" style="width:60px;height:60px;object-fit:contain"/><b>${name}</b><small>보유 ${count.toLocaleString('ko-KR')}개 · ${detail}</small></article>`)
       }
       addMisc('한계돌파석', this.store.market.stones, '/assets/items/breakthrough_stone.png', '캐릭터 한계돌파 재료')
-      addMisc('겅이복권', this.store.data.lotteryTickets ?? 0, '/assets/lottery_ticket_custom.png', '토벌장 0.6% 획득')
+      addMisc('겅이복권', this.store.data.lotteryTickets ?? 0, '/assets/lottery_ticket_custom.png', '토벌장 0.65% 획득')
       addMisc('잡초', this.store.wildWeed?.count ?? 0, '/field_wild_weed.png', '개당 500코인')
       addMisc('황금잡초', this.store.wildWeed?.goldenCount ?? 0, '/field_golden_weed.png', '개당 5,000코인')
       grid.innerHTML = miscItems.join('') || '<p class="users-empty misc-empty">보유한 기타 아이템이 없습니다.</p>'
@@ -4260,7 +4260,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     content.innerHTML = `<p class="battle-drop-stage">현재 스테이지 <b>${zone}-${sub}</b></p><p class="battle-drop-subtitle">스테이지 클리어 기준 보상</p>`
       + item('다이아', `${diamonds}개 지급`, '100%')
       + item('강화파편', `${fragments}개 지급`, '100%')
-      + item('겅이복권', '1장 획득', '0.75%')
+      + item('겅이복권', '1장 획득', '0.65%')
       + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.1%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
       + '<p class="battle-drop-note">각 보상은 스테이지 클리어 시 개별 판정됩니다. 펫박스 등급은 스테이지 구간에 따라 달라집니다.</p>'
     overlay.hidden = false

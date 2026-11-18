@@ -901,7 +901,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        const ticket = randomInt(400) < 3 ? 1 : 0
+        const ticket = randomInt(2000) < 13 ? 1 : 0
         ticketsEarned += ticket
         diamondsEarned += reward.diamonds
         earned += reward.fragments
@@ -1998,11 +1998,11 @@ const routes = {
     const now=Date.now();await pool.query("UPDATE gm_pet_listings l LEFT JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? SET l.status='expired' WHERE l.status='active' AND sh.account_id IS NULL",[now]);
     await pool.query("UPDATE gm_pet_boxes b JOIN gm_pet_listings l ON l.item_type='box' AND l.item_id=b.id SET b.listing_id=NULL WHERE l.status='expired' AND b.listing_id=l.id");
     await pool.query("UPDATE gm_pets p JOIN gm_pet_listings l ON l.item_type='pet' AND l.item_id=p.id SET p.listing_id=NULL WHERE l.status='expired' AND p.listing_id=l.id");
-    const [rows]=await pool.query("SELECT l.id,l.seller_id,l.item_type,l.item_id,l.price,b.grade,p.kind FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? LEFT JOIN gm_pets p ON l.item_type='pet' AND p.id=l.item_id LEFT JOIN gm_pet_boxes b ON l.item_type='box' AND b.id=l.item_id WHERE l.status='active' ORDER BY l.id DESC LIMIT 100",[now]);const [recent]=await pool.query("SELECT l.price,b.grade,l.sold_ms FROM gm_pet_listings l LEFT JOIN gm_pet_boxes b ON b.id=l.item_id AND b.trades>0 WHERE l.item_type='box' AND l.status='sold' ORDER BY l.sold_ms DESC LIMIT 20");send(res,200,{listings:rows,recentSales:recent})
+    const [rows]=await pool.query("SELECT l.id,l.seller_id,l.item_type,l.item_id,l.price,p.kind FROM gm_pet_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? LEFT JOIN gm_pets p ON l.item_type='pet' AND p.id=l.item_id WHERE l.status='active' ORDER BY l.id DESC LIMIT 100",[now]);send(res,200,{listings:rows})
   },
   'POST /api/pets/list':async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});const {itemType,itemId,price}=await readJson(req);
-    if(!['box','pet'].includes(itemType)||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<1000||price>100000000)return send(res,400,{error:'invalid_listing'});
+    if(!['box','pet'].includes(itemType)||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<10||price>100000000)return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
       const [cnt]=await c.query("SELECT COUNT(*) n FROM gm_pet_listings WHERE seller_id=? AND status='active'",[a.id]);if(Number(cnt[0].n)>=5){await c.rollback();return send(res,409,{error:'listing_full'})}
       if(itemType==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}const table=itemType==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE`,[itemId,a.id]);if(!items.length||(itemType==='box'&&Number(items[0].trades)>0)||(itemType==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'not_tradeable'})}
@@ -2015,14 +2015,7 @@ const routes = {
       const l=ls[0];if(l.item_type==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
       const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);const [saves]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(a.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
       const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE`,[l.item_id,l.seller_id,l.id]);if(!items.length||(l.item_type==='box'&&Number(items[0].trades)>0)||(l.item_type==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'item_unavailable'})}
-      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);
-      const [buyerRows]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
-      const buyerName=String(buyerRows[0]?.nickname||'다른 유저').slice(0,32);
-      const gradeLabel={normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}[items[0].grade||'normal']||'노말';
-      const mailText=`[판매 완료] ${buyerName}님이 ${gradeLabel} 펫박스를 ${Number(l.price).toLocaleString('ko-KR')}다이아에 구매했습니다. (수수료 ${fee.toLocaleString('ko-KR')}다이아)`;
-      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,l.seller_id,mailText,0,checkInDay(),Date.now()]);
-      await trimInbox(c,l.seller_id);
-      await c.commit();send(res,200,{ok:true,fee})
+      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
   'GET /api/plaza/shop': async(req,res)=>{
