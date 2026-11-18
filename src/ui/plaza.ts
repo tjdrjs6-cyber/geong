@@ -61,7 +61,7 @@ export class Plaza {
    const price=(n:number)=>Number(n).toLocaleString('ko-KR');
    const fmt=(n:number)=>Math.max(0,Math.ceil((n-Date.now())/60000));
    const visibleListings=this.shopView==='browse'&&this.selectedSeller!==null?m.listings.filter(l=>l.seller_id===this.selectedSeller):m.listings;
-   const head=`<div class="plaza-shop-title"><div><strong>거래 광장</strong><small>유저끼리 펫박스를 거래하는 공간</small></div><button data-shop-action="hide" aria-label="상점 닫기">닫기</button></div><div class="plaza-market-tabs"><button data-shop-action="browse" class="${this.shopView==='browse'?'is-selected':''}">상품 둘러보기</button><button data-shop-action="mine" class="${this.shopView==='mine'?'is-selected':''}">내 상점 관리</button></div>`;
+   const head=`<div class="plaza-shop-title"><div><strong>${this.selectedSeller===null?'거래 광장':'판매자 상점'}</strong><small>${this.selectedSeller===null?'유저끼리 펫박스를 거래하는 공간':'해당 판매자의 상품만 표시됩니다.'}</small></div><button data-shop-action="hide" aria-label="상점 닫기">닫기</button></div>${this.selectedSeller===null?'<div class="plaza-market-tabs"><button data-shop-action="browse" class="${this.shopView==='browse'?'is-selected':''}">상품 둘러보기</button><button data-shop-action="mine" class="${this.shopView==='mine'?'is-selected':''}">내 상점 관리</button></div>':''}`;
    let body='';
    if(this.shopView==='browse'){
     body=`<div class="plaza-market-intro"><b>판매 중인 상품 <em>${visibleListings.length}개</em></b><span>다이아 결제 · 구매 전 가격을 확인하세요</span></div><div class="plaza-market-grid">${visibleListings.map(l=>`<article class="plaza-market-item"><div class="plaza-market-art"><img src="${l.item_type==='box'?'/assets/pets/box_normal.png':PET_IMAGES[l.kind||'']||'/assets/pets/box_normal.png'}" alt="" loading="lazy"/></div><div class="plaza-market-item-info"><strong>${l.item_type==='box'?grade(l.grade)+' 펫박스':(PET_NAMES[l.kind||'']||'펫')}</strong><small>${l.seller_id===s.me?'내가 등록한 상품':`판매자 ${safe(l.seller_nickname||'다른 유저')}`}</small><b>${price(l.price)} 다이아</b></div>${l.seller_id===s.me?'<span class="plaza-market-own">판매 중</span>':`<button data-shop-action="buypet" data-id="${l.id}">구매</button>`}</article>`).join('')||'<p class="plaza-market-empty">현재 판매 중인 상품이 없습니다. 내 상점에서 첫 상품을 등록해 보세요.</p>'}</div>`;
@@ -73,13 +73,13 @@ export class Plaza {
    panel.innerHTML=head+`<div class="plaza-market-body">${body}</div>`;
   }catch{panel.innerHTML='<div class="plaza-shop-title"><strong>거래 광장</strong><button data-shop-action="hide">닫기</button></div><p class="plaza-market-empty">상점 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>'}
  }
- private async shopAction(action:string,id:number){const panel=this.panel.querySelector<HTMLElement>('.plaza-shop-panel')!;if(action==='hide'){panel.hidden=true;return}if(action==='browse'||action==='mine'){await this.openShop(action);return}if(['buypet','openbox','usepet','close'].includes(action)){
+ private async shopAction(action:string,id:number){const panel=this.panel.querySelector<HTMLElement>('.plaza-shop-panel')!;if(action==='hide'){panel.hidden=true;return}if(action==='browse'||action==='mine'){if(this.selectedSeller!==null&&action==='mine')return;await this.openShop(action);return}if(['buypet','openbox','usepet','close'].includes(action)){
     const msg=action==='buypet'?'다이아로 구매하시겠습니까?':action==='openbox'?'펫박스를 개봉하시겠습니까?':action==='usepet'?'이 펫을 장착하시겠습니까?':'상점을 닫고 미판매 상품을 반환하시겠습니까?';
     if(!await this.confirmGame(msg))return
   }
   const button=panel.querySelector<HTMLButtonElement>(`button[data-shop-action="${action}"][data-id="${id}"]`);const type=button?.dataset.type||'';
   try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw Error('request');return r.json()};
-   if(action==='open'||action==='close')await request('/api/plaza/shop/'+action);
+   if(action==='open'||action==='close'){try{await request('/api/plaza/shop/'+action)}catch{this.notice(action==='open'?'상점은 지정된 판매 구역에서만 열 수 있습니다. 빈 판매 자리로 이동해 주세요.':'상점을 닫지 못했습니다.');return}}
    else if(action==='listpet'){const price=Number(panel.querySelector<HTMLInputElement>(`[data-price-id="${type}-${id}"]`)?.value);if(type==='box'&&(!Number.isFinite(price)||price<1000)){this.notice('펫박스는 1,000다이아 이상부터 판매할 수 있습니다.');return}await request('/api/pets/list',{itemType:type,itemId:id,price})}
    else if(action==='buypet')await request('/api/pets/buy',{listingId:id});
    else if(action==='openbox'){const result=await request('/api/pets/open',{boxId:id});this.notice(result.pet?`${PET_NAMES[result.pet.kind]} ${PET_GRADES[result.pet.grade||'normal']} 펫을 획득했습니다!`:'꽝! 펫이 나오지 않았습니다.')}

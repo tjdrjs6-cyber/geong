@@ -1,0 +1,1 @@
+3.5 partial patch based on 3.4. Fix other player shop browse-only, shop stall size/clipping, clearer zone-only message. Quantity/unit price sale and automatic snap are NOT implemented. Apply only to staging and test.
