@@ -12,7 +12,7 @@ export class Plaza {
  constructor(private root:HTMLElement,private featured:()=>string|null){this.setupWorld();this.bind()}
  private notice(message:string){
   const card=this.panel.querySelector<HTMLElement>('.plaza-card')!;
-  let toast=card.querySelector<HTMLElement>('.plaza-game-notice');if(!toast){toast=document.createElement('div');toast.className='plaza-game-notice';toast.setAttribute('role','status');card.append(toast)}
+  let toast=document.querySelector<HTMLElement>('.plaza-game-notice.plaza-global-notice');if(!toast){toast=document.createElement('div');toast.className='plaza-game-notice plaza-global-notice';toast.setAttribute('role','alert');document.body.append(toast)}
   toast.textContent=message;toast.classList.add('is-visible');window.setTimeout(()=>{if(toast?.textContent===message)toast.classList.remove('is-visible')},2800)
  }
  private confirmGame(message:string):Promise<boolean>{
@@ -172,7 +172,7 @@ export class Plaza {
     const msg=action==='cancelpetgroup'||action==='canceldropgroup'?'선택한 상품의 판매 등록을 취소하시겠습니까?':action==='openbox'?'펫박스를 개봉하시겠습니까?':action==='usepet'?'이 펫을 장착하시겠습니까?':'상점을 닫고 미판매 상품을 반환하시겠습니까?';
     if(!await this.confirmGame(msg))return;
   }
-  try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw Error('request');return r.json()};
+  try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const payload=await r.json().catch(()=>({})) as {error?:string;message?:string};const code=String(payload.error||payload.message||'');if(/diamond|coin|balance|funds|insufficient|not_enough/i.test(code))throw Error(/coin/i.test(code)?'COIN_SHORTAGE':'DIAMOND_SHORTAGE');throw Error('request')}return r.json()};
    if(action==='open'||action==='close'){try{
      if(action==='open'){
       // The server validates the latest saved coordinates, not the client's visible position.
@@ -200,7 +200,7 @@ export class Plaza {
    if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop();
    if(action==='buypet'||action==='buydrop')await this.refreshDiamonds(true);
    if(!['openbox'].includes(action))this.notice('처리가 완료되었습니다.')
-  }catch{this.notice('요청을 처리하지 못했습니다. 아이템 상태·다이아·상점 위치를 확인해주세요.');if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop()}
+  }catch(error){const message=error instanceof Error?error.message:'';this.notice(message==='COIN_SHORTAGE'?'보유 코인이 부족합니다.':message==='DIAMOND_SHORTAGE'?'보유 다이아가 부족합니다.':'요청을 처리하지 못했습니다. 아이템 상태·다이아·상점 위치를 확인해주세요.');if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop()}
  }
  async send(){const input=this.panel.querySelector<HTMLInputElement>('.plaza-input')!;const message=input.value.trim();if(!message)return;try{await api('/chat',{message});input.value='';await this.sync()}catch{this.panel.querySelector<HTMLElement>('.plaza-hint')!.textContent='채팅 전송 실패 · 잠시 후 다시 시도해주세요'}}
 
