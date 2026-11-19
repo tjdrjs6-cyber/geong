@@ -1620,7 +1620,7 @@ const routes = {
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     if(outcome.error)return send(res,400,outcome)
     await safeEventProgress(account.id,'lottery',count)
-    send(res,200,{...outcome,save:await getSave(account.id),accessory:await getAccessory(account.id)})
+    send(res,200,{...outcome,save:await getSave(account.id),accessory:await getAccessory(account.id),dupes:await getDupes(account.id)})
   },
   'POST /api/wild-weed/state': async (req,res) => {
     const account=await currentAccount(req)

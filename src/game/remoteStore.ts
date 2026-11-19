@@ -359,9 +359,10 @@ export class RemoteGachaStore {
   async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
   async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
-    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState}>('lottery/buy',{count})
+    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState;dupes:CharDupes}>('lottery/buy',{count})
     this.data=result.save
     this.accessory=result.accessory
+    this.dupes=result.dupes
     return result
   }
   private async rpsRequest(path:string,body:object):Promise<RpsState> {
