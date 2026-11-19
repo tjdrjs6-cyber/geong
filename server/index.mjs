@@ -2154,12 +2154,13 @@ const routes = {
   },
   'POST /api/plaza/drops/buy': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
-    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId))return send(res,400,{error:'invalid_listing'});
+    const {listingId,quantity}=await readJson(req);if(!Number.isSafeInteger(listingId)||!Number.isSafeInteger(quantity)||quantity<1||quantity>10000)return send(res,400,{error:'invalid_quantity'});
     const c=await pool.getConnection();
     try{await c.beginTransaction();
       const [ls]=await c.query("SELECT l.* FROM gm_drop_listings l JOIN gm_plaza_shops sh ON sh.account_id=l.seller_id AND sh.expires_ms>? WHERE l.id=? AND l.status='active' FOR UPDATE",[Date.now(),listingId]);
       if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}
-      const l=ls[0],seller=Number(l.seller_id),qty=Number(l.quantity),amount=qty*Number(l.unit_price);
+      const l=ls[0],seller=Number(l.seller_id),qty=quantity,amount=qty*Number(l.unit_price);
+      if(qty>Number(l.quantity)||!Number.isSafeInteger(amount)||amount<1){await c.rollback();return send(res,409,{error:'quantity_unavailable'})}
       if(seller===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
       const ids=[Number(a.id),seller].sort((x,y)=>x-y);
       const [balances]=await c.query('SELECT account_id,diamonds,lottery_tickets FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);
@@ -2179,7 +2180,11 @@ const routes = {
         await c.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-? WHERE account_id=?',[qty,seller]);
         await c.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets+? WHERE account_id=?',[qty,a.id]);
       }
-      await c.query("UPDATE gm_drop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),listingId]);
+      if(qty===Number(l.quantity)){
+        await c.query("UPDATE gm_drop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),listingId]);
+      }else{
+        await c.query("UPDATE gm_drop_listings SET quantity=quantity-? WHERE id=? AND status='active'",[qty,listingId]);
+      }
       const [names]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
       const buyerName=String(names[0]?.nickname||'다른 유저').slice(0,32);
       await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,seller,`[판매 완료] ${buyerName}님이 ${isStone?'한계돌파석':'겅이복권'} ${qty}개를 ${amount.toLocaleString('ko-KR')}다이아에 구매했습니다.`,0,checkInDay(),Date.now()]);

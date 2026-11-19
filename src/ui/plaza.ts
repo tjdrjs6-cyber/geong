@@ -139,8 +139,8 @@ export class Plaza {
    const head=`<div class="plaza-shop-title"><div><strong>${this.selectedSeller===null?'내 상점 관리':'판매자 상점'}</strong><small>${this.selectedSeller===null?'내 상점 운영과 판매 상품을 관리하세요':'해당 판매자의 상품만 표시됩니다.'}</small></div><button data-shop-action="hide" aria-label="상점 닫기">닫기</button></div>${tabs}`;
    let body='';
    if(this.shopView==='browse'){
-    const dropCards=visibleDropListings.map(l=>`<article class="plaza-market-item"><div class="plaza-market-art"><img src="${l.kind==='stone'?'/assets/items/breakthrough_stone.png':'/assets/lottery_ticket_custom.png'}" alt="" loading="lazy"/></div><div class="plaza-market-item-info"><strong>${l.kind==='stone'?'한계돌파석':'겅이복권'}</strong><small>${l.quantity}개 · 개당 ${price(l.unit_price)} 다이아</small><small>판매자 ${safe(l.nickname||'유저')}</small><b>총 ${price(l.quantity*l.unit_price)} 다이아</b></div>${l.seller_id===s.me?'<span class="plaza-market-own">판매 중</span>':`<button data-shop-action="buydrop" data-id="${l.id}">구매</button>`}</article>`).join('');
-    body=`<div class="plaza-market-intro"><b>판매 중인 상품 <em>${listingGroups.length+visibleDropListings.length}종 · ${visibleListings.length+visibleDropListings.length}건</em></b><span>다이아 결제 · 구매 전 가격을 확인하세요</span></div><div class="plaza-market-grid">${listingGroups.map(({item:l,count})=>`<article class="plaza-market-item"><div class="plaza-market-art"><img src="${l.item_type==='box'?'/assets/pets/box_normal.png':PET_IMAGES[l.kind||'']||'/assets/pets/box_normal.png'}" alt="" loading="lazy"/></div><div class="plaza-market-item-info"><strong>${l.item_type==='box'?grade(l.grade)+' 펫박스':(PET_NAMES[l.kind||'']||'펫')}</strong><small>판매 중 ${count}개 · 개당 ${price(l.price)} 다이아</small><small>${l.seller_id===s.me?'내가 등록한 상품':`판매자 ${safe(l.seller_nickname||'다른 유저')}`}</small><b>${price(l.price)} 다이아</b></div>${l.seller_id===s.me?'<span class="plaza-market-own">판매 중</span>':`<button data-shop-action="buypet" data-id="${l.id}">구매</button>`}</article>`).join('')}</div><div class="plaza-market-grid">${dropCards}</div>${!visibleListings.length&&!visibleDropListings.length?'<p class="plaza-market-empty">판매 중인 상품이 없습니다.</p>':''}`;
+    const dropCards=visibleDropListings.map(l=>`<article class="plaza-market-item"><div class="plaza-market-art"><img src="${l.kind==='stone'?'/assets/items/breakthrough_stone.png':'/assets/lottery_ticket_custom.png'}" alt="" loading="lazy"/></div><div class="plaza-market-item-info"><strong>${l.kind==='stone'?'한계돌파석':'겅이복권'}</strong><small>${l.quantity}개 · 개당 ${price(l.unit_price)} 다이아</small><small>판매자 ${safe(l.nickname||'유저')}</small><b>개당 ${price(l.unit_price)} 다이아</b></div>${l.seller_id===s.me?'<span class="plaza-market-own">판매 중</span>':`<div class="plaza-market-purchase"><label>구매 수량 <input type="number" min="1" max="${l.quantity}" value="1" step="1" inputmode="numeric" data-buy-qty="${l.id}" aria-label="구매 수량"/></label><button data-shop-action="buydrop" data-id="${l.id}" data-unit-price="${l.unit_price}" data-max-qty="${l.quantity}">구매</button></div>`}</article>`).join('');
+    body=`<div class="plaza-market-intro"><b>판매 중인 상품 <em>${listingGroups.length+visibleDropListings.length}종 · ${visibleListings.length+visibleDropListings.length}건</em></b><span>다이아 결제 · 구매 전 가격을 확인하세요</span></div><div class="plaza-market-grid">${listingGroups.map(({item:l,count})=>`<article class="plaza-market-item"><div class="plaza-market-art"><img src="${l.item_type==='box'?'/assets/pets/box_normal.png':PET_IMAGES[l.kind||'']||'/assets/pets/box_normal.png'}" alt="" loading="lazy"/></div><div class="plaza-market-item-info"><strong>${l.item_type==='box'?grade(l.grade)+' 펫박스':(PET_NAMES[l.kind||'']||'펫')}</strong><small>판매 중 ${count}개 · 개당 ${price(l.price)} 다이아</small><small>${l.seller_id===s.me?'내가 등록한 상품':`판매자 ${safe(l.seller_nickname||'다른 유저')}`}</small><b>${price(l.price)} 다이아</b></div>${l.seller_id===s.me?'<span class="plaza-market-own">판매 중</span>':`<button data-shop-action="buypet" data-id="${l.id}" data-unit-price="${l.price}">1개 구매</button>`}</article>`).join('')}</div><div class="plaza-market-grid">${dropCards}</div>${!visibleListings.length&&!visibleDropListings.length?'<p class="plaza-market-empty">판매 중인 상품이 없습니다.</p>':''}`;
    }else{
     const available=p.boxes.filter(x=>!x.listing_id&&!x.trades);
     const myListings=m.listings.filter(l=>l.seller_id===s.me);
@@ -161,13 +161,14 @@ export class Plaza {
   if(action==='buypet'||action==='buydrop'){
     await this.refreshDiamonds(true);
     if(!this.diamondsLoaded){this.notice('보유 다이아를 확인하지 못했습니다. 다시 시도해 주세요.');return}
-    const card=button?.closest<HTMLElement>('.plaza-market-item');
-    const text=card?.querySelector<HTMLElement>('.plaza-market-item-info')?.textContent||'';
-    const priceMatch=action==='buydrop'?text.match(/총\s*([\d,]+)\s*다이아/):text.match(/개당\s*([\d,]+)\s*다이아/);
-    const required=priceMatch?Number(priceMatch[1].replace(/,/g,'')):NaN;
+    const unitPrice=Number(button?.dataset.unitPrice);
+    const quantity=action==='buydrop'?Number(panel.querySelector<HTMLInputElement>(`[data-buy-qty="${id}"]`)?.value):1;
+    const maxQty=action==='buydrop'?Number(button?.dataset.maxQty):1;
+    if(!Number.isSafeInteger(quantity)||quantity<1||quantity>maxQty){this.notice(`구매 수량은 1~${maxQty}개로 입력해 주세요.`);return}
+    const required=unitPrice*quantity;
     if(!Number.isSafeInteger(required)||required<1){this.notice('상품 가격을 확인할 수 없습니다. 다시 시도해 주세요.');return}
     if(this.diamonds<required){this.notice(`보유한 다이아가 부족합니다. (보유 ${this.diamonds.toLocaleString('ko-KR')}개)`);return}
-    if(!await this.confirmGame(`${required.toLocaleString('ko-KR')}다이아로 구매하시겠습니까?`))return;
+    if(!await this.confirmGame(`${quantity}개를 ${required.toLocaleString('ko-KR')}다이아로 구매하시겠습니까?`))return;
   }else if(['openbox','usepet','close','cancelpetgroup','canceldropgroup'].includes(action)){
     const msg=action==='cancelpetgroup'||action==='canceldropgroup'?'선택한 상품의 판매 등록을 취소하시겠습니까?':action==='openbox'?'펫박스를 개봉하시겠습니까?':action==='usepet'?'이 펫을 장착하시겠습니까?':'상점을 닫고 미판매 상품을 반환하시겠습니까?';
     if(!await this.confirmGame(msg))return;
@@ -193,7 +194,7 @@ export class Plaza {
    }
    else if(action==='buypet')await request('/api/pets/buy',{listingId:id});
    else if(action==='listdrop'){const quantity=Number(panel.querySelector<HTMLInputElement>(`[data-drop-qty="${type}"]`)?.value),unitPrice=Number(panel.querySelector<HTMLInputElement>(`[data-drop-price="${type}"]`)?.value);if(!Number.isSafeInteger(quantity)||quantity<1||!Number.isSafeInteger(unitPrice)||unitPrice<(type==='stone'?3000:800)){this.notice('판매 수량과 최소 개당 가격을 확인해 주세요.');return}await request('/api/plaza/drops/list',{kind:type,quantity,unitPrice})}
-   else if(action==='buydrop')await request('/api/plaza/drops/buy',{listingId:id});
+   else if(action==='buydrop'){const quantity=Number(panel.querySelector<HTMLInputElement>(`[data-buy-qty="${id}"]`)?.value);await request('/api/plaza/drops/buy',{listingId:id,quantity})}
    else if(action==='openbox'){const result=await request('/api/pets/open',{boxId:id});this.notice(result.pet?`${PET_NAMES[result.pet.kind]} ${PET_GRADES[result.pet.grade||'normal']} 펫을 획득했습니다!`:'꽝! 펫이 나오지 않았습니다.')}
    else if(action==='usepet')await request('/api/pets/use',{petId:id});
    else if(action==='unequip')await request('/api/pets/unequip');
