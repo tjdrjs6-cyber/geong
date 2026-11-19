@@ -781,7 +781,7 @@ export class GachaUi {
           <div class="auth-tabs user-tabs mail-tabs" role="tablist"><button class="auth-tab is-active" data-action="mail-tab" data-tab="in" role="tab">📥 받은 편지함 <i class="mail-tab-count">0</i></button><button class="auth-tab" data-action="mail-tab" data-tab="sent" role="tab">📤 보낸 편지함 <i class="mail-tab-count">0</i></button></div>
           <p class="collection-summary mail-summary">유저 목록에서 유저를 골라 편지와 코인을 보낼 수 있어요.</p>
           <div class="mail-list" role="list"></div>
-          <div class="mail-actions"><button class="modal-primary mail-claim-all" data-action="mail-claim-all">코인 모두 받기</button><button class="modal-secondary" data-action="users">✉ 편지 쓰러 가기</button></div>
+          <div class="mail-actions"><button class="modal-primary mail-claim-all" data-action="mail-claim-all">첨부 보상 모두 받기</button><button class="modal-secondary" data-action="users">✉ 편지 쓰러 가기</button></div>
         </div>
       </section>
       <section class="gacha-modal claw-screen" data-screen="claw" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="claw-title">
@@ -3623,7 +3623,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       list.innerHTML = box.mail.length ? box.mail.map(item => `<article class="mail-item${item.seen ? '' : ' is-new'}" role="listitem">
         <div class="mail-head"><b>${escapeHtml(item.from)}</b><small>${mailTime(item.at)}</small>${item.seen ? '' : '<em>NEW</em>'}${del(item.id, 'in')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? (item.claimed ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받음</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">🎁 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받기</button>`) : ''}
+        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? (item.claimed ? `<span class="mail-coins is-claimed">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령 완료` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받음`}</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받기`}</button>`) : ''}
       </article>`).join('') : '<p class="users-empty">아직 받은 편지가 없어요.</p>'
     } else {
       list.innerHTML = box.sent.length ? box.sent.map(item => `<article class="mail-item is-sent" role="listitem">
@@ -3639,7 +3639,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.renderMail(box)
       this.renderWallet()
       this.renderMailBadge()
-      if (claimed) { this.audio.play('win'); this.toast(`우편함에서 ${claimed}코인을 받았어요!`) }
+      if (claimed || box.mail.some(item => item.claimed && item.diamonds > 0)) { this.audio.play('win'); this.toast('우편 첨부 보상을 수령했습니다. 다이아 잔액을 확인해주세요.') }
     } catch (error) { this.handleError(error) }
   }
   private async deleteMail(id: number, which: 'in' | 'sent'): Promise<void> {

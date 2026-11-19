@@ -2066,12 +2066,12 @@ const routes = {
       const l=ls[0];if(l.item_type==='pet'){await c.rollback();return send(res,409,{error:'pet_not_tradeable'})}if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
       const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);const [saves]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(a.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
       const table=l.item_type==='box'?'gm_pet_boxes':'gm_pets';const [items]=await c.query(`SELECT * FROM ${table} WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE`,[l.item_id,l.seller_id,l.id]);if(!items.length||(l.item_type==='box'&&Number(items[0].trades)>0)||(l.item_type==='pet'&&(items[0].used||Number(items[0].trades)>0))){await c.rollback();return send(res,409,{error:'item_unavailable'})}
-      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[Number(l.price)-fee,l.seller_id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);
+      const fee=Math.floor(Number(l.price)*.1);await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);await c.query(`UPDATE ${table} SET owner_id=?,listing_id=NULL${l.item_type==='pet'||l.item_type==='box'?',trades=trades+1':''} WHERE id=?`,[a.id,l.item_id]);await c.query("UPDATE gm_pet_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),l.id]);
       const [buyerRows]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
       const buyerName=String(buyerRows[0]?.nickname||'다른 유저').slice(0,32);
       const gradeLabel={normal:'노말',rare:'레어',epic:'에픽',unique:'유니크'}[items[0].grade||'normal']||'노말';
       const mailText=`[판매 완료] ${buyerName}님이 ${gradeLabel} 펫박스를 ${Number(l.price).toLocaleString('ko-KR')}다이아에 구매했습니다. (수수료 ${fee.toLocaleString('ko-KR')}다이아)`;
-      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,l.seller_id,mailText,0,checkInDay(),Date.now()]);
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,l.seller_id,mailText,0,Number(l.price)-fee,checkInDay(),Date.now()]);
       await trimInbox(c,l.seller_id);
       await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
@@ -2171,7 +2171,7 @@ const routes = {
       if(Number(stock[0]?.amount||0)<qty){await c.rollback();return send(res,409,{error:'item_unavailable'})}
       const fee=Math.floor(amount*.1);
       await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[amount,a.id]);
-      await c.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[amount-fee,seller]);
+      
       if(isStone){
         await c.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[a.id]);
         await c.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones-? WHERE account_id=?',[qty,seller]);
@@ -2187,7 +2187,7 @@ const routes = {
       }
       const [names]=await c.query('SELECT nickname FROM gm_accounts WHERE id=?',[a.id]);
       const buyerName=String(names[0]?.nickname||'다른 유저').slice(0,32);
-      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,sent_day,created_ms) VALUES(?,?,?,?,?,?)',[0,seller,`[판매 완료] ${buyerName}님이 ${isStone?'한계돌파석':'겅이복권'} ${qty}개를 ${amount.toLocaleString('ko-KR')}다이아에 구매했습니다.`,0,checkInDay(),Date.now()]);
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,seller,`[판매 완료] ${buyerName}님이 ${isStone?'한계돌파석':'겅이복권'} ${qty}개를 ${amount.toLocaleString('ko-KR')}다이아에 구매했습니다. (수수료 ${fee.toLocaleString('ko-KR')}다이아)`,0,amount-fee,checkInDay(),Date.now()]);
       await trimInbox(c,seller);
       await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
@@ -2249,7 +2249,12 @@ const routes = {
     const l=ls[0];if(Number(l.seller_id)===Number(account.id)){await conn.rollback();return send(res,400,{error:'own_listing'})}
     const ids=[Number(account.id),Number(l.seller_id)].sort((a,b)=>a-b);const [saves]=await conn.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);const buyer=saves.find(x=>Number(x.account_id)===Number(account.id));if(!buyer||Number(buyer.diamonds)<Number(l.price)){await conn.rollback();return send(res,409,{error:'not_enough_diamonds'})}
     const [item]=await conn.query('SELECT id FROM gm_cosmetic_inventory WHERE id=? AND owner_id=? AND listing_id=? FOR UPDATE',[l.inventory_id,l.seller_id,l.id]);if(!item.length){await conn.rollback();return send(res,409,{error:'item_unavailable'})}
-    const fee=Math.floor(Number(l.price)*.1),net=Number(l.price)-fee;await conn.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,account.id]);await conn.query('UPDATE gm_saves SET diamonds=diamonds+? WHERE account_id=?',[net,l.seller_id]);await conn.query('UPDATE gm_cosmetic_inventory SET owner_id=?,listing_id=NULL WHERE id=?',[account.id,l.inventory_id]);await conn.query("UPDATE gm_plaza_shop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[account.id,Date.now(),l.id]);await conn.query('INSERT INTO gm_plaza_shop_sales(listing_id,seller_id,buyer_id,price,fee,sold_ms) VALUES(?,?,?,?,?,?)',[l.id,l.seller_id,account.id,l.price,fee,Date.now()]);await conn.commit();send(res,200,{ok:true,price:Number(l.price),fee})}catch(e){await conn.rollback();throw e}finally{conn.release()}
+    const fee=Math.floor(Number(l.price)*.1),net=Number(l.price)-fee;await conn.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,account.id]);await conn.query('UPDATE gm_cosmetic_inventory SET owner_id=?,listing_id=NULL WHERE id=?',[account.id,l.inventory_id]);await conn.query("UPDATE gm_plaza_shop_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[account.id,Date.now(),l.id]);await conn.query('INSERT INTO gm_plaza_shop_sales(listing_id,seller_id,buyer_id,price,fee,sold_ms) VALUES(?,?,?,?,?,?)',[l.id,l.seller_id,account.id,l.price,fee,Date.now()]);
+    const [buyerNames]=await conn.query('SELECT nickname FROM gm_accounts WHERE id=?',[account.id]);
+    const buyerName=String(buyerNames[0]?.nickname||'다른 유저').slice(0,32);
+    await conn.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,l.seller_id,`[판매 완료] ${buyerName}님이 광장 상품을 ${Number(l.price).toLocaleString('ko-KR')}다이아에 구매했습니다. (수수료 ${fee.toLocaleString('ko-KR')}다이아)`,0,net,checkInDay(),Date.now()]);
+    await trimInbox(conn,l.seller_id);
+    await conn.commit();send(res,200,{ok:true,price:Number(l.price),fee})}catch(e){await conn.rollback();throw e}finally{conn.release()}
   },
   'GET /api/plaza': async (req,res) => {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
@@ -2799,6 +2804,8 @@ const routes = {
     const { id } = await readJson(req)
     const conn = await pool.getConnection()
     let total = 0
+    let diamondTotal = 0
+    let fragmentTotal = 0
     try {
       await conn.beginTransaction()
       const [rows] = await conn.query(
@@ -2808,8 +2815,8 @@ const routes = {
         id == null ? [account.id] : [account.id, Number(id)],
       )
       total = rows.reduce((sum, row) => sum + Number(row.coins), 0)
-      const diamondTotal = rows.reduce((sum, row) => sum + Number(row.diamonds), 0)
-      const fragmentTotal = rows.reduce((sum, row) => sum + Number(row.fragments), 0)
+      diamondTotal = rows.reduce((sum, row) => sum + Number(row.diamonds), 0)
+      fragmentTotal = rows.reduce((sum, row) => sum + Number(row.fragments), 0)
       if (rows.length) {
         await conn.query(`UPDATE gm_mail SET claimed = 1, seen = 1 WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(row => row.id))
         await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [total, diamondTotal, fragmentTotal, account.id])
@@ -2821,7 +2828,7 @@ const routes = {
     } finally {
       conn.release()
     }
-    send(res, 200, { claimed: total, save: await getSave(account.id), ...(await mailbox(account.id)) })
+    send(res, 200, { claimed: total, claimedDiamonds: diamondTotal, claimedFragments: fragmentTotal, save: await getSave(account.id), ...(await mailbox(account.id)) })
   },
   'POST /api/pull': async (req, res) => {
     const account = await currentAccount(req)
