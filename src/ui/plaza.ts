@@ -173,7 +173,7 @@ export class Plaza {
     const msg=action==='cancelpetgroup'||action==='canceldropgroup'?'선택한 상품의 판매 등록을 취소하시겠습니까?':action==='openbox'?'펫박스를 개봉하시겠습니까?':action==='usepet'?'이 펫을 장착하시겠습니까?':'상점을 닫고 미판매 상품을 반환하시겠습니까?';
     if(!await this.confirmGame(msg))return;
   }
-  try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const payload=await r.json().catch(()=>({})) as {error?:string;message?:string};const code=String(payload.error||payload.message||'');if(/diamond|coin|balance|funds|insufficient|not_enough/i.test(code))throw Error(/coin/i.test(code)?'COIN_SHORTAGE':'DIAMOND_SHORTAGE');throw Error('request')}return r.json()};
+  try{const request=async(path:string,body:object={})=>{const r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const payload=await r.json().catch(()=>({})) as {error?:string;message?:string};const code=String(payload.error||payload.message||'');if(/diamond|coin|balance|funds|insufficient|not_enough/i.test(code))throw Error(/coin/i.test(code)?'COIN_SHORTAGE':'DIAMOND_SHORTAGE');throw Error('SHOP_ERROR:'+code)}return r.json()};
    if(action==='open'||action==='close'){try{
      if(action==='open'){
       // The server validates the latest saved coordinates, not the client's visible position.
@@ -201,7 +201,7 @@ export class Plaza {
    if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop();
    if(action==='buypet'||action==='buydrop')await this.refreshDiamonds(true);
    if(!['openbox'].includes(action))this.notice('처리가 완료되었습니다.')
-  }catch(error){const message=error instanceof Error?error.message:'';this.notice(message==='COIN_SHORTAGE'?'보유 코인이 부족합니다.':message==='DIAMOND_SHORTAGE'?'보유 다이아가 부족합니다.':'요청을 처리하지 못했습니다. 아이템 상태·다이아·상점 위치를 확인해주세요.');if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop()}
+  }catch(error){const message=error instanceof Error?error.message:'';const errors:Record<string,string>={item_unavailable:'판매자의 실제 재고가 부족하거나 판매 상품 정보가 일치하지 않습니다. 판매자에게 등록 취소 후 재등록을 요청해 주세요.',sold_or_expired:'판매가 종료되었거나 상점 운영 시간이 만료되었습니다.',quantity_unavailable:'판매 가능한 수량보다 많이 선택했습니다.',invalid_quantity:'구매 수량을 다시 확인해 주세요.',own_listing:'자신의 상품은 구매할 수 없습니다.',not_enough_diamonds:'보유 다이아가 부족합니다.',shop_closed:'판매자의 상점이 닫혔습니다.',not_tradeable:'거래할 수 없는 상품입니다.'};const errorCode=message.startsWith('SHOP_ERROR:')?message.slice(11):'';this.notice(message==='COIN_SHORTAGE'?'보유 코인이 부족합니다.':message==='DIAMOND_SHORTAGE'?'보유 다이아가 부족합니다.':errors[errorCode]||`구매 요청에 실패했습니다. ${errorCode?'오류: '+errorCode:'서버 응답을 확인해 주세요.'}`);if(['openbox','usepet','unequip'].includes(action))await this.loadPets();else await this.loadShop()}
  }
  async send(){const input=this.panel.querySelector<HTMLInputElement>('.plaza-input')!;const message=input.value.trim();if(!message)return;try{await api('/chat',{message});input.value='';await this.sync()}catch{this.panel.querySelector<HTMLElement>('.plaza-hint')!.textContent='채팅 전송 실패 · 잠시 후 다시 시도해주세요'}}
 
