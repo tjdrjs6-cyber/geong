@@ -113,6 +113,7 @@ export class GachaUi {
   private toastTimer = 0
   private results: RevealItem[] = []
   private resultKind: 'char' | 'deco' = 'char'
+  private legendaryTicketResult = false
   private house!: HouseView
   private houseBadgeBusy = false
   private userTab: 'char' | 'deco' | 'accessory' | 'house' = 'char'
@@ -1781,6 +1782,7 @@ export class GachaUi {
     if (action === 'mail-send' && button.dataset.nickname) { await this.sendMail(button.dataset.nickname); return }
     if (action === 'user-list') { this.renderUsers(); return }
     if (action === 'user-view' && button.dataset.nickname) { this.userTab = 'char'; this.renderUserDetail(button.dataset.nickname); return }
+    if (action === 'close' && this.screen==='result' && this.legendaryTicketResult) { this.legendaryTicketResult=false; this.show('storage'); return }
     if (action === 'close') { const reopen=this.screen==='result'; const kind=this.resultKind; this.show('title'); if(reopen){this.setPullMode(kind==='deco'?'deco':'char');const popup=this.root.querySelector<HTMLElement>('.pull-popup');if(popup)popup.hidden=false} return }
     if (action === 'result-collection') { this.show(this.resultKind === 'deco' ? 'decos' : 'collection'); return }
     if (action === 'retry') { this.actions.retry(); return }
@@ -1821,6 +1823,7 @@ export class GachaUi {
         return
       } finally { this.busy = false }
       this.audio.play('pickup')
+      this.legendaryTicketResult = false
       this.results = result.map(item => this.characterReveal(item))
       this.resultKind = 'char'
       this.revealing = true
@@ -1848,6 +1851,7 @@ export class GachaUi {
         return
       } finally { this.busy = false }
       this.audio.play('pickup')
+      this.legendaryTicketResult = false
       this.results = result.map(item => this.decoReveal(item))
       this.resultKind = 'deco'
       const duration = this.spinMachine('#f2b6c6')
@@ -3765,6 +3769,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
                 const reveal=this.characterReveal({id:reward.id,duplicate:!!result.duplicate,bonus:0} as PullResult)
                 reveal.tag=result.duplicate?'중복 캐릭터 +1':'레전더리 캐릭터 획득!'
                 reveal.sub=result.duplicate?'중복 보유 수량 +1':'새로운 레전더리 친구 획득'
+                this.legendaryTicketResult=true
                 this.results=[reveal]
                 this.resultKind='char'
                 this.renderResults()
@@ -4647,9 +4652,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (!list) return
     const subtitle = this.root.querySelector<HTMLElement>('.result-subtitle')
     const deco = this.resultKind === 'deco'
-    if (subtitle) subtitle.textContent = this.results.length > 1 ? `${this.results.length}개 캡슐에서 나온 ${deco ? '데코' : '친구'}들` : deco ? '캡슐에서 나온 데코예요.' : '캡슐에서 만난 친구예요.'
+    if (subtitle) subtitle.textContent = this.legendaryTicketResult ? '레전더리 티켓에서 얻은 친구예요.' : this.results.length > 1 ? `${this.results.length}개 캡슐에서 나온 ${deco ? '데코' : '친구'}들` : deco ? '캡슐에서 나온 데코예요.' : '캡슐에서 만난 친구예요.'
     const title = this.root.querySelector<HTMLElement>('#result-title')
-    if (title) title.textContent = deco ? '데코가 나왔어요' : '새로운 만남이에요'
+    if (title) title.textContent = this.legendaryTicketResult ? '티켓에서 얻은 친구예요' : deco ? '데코가 나왔어요' : '새로운 만남이에요'
+    const closeButton = this.root.querySelector<HTMLButtonElement>('.gacha-modal[data-screen="result"] button[data-action="close"]')
+    if (closeButton) closeButton.textContent = this.legendaryTicketResult ? '확인' : '계속 뽑기'
     const toCollection = this.root.querySelector<HTMLElement>('.result-collection')
     if (toCollection) toCollection.textContent = deco ? '데코 도감에서 확인하기' : '도감에서 확인하기'
     list.innerHTML = this.results.map((item, index) => {
