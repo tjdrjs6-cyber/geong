@@ -26,6 +26,17 @@ async function marketState(accountId, conn=pool, lock=false){
   return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
 }
 const SKILL_TIERS = {"christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+
+// Mark event/collaboration characters here when they are introduced.
+// All other catalogued legendary characters automatically join the ticket pool.
+const LEGEND_TICKET_EXCLUDED_IDS = new Set([
+  'christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi',
+  'rilakkuma_chiikawa','korilakkuma_kani',
+  'halloween_chiikawa','halloween_hachiware','halloween_usagi'
+]);
+function legendTicketPool(){
+  return CHARACTER_IDS.filter(id => SKILL_TIERS[id] === 'legendary' && !LEGEND_TICKET_EXCLUDED_IDS.has(id));
+}
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
 const COOKIE = 'gm_session'
@@ -2208,7 +2219,8 @@ const routes = {
       const [dr]=await c.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[a.id]);
       if(!sr.length){await c.rollback();return send(res,409,{error:'save_missing'})}
       // Only the four permanent legendary entries in the base character catalog.
-      const poolIds=['kurimanju_bean','rakko_limited','beetle_berserk','usagi_orange'];
+      const poolIds=legendTicketPool();
+      if(!poolIds.length){await c.rollback();return send(res,409,{error:'no_eligible_legendary'})}
       const characterId=poolIds[randomInt(poolIds.length)];const owned=normalizeOwned(parseJson(sr[0].owned));const duplicate=owned.includes(characterId);
       const dupes=normalizeDupes(dr.length?parseJson(dr[0].items):{});
       if(duplicate)dupes[characterId]=(Number(dupes[characterId])||0)+1;else owned.push(characterId);

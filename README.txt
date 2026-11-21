@@ -1,3 +1,1 @@
-레전더리 티켓 드롭률 UI 표시 패치
-기존 레전더리 티켓 및 운영자 50% 패치 적용 후 src/ui/gachaUi.ts 덮어쓰기
-일반 0.01%, 운영자 및 test 50% 표시. 서버 확률 변경 없음.
+Apply after legendary ticket reward/reveal fix. Replace server/index.mjs. Future permanent legendary entries in SKILL_TIERS are included automatically; add new event/collab IDs to LEGEND_TICKET_EXCLUDED_IDS. Existing 4 permanent entries remain eligible.
