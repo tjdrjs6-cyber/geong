@@ -781,7 +781,7 @@ export class GachaUi {
           <div class="auth-tabs user-tabs mail-tabs" role="tablist"><button class="auth-tab is-active" data-action="mail-tab" data-tab="in" role="tab">📥 받은 편지함 <i class="mail-tab-count">0</i></button><button class="auth-tab" data-action="mail-tab" data-tab="sent" role="tab">📤 보낸 편지함 <i class="mail-tab-count">0</i></button></div>
           <p class="collection-summary mail-summary">유저 목록에서 유저를 골라 편지와 코인을 보낼 수 있어요.</p>
           <div class="mail-list" role="list"></div>
-          <div class="mail-actions"><button class="modal-primary mail-claim-all" data-action="mail-claim-all">코인 모두 받기</button><button class="modal-secondary" data-action="users">✉ 편지 쓰러 가기</button></div>
+          <div class="mail-actions"><button class="modal-primary mail-claim-all" data-action="mail-claim-all">첨부 보상 모두 받기</button><button class="modal-secondary" data-action="users">✉ 편지 쓰러 가기</button></div>
         </div>
       </section>
       <section class="gacha-modal claw-screen" data-screen="claw" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="claw-title">
@@ -2629,7 +2629,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${'ABCDEFGHIJKL'[i]}상</b>${i<3?`<img src="${CHARACTER_IMAGE_URLS[ids[i] as keyof typeof CHARACTER_IMAGE_URLS]}" alt=""/><span>${['치이카와(할로윈)','하치와레(할로윈)','우사기(할로윈)'][i]}</span>`:i<11?`<img src="/assets/accessories/${accessoryIds[i-3]}_keyring.png" alt=""/><span>${accessoryIds[i-3]==='chiikawa'?'치이카와':({hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'} as Record<string,string>)[accessoryIds[i-3]]} 레어 키링</span>`:'<span>꽝</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(2):'0.00'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')
     const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${w.grade}상`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 당첨자가 없습니다.';winners.append(empty)}}
     const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0;if(Number(input.value)>state.total)input.value=String(Math.max(1,state.total))}
-    const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=state.total===0||state.tickets===0||this.lotteryBusy
+    const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=this.lotteryBusy
     this.updateLotteryPrice()
   }
   private async showLotteryResetNotice():Promise<void>{
@@ -2713,9 +2713,14 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }catch(e){this.handleError(e)}
   }
   private async buyLottery():Promise<void>{
-    if(this.lotteryBusy||!this.lotteryState||this.lotteryResults.length)return
+    if(this.lotteryBusy)return
+    if(!this.lotteryState){this.lotteryTopPopup('복권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');void this.loadLottery();return}
+    if(this.lotteryResults.length){this.lotteryTopPopup('진행 중인 복권 결과를 먼저 확인해주세요.');return}
+    if(this.lotteryState.total<1){this.lotteryTopPopup('현재 남은 복권이 없습니다.');return}
+    if(this.lotteryState.tickets<1){this.lotteryTopPopup('보유한 겅이복권이 없습니다.');return}
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
-    if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.toast('구매 수량을 확인해주세요.');return}
+    if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.lotteryTopPopup('사용할 복권 수량을 확인해주세요.');return}
+    if(count>this.lotteryState.tickets){this.lotteryTopPopup(`겅이복권이 부족합니다. (보유 ${this.lotteryState.tickets}개)`);return}
     const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
     if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
     this.lotteryBusy=true
@@ -3088,7 +3093,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     document.querySelector('.pull-rates-dialog')?.remove()
   }
   private freePullRemaining(): number {
-    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+    const day = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now() - 9 * 60 * 60 * 1000))
     return this.store.data.freePullDay===day && (this.store.data.freePullUsed||0)>0 ? 0 : 10
   }
   private renderFreePullStatus(): void {
@@ -3618,7 +3623,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       list.innerHTML = box.mail.length ? box.mail.map(item => `<article class="mail-item${item.seen ? '' : ' is-new'}" role="listitem">
         <div class="mail-head"><b>${escapeHtml(item.from)}</b><small>${mailTime(item.at)}</small>${item.seen ? '' : '<em>NEW</em>'}${del(item.id, 'in')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? (item.claimed ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받음</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">🎁 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받기</button>`) : ''}
+        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? (item.claimed ? `<span class="mail-coins is-claimed">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령 완료` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받음`}</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받기`}</button>`) : ''}
       </article>`).join('') : '<p class="users-empty">아직 받은 편지가 없어요.</p>'
     } else {
       list.innerHTML = box.sent.length ? box.sent.map(item => `<article class="mail-item is-sent" role="listitem">
@@ -3634,7 +3639,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.renderMail(box)
       this.renderWallet()
       this.renderMailBadge()
-      if (claimed) { this.audio.play('win'); this.toast(`우편함에서 ${claimed}코인을 받았어요!`) }
+      if (claimed || box.mail.some(item => item.claimed && item.diamonds > 0)) { this.audio.play('win'); this.toast('우편 첨부 보상을 수령했습니다. 다이아 잔액을 확인해주세요.') }
     } catch (error) { this.handleError(error) }
   }
   private async deleteMail(id: number, which: 'in' | 'sent'): Promise<void> {
@@ -4285,7 +4290,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       + item('강화파편', `${fragments}개 지급`, '100%')
       + item('겅이복권', '1장 획득', '0.65%')
       + item('한계돌파석', '1개 획득', '0.01%')
-      + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.1%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
+      + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.3%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
       + '<p class="battle-drop-note">각 보상은 스테이지 클리어 시 개별 판정됩니다. 펫박스 등급은 스테이지 구간에 따라 달라집니다.</p>'
     if (overlay.parentElement !== this.root) this.root.appendChild(overlay)
     if (overlay.dataset.closeBound !== '1') {
@@ -4732,6 +4737,19 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
 
   private toast(text: string): void {
+    if (this.screen === 'title' && /다이아.*부족|코인.*부족|not_enough_diamonds|not_enough_coins/.test(text)) {
+      let banner = document.querySelector<HTMLElement>('.market-global-shortage-notice')
+      if (!banner) {
+        banner = document.createElement('div')
+        banner.className = 'market-global-shortage-notice'
+        banner.setAttribute('role', 'alert')
+        document.body.appendChild(banner)
+      }
+      banner.textContent = text
+      banner.classList.add('is-visible')
+      window.setTimeout(() => { if (banner?.textContent === text) banner.classList.remove('is-visible') }, 2800)
+      return
+    }
     const node = this.root.querySelector<HTMLElement>(this.screen === 'weed' ? '.weed-toast' : this.screen === 'battle' ? '.battle-toast' : this.screen === 'house' ? '.house-toast' : this.screen === 'claw' ? '.claw-toast' : '.gacha-screen .toast')
     if (!node) return
     node.textContent = text

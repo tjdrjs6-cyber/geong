@@ -7408,3 +7408,64 @@ dialog.geongi-first-menu-guide:not([open]){display:none!important;}
 /* 5.3: diamond balance beside the plaza heading */
 #ui [data-screen="plaza"] .plaza-head {display:flex;align-items:center;flex-wrap:wrap;column-gap:10px;row-gap:5px}
 #ui [data-screen="plaza"] .plaza-diamond-balance {display:inline-flex;align-items:center;border:1px solid #dfcbb0;border-radius:999px;background:#fffaf0;color:#74513e;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+
+/* 5.4: existing diamond artwork in the plaza balance */
+#ui [data-screen="plaza"] .plaza-diamond-balance{gap:5px}
+#ui [data-screen="plaza"] .plaza-diamond-icon{display:block;width:17px;height:17px;object-fit:contain;flex:none}
+
+/* 5.10: purchase errors are shown above all game panels on mobile and desktop */
+body > .plaza-game-notice.plaza-global-notice{position:fixed!important;top:max(16px,env(safe-area-inset-top,0px) + 12px)!important;bottom:auto!important;left:50%!important;z-index:2147483000!important;transform:translate(-50%,-12px)!important;opacity:0;pointer-events:none;box-sizing:border-box;max-width:min(440px,calc(100vw - 24px));width:max-content;padding:12px 18px;background:#fff9e9;border:1px solid #d7bc95;border-radius:13px;box-shadow:0 8px 28px #44342340;color:#57402c;font-size:13px;font-weight:700;text-align:center;transition:opacity .18s,transform .18s}
+body > .plaza-game-notice.plaza-global-notice.is-visible{opacity:1!important;transform:translate(-50%,0)!important}
+
+/* 5.11: the main market uses gachaUi's toast, not plaza's notice. */
+body > .market-global-shortage-notice {
+  position:fixed!important;
+  top:max(14px,env(safe-area-inset-top,0px) + 10px)!important;
+  left:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-10px)!important;
+  z-index:2147483000!important;
+  opacity:0;
+  pointer-events:none;
+  width:max-content;
+  max-width:calc(100vw - 24px);
+  box-sizing:border-box;
+  padding:12px 18px;
+  border:1px solid #d7bc95;
+  border-radius:13px;
+  background:#fff9e9;
+  box-shadow:0 8px 28px #44342340;
+  color:#57402c;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  transition:opacity .18s,transform .18s;
+}
+body > .market-global-shortage-notice.is-visible {
+  opacity:1!important;
+  transform:translate(-50%,0)!important;
+}
+
+/* 5.12: same 2px solid stroke on all five top-right menu tabs. */
+#ui .gacha-screen > .collection-peek .reward-chip,
+#ui .gacha-screen > .top-rewards .reward-chip {
+  border-style:solid!important;
+  border-width:2px!important;
+  box-sizing:border-box!important;
+  background-clip:padding-box!important;
+}
+
+/* 5.13: unify visible border thickness, including shadows, on all five right-side tabs. */
+#ui .gacha-screen > .collection-peek > button.reward-chip,
+#ui .gacha-screen > .top-rewards > button.reward-chip {
+  border-width:2px!important;
+  border-style:solid!important;
+  box-shadow:none!important;
+  outline:0!important;
+  box-sizing:border-box!important;
+  background-clip:padding-box!important;
+}
+#ui .gacha-screen > .collection-peek > button.reward-chip::before,
+#ui .gacha-screen > .top-rewards > button.reward-chip::before {
+  box-shadow:none!important;
+}
