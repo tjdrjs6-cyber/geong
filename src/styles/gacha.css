@@ -7475,3 +7475,15 @@ body > .market-global-shortage-notice.is-visible {
 /* Trade market: #ui disables pointer events for the lobby overlay. Re-enable on the interactive market dialog. */
 #ui .trade-modal:not([hidden]), #ui .trade-modal:not([hidden]) .trade-card, #ui .trade-modal:not([hidden]) .trade-content { pointer-events:auto !important; }
 #ui .trade-modal:not([hidden]) button, #ui .trade-modal:not([hidden]) input, #ui .trade-modal:not([hidden]) select { pointer-events:auto !important; }
+
+
+/* Trade market: item thumbnails and native-dialog replacement */
+.trade-product{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.trade-product-icon{width:32px;height:32px;object-fit:contain;flex:none;border-radius:6px}
+.trade-game-dialog{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(28,18,12,.52);padding:14px;pointer-events:auto!important}
+.trade-game-dialog-panel{width:min(100%,340px);padding:18px;border:2px solid #9d7755;border-radius:14px;background:#f4e5cf;color:#392a1e;box-shadow:0 8px 28px rgba(0,0,0,.24);text-align:center;pointer-events:auto!important}
+.trade-game-dialog-title{font-weight:800;font-size:17px;margin-bottom:12px}
+.trade-game-dialog-message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55;margin:0 0 18px}
+.trade-game-dialog-buttons{display:flex;gap:8px;justify-content:center}
+.trade-game-dialog-buttons button{border:1px solid #ad8a66;background:#fff1dc;color:#3a2a1e;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;pointer-events:auto!important}
+.trade-game-dialog-buttons [data-dialog-yes]{background:#78533c;color:#fff}
