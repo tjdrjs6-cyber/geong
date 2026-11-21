@@ -663,7 +663,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 돌아가기</button><b>PvP 아레나</b><button type="button" class="pvp-rewards-button" data-action="pvp-rewards" aria-haspopup="dialog">보상</button></header>
         <div class="pvp-main"><div class="pvp-top"><strong>WEEKLY ARENA</strong><span class="pvp-summary">정보를 불러오는 중...</span></div>
           <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-power-summary"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
-          <div class="pvp-section"><h3>오늘의 도전 상대</h3><div class="pvp-opponents"></div></div>
+          <div class="pvp-section"><div class="pvp-opponents-heading"><h3>오늘의 도전 상대</h3><button type="button" class="pvp-refresh-button" data-action="pvp-refresh">새로고침 · 1,000코인</button></div><div class="pvp-opponents"></div></div>
           <div class="pvp-section pvp-battle" hidden><div class="pvp-battle-head"><span class="pvp-battle-label">PvP 아레나</span><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><button data-action="pvp-speed" class="pvp-speed">1배속</button></div><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"><div class="pvp-fighters pvp-fighters-self"></div><div class="pvp-versus">VS</div><div class="pvp-fighters pvp-fighters-enemy"></div></div><div class="pvp-combat-log"></div><button class="pvp-primary pvp-skip" data-action="pvp-skip">전투 연출 건너뛰기</button><div class="pvp-result-overlay" hidden><div class="pvp-result-card"><div class="pvp-result-emblem"></div><h2 class="pvp-result-title"></h2><p class="pvp-result-score"></p><p class="pvp-result-hp"></p><button class="pvp-primary" data-action="pvp-result-confirm">결과 확인 · 아레나로</button></div></div></div>
           <div class="pvp-section"><h3>주간 랭킹 TOP 50</h3><div class="pvp-ranking"></div></div>
           <div class="pvp-section"><h3>최근 전투</h3><div class="pvp-history"></div></div>
@@ -1504,7 +1504,7 @@ export class GachaUi {
   private async pvpRequest(path:string,body?:object):Promise<any>{
     const response=await fetch('/api/pvp'+path,{method:body?'POST':'GET',credentials:'include',cache:'no-store',headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})})
     const result=await response.json()
-    if(!response.ok)throw new Error(({pvp_daily_limit:'오늘 도전 횟수 5회를 모두 사용했습니다.',pvp_team_invalid:'서로 다른 캐릭터 5명을 편성해 주세요.',pvp_not_owned:'보유하지 않은 캐릭터가 포함되어 있습니다.',pvp_opponent_invalid:'상대를 찾을 수 없습니다.'} as Record<string,string>)[result.error]||result.error||'PvP 요청 실패')
+    if(!response.ok)throw new Error(({pvp_daily_limit:'오늘 도전 횟수 5회를 모두 사용했습니다.',pvp_team_invalid:'서로 다른 캐릭터 5명을 편성해 주세요.',pvp_not_owned:'보유하지 않은 캐릭터가 포함되어 있습니다.',pvp_opponent_invalid:'상대를 찾을 수 없습니다.',pvp_refresh_coins:'코인이 부족합니다. 새로고침에는 1,000코인이 필요합니다.'} as Record<string,string>)[result.error]||result.error||'PvP 요청 실패')
     return result
   }
   private pvpDailyDotBusy=false
@@ -1887,6 +1887,19 @@ export class GachaUi {
     if (action === 'pvp-rewards-close') {const modal=this.root.querySelector<HTMLElement>('.pvp-rewards-modal');if(modal)modal.hidden=true;return}
     if (action === 'pvp-save') {await this.savePvp();return}
     if (action === 'pvp-select' && button?.dataset.id) {const id=button.dataset.id;this.pvpTeam=this.pvpTeam.includes(id)?this.pvpTeam.filter(x=>x!==id):this.pvpTeam.length<5?[...this.pvpTeam,id]:this.pvpTeam;this.renderPvp();return}
+    if (action === 'pvp-refresh') {
+      if(this.pvpBusy)return
+      if(!await this.pvpNotice('1,000코인을 사용하여 도전 상대를 새로고침하시겠습니까?',true))return
+      this.pvpBusy=true
+      try{
+        const result=await this.pvpRequest('/refresh',{})
+        if(this.pvpState){this.pvpState.opponents=result.opponents;this.renderPvp()}
+        this.store.data.gems=Math.max(0,Number(this.store.data.gems)-Number(result.coinsCharged||1000))
+        this.renderWallet()
+      }catch(e){await this.pvpNotice(e instanceof Error?e.message:'상대 새로고침에 실패했습니다.')}
+      finally{this.pvpBusy=false}
+      return
+    }
     if (action === 'pvp-fight' && button?.dataset.id) {if(this.pvpBusy)return;const opponentId=Number(button.dataset.id);if(await this.pvpNotice('도전하시겠습니까?',true))await this.fightPvp(opponentId);return}
     if (action === 'pvp-speed') {this.pvpSpeed=this.pvpSpeed===1?3:1;if(button)button.textContent=`${this.pvpSpeed}배속`;return}
     if (action === 'pvp-battle-exit') {return}

@@ -1535,6 +1535,18 @@ const routes = {
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
     send(res,200,await pvpView(a.id))
   },
+  'POST /api/pvp/refresh': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    const result=await inTransaction(async conn=>{
+      const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-1000 WHERE account_id=? AND gems>=1000',[a.id])
+      if(!paid.affectedRows)return {error:'pvp_refresh_coins'}
+      const [opponents]=await conn.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.team FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.account_id<>? AND JSON_LENGTH(p.team)=5 ORDER BY RAND() LIMIT 5`,[a.id])
+      return {opponents,coinsCharged:1000}
+    })
+    if(result.error)return send(res,400,result)
+    const opponentsWithPower=await Promise.all(result.opponents.map(async o=>({...o,team:pvpTeam(o.team),power:(await pvpPowerDetail(o.account_id,pvpTeam(o.team))).total})))
+    send(res,200,{opponents:opponentsWithPower,coinsCharged:1000})
+  },
   'POST /api/pvp/team': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
     const {team}=await readJson(req)
