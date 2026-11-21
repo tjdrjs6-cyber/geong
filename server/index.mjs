@@ -1382,7 +1382,12 @@ const ACHIEVEMENTS = [
  {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:0,power:40},
  {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:0,power:40},
  {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:0,power:50},
- {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:0,power:60}
+ {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:0,power:60},
+ {id:'christmas_collect',tier:'레전더리',name:'크리스마스 수집',ids:['christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi'],coins:0,power:100},
+ {id:'pet_normal_all',kind:'pet',grade:'normal',tier:'레전더리',name:'노말 펫 전종 수집',ids:PET_KINDS,coins:0,power:100},
+ {id:'pet_rare_all',kind:'pet',grade:'rare',tier:'레전더리',name:'레어 펫 전종 수집',ids:PET_KINDS,coins:0,power:200},
+ {id:'pet_epic_all',kind:'pet',grade:'epic',tier:'레전더리',name:'에픽 펫 전종 수집',ids:PET_KINDS,coins:0,power:300},
+ {id:'pet_unique_all',kind:'pet',grade:'unique',tier:'레전더리',name:'유니크 펫 전종 수집',ids:PET_KINDS,coins:0,power:500}
 ]
 let achievementTableReady=null
 async function ensureAchievementTable(){
@@ -1488,8 +1493,13 @@ const routes = {
     const owned=new Set(saveRows.length?normalizeOwned(parseJson(saveRows[0].owned)):[])
     const [discoveryRows]=await pool.query('SELECT accessory_id,grade FROM gm_accessory_discoveries WHERE account_id=?',[account.id])
     const keyringOwned=new Set(discoveryRows.map(row=>`${row.accessory_id}:${row.grade}`))
+    const [petHistoryRows,petOwnedRows]=await Promise.all([
+      pool.query('SELECT kind,grade FROM gm_pet_collection WHERE account_id=?',[account.id]),
+      pool.query('SELECT kind,grade FROM gm_pets WHERE owner_id=?',[account.id])
+    ])
+    const petOwned=new Set([...petHistoryRows,...petOwnedRows].map(row=>`${row.kind}:${row.grade}`))
     const claimed=new Set(claimRows.map(row=>row.achievement_id))
-    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>a.kind==='keyring'?keyringOwned.has(`${id}:${a.grade}`):owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
+    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>a.kind==='keyring'?keyringOwned.has(`${id}:${a.grade}`):a.kind==='pet'?petOwned.has(`${id}:${a.grade}`):owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
   },
   'POST /api/achievements/claim': async (req,res) => {
     const account=await currentAccount(req)
@@ -1508,6 +1518,14 @@ const routes = {
         const [discovered]=await conn.query('SELECT accessory_id FROM gm_accessory_discoveries WHERE account_id=? AND grade=?',[account.id,item.grade])
         const found=new Set(discovered.map(row=>row.accessory_id))
         complete=item.ids.every(cid=>found.has(cid))
+      }
+      if(item.kind==='pet'){
+        const [history,inventory]=await Promise.all([
+          conn.query('SELECT kind FROM gm_pet_collection WHERE account_id=? AND grade=?',[account.id,item.grade]),
+          conn.query('SELECT kind FROM gm_pets WHERE owner_id=? AND grade=?',[account.id,item.grade])
+        ])
+        const found=new Set([...history,...inventory].map(row=>row.kind))
+        complete=item.ids.every(kind=>found.has(kind))
       }
       if(!complete){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
       const [inserted]=await conn.query('INSERT IGNORE INTO gm_achievement_claims(account_id,achievement_id) VALUES (?,?)',[account.id,item.id])
@@ -2019,6 +2037,7 @@ const routes = {
         if(reward){const key=reward.grade+':'+reward.kind;wins[key]=(wins[key]||0)+1;pets.push([a.id,reward.kind,reward.grade,1])}
       }
       if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES ?',[pets]);
+      if(pets.length)await c.query('INSERT IGNORE INTO gm_pet_collection(account_id,kind,grade) VALUES ?',[pets.map(p=>[p[0],p[1],p[2]])]);
       await c.commit();return send(res,200,{ok:true,opened:count,wins});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
@@ -2027,7 +2046,7 @@ const routes = {
     const {boxId}=await readJson(req);if(!Number.isSafeInteger(boxId))return send(res,400,{error:'invalid_box'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [b]=await c.query('SELECT id,grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[boxId,a.id]);if(!b.length){await c.rollback();return send(res,409,{error:'box_unavailable'})}
       await c.query('DELETE FROM gm_pet_boxes WHERE id=?',[boxId]);const reward=petRoll(b[0].grade||'normal');let pet=null;
-      if(reward){const [r]=await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,?,1)',[a.id,reward.kind,reward.grade]);pet={id:r.insertId,...reward}}
+      if(reward){const [r]=await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,?,1)',[a.id,reward.kind,reward.grade]);pet={id:r.insertId,...reward};await c.query('INSERT IGNORE INTO gm_pet_collection(account_id,kind,grade) VALUES(?,?,?)',[a.id,reward.kind,reward.grade])}
       await c.commit();send(res,200,{ok:true,pet});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
