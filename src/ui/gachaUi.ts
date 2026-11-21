@@ -4364,7 +4364,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const overlay = this.root.querySelector<HTMLElement>('.battle-drop-overlay')
     const content = overlay?.querySelector<HTMLElement>('.battle-drop-content')
     if (!overlay || !content) return
-    const stage = Math.max(1, Math.min(200, this.store.battle?.stage ?? 1))
+    const stage = Math.max(1, Math.min(500, this.store.battle?.stage ?? 1))
     const zone = Math.floor((stage - 1) / 10) + 1
     const sub = ((stage - 1) % 10) + 1
     const diamonds = [1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10][zone - 1]

@@ -1525,7 +1525,7 @@ const routes = {
           conn.query('SELECT kind FROM gm_pet_collection WHERE account_id=? AND grade=?',[account.id,item.grade]),
           conn.query('SELECT kind FROM gm_pets WHERE owner_id=? AND grade=?',[account.id,item.grade])
         ])
-        const found=new Set([...history,...inventory].map(row=>row.kind))
+        const found=new Set([...history[0],...inventory[0]].map(row=>row.kind))
         complete=item.ids.every(kind=>found.has(kind))
       }
       if(!complete){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
