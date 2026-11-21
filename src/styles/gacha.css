@@ -7469,3 +7469,27 @@ body > .market-global-shortage-notice.is-visible {
 #ui .gacha-screen > .top-rewards > button.reward-chip::before {
   box-shadow:none!important;
 }
+/* Unified player marketplace (same layout on desktop and mobile). */
+.trade-modal{position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}.trade-modal[hidden]{display:none!important}.trade-card{width:min(760px,100%);max-height:92dvh;display:flex;flex-direction:column;background:#fffaf0;color:#3c3028;border:3px solid #6f5741;border-radius:15px;overflow:hidden;box-sizing:border-box}.trade-card>header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:#eadbc3}.trade-card h2{margin:0;font-size:19px}.trade-card button{cursor:pointer;border:1px solid #aa9276;background:#f8e9d1;color:#382c22;border-radius:8px;padding:8px 12px;font-weight:700}.trade-card button.active{background:#73523d;color:white}.trade-content{overflow:auto;padding:14px;min-height:0}.trade-top,.trade-tabs,.trade-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.trade-top{justify-content:space-between}.trade-controls input{flex:1;min-width:150px}.trade-card input,.trade-card select{border:1px solid #c7b49d;border-radius:7px;padding:8px;box-sizing:border-box;background:white;color:#302820}.trade-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 8px;border-bottom:1px solid #dfd2bf}.trade-item>div:first-child{flex:1;min-width:130px}.trade-item small{display:block;color:#786b5d;font-size:12px;margin-top:3px}.trade-item input[type=number]{width:85px}.trade-note{color:#786b5d;font-size:13px;line-height:1.6}@media(max-width:600px){.trade-card{max-height:95dvh}.trade-item{gap:7px}.trade-item>div:first-child{min-width:110px}.trade-card button{padding:7px 9px}}
+
+/* Trade market: #ui disables pointer events for the lobby overlay. Re-enable on the interactive market dialog. */
+#ui .trade-modal:not([hidden]), #ui .trade-modal:not([hidden]) .trade-card, #ui .trade-modal:not([hidden]) .trade-content { pointer-events:auto !important; }
+#ui .trade-modal:not([hidden]) button, #ui .trade-modal:not([hidden]) input, #ui .trade-modal:not([hidden]) select { pointer-events:auto !important; }
+
+
+/* Trade market: item thumbnails and native-dialog replacement */
+.trade-product{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.trade-product-icon{width:32px;height:32px;object-fit:contain;flex:none;border-radius:6px}
+.trade-game-dialog{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(28,18,12,.52);padding:14px;pointer-events:auto!important}
+.trade-game-dialog-panel{width:min(100%,340px);padding:18px;border:2px solid #9d7755;border-radius:14px;background:#f4e5cf;color:#392a1e;box-shadow:0 8px 28px rgba(0,0,0,.24);text-align:center;pointer-events:auto!important}
+.trade-game-dialog-title{font-weight:800;font-size:17px;margin-bottom:12px}
+.trade-game-dialog-message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55;margin:0 0 18px}
+.trade-game-dialog-buttons{display:flex;gap:8px;justify-content:center}
+.trade-game-dialog-buttons button{border:1px solid #ad8a66;background:#fff1dc;color:#3a2a1e;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;pointer-events:auto!important}
+.trade-game-dialog-buttons [data-dialog-yes]{background:#78533c;color:#fff}
+
+/* Trade market: pet box rarity border, existing image only */
+.trade-product-icon.trade-box-normal{border:2px solid #b8aa95!important;box-sizing:border-box;border-radius:7px}
+.trade-product-icon.trade-box-rare{border:2px solid #3888e8!important;box-sizing:border-box;border-radius:7px}
+.trade-product-icon.trade-box-epic{border:2px solid #e04848!important;box-sizing:border-box;border-radius:7px}
+.trade-product-icon.trade-box-unique{border:2px solid #9a4fe0!important;box-sizing:border-box;border-radius:7px}
