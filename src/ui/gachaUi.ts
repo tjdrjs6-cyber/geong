@@ -3747,9 +3747,24 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
             dialog.querySelector('[data-yes]')?.addEventListener('click',async()=>{
               const yes=dialog.querySelector<HTMLButtonElement>('[data-yes]');if(yes)yes.disabled=true
               try{const r=await fetch('/api/legend-tickets/open',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticketId:ticket.id})});const result=await r.json();if(!r.ok)throw Error(result.error||'개봉 실패');
-                const names:Record<string,string>={kurimanju_bean:'쿠리만쥬(콩)',rakko_limited:'랏코(한정선)',beetle_berserk:'풍뎅이(폭주)',usagi_orange:'우사기(귤)'}
-                dialog.querySelector('p')!.textContent=`${names[result.characterId]||result.characterId} 획득!${result.duplicate?' (중복 +1)':''}`
-                dialog.querySelector('[data-no]')?.remove();if(yes){yes.textContent='확인';yes.disabled=false;yes.onclick=()=>{dialog.close();this.renderStorage()}}
+                // The server commits the reward first; sync the in-memory save before any UI refresh.
+                if(Array.isArray(result.owned))this.store.data.owned=result.owned
+                if(result.dupes&&typeof result.dupes==='object')this.store.dupes=result.dupes
+                dialog.close()
+                this.renderStorage()
+                this.renderWallet()
+                const reward=characterById(result.characterId as CharacterId)
+                if(!reward){this.toast('티켓 보상이 지급되었습니다. 도감에서 확인해 주세요.');return}
+                const reveal=this.characterReveal({id:reward.id,duplicate:!!result.duplicate,bonus:0} as PullResult)
+                reveal.tag=result.duplicate?'중복 캐릭터 +1':'레전더리 캐릭터 획득!'
+                reveal.sub=result.duplicate?'중복 보유 수량 +1':'새로운 레전더리 친구 획득'
+                this.results=[reveal]
+                this.resultKind='char'
+                this.renderResults()
+                this.revealing=true
+                this.spinMachine(reward.accent)
+                const sequence=++this.revealSequence
+                window.setTimeout(()=>{void this.playPops(this.results,sequence)},650)
               }catch(error){dialog.querySelector('p')!.textContent='개봉 실패: '+(error instanceof Error?error.message:'오류');if(yes)yes.disabled=false}
             },{once:true})
           });card.append(image,title,detail,open);grid.prepend(card);grid.querySelector('.misc-empty')?.remove()

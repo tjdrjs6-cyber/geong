@@ -2214,7 +2214,7 @@ const routes = {
       if(duplicate)dupes[characterId]=(Number(dupes[characterId])||0)+1;else owned.push(characterId);
       await c.query('UPDATE gm_saves SET owned=? WHERE account_id=?',[JSON.stringify(owned),a.id]);
       await c.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[a.id,JSON.stringify(dupes)]);
-      await c.query('DELETE FROM gm_legend_tickets WHERE id=?',[ticketId]);await c.commit();send(res,200,{ok:true,characterId,duplicate});
+      await c.query('DELETE FROM gm_legend_tickets WHERE id=?',[ticketId]);await c.commit();send(res,200,{ok:true,characterId,duplicate,owned,dupes});
     }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
   },
   'POST /api/legend-tickets/list': async(req,res)=>{
