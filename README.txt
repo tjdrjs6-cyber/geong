@@ -1,1 +1,1 @@
-Apply after the latest PvP team save/challenge confirmation patch. Replace src/styles/gacha.css. Parent menu red dots reflect pending child menu dots, including PvP. No server changes.
+PvP 방어 성공 +10점 / 방어 실패 -10점. 공격자와 방어자 점수 동일 트랜잭션 처리. server/index.mjs만 교체. 최신 서버 변경사항 병합 주의.

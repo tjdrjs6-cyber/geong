@@ -1555,14 +1555,23 @@ const routes = {
       if(myTeam.length!==5)return {error:'pvp_team_invalid'}
       const owned=await pvpOwned(a.id,conn)
       if(myTeam.some(x=>!owned.includes(x)))return {error:'pvp_not_owned'}
-      const [others]=await conn.query('SELECT team FROM gm_pvp WHERE account_id=?',[opponentId])
+      // Lock the defending account too: both rankings must settle in the same transaction.
+      const [others]=await conn.query('SELECT * FROM gm_pvp WHERE account_id=? FOR UPDATE',[opponentId])
       if(!others.length||pvpTeam(others[0].team).length!==5)return {error:'pvp_opponent_invalid'}
-      const theirTeam=pvpTeam(others[0].team)
+      const defender=others[0]
+      const theirTeam=pvpTeam(defender.team)
       const myPower=await pvpStrength(a.id,myTeam,conn),theirPower=await pvpStrength(opponentId,theirTeam,conn)
       const sim=pvpSimulate(myPower,theirPower),seasonScore=me.season===clock.season?Number(me.score):1000
       const scoreDelta=sim.won?(theirPower>myPower?30:10):-10
       const score=Math.max(0,seasonScore+scoreDelta)
       await conn.query('UPDATE gm_pvp SET score=?,season=?,day_key=?,daily_used=?,wins=?,losses=?,updated_ms=? WHERE account_id=?',[score,clock.season,clock.dayKey,used+1,(me.season===clock.season?Number(me.wins):0)+(sim.won?1:0),(me.season===clock.season?Number(me.losses):0)+(sim.won?0:1),Date.now(),a.id])
+      // A successful defense earns 10 points; a failed defense loses 10.
+      // Preserve the defender's own daily challenge count and existing win/loss statistics.
+      const defenseDelta=sim.won?-10:10
+      const defenderScore=defender.season===clock.season?Number(defender.score):1000
+      await conn.query('UPDATE gm_pvp SET score=?,season=?,updated_ms=? WHERE account_id=?',[
+        Math.max(0,defenderScore+defenseDelta),clock.season,Date.now(),opponentId
+      ])
       await conn.query('INSERT INTO gm_pvp_matches(season,attacker,defender,won,attacker_hp,defender_hp,events,created_ms) VALUES(?,?,?,?,?,?,?,?)',[clock.season,a.id,opponentId,sim.won?1:0,...sim.hp,JSON.stringify(sim.events),Date.now()])
       return {...sim,score,scoreDelta,used:used+1,myTeam,theirTeam,myPower,theirPower}
     })
