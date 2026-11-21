@@ -1498,7 +1498,7 @@ const routes = {
       pool.query('SELECT kind,grade FROM gm_pet_collection WHERE account_id=?',[account.id]),
       pool.query('SELECT kind,grade FROM gm_pets WHERE owner_id=?',[account.id])
     ])
-    const petOwned=new Set([...petHistoryRows,...petOwnedRows].map(row=>`${row.kind}:${row.grade}`))
+    const petOwned=new Set([...petHistoryRows[0],...petOwnedRows[0]].map(row=>`${row.kind}:${row.grade}`))
     const claimed=new Set(claimRows.map(row=>row.achievement_id))
     send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>a.kind==='keyring'?keyringOwned.has(`${id}:${a.grade}`):a.kind==='pet'?petOwned.has(`${id}:${a.grade}`):owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
   },

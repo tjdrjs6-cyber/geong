@@ -1,1 +1,1 @@
-토벌장 UI 200단계 제한을 500단계로 수정. 펫 업적 보상 수령 시 DB 조회 결과 배열 해석 오류 수정. 최신 원정대 보상 패치 기준.
+Fix: 50-10 client-side stage clamp and matching HP anchors; pet achievement MySQL result tuple unpacking; fresh achievement collection and correct pet portraits. Apply on latest expedition/battle/pet patch.

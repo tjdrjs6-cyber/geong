@@ -1,6 +1,6 @@
-const BATTLE_HP_ANCHORS: [number, number][] = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000]];
+const BATTLE_HP_ANCHORS: [number, number][] = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000], [210, 500000], [220, 535000], [230, 570000], [240, 605000], [250, 640000], [260, 675000], [270, 710000], [280, 745000], [290, 780000], [300, 815000], [310, 850000], [320, 885000], [330, 920000], [340, 955000], [350, 990000], [360, 1025000], [370, 1060000], [380, 1095000], [390, 1130000], [400, 1165000], [410, 1200000], [420, 1235000], [430, 1270000], [440, 1305000], [450, 1340000], [460, 1375000], [470, 1410000], [480, 1445000], [490, 1480000], [500, 1515000]];
 const battleStageHp = (stage: number): number => {
-  const s = Math.max(1, Math.min(200, stage));
+  const s = Math.max(1, Math.min(500, stage));
   for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
     const [end, endHp] = BATTLE_HP_ANCHORS[i];
     if (s <= end) {
@@ -8,7 +8,7 @@ const battleStageHp = (stage: number): number => {
       return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
     }
   }
-  return 465000;
+  return 1515000;
 };
 
 import { BATTLE_TICK_MS, ENEMY_HP, WEED_HOUR_MS, battlePower, characterById, weedIntervalMs, weedCoinsPerHour, weedEarnedBetweenSlots } from './collection'
@@ -176,7 +176,7 @@ export class RemoteGachaStore {
     const power=battle.power ?? (battlePower(battle.id)+(battle.secondId?battlePower(battle.secondId):0)+(battle.thirdId?battlePower(battle.thirdId):0)+(this.forge?.bonus??0)+this.collectionCombatPower)
     const elapsed=Math.max(0,this.serverNow()-(battle.stageSince || battle.since))
     const seconds=Math.min(60,Math.floor(elapsed/BATTLE_TICK_MS))
-    const stage=Math.min(200,battle.stage??1)
+    const stage=Math.min(500,battle.stage??1)
     const maxHp=battleStageHp(stage)
     const damage=Math.min(maxHp,Math.max(0,power)*seconds)
     return {kills:0,hp:maxHp-damage,maxHp,nextIn:BATTLE_TICK_MS-(elapsed%BATTLE_TICK_MS),power,stage,remaining:Math.max(0,60000-elapsed)}
