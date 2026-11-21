@@ -7570,3 +7570,8 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-screen .pvp-result-card .pvp-primary{font-size:15px;padding:12px 24px}
 @keyframes pvp-result-enter{from{opacity:0;transform:translateY(24px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:520px){.pvp-screen .weed-header{grid-template-columns:auto 1fr;row-gap:4px}.pvp-screen .weed-header>small{grid-column:2;text-align:center}.pvp-screen .pvp-main{padding-top:22px!important}}
+
+/* PvP remaining daily challenges: shared notification position and styling. */
+#ui button[data-action] > .pvp-daily-dot:not([hidden]){position:absolute!important;top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;width:9px!important;height:9px!important;min-width:9px!important;min-height:9px!important;border-radius:50%!important;border:1.5px solid #fff!important;background:#ee384b!important;box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;z-index:15!important;pointer-events:none!important}
+#ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > .pvp-daily-dot:not([hidden]){display:none!important}
+#ui button[data-action] > :is(.geongi-keyring-dot,.wild-weed-alert-dot):not([hidden]) ~ .pvp-daily-dot:not([hidden]){display:none!important}
