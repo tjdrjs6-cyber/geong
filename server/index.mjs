@@ -2079,8 +2079,6 @@ const routes = {
     const {itemType,itemId,price,quantity}=await readJson(req);
     if(itemType!=='box'||!Number.isSafeInteger(itemId)||!Number.isSafeInteger(price)||price<1000||price>100000000||!Number.isSafeInteger(quantity)||quantity<1||quantity>1000)return send(res,400,{error:'invalid_listing'});
     const c=await pool.getConnection();try{await c.beginTransaction();
-      const [sh]=await c.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[a.id,Date.now()]);
-      if(!sh.length){await c.rollback();return send(res,409,{error:'shop_closed'})}
       const [selected]=await c.query('SELECT grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL AND trades=0 FOR UPDATE',[itemId,a.id]);
       if(!selected.length){await c.rollback();return send(res,409,{error:'not_tradeable'})}
       const grade=selected[0].grade;
@@ -2349,7 +2347,7 @@ const routes = {
   'POST /api/plaza/shop/list': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const {inventoryId,price}=await readJson(req);if(!Number.isSafeInteger(inventoryId)||!Number.isSafeInteger(price)||price<10||price>100000000)return send(res,400,{error:'invalid_listing'})
-    const conn=await pool.getConnection();try{await conn.beginTransaction();const [shop]=await conn.query('SELECT account_id FROM gm_plaza_shops WHERE account_id=? AND expires_ms>? FOR UPDATE',[account.id,Date.now()]);if(!shop.length){await conn.rollback();return send(res,409,{error:'shop_closed'})}
+    const conn=await pool.getConnection();try{await conn.beginTransaction();
     const [count]=await conn.query("SELECT COUNT(*) n FROM gm_plaza_shop_listings WHERE seller_id=? AND status='active'",[account.id]);if(Number(count[0].n)>=5){await conn.rollback();return send(res,409,{error:'listing_full'})}
     const [items]=await conn.query("SELECT id FROM gm_cosmetic_inventory WHERE id=? AND owner_id=? AND source='battle' AND listing_id IS NULL FOR UPDATE",[inventoryId,account.id]);if(!items.length){await conn.rollback();return send(res,409,{error:'item_unavailable'})}
     const [result]=await conn.query('INSERT INTO gm_plaza_shop_listings(seller_id,inventory_id,price,created_ms) VALUES(?,?,?,?)',[account.id,inventoryId,price,Date.now()]);await conn.query('UPDATE gm_cosmetic_inventory SET listing_id=? WHERE id=?',[result.insertId,inventoryId]);await conn.commit();send(res,200,{ok:true})}catch(e){await conn.rollback();throw e}finally{conn.release()}
