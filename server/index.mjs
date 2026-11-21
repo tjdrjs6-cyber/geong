@@ -920,7 +920,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
-        if(randomInt(10000)===0) await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[accountId])
+        if(randomInt(10000) < (boostedPetDrop ? 5000 : 1)) await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[accountId])
         const ticket = randomInt(10000) < 65 ? 1 : 0
         ticketsEarned += ticket
         const stone = randomInt(10000) === 0 ? 1 : 0
