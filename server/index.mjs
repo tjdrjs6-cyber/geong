@@ -1171,8 +1171,9 @@ async function expeditionSettle(conn, day, serverId, now) {
     for(const player of players) {
       const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
       if(paid.affectedRows) {
-        const coins=stage===1?2000:stage===2?3000:5000, fragments=0
-        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
+        const coins=stage===1?10000:stage===2?20000:30000
+        const diamonds=stage===1?500:stage===2?1000:1500
+        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,diamonds,day,now])
         await trimInbox(conn,player.account_id)
       }
     }
