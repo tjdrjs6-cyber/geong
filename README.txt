@@ -1,1 +1,1 @@
-PvP UI overhaul: character portraits, combat power sort, 2-row scroll selector, separate 5v5 battle arena, 1x/3x replay. Apply after PvP activity menu patch. Server unchanged.
+PvP 상단 겹침 수정, 전투 중 나가기 차단, 전투 완료/건너뛰기 모두 승리·패배 결과 연출 후 확인 버튼으로 나가기. 기존 최신 PvP 패치에 적용.

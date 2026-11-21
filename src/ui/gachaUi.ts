@@ -169,6 +169,7 @@ export class GachaUi {
   private pvpTeam: string[] = []
   private pvpAnimation = 0
   private pvpBusy = false
+  private pvpResult: {won:boolean;scoreDelta:number;myHp:number;enemyHp:number}|null = null
   private pvpSpeed = 1
   private expedition: ExpeditionState | null = null
   private expeditionPrefetch: Promise<ExpeditionState> | null = null
@@ -463,7 +464,7 @@ export class GachaUi {
       usersCard?.classList.remove('privacy-mode')
       usersCard?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden')
     }
-    if (screen !== 'pvp') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false}
+    if (screen !== 'pvp') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.pvpResult=null}
     if (screen === 'pvp') void this.openPvp()
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
@@ -661,7 +662,7 @@ export class GachaUi {
         <div class="pvp-main"><div class="pvp-top"><strong>WEEKLY ARENA</strong><span class="pvp-summary">정보를 불러오는 중...</span></div>
           <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-power-summary"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
           <div class="pvp-section"><h3>오늘의 도전 상대</h3><div class="pvp-opponents"></div></div>
-          <div class="pvp-section pvp-battle" hidden><div class="pvp-battle-head"><button data-action="pvp-battle-exit" class="pvp-exit">← 아레나</button><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><button data-action="pvp-speed" class="pvp-speed">1배속</button></div><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"><div class="pvp-fighters pvp-fighters-self"></div><div class="pvp-versus">VS</div><div class="pvp-fighters pvp-fighters-enemy"></div></div><div class="pvp-combat-log"></div><button class="pvp-primary" data-action="pvp-skip">전투 연출 건너뛰기</button></div>
+          <div class="pvp-section pvp-battle" hidden><div class="pvp-battle-head"><span class="pvp-battle-label">PvP 아레나</span><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><button data-action="pvp-speed" class="pvp-speed">1배속</button></div><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"><div class="pvp-fighters pvp-fighters-self"></div><div class="pvp-versus">VS</div><div class="pvp-fighters pvp-fighters-enemy"></div></div><div class="pvp-combat-log"></div><button class="pvp-primary pvp-skip" data-action="pvp-skip">전투 연출 건너뛰기</button><div class="pvp-result-overlay" hidden><div class="pvp-result-card"><div class="pvp-result-emblem"></div><h2 class="pvp-result-title"></h2><p class="pvp-result-score"></p><p class="pvp-result-hp"></p><button class="pvp-primary" data-action="pvp-result-confirm">결과 확인 · 아레나로</button></div></div></div>
           <div class="pvp-section"><h3>주간 랭킹 TOP 50</h3><div class="pvp-ranking"></div></div>
           <div class="pvp-section"><h3>최근 전투</h3><div class="pvp-history"></div></div>
           <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 강한 상대 승리 +30점 / 낮거나 같은 상대 승리 +10점 / 패배 -10점<br/>일요일 오후 8시 정산: 1위 레전더리 뽑기권 1개 + 한계돌파석 1개 + 3,000다이아 / 2위 한계돌파석 1개 + 3,000다이아 / 3위 3,000다이아</p>
@@ -1541,6 +1542,9 @@ export class GachaUi {
       const root=this.root.querySelector<HTMLElement>('.pvp-screen');const battle=root?.querySelector<HTMLElement>('.pvp-battle')
       if(!root||!battle){this.pvpBusy=false;return}
       battle.hidden=false
+      this.pvpResult=null
+      const overlay=battle.querySelector<HTMLElement>('.pvp-result-overlay');if(overlay)overlay.hidden=true
+      const skip=battle.querySelector<HTMLElement>('.pvp-skip');if(skip)skip.hidden=false
       this.pvpSpeed=1
       const speed=root.querySelector<HTMLElement>('.pvp-speed');if(speed)speed.textContent='1배속'
       const portrait=(id:string)=>{const url=CHARACTER_IMAGE_URLS[id as CharacterId];return url?`<img src="${url}" alt=""/>`:''}
@@ -1550,6 +1554,8 @@ export class GachaUi {
       if(enemy)enemy.innerHTML=fighters(result.theirTeam||[],1)
       const events=result.events as Array<{t:number;side:number;slot:number;effect:string;damage:number;hp:number[]}>
       const maxTime=Math.min(60,events.length?events[events.length-1].t:60)
+      const finalHp=events.length?events[events.length-1].hp:[100000,100000]
+      this.pvpResult={won:Boolean(result.won),scoreDelta:Number(result.scoreDelta||0),myHp:Number(finalHp[0]),enemyHp:Number(finalHp[1])}
       let elapsed=0,seen=0,previous=Date.now()
       const el=(selector:string)=>root.querySelector<HTMLElement>(selector)
       const update=()=>{
@@ -1572,9 +1578,28 @@ export class GachaUi {
       this.pvpAnimation=window.setInterval(()=>{
         if(this.screen!=='pvp'||battle.hidden){window.clearInterval(this.pvpAnimation);this.pvpBusy=false;return}
         const now=Date.now();elapsed+=(now-previous)/1000*this.pvpSpeed;previous=now;update()
-        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.toast(result.won?`PvP 승리! +${result.scoreDelta}점`:'PvP 패배 · -10점');battle.hidden=true;void this.openPvp()}
+        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.showPvpResult()}
       },70)
     }catch(e){this.pvpBusy=false;this.toast(e instanceof Error?e.message:'PvP 전투 실패')}
+  }
+
+  private showPvpResult():void{
+    const battle=this.root.querySelector<HTMLElement>('.pvp-screen .pvp-battle')
+    const result=this.pvpResult
+    if(!battle||!result)return
+    window.clearInterval(this.pvpAnimation);this.pvpAnimation=0
+    this.pvpBusy=true
+    const overlay=battle.querySelector<HTMLElement>('.pvp-result-overlay')
+    const title=battle.querySelector<HTMLElement>('.pvp-result-title')
+    const emblem=battle.querySelector<HTMLElement>('.pvp-result-emblem')
+    const score=battle.querySelector<HTMLElement>('.pvp-result-score')
+    const hp=battle.querySelector<HTMLElement>('.pvp-result-hp')
+    if(overlay){overlay.hidden=false;overlay.classList.toggle('pvp-result-win',result.won);overlay.classList.toggle('pvp-result-loss',!result.won)}
+    if(title)title.textContent=result.won?'승리!':'패배'
+    if(emblem)emblem.textContent=result.won?'WIN':'LOSE'
+    if(score)score.textContent=`랭킹 점수 ${result.scoreDelta>0?'+':''}${result.scoreDelta}점`
+    if(hp)hp.textContent=`남은 체력 · 내 팀 ${result.myHp.toLocaleString('ko-KR')} / 상대 팀 ${result.enemyHp.toLocaleString('ko-KR')}`
+    const skip=battle.querySelector<HTMLElement>('.pvp-skip');if(skip)skip.hidden=true
   }
 
   private async onClick(event: MouseEvent): Promise<void> {
@@ -1830,8 +1855,9 @@ export class GachaUi {
     if (action === 'pvp-select' && button?.dataset.id) {const id=button.dataset.id;this.pvpTeam=this.pvpTeam.includes(id)?this.pvpTeam.filter(x=>x!==id):this.pvpTeam.length<5?[...this.pvpTeam,id]:this.pvpTeam;this.renderPvp();return}
     if (action === 'pvp-fight' && button?.dataset.id) {await this.fightPvp(Number(button.dataset.id));return}
     if (action === 'pvp-speed') {this.pvpSpeed=this.pvpSpeed===1?3:1;if(button)button.textContent=`${this.pvpSpeed}배속`;return}
-    if (action === 'pvp-battle-exit') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;const b=this.root.querySelector<HTMLElement>('.pvp-battle');if(b)b.hidden=true;void this.openPvp();return}
-    if (action === 'pvp-skip') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;void this.openPvp();return}
+    if (action === 'pvp-battle-exit') {return}
+    if (action === 'pvp-skip') {this.showPvpResult();return}
+    if (action === 'pvp-result-confirm') {if(!this.pvpResult)return;this.pvpResult=null;this.pvpBusy=false;const b=this.root.querySelector<HTMLElement>('.pvp-battle');if(b)b.hidden=true;void this.openPvp();return}
     if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.expeditionPendingDamage.clear();this.show('expedition');return}
     if (action === 'exp-test-hp' || action === 'exp-test-respawn') {
       if(this.store.user?.username?.toLowerCase()!=='test')return
@@ -1888,6 +1914,7 @@ export class GachaUi {
     if (action === 'mail-send' && button.dataset.nickname) { await this.sendMail(button.dataset.nickname); return }
     if (action === 'user-list') { this.renderUsers(); return }
     if (action === 'user-view' && button.dataset.nickname) { this.userTab = 'char'; this.renderUserDetail(button.dataset.nickname); return }
+    if (action === 'close' && this.screen==='pvp' && this.pvpBusy) {return}
     if (action === 'close' && this.screen==='result' && this.legendaryTicketResult) { this.legendaryTicketResult=false; this.show('storage'); return }
     if (action === 'close') { const reopen=this.screen==='result'; const kind=this.resultKind; this.show('title'); if(reopen){this.setPullMode(kind==='deco'?'deco':'char');const popup=this.root.querySelector<HTMLElement>('.pull-popup');if(popup)popup.hidden=false} return }
     if (action === 'result-collection') { this.show(this.resultKind === 'deco' ? 'decos' : 'collection'); return }

@@ -7549,3 +7549,24 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-screen .pvp-opponent span{display:flex;flex-direction:column;gap:5px;min-width:0}
 .pvp-screen .pvp-opponent small{font-size:11px;font-weight:700;color:#986f89}
 .pvp-screen .pvp-opponent button{flex-shrink:0;font-weight:800}
+
+/* PvP header spacing and locked battle results */
+.pvp-screen .weed-header{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:58px;padding:10px 12px;box-sizing:border-box}
+.pvp-screen .weed-header .weed-back{position:static;transform:none;white-space:nowrap;max-width:100%}
+.pvp-screen .weed-header>b{position:static;transform:none;min-width:0;text-align:center;white-space:nowrap;font-size:clamp(14px,3.4vw,19px)}
+.pvp-screen .weed-header>small{position:static;transform:none;white-space:nowrap;font-size:clamp(9px,2.1vw,12px)}
+.pvp-screen .pvp-main{padding-top:18px!important;margin-top:10px!important}
+.pvp-screen .pvp-top{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:start}
+.pvp-screen .pvp-top>strong,.pvp-screen .pvp-summary{position:static!important;transform:none!important;white-space:normal;line-height:1.5}
+.pvp-screen .pvp-battle-label{font-weight:800;color:#855a78}
+.pvp-screen .pvp-result-overlay:not([hidden]){position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;background:#261e32b8;backdrop-filter:blur(5px)}
+.pvp-screen .pvp-battle{isolation:isolate}
+.pvp-screen .pvp-result-card{width:min(440px,100%);border-radius:25px;background:linear-gradient(160deg,#fffaf6,#fff1fa);padding:32px 20px;text-align:center;border:3px solid #e6b9d1;box-shadow:0 20px 60px #28192b66;animation:pvp-result-enter .5s cubic-bezier(.2,1.3,.3,1) both;font-family:inherit}
+.pvp-screen .pvp-result-emblem{font-size:clamp(30px,7vw,58px);font-weight:1000;letter-spacing:.1em;color:#d69b40;text-shadow:0 3px #fff}
+.pvp-screen .pvp-result-title{font-size:clamp(32px,7vw,54px);font-weight:1000;color:#c06d9d;margin:8px 0 12px}
+.pvp-screen .pvp-result-loss .pvp-result-emblem,.pvp-screen .pvp-result-loss .pvp-result-title{color:#7f849b}
+.pvp-screen .pvp-result-score{font-size:21px;font-weight:900;color:#825779}
+.pvp-screen .pvp-result-hp{font-size:12px;line-height:1.6;color:#917b8b;margin:12px 0 22px}
+.pvp-screen .pvp-result-card .pvp-primary{font-size:15px;padding:12px 24px}
+@keyframes pvp-result-enter{from{opacity:0;transform:translateY(24px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:520px){.pvp-screen .weed-header{grid-template-columns:auto 1fr;row-gap:4px}.pvp-screen .weed-header>small{grid-column:2;text-align:center}.pvp-screen .pvp-main{padding-top:22px!important}}
