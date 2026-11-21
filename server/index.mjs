@@ -166,6 +166,18 @@ async function prepareDatabase() {
     show_house TINYINT(1) NOT NULL DEFAULT 1
   )`)
   try { await pool.query("ALTER TABLE gm_profile_privacy ADD COLUMN show_accessory TINYINT(1) NOT NULL DEFAULT 1") } catch(error) { if(error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pvp (
+    account_id BIGINT UNSIGNED PRIMARY KEY, team JSON NOT NULL, score INT NOT NULL DEFAULT 1000,
+    season VARCHAR(16) NOT NULL DEFAULT '', day_key VARCHAR(12) NOT NULL DEFAULT '', daily_used TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    wins INT NOT NULL DEFAULT 0, losses INT NOT NULL DEFAULT 0, updated_ms BIGINT NOT NULL DEFAULT 0)`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pvp_matches (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, season VARCHAR(16) NOT NULL,
+    attacker BIGINT UNSIGNED NOT NULL, defender BIGINT UNSIGNED NOT NULL, won TINYINT NOT NULL,
+    attacker_hp INT NOT NULL, defender_hp INT NOT NULL, events JSON NOT NULL,
+    created_ms BIGINT NOT NULL, INDEX(attacker,created_ms), INDEX(season,created_ms))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pvp_awards (
+    season VARCHAR(16) NOT NULL, rank_no TINYINT NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
+    created_ms BIGINT NOT NULL, PRIMARY KEY(season,rank_no), UNIQUE KEY uq_pvp_award_account(season,account_id))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(20) NOT NULL,
@@ -390,6 +402,7 @@ async function prepareDatabase() {
   if (!slotTable.length) await pool.query("INSERT IGNORE INTO gm_weed_slots (account_id, character_id, since_ms) SELECT account_id, character_id, since_ms FROM gm_weeding WHERE character_id <> ''")
   try { await pool.query('ALTER TABLE gm_weeding ADD COLUMN beetle TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   for (const field of ['diamonds', 'fragments']) { try { await pool.query(`ALTER TABLE gm_mail ADD COLUMN ${field} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error } }
+  for (const field of ['pvp_legend_tickets', 'pvp_breakthrough_stones']) { try { await pool.query(`ALTER TABLE gm_mail ADD COLUMN ${field} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error } }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN to_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN from_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   // Promote only an existing account; never create an administrator implicitly.
@@ -661,20 +674,24 @@ async function sentToday(conn, accountId) {
   return Number(rows[0].total)
 }
 async function mailbox(accountId) {
-  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
-  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.diamonds, m.fragments, m.pvp_legend_tickets, m.pvp_breakthrough_stones, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : String(row.message || '').startsWith('PvP 아레나') ? 'PvP 주간 보상' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), pvpLegendTickets: Number(row.pvp_legend_tickets), pvpBreakthroughStones: Number(row.pvp_breakthrough_stones), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.diamonds, m.fragments, m.pvp_legend_tickets, m.pvp_breakthrough_stones, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), pvpLegendTickets: Number(row.pvp_legend_tickets), pvpBreakthroughStones: Number(row.pvp_breakthrough_stones), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
   return { mail, sent, max: MAILBOX_MAX, unread: mail.filter(item => !item.seen).length, sentToday: await sentToday(pool, accountId), dailyLimit: MAIL_DAILY_COINS }
 }
 /** Hides a recipient's inbox letters beyond the newest MAILBOX_MAX; coins still waiting in them go to the recipient. */
 async function trimInbox(conn, toId) {
-  const [old] = await conn.query('SELECT id, coins, diamonds, fragments, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
+  const [old] = await conn.query('SELECT id, coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
   if (!old.length) return
   const coins = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.coins)), 0)
   await conn.query(`UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
   const diamonds = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.diamonds)), 0)
   const fragments = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.fragments)), 0)
+  const pvpTickets = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.pvp_legend_tickets)), 0)
+  const pvpStones = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.pvp_breakthrough_stones)), 0)
+  if (pvpStones) { await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[toId]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[pvpStones,toId]) }
+  for(let n=0;n<pvpTickets;n++)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[toId])
   if (coins || diamonds || fragments) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [coins, diamonds, fragments, toId])
 }
 async function trimSent(conn, fromId) {
@@ -709,7 +726,7 @@ async function suggestions(account) {
   const [rows] = await pool.query('SELECT s.id, s.account_id, s.message, s.created_ms, s.reply, s.reply_ms, a.nickname FROM gm_suggest s LEFT JOIN gm_accounts a ON a.id = s.account_id ORDER BY s.id DESC LIMIT 100')
   const [today] = await pool.query('SELECT COUNT(*) AS n FROM gm_suggest WHERE account_id = ? AND day = ?', [account.id, checkInDay()])
   return {
-    items: rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
+    items: rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : String(row.message || '').startsWith('PvP 아레나') ? 'PvP 주간 보상' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
     admin: Boolean(account.is_admin), todayCount: Number(today[0].n), dailyMax: SUGGEST_DAILY_MAX,
   }
 }
@@ -1430,7 +1447,141 @@ async function eventView(accountId){
     missions:Object.entries(EVENT_REWARDS).map(([id,reward])=>({id,reward,target:EVENT_TARGETS[id],progress:Math.min(EVENT_TARGETS[id],progress[id]?.progress||0),claimed:progress[id]?.claimed||false}))}
 }
 
+// Arena season ends every Sunday 20:00 Asia/Seoul; daily attempts reset at 09:00.
+function pvpClock(now=Date.now()) {
+  const local=new Date(now+9*3600000)
+  const hour=local.getUTCHours(), day=local.getUTCDay()
+  const dayDate=new Date(local.getTime()-(hour<9?86400000:0))
+  const dayKey=dayDate.toISOString().slice(0,10)
+  const daysUntilSunday=(7-day)%7
+  const close=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()+daysUntilSunday,20)).getTime()-9*3600000
+  const seasonEnd=(day===0&&hour>=20)?close+7*86400000:close
+  return {dayKey,season:new Date(seasonEnd).toISOString().slice(0,16),seasonEnd}
+}
+const pvpTeam = value => {try {const v=parseJson(value);return Array.isArray(v)?v.filter(id=>typeof id==='string').slice(0,5):[]}catch{return []}}
+async function pvpEnsure(id,conn=pool) {
+  await conn.query('INSERT IGNORE INTO gm_pvp(account_id,team) VALUES(?,?)',[id,'[]'])
+}
+async function pvpOwned(id,conn=pool){
+  const [r]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[id]);return r[0]?normalizeOwned(parseJson(r[0].owned)):[]
+}
+async function pvpPowerDetail(id,team,conn=pool){
+  const levels=await getLimitBreak(id,conn)
+  const character=team.reduce((sum,char)=>sum+boostedCharacterPower(char,levels),0)
+  const [forge]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[id])
+  const weapon=forge.length?forgeBonus(Number(forge[0].level)):0
+  const accessory=accessoryPower(await getAccessory(id,conn))
+  const achievement=await achievementPower(id,conn)
+  const researchLv=await researchLevel(id,conn)
+  const beforeResearch=character+weapon+accessory+achievement
+  const researched=researchPower(beforeResearch,researchLv)
+  const research=researched-beforeResearch
+  const [pet]=await conn.query('SELECT p.grade FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id WHERE e.account_id=?',[id])
+  const petRate=pet.length?({normal:.10,rare:.15,epic:.20,unique:.25}[pet[0].grade]||0):0
+  const petBonus=Math.floor(researched*petRate)
+  return {character,weapon,accessory,achievement,research,researchPercent:Number((researchLv*.3).toFixed(1)),pet:petBonus,petPercent:Math.round(petRate*100),total:researched+petBonus}
+}
+async function pvpView(id){
+  await pvpEnsure(id)
+  const clk=pvpClock()
+  const [rows]=await pool.query('SELECT * FROM gm_pvp WHERE account_id=?',[id]);const me=rows[0]
+  const team=pvpTeam(me.team)
+  const [ranking]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.wins,p.losses FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.season=? AND JSON_LENGTH(p.team)=5 ORDER BY p.score DESC,p.wins DESC,p.updated_ms ASC,p.account_id ASC LIMIT 50`,[clk.season])
+  const [opponents]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.team FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.account_id<>? AND JSON_LENGTH(p.team)=5 ORDER BY RAND() LIMIT 5`,[id])
+  const opponentsWithPower=await Promise.all(opponents.map(async o=>({...o,team:pvpTeam(o.team),power:(await pvpPowerDetail(o.account_id,pvpTeam(o.team))).total})))
+  const [history]=await pool.query('SELECT defender,won,attacker_hp,defender_hp,created_ms FROM gm_pvp_matches WHERE attacker=? ORDER BY id DESC LIMIT 20',[id])
+  return {team,owned:await pvpOwned(id),power:team.length===5?await pvpPowerDetail(id,team):null,score:me.season===clk.season?me.score:1000,wins:me.season===clk.season?me.wins:0,losses:me.season===clk.season?me.losses:0,used:me.day_key===clk.dayKey?me.daily_used:0,seasonEnd:clk.seasonEnd,ranking,opponents:opponentsWithPower,history}
+}
+async function pvpStrength(id,team,conn=pool){return (await pvpPowerDetail(id,team,conn)).total}
+function pvpSimulate(a,b){
+  const hp=[100000,100000],power=[a,b],events=[]
+  const next=Array.from({length:10},()=>1+randomInt(1000)/1000)
+  for(let tick=0;tick<600&&hp[0]>0&&hp[1]>0;tick++){
+    const t=(tick+1)/10
+    for(let slot=0;slot<10;slot++){
+      if(next[slot]>t||hp[0]<=0||hp[1]<=0)continue
+      const side=slot<5?0:1,enemy=1-side
+      next[slot]=t+1+randomInt(1000)/1000
+      const evaded=randomInt(100)<10
+      const roll=randomInt(100),effect=roll<5?'강타':roll<20?'치명타':'일반'
+      const factor=effect==='강타'?1.8:effect==='치명타'?1.5:1
+      const damage=evaded?0:Math.max(1,Math.round(180*Math.sqrt(power[side]/1000)*(0.85+randomInt(301)/1000)*factor))
+      hp[enemy]=Math.max(0,hp[enemy]-damage)
+      events.push({t:Number(t.toFixed(1)),side,slot:slot%5,effect:evaded?'회피':effect,damage,hp:[...hp]})
+    }
+  }
+  return {won:hp[0]>hp[1],hp,events}
+}
+let pvpSettlementBusy=false
+async function pvpSettle(){
+  if(!ready||pvpSettlementBusy)return
+  pvpSettlementBusy=true
+  try{
+    const clk=pvpClock(),ended=new Date(clk.seasonEnd-7*86400000).toISOString().slice(0,16)
+    const [leaders]=await pool.query(`SELECT account_id FROM gm_pvp WHERE season=? AND JSON_LENGTH(team)=5 ORDER BY score DESC,wins DESC,updated_ms ASC,account_id ASC LIMIT 3`,[ended])
+    for(let i=0;i<leaders.length;i++){
+      await inTransaction(async conn=>{
+        const [insert]=await conn.query('INSERT IGNORE INTO gm_pvp_awards(season,rank_no,account_id,created_ms) VALUES(?,?,?,?)',[ended,i+1,leaders[i].account_id,Date.now()])
+        if(!insert.affectedRows)return
+        const id=leaders[i].account_id
+        await conn.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,pvp_legend_tickets,pvp_breakthrough_stones,sent_day,created_ms) VALUES(?,?,?,?,?,?,?,?,?)',[0,id,`PvP 아레나 주간 ${i+1}위 보상`,0,3000,i===0?1:0,i<2?1:0,checkInDay(),Date.now()])
+      })
+    }
+  }catch(e){console.error('[pvp] settlement:',e)}finally{pvpSettlementBusy=false}
+}
+
 const routes = {
+  'GET /api/pvp': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    send(res,200,await pvpView(a.id))
+  },
+  'POST /api/pvp/team': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    const {team}=await readJson(req)
+    if(!Array.isArray(team)||team.length!==5||new Set(team).size!==5||team.some(x=>typeof x!=='string'||!CHARACTER_IDS.includes(x)))return send(res,400,{error:'pvp_team_invalid'})
+    const owned=await pvpOwned(a.id)
+    if(team.some(x=>!owned.includes(x)))return send(res,400,{error:'pvp_not_owned'})
+    await pvpEnsure(a.id)
+    await pool.query('UPDATE gm_pvp SET team=?,updated_ms=? WHERE account_id=?',[JSON.stringify(team),Date.now(),a.id])
+    send(res,200,await pvpView(a.id))
+  },
+  'POST /api/pvp/fight': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    const {opponentId}=await readJson(req)
+    if(!Number.isSafeInteger(opponentId)||opponentId===Number(a.id))return send(res,400,{error:'pvp_opponent_invalid'})
+    const result=await inTransaction(async conn=>{
+      await pvpEnsure(a.id,conn)
+      const [mine]=await conn.query('SELECT * FROM gm_pvp WHERE account_id=? FOR UPDATE',[a.id]);const me=mine[0],clock=pvpClock()
+      const used=me.day_key===clock.dayKey?Number(me.daily_used):0
+      if(used>=5)return {error:'pvp_daily_limit'}
+      const myTeam=pvpTeam(me.team)
+      if(myTeam.length!==5)return {error:'pvp_team_invalid'}
+      const owned=await pvpOwned(a.id,conn)
+      if(myTeam.some(x=>!owned.includes(x)))return {error:'pvp_not_owned'}
+      // Lock the defending account too: both rankings must settle in the same transaction.
+      const [others]=await conn.query('SELECT * FROM gm_pvp WHERE account_id=? FOR UPDATE',[opponentId])
+      if(!others.length||pvpTeam(others[0].team).length!==5)return {error:'pvp_opponent_invalid'}
+      const defender=others[0]
+      const theirTeam=pvpTeam(defender.team)
+      const myPower=await pvpStrength(a.id,myTeam,conn),theirPower=await pvpStrength(opponentId,theirTeam,conn)
+      const sim=pvpSimulate(myPower,theirPower),seasonScore=me.season===clock.season?Number(me.score):1000
+      const scoreDelta=sim.won?(theirPower>myPower?30:10):-10
+      const score=Math.max(0,seasonScore+scoreDelta)
+      await conn.query('UPDATE gm_pvp SET score=?,season=?,day_key=?,daily_used=?,wins=?,losses=?,updated_ms=? WHERE account_id=?',[score,clock.season,clock.dayKey,used+1,(me.season===clock.season?Number(me.wins):0)+(sim.won?1:0),(me.season===clock.season?Number(me.losses):0)+(sim.won?0:1),Date.now(),a.id])
+      // A successful defense earns 10 points; a failed defense loses 10.
+      // Preserve the defender's own daily challenge count and existing win/loss statistics.
+      const defenseDelta=sim.won?-10:10
+      const defenderScore=defender.season===clock.season?Number(defender.score):1000
+      await conn.query('UPDATE gm_pvp SET score=?,season=?,updated_ms=? WHERE account_id=?',[
+        Math.max(0,defenderScore+defenseDelta),clock.season,Date.now(),opponentId
+      ])
+      await conn.query('INSERT INTO gm_pvp_matches(season,attacker,defender,won,attacker_hp,defender_hp,events,created_ms) VALUES(?,?,?,?,?,?,?,?)',[clock.season,a.id,opponentId,sim.won?1:0,...sim.hp,JSON.stringify(sim.events),Date.now()])
+      return {...sim,score,scoreDelta,used:used+1,myTeam,theirTeam,myPower,theirPower}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,result)
+  },
+
   'GET /api/rilakkuma-event': async (req,res)=>{
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -2916,21 +3067,27 @@ const routes = {
     let total = 0
     let diamondTotal = 0
     let fragmentTotal = 0
+    let pvpTicketTotal = 0
+    let pvpStoneTotal = 0
     try {
       await conn.beginTransaction()
       const [rows] = await conn.query(
         id == null
-          ? 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 FOR UPDATE'
-          : 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 AND id = ? FOR UPDATE',
+          ? 'SELECT id, coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0 OR pvp_legend_tickets > 0 OR pvp_breakthrough_stones > 0) AND to_deleted = 0 FOR UPDATE'
+          : 'SELECT id, coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0 OR pvp_legend_tickets > 0 OR pvp_breakthrough_stones > 0) AND to_deleted = 0 AND id = ? FOR UPDATE',
         id == null ? [account.id] : [account.id, Number(id)],
       )
       total = rows.reduce((sum, row) => sum + Number(row.coins), 0)
       diamondTotal = rows.reduce((sum, row) => sum + Number(row.diamonds), 0)
       fragmentTotal = rows.reduce((sum, row) => sum + Number(row.fragments), 0)
+      pvpTicketTotal = rows.reduce((sum, row) => sum + Number(row.pvp_legend_tickets), 0)
+      pvpStoneTotal = rows.reduce((sum, row) => sum + Number(row.pvp_breakthrough_stones), 0)
       if (rows.length) {
         await conn.query(`UPDATE gm_mail SET claimed = 1, seen = 1 WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(row => row.id))
         await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [total, diamondTotal, fragmentTotal, account.id])
       }
+      if(pvpStoneTotal){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[account.id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[pvpStoneTotal,account.id])}
+      for(let n=0;n<pvpTicketTotal;n++)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[account.id])
       await conn.commit()
     } catch (error) {
       await conn.rollback().catch(() => {})
@@ -3077,12 +3234,14 @@ const routes = {
         const [r] = await conn.query('UPDATE gm_mail SET from_deleted = 1 WHERE id = ? AND from_id = ? AND from_deleted = 0', [id, account.id])
         return r.affectedRows ? { claimed: 0 } : { error: 'mail_not_found' }
       }
-      const [rows] = await conn.query('SELECT coins, diamonds, fragments, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
+      const [rows] = await conn.query('SELECT coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
       if (!rows[0]) return { error: 'mail_not_found' }
       // Deleting a letter never loses its coins: unclaimed coins are received first.
       const claimed = rows[0].claimed ? 0 : Number(rows[0].coins)
       await conn.query('UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id = ?', [id])
       if (!rows[0].claimed) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [claimed, Number(rows[0].diamonds), Number(rows[0].fragments), account.id])
+      if(!rows[0].claimed && Number(rows[0].pvp_breakthrough_stones)){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[account.id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[Number(rows[0].pvp_breakthrough_stones),account.id])}
+      if(!rows[0].claimed)for(let n=0;n<Number(rows[0].pvp_legend_tickets);n++)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[account.id])
       return { claimed }
     })
     if (outcome.error) return send(res, 404, { error: outcome.error })
@@ -3249,4 +3408,6 @@ server.listen(PORT, () => {
   // Server-side progression must not depend on an expedition page visit.
   setInterval(expeditionBackgroundTick, EXP_TICK)
   setInterval(battleBackgroundTick, BATTLE_BACKGROUND_INTERVAL_MS)
+  setInterval(pvpSettle, 60_000)
+  setTimeout(pvpSettle, 10_000)
 })
