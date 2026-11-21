@@ -1,6 +1,7 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
+  { id: 'chiikawa_babo', name: '치이카와', variant: '바보', probability: 0.06, tier: 'legendary', weedBonus: 0, power: 540, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'christmas_chiikawa', name: '치이카와', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
   { id: 'christmas_hachiware', name: '하치와레', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
   { id: 'christmas_usagi', name: '우사기', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
@@ -11,7 +12,7 @@ export const CHARACTERS = [
   { id: 'rilakkuma_chiikawa', name: '리락쿠마', variant: '치이카와', probability: 0, tier: 'legendary', weedBonus: 0, power: 530, color: '#f5e1c9', accent: '#b98450' },
   { id: 'korilakkuma_kani', name: '코리락쿠마', variant: '카니', probability: 0, tier: 'legendary', weedBonus: 0, power: 530, color: '#ffe6eb', accent: '#d98eaa' },
   { id: 'pepero_chiikawa', name: '치이카와', variant: '빼빼로', probability: 0, tier: 'normal', weedBonus: 0, power: 8, color: '#fff4f6', accent: '#f3a3b8' },
-  { id: 'chiikawa', name: '치이카와', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 20, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'chiikawa', name: '치이카와', variant: '', probability: 4.64, tier: 'normal', weedBonus: 0, power: 20, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'hachiware', name: '하치와레', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 20, color: '#e6f3ff', accent: '#6ea5d8' },
   { id: 'usagi', name: '우사기', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 20, color: '#fff6d8', accent: '#e8c35a' },
   { id: 'momonga', name: '모몽가', variant: '', probability: 4.7, tier: 'normal', weedBonus: 0, power: 10, color: '#f1efff', accent: '#a99ae1' },
