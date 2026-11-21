@@ -3786,11 +3786,12 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
                 window.setTimeout(()=>{
                   animation.remove()
                   if(sequence!==this.revealSequence)return
-                  // Reveal must be mounted on the draw screen, not hidden behind inventory.
-                  this.show('result')
+                  // Reuse the standard character-pull pop animation before showing results.
+                  // The pop layer lives at the gacha root and can display over inventory.
                   this.renderResults()
                   this.revealing=false
                   this.renderWallet()
+                  void this.playPops([reveal],sequence)
                 },2250)
               }catch(error){dialog.querySelector('p')!.textContent='개봉 실패: '+(error instanceof Error?error.message:'오류');if(yes)yes.disabled=false}
             },{once:true})
