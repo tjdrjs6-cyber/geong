@@ -69,6 +69,8 @@ async function prepareDatabase() {
     sold_ms BIGINT DEFAULT NULL,
     INDEX(status,seller_id)
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_legend_tickets (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,owner_id BIGINT UNSIGNED NOT NULL,trades TINYINT UNSIGNED NOT NULL DEFAULT 0,listing_id BIGINT UNSIGNED NULL,INDEX(owner_id,listing_id))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_legend_listings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,seller_id BIGINT UNSIGNED NOT NULL,ticket_id BIGINT UNSIGNED NOT NULL UNIQUE,price BIGINT UNSIGNED NOT NULL,status VARCHAR(12) NOT NULL DEFAULT 'active',buyer_id BIGINT UNSIGNED NULL,created_ms BIGINT NOT NULL,sold_ms BIGINT NULL,INDEX(status,price),INDEX(seller_id,status))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_market_items (account_id BIGINT UNSIGNED PRIMARY KEY, breakthrough_stones INT UNSIGNED NOT NULL DEFAULT 0, weekly_key VARCHAR(16) NOT NULL DEFAULT '', weekly_bought TINYINT UNSIGNED NOT NULL DEFAULT 0, daily_key VARCHAR(16) NOT NULL DEFAULT '', daily_bought TINYINT UNSIGNED NOT NULL DEFAULT 0)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_research (account_id BIGINT UNSIGNED PRIMARY KEY, combat_level TINYINT UNSIGNED NOT NULL DEFAULT 0, pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0)` )
   try { await pool.query('ALTER TABLE gm_research ADD COLUMN pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch(e) { if(e.code !== 'ER_DUP_FIELDNAME') throw e }
@@ -918,6 +920,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
+        if(randomInt(10000)===0) await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[accountId])
         const ticket = randomInt(10000) < 65 ? 1 : 0
         ticketsEarned += ticket
         const stone = randomInt(10000) === 0 ? 1 : 0
@@ -2191,6 +2194,69 @@ const routes = {
       await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
+  'GET /api/legend-tickets': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const [rows]=await pool.query('SELECT id,trades FROM gm_legend_tickets WHERE owner_id=? AND listing_id IS NULL ORDER BY id',[a.id]);send(res,200,{tickets:rows})
+  },
+  'POST /api/legend-tickets/open': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {ticketId}=await readJson(req);if(!Number.isSafeInteger(ticketId)||ticketId<1)return send(res,400,{error:'invalid_ticket'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [t]=await c.query('SELECT id FROM gm_legend_tickets WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[ticketId,a.id]);
+      if(!t.length){await c.rollback();return send(res,409,{error:'ticket_unavailable'})}
+      const [sr]=await c.query('SELECT owned FROM gm_saves WHERE account_id=? FOR UPDATE',[a.id]);
+      const [dr]=await c.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[a.id]);
+      if(!sr.length){await c.rollback();return send(res,409,{error:'save_missing'})}
+      // Only the four permanent legendary entries in the base character catalog.
+      const poolIds=['kurimanju_bean','rakko_limited','beetle_berserk','usagi_orange'];
+      const characterId=poolIds[randomInt(poolIds.length)];const owned=normalizeOwned(parseJson(sr[0].owned));const duplicate=owned.includes(characterId);
+      const dupes=normalizeDupes(dr.length?parseJson(dr[0].items):{});
+      if(duplicate)dupes[characterId]=(Number(dupes[characterId])||0)+1;else owned.push(characterId);
+      await c.query('UPDATE gm_saves SET owned=? WHERE account_id=?',[JSON.stringify(owned),a.id]);
+      await c.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[a.id,JSON.stringify(dupes)]);
+      await c.query('DELETE FROM gm_legend_tickets WHERE id=?',[ticketId]);await c.commit();send(res,200,{ok:true,characterId,duplicate});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
+  'POST /api/legend-tickets/list': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {ticketId,price}=await readJson(req);if(!Number.isSafeInteger(ticketId)||ticketId<1||!Number.isSafeInteger(price)||price<10000||price>1000000000)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [t]=await c.query('SELECT id FROM gm_legend_tickets WHERE id=? AND owner_id=? AND trades=0 AND listing_id IS NULL FOR UPDATE',[ticketId,a.id]);
+      if(!t.length){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      const [r]=await c.query('INSERT INTO gm_legend_listings(seller_id,ticket_id,price,created_ms) VALUES(?,?,?,?)',[a.id,ticketId,price,Date.now()]);
+      await c.query('UPDATE gm_legend_tickets SET listing_id=? WHERE id=?',[r.insertId,ticketId]);await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
+  'POST /api/legend-tickets/cancel': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [l]=await c.query("SELECT * FROM gm_legend_listings WHERE id=? AND seller_id=? AND status='active' FOR UPDATE",[listingId,a.id]);
+      if(!l.length){await c.rollback();return send(res,409,{error:'listing_unavailable'})}
+      await c.query('UPDATE gm_legend_tickets SET listing_id=NULL WHERE id=? AND owner_id=? AND listing_id=?',[l[0].ticket_id,a.id,listingId]);
+      await c.query("UPDATE gm_legend_listings SET status='cancelled' WHERE id=?",[listingId]);await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
+  'POST /api/legend-tickets/buy': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT * FROM gm_legend_listings WHERE id=? AND status='active' FOR UPDATE",[listingId]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}const l=ls[0];
+      if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
+      const [t]=await c.query('SELECT id FROM gm_legend_tickets WHERE id=? AND owner_id=? AND listing_id=? AND trades=0 FOR UPDATE',[l.ticket_id,l.seller_id,listingId]);
+      if(!t.length){await c.rollback();return send(res,409,{error:'item_unavailable'})}
+      const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);
+      const [bal]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);
+      if(!bal.some(x=>Number(x.account_id)===Number(a.id)&&Number(x.diamonds)>=Number(l.price))){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+      const fee=Math.floor(Number(l.price)*.1);
+      await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);
+      await c.query('UPDATE gm_legend_tickets SET owner_id=?,trades=1,listing_id=NULL WHERE id=?',[a.id,l.ticket_id]);
+      await c.query("UPDATE gm_legend_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),listingId]);
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,l.seller_id,`[판매 완료] 레전더리 뽑기 티켓 판매대금 ${Number(l.price).toLocaleString('ko-KR')}다이아 (수수료 ${fee.toLocaleString('ko-KR')}다이아)`,0,Number(l.price)-fee,checkInDay(),Date.now()]);
+      await trimInbox(c,l.seller_id);await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
   'GET /api/trade/market': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const [drops]=await pool.query("SELECT l.id,l.seller_id,l.kind,l.quantity,l.unit_price,a.nickname FROM gm_drop_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.unit_price,l.id LIMIT 300");
@@ -2201,7 +2267,10 @@ const routes = {
     const [boxes]=await pool.query('SELECT id,grade FROM gm_pet_boxes WHERE owner_id=? AND listing_id IS NULL AND trades=0 ORDER BY id',[a.id]);
     const [mineDrops]=await pool.query("SELECT id,kind,quantity,unit_price FROM gm_drop_listings WHERE seller_id=? AND status='active' ORDER BY id DESC",[a.id]);
     const [minePets]=await pool.query("SELECT l.id,l.price,b.grade FROM gm_pet_listings l JOIN gm_pet_boxes b ON b.id=l.item_id WHERE l.seller_id=? AND l.status='active' ORDER BY l.id DESC",[a.id]);
-    send(res,200,{me:Number(a.id),diamonds:Number(totals[0]?.diamonds||0),drops,pets,boxes,mineDrops,minePets,tradeable:{ticket:Math.max(0,Math.min(Number(available[0]?.ticket_qty||0),Number(totals[0]?.lottery_tickets||0)-mineDrops.filter(x=>x.kind==='ticket').reduce((n,x)=>n+Number(x.quantity),0))),stone:Math.max(0,Math.min(Number(available[0]?.stone_qty||0),Number(stones[0]?.breakthrough_stones||0)-mineDrops.filter(x=>x.kind==='stone').reduce((n,x)=>n+Number(x.quantity),0)))}})
+    const [legendListings]=await pool.query("SELECT l.id,l.seller_id,l.price,a.nickname FROM gm_legend_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.price,l.id LIMIT 300");
+    const [legendMine]=await pool.query("SELECT l.id,l.price FROM gm_legend_listings l WHERE l.seller_id=? AND l.status='active' ORDER BY l.id DESC",[a.id]);
+    const [legendAvailable]=await pool.query('SELECT id,trades FROM gm_legend_tickets WHERE owner_id=? AND listing_id IS NULL ORDER BY id',[a.id]);
+    send(res,200,{legendListings,legendMine,legendAvailable,me:Number(a.id),diamonds:Number(totals[0]?.diamonds||0),drops,pets,boxes,mineDrops,minePets,tradeable:{ticket:Math.max(0,Math.min(Number(available[0]?.ticket_qty||0),Number(totals[0]?.lottery_tickets||0)-mineDrops.filter(x=>x.kind==='ticket').reduce((n,x)=>n+Number(x.quantity),0))),stone:Math.max(0,Math.min(Number(available[0]?.stone_qty||0),Number(stones[0]?.breakthrough_stones||0)-mineDrops.filter(x=>x.kind==='stone').reduce((n,x)=>n+Number(x.quantity),0)))}})
   },
   'GET /api/plaza/shop': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})

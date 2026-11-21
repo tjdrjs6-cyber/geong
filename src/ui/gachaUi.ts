@@ -3726,6 +3726,34 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
             }
           }
         }).catch(()=>{if(this.storageTab==='inventory'&&inventoryAtRequest.isConnected){const note=document.createElement('small');note.className='tradeable-storage-item';note.textContent='거래 가능 수량을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.';inventoryAtRequest.prepend(note)}})
+      // Legendary draw tickets are individually tracked so a purchased ticket cannot be resold.
+      void fetch('/api/legend-tickets',{credentials:'include',cache:'no-store'})
+        .then(async r=>{if(!r.ok)throw Error('legend_tickets');return r.json() as Promise<{tickets:{id:number;trades:number}[]}>})
+        .then(data=>{
+          if(this.storageTab!=='inventory'||!grid.isConnected)return
+          const tickets=Array.isArray(data.tickets)?data.tickets:[]
+          if(!tickets.length)return
+          const card=document.createElement('article');card.className='storage-item legend-ticket-storage-item';card.setAttribute('role','listitem')
+          const image=document.createElement('img');image.src='/assets/items/legendary_draw_ticket.png';image.alt='레전더리 뽑기 티켓';image.style.cssText='width:60px;height:60px;object-fit:contain'
+          const title=document.createElement('b');title.textContent='레전더리 뽑기 티켓'
+          const detail=document.createElement('small');detail.textContent=`보유 ${tickets.length}개 · 거래 가능 ${tickets.filter(t=>t.trades===0).length}개`
+          const open=document.createElement('button');open.type='button';open.textContent='1개 개봉';open.className='storage-sell-btn'
+          open.addEventListener('click',async()=>{
+            if(open.disabled)return
+            const ticket=tickets[0];if(!ticket)return
+            const dialog=document.createElement('dialog');dialog.style.cssText='border:0;border-radius:18px;padding:20px;max-width:min(330px,90vw);background:#fff9eb;color:#674630;box-shadow:0 10px 35px #0005;z-index:99999'
+            dialog.innerHTML='<b>레전더리 뽑기 티켓</b><p>티켓 1개를 개봉하시겠습니까?</p><button data-no>취소</button> <button data-yes>개봉</button>'
+            document.body.appendChild(dialog);dialog.querySelector('[data-no]')?.addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal()
+            dialog.querySelector('[data-yes]')?.addEventListener('click',async()=>{
+              const yes=dialog.querySelector<HTMLButtonElement>('[data-yes]');if(yes)yes.disabled=true
+              try{const r=await fetch('/api/legend-tickets/open',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticketId:ticket.id})});const result=await r.json();if(!r.ok)throw Error(result.error||'개봉 실패');
+                const names:Record<string,string>={kurimanju_bean:'쿠리만쥬(콩)',rakko_limited:'랏코(한정선)',beetle_berserk:'풍뎅이(폭주)',usagi_orange:'우사기(귤)'}
+                dialog.querySelector('p')!.textContent=`${names[result.characterId]||result.characterId} 획득!${result.duplicate?' (중복 +1)':''}`
+                dialog.querySelector('[data-no]')?.remove();if(yes){yes.textContent='확인';yes.disabled=false;yes.onclick=()=>{dialog.close();this.renderStorage()}}
+              }catch(error){dialog.querySelector('p')!.textContent='개봉 실패: '+(error instanceof Error?error.message:'오류');if(yes)yes.disabled=false}
+            },{once:true})
+          });card.append(image,title,detail,open);grid.prepend(card);grid.querySelector('.misc-empty')?.remove()
+        }).catch(()=>{})
       // All pet box grades are separate 기타 items. Never render zero-quantity boxes.
       const inventoryGrid = grid
       void fetch('/api/pets', { credentials: 'include', cache: 'no-store' })
