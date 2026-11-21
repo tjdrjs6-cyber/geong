@@ -25,7 +25,18 @@ async function marketState(accountId, conn=pool, lock=false){
   const r=rows[0], keys=kstMarketKeys()
   return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
 }
-const SKILL_TIERS = {"christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+const SKILL_TIERS = {"chiikawa_babo":"legendary", "christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+
+// Mark event/collaboration characters here when they are introduced.
+// All other catalogued legendary characters automatically join the ticket pool.
+const LEGEND_TICKET_EXCLUDED_IDS = new Set([
+  'christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi',
+  'rilakkuma_chiikawa','korilakkuma_kani',
+  'halloween_chiikawa','halloween_hachiware','halloween_usagi'
+]);
+function legendTicketPool(){
+  return CHARACTER_IDS.filter(id => SKILL_TIERS[id] === 'legendary' && !LEGEND_TICKET_EXCLUDED_IDS.has(id));
+}
 const scrypt = promisify(scryptCb)
 const PORT = Number(process.env.PORT || 3000)
 const COOKIE = 'gm_session'
@@ -69,6 +80,8 @@ async function prepareDatabase() {
     sold_ms BIGINT DEFAULT NULL,
     INDEX(status,seller_id)
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_legend_tickets (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,owner_id BIGINT UNSIGNED NOT NULL,trades TINYINT UNSIGNED NOT NULL DEFAULT 0,listing_id BIGINT UNSIGNED NULL,INDEX(owner_id,listing_id))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_legend_listings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,seller_id BIGINT UNSIGNED NOT NULL,ticket_id BIGINT UNSIGNED NOT NULL UNIQUE,price BIGINT UNSIGNED NOT NULL,status VARCHAR(12) NOT NULL DEFAULT 'active',buyer_id BIGINT UNSIGNED NULL,created_ms BIGINT NOT NULL,sold_ms BIGINT NULL,INDEX(status,price),INDEX(seller_id,status))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_market_items (account_id BIGINT UNSIGNED PRIMARY KEY, breakthrough_stones INT UNSIGNED NOT NULL DEFAULT 0, weekly_key VARCHAR(16) NOT NULL DEFAULT '', weekly_bought TINYINT UNSIGNED NOT NULL DEFAULT 0, daily_key VARCHAR(16) NOT NULL DEFAULT '', daily_bought TINYINT UNSIGNED NOT NULL DEFAULT 0)`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_research (account_id BIGINT UNSIGNED PRIMARY KEY, combat_level TINYINT UNSIGNED NOT NULL DEFAULT 0, pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0)` )
   try { await pool.query('ALTER TABLE gm_research ADD COLUMN pending_until BIGINT UNSIGNED NOT NULL DEFAULT 0') } catch(e) { if(e.code !== 'ER_DUP_FIELDNAME') throw e }
@@ -704,7 +717,7 @@ const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1,1,1,1,1,1]
 const FORGE_COSTS = [{"coins":200,"fragments":0},{"coins":400,"fragments":0},{"coins":600,"fragments":0},{"coins":800,"fragments":0},{"coins":1000,"fragments":0},{"coins":1200,"fragments":60},{"coins":1400,"fragments":60},{"coins":1600,"fragments":60},{"coins":1800,"fragments":60},{"coins":2000,"fragments":60},{"coins":2500,"fragments":180},{"coins":2900,"fragments":180},{"coins":3300,"fragments":180},{"coins":3650,"fragments":180},{"coins":4000,"fragments":180},{"coins":4500,"fragments":450},{"coins":5100,"fragments":450},{"coins":5700,"fragments":450},{"coins":6350,"fragments":450},{"coins":7000,"fragments":450},{"coins":8000,"fragments":900},{"coins":9000,"fragments":1050},{"coins":10000,"fragments":1200},{"coins":11000,"fragments":1500},{"coins":12000,"fragments":1500},{"coins":13000,"fragments":1800},{"coins":14500,"fragments":1800},{"coins":16000,"fragments":2250},{"coins":18000,"fragments":2250},{"coins":20000,"fragments":3000}]
 const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885'
-const FORGE_POWER = [10, 16, 22, 28, 34, 40, 50, 60, 70, 80, 90, 104, 118, 132, 146, 160, 178, 196, 214, 232, 250, 272, 294, 316, 338, 360, 388, 416, 444, 472, 500]
+const FORGE_POWER = [10, 23, 36, 49, 62, 75, 105, 135, 165, 195, 225, 280, 335, 390, 445, 500, 600, 700, 800, 900, 1000, 1110, 1230, 1360, 1500, 1650, 1810, 1975, 2145, 2320, 2500]
 const forgeBonus = level => FORGE_POWER[Math.max(0, Math.min(30, Number(level) || 0))]
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
 const ACCESSORY_GRADES = {rare:{cost:3,coins:2500,fragments:700,power:30},epic:{cost:3,coins:10000,fragments:2500,power:80},unique:{cost:3,coins:30000,fragments:5000,power:160},legendary:{cost:3,coins:100000,fragments:20000,power:300},transcendent:{cost:3,coins:300000,fragments:100000,power:500}}
@@ -741,9 +754,9 @@ async function getWeed(accountId) {
 const STAGE_LIMIT_MS = 60_000
 const BATTLE_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
 // Geong Market 3.0: 30 zones, 300 stages; all rewards are integers.
-const MAX_BATTLE_STAGE = 200
+const MAX_BATTLE_STAGE = 500
 // Unified 100-stage HP table; proposed reduction followed by an additional 10% reduction.
-const BATTLE_HP_ANCHORS = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000]];
+const BATTLE_HP_ANCHORS = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000], [210, 500000], [220, 535000], [230, 570000], [240, 605000], [250, 640000], [260, 675000], [270, 710000], [280, 745000], [290, 780000], [300, 815000], [310, 850000], [320, 885000], [330, 920000], [340, 955000], [350, 990000], [360, 1025000], [370, 1060000], [380, 1095000], [390, 1130000], [400, 1165000], [410, 1200000], [420, 1235000], [430, 1270000], [440, 1305000], [450, 1340000], [460, 1375000], [470, 1410000], [480, 1445000], [490, 1480000], [500, 1515000]];
 function stageHp(stage) {
   const s = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1));
   for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
@@ -753,7 +766,7 @@ function stageHp(stage) {
       return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
     }
   }
-  return 465000;
+  return 1515000;
 }
 
 
@@ -762,8 +775,8 @@ const BATTLE_REWARD_DIAMONDS = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 
 const BATTLE_REWARD_FRAGMENTS = [1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 function stageReward(stage) {
   const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
-  const zone = Math.min(19, Math.floor(n / 10))
-  return { diamonds: BATTLE_REWARD_DIAMONDS[zone], fragments: BATTLE_REWARD_FRAGMENTS[zone], coins: 0 }
+  const zone = Math.floor(n / 10)
+  return { diamonds: zone < 20 ? BATTLE_REWARD_DIAMONDS[zone] : 10, fragments: zone < 20 ? BATTLE_REWARD_FRAGMENTS[zone] : 20, coins: 0 }
 }
 
 function battleRow(row) {
@@ -918,6 +931,7 @@ async function updateBattle(accountId, nextCharacter) {
         }
         if (now - cursor < killMs) break
         const reward = stageReward(current)
+        if(randomInt(10000) < (boostedPetDrop ? 5000 : 1)) await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[accountId])
         const ticket = randomInt(10000) < 65 ? 1 : 0
         ticketsEarned += ticket
         const stone = randomInt(10000) === 0 ? 1 : 0
@@ -1157,8 +1171,9 @@ async function expeditionSettle(conn, day, serverId, now) {
     for(const player of players) {
       const [paid]=await conn.query('INSERT IGNORE INTO gm_expedition_stage_paid (raid_day,server_id,stage,account_id) VALUES (?,?,?,?)',[day,serverId,stage,player.account_id])
       if(paid.affectedRows) {
-        const coins=stage===1?2000:stage===2?3000:5000, fragments=0
-        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,fragments,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,fragments,day,now])
+        const coins=stage===1?10000:stage===2?20000:30000
+        const diamonds=stage===1?500:stage===2?1000:1500
+        await conn.query('INSERT INTO gm_mail (from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES (?,?,?,?,?,?,?)',[0,player.account_id,`원정대 ${stage}단계 보상`,coins,diamonds,day,now])
         await trimInbox(conn,player.account_id)
       }
     }
@@ -1368,7 +1383,12 @@ const ACHIEVEMENTS = [
  {id:'curry',tier:'유니크',name:'카레시리즈 수집',ids:['c_curry','h_curry','u_curry'],coins:0,power:40},
  {id:'ginger',tier:'유니크',name:'진저맨시리즈 수집',ids:['ginger_chiikawa','ginger_hachiware','ginger_usagi'],coins:0,power:40},
  {id:'momonga',tier:'유니크',name:'선·악 모몽가 수집',ids:['angel_momonga','devil_momonga'],coins:0,power:50},
- {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:0,power:60}
+ {id:'beetle',tier:'레전더리',name:'풍뎅이 수집',ids:['beetle','beetle_berserk'],coins:0,power:60},
+ {id:'christmas_collect',tier:'레전더리',name:'크리스마스 수집',ids:['christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi'],coins:0,power:100},
+ {id:'pet_normal_all',kind:'pet',grade:'normal',tier:'레전더리',name:'노말 펫 전종 수집',ids:PET_KINDS,coins:0,power:100},
+ {id:'pet_rare_all',kind:'pet',grade:'rare',tier:'레전더리',name:'레어 펫 전종 수집',ids:PET_KINDS,coins:0,power:200},
+ {id:'pet_epic_all',kind:'pet',grade:'epic',tier:'레전더리',name:'에픽 펫 전종 수집',ids:PET_KINDS,coins:0,power:300},
+ {id:'pet_unique_all',kind:'pet',grade:'unique',tier:'레전더리',name:'유니크 펫 전종 수집',ids:PET_KINDS,coins:0,power:500}
 ]
 let achievementTableReady=null
 async function ensureAchievementTable(){
@@ -1474,8 +1494,13 @@ const routes = {
     const owned=new Set(saveRows.length?normalizeOwned(parseJson(saveRows[0].owned)):[])
     const [discoveryRows]=await pool.query('SELECT accessory_id,grade FROM gm_accessory_discoveries WHERE account_id=?',[account.id])
     const keyringOwned=new Set(discoveryRows.map(row=>`${row.accessory_id}:${row.grade}`))
+    const [petHistoryRows,petOwnedRows]=await Promise.all([
+      pool.query('SELECT kind,grade FROM gm_pet_collection WHERE account_id=?',[account.id]),
+      pool.query('SELECT kind,grade FROM gm_pets WHERE owner_id=?',[account.id])
+    ])
+    const petOwned=new Set([...petHistoryRows[0],...petOwnedRows[0]].map(row=>`${row.kind}:${row.grade}`))
     const claimed=new Set(claimRows.map(row=>row.achievement_id))
-    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>a.kind==='keyring'?keyringOwned.has(`${id}:${a.grade}`):owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
+    send(res,200,{items:ACHIEVEMENTS.map(a=>({...a,owned:a.ids.filter(id=>a.kind==='keyring'?keyringOwned.has(`${id}:${a.grade}`):a.kind==='pet'?petOwned.has(`${id}:${a.grade}`):owned.has(id)),claimed:claimed.has(a.id)})),power:ACHIEVEMENTS.reduce((n,a)=>n+(claimed.has(a.id)?a.power:0),0)})
   },
   'POST /api/achievements/claim': async (req,res) => {
     const account=await currentAccount(req)
@@ -1494,6 +1519,14 @@ const routes = {
         const [discovered]=await conn.query('SELECT accessory_id FROM gm_accessory_discoveries WHERE account_id=? AND grade=?',[account.id,item.grade])
         const found=new Set(discovered.map(row=>row.accessory_id))
         complete=item.ids.every(cid=>found.has(cid))
+      }
+      if(item.kind==='pet'){
+        const [history,inventory]=await Promise.all([
+          conn.query('SELECT kind FROM gm_pet_collection WHERE account_id=? AND grade=?',[account.id,item.grade]),
+          conn.query('SELECT kind FROM gm_pets WHERE owner_id=? AND grade=?',[account.id,item.grade])
+        ])
+        const found=new Set([...history[0],...inventory[0]].map(row=>row.kind))
+        complete=item.ids.every(kind=>found.has(kind))
       }
       if(!complete){await conn.rollback();return send(res,400,{error:'collection_incomplete'})}
       const [inserted]=await conn.query('INSERT IGNORE INTO gm_achievement_claims(account_id,achievement_id) VALUES (?,?)',[account.id,item.id])
@@ -2005,6 +2038,7 @@ const routes = {
         if(reward){const key=reward.grade+':'+reward.kind;wins[key]=(wins[key]||0)+1;pets.push([a.id,reward.kind,reward.grade,1])}
       }
       if(pets.length)await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES ?',[pets]);
+      if(pets.length)await c.query('INSERT IGNORE INTO gm_pet_collection(account_id,kind,grade) VALUES ?',[pets.map(p=>[p[0],p[1],p[2]])]);
       await c.commit();return send(res,200,{ok:true,opened:count,wins});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
@@ -2013,7 +2047,7 @@ const routes = {
     const {boxId}=await readJson(req);if(!Number.isSafeInteger(boxId))return send(res,400,{error:'invalid_box'});
     const c=await pool.getConnection();try{await c.beginTransaction();const [b]=await c.query('SELECT id,grade FROM gm_pet_boxes WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[boxId,a.id]);if(!b.length){await c.rollback();return send(res,409,{error:'box_unavailable'})}
       await c.query('DELETE FROM gm_pet_boxes WHERE id=?',[boxId]);const reward=petRoll(b[0].grade||'normal');let pet=null;
-      if(reward){const [r]=await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,?,1)',[a.id,reward.kind,reward.grade]);pet={id:r.insertId,...reward}}
+      if(reward){const [r]=await c.query('INSERT INTO gm_pets(owner_id,kind,grade,used) VALUES(?,?,?,1)',[a.id,reward.kind,reward.grade]);pet={id:r.insertId,...reward};await c.query('INSERT IGNORE INTO gm_pet_collection(account_id,kind,grade) VALUES(?,?,?)',[a.id,reward.kind,reward.grade])}
       await c.commit();send(res,200,{ok:true,pet});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
@@ -2191,6 +2225,70 @@ const routes = {
       await c.commit();send(res,200,{ok:true,fee})
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
+  'GET /api/legend-tickets': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const [rows]=await pool.query('SELECT id,trades FROM gm_legend_tickets WHERE owner_id=? AND listing_id IS NULL ORDER BY id',[a.id]);send(res,200,{tickets:rows})
+  },
+  'POST /api/legend-tickets/open': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {ticketId}=await readJson(req);if(!Number.isSafeInteger(ticketId)||ticketId<1)return send(res,400,{error:'invalid_ticket'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [t]=await c.query('SELECT id FROM gm_legend_tickets WHERE id=? AND owner_id=? AND listing_id IS NULL FOR UPDATE',[ticketId,a.id]);
+      if(!t.length){await c.rollback();return send(res,409,{error:'ticket_unavailable'})}
+      const [sr]=await c.query('SELECT owned FROM gm_saves WHERE account_id=? FOR UPDATE',[a.id]);
+      const [dr]=await c.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[a.id]);
+      if(!sr.length){await c.rollback();return send(res,409,{error:'save_missing'})}
+      // Only the four permanent legendary entries in the base character catalog.
+      const poolIds=legendTicketPool();
+      if(!poolIds.length){await c.rollback();return send(res,409,{error:'no_eligible_legendary'})}
+      const characterId=poolIds[randomInt(poolIds.length)];const owned=normalizeOwned(parseJson(sr[0].owned));const duplicate=owned.includes(characterId);
+      const dupes=normalizeDupes(dr.length?parseJson(dr[0].items):{});
+      if(duplicate)dupes[characterId]=(Number(dupes[characterId])||0)+1;else owned.push(characterId);
+      await c.query('UPDATE gm_saves SET owned=? WHERE account_id=?',[JSON.stringify(owned),a.id]);
+      await c.query('INSERT INTO gm_dupes(account_id,items) VALUES(?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[a.id,JSON.stringify(dupes)]);
+      await c.query('DELETE FROM gm_legend_tickets WHERE id=?',[ticketId]);await c.commit();send(res,200,{ok:true,characterId,duplicate,owned,dupes});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
+  'POST /api/legend-tickets/list': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {ticketId,price}=await readJson(req);if(!Number.isSafeInteger(ticketId)||ticketId<1||!Number.isSafeInteger(price)||price<10000||price>1000000000)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [t]=await c.query('SELECT id FROM gm_legend_tickets WHERE id=? AND owner_id=? AND trades=0 AND listing_id IS NULL FOR UPDATE',[ticketId,a.id]);
+      if(!t.length){await c.rollback();return send(res,409,{error:'not_tradeable'})}
+      const [r]=await c.query('INSERT INTO gm_legend_listings(seller_id,ticket_id,price,created_ms) VALUES(?,?,?,?)',[a.id,ticketId,price,Date.now()]);
+      await c.query('UPDATE gm_legend_tickets SET listing_id=? WHERE id=?',[r.insertId,ticketId]);await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
+  'POST /api/legend-tickets/cancel': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [l]=await c.query("SELECT * FROM gm_legend_listings WHERE id=? AND seller_id=? AND status='active' FOR UPDATE",[listingId,a.id]);
+      if(!l.length){await c.rollback();return send(res,409,{error:'listing_unavailable'})}
+      await c.query('UPDATE gm_legend_tickets SET listing_id=NULL WHERE id=? AND owner_id=? AND listing_id=?',[l[0].ticket_id,a.id,listingId]);
+      await c.query("UPDATE gm_legend_listings SET status='cancelled' WHERE id=?",[listingId]);await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
+  'POST /api/legend-tickets/buy': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const {listingId}=await readJson(req);if(!Number.isSafeInteger(listingId)||listingId<1)return send(res,400,{error:'invalid_listing'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+      const [ls]=await c.query("SELECT * FROM gm_legend_listings WHERE id=? AND status='active' FOR UPDATE",[listingId]);
+      if(!ls.length){await c.rollback();return send(res,409,{error:'sold_or_expired'})}const l=ls[0];
+      if(Number(l.seller_id)===Number(a.id)){await c.rollback();return send(res,400,{error:'own_listing'})}
+      const [t]=await c.query('SELECT id FROM gm_legend_tickets WHERE id=? AND owner_id=? AND listing_id=? AND trades=0 FOR UPDATE',[l.ticket_id,l.seller_id,listingId]);
+      if(!t.length){await c.rollback();return send(res,409,{error:'item_unavailable'})}
+      const ids=[Number(a.id),Number(l.seller_id)].sort((x,y)=>x-y);
+      const [bal]=await c.query('SELECT account_id,diamonds FROM gm_saves WHERE account_id IN (?,?) ORDER BY account_id FOR UPDATE',ids);
+      if(!bal.some(x=>Number(x.account_id)===Number(a.id)&&Number(x.diamonds)>=Number(l.price))){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+      const fee=Math.floor(Number(l.price)*.1);
+      await c.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=?',[l.price,a.id]);
+      await c.query('UPDATE gm_legend_tickets SET owner_id=?,trades=1,listing_id=NULL WHERE id=?',[a.id,l.ticket_id]);
+      await c.query("UPDATE gm_legend_listings SET status='sold',buyer_id=?,sold_ms=? WHERE id=?",[a.id,Date.now(),listingId]);
+      await c.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,l.seller_id,`[판매 완료] 레전더리 뽑기 티켓 판매대금 ${Number(l.price).toLocaleString('ko-KR')}다이아 (수수료 ${fee.toLocaleString('ko-KR')}다이아)`,0,Number(l.price)-fee,checkInDay(),Date.now()]);
+      await trimInbox(c,l.seller_id);await c.commit();send(res,200,{ok:true});
+    }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
+  },
   'GET /api/trade/market': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const [drops]=await pool.query("SELECT l.id,l.seller_id,l.kind,l.quantity,l.unit_price,a.nickname FROM gm_drop_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.unit_price,l.id LIMIT 300");
@@ -2201,7 +2299,10 @@ const routes = {
     const [boxes]=await pool.query('SELECT id,grade FROM gm_pet_boxes WHERE owner_id=? AND listing_id IS NULL AND trades=0 ORDER BY id',[a.id]);
     const [mineDrops]=await pool.query("SELECT id,kind,quantity,unit_price FROM gm_drop_listings WHERE seller_id=? AND status='active' ORDER BY id DESC",[a.id]);
     const [minePets]=await pool.query("SELECT l.id,l.price,b.grade FROM gm_pet_listings l JOIN gm_pet_boxes b ON b.id=l.item_id WHERE l.seller_id=? AND l.status='active' ORDER BY l.id DESC",[a.id]);
-    send(res,200,{me:Number(a.id),diamonds:Number(totals[0]?.diamonds||0),drops,pets,boxes,mineDrops,minePets,tradeable:{ticket:Math.max(0,Math.min(Number(available[0]?.ticket_qty||0),Number(totals[0]?.lottery_tickets||0)-mineDrops.filter(x=>x.kind==='ticket').reduce((n,x)=>n+Number(x.quantity),0))),stone:Math.max(0,Math.min(Number(available[0]?.stone_qty||0),Number(stones[0]?.breakthrough_stones||0)-mineDrops.filter(x=>x.kind==='stone').reduce((n,x)=>n+Number(x.quantity),0)))}})
+    const [legendListings]=await pool.query("SELECT l.id,l.seller_id,l.price,a.nickname FROM gm_legend_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.price,l.id LIMIT 300");
+    const [legendMine]=await pool.query("SELECT l.id,l.price FROM gm_legend_listings l WHERE l.seller_id=? AND l.status='active' ORDER BY l.id DESC",[a.id]);
+    const [legendAvailable]=await pool.query('SELECT id,trades FROM gm_legend_tickets WHERE owner_id=? AND listing_id IS NULL ORDER BY id',[a.id]);
+    send(res,200,{legendListings,legendMine,legendAvailable,me:Number(a.id),diamonds:Number(totals[0]?.diamonds||0),drops,pets,boxes,mineDrops,minePets,tradeable:{ticket:Math.max(0,Math.min(Number(available[0]?.ticket_qty||0),Number(totals[0]?.lottery_tickets||0)-mineDrops.filter(x=>x.kind==='ticket').reduce((n,x)=>n+Number(x.quantity),0))),stone:Math.max(0,Math.min(Number(available[0]?.stone_qty||0),Number(stones[0]?.breakthrough_stones||0)-mineDrops.filter(x=>x.kind==='stone').reduce((n,x)=>n+Number(x.quantity),0)))}})
   },
   'GET /api/plaza/shop': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})

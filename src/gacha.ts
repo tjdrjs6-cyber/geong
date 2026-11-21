@@ -108,6 +108,23 @@ async function boot(): Promise<void> {
       ;(window as unknown as { __game: unknown }).__game = { ui, store: collection }
       ui.show(user ? (user.nickname ? 'title' : 'nickname') : 'auth')
       warmCollectionArt()
+      // Show the new-character notice once per signed-in account on this browser.
+      if (user && user.nickname) {
+        const noticeKey = `gm-new-character-chiikawa-babo-v1:${user.nickname}`
+        let seen = false
+        try { seen = localStorage.getItem(noticeKey) === '1' } catch { /* storage disabled */ }
+        if (!seen) {
+          const overlay = document.createElement('div')
+          overlay.setAttribute('role','dialog')
+          overlay.setAttribute('aria-modal','true')
+          overlay.setAttribute('aria-label','신규 레전더리 캐릭터 등장')
+          overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(12,9,28,.78);padding:20px;pointer-events:auto'
+          overlay.innerHTML = `<div style="width:min(92vw,390px);background:linear-gradient(145deg,#fff9e9,#ffe9b0);border:3px solid #f5bf49;border-radius:24px;text-align:center;padding:24px 18px;color:#47320f;box-shadow:0 15px 55px #0007"><div style="font-size:13px;font-weight:900;color:#b07811">NEW LEGENDARY</div><h2 style="margin:10px 0;font-size:24px">신규 캐릭터 등장!</h2><img src="/assets/chars/chiikawa_babo.png" alt="치이카와(바보)" style="width:170px;height:170px;object-fit:contain;display:block;margin:12px auto"/><strong style="display:block;font-size:21px">치이카와(바보)</strong><p style="font-size:13px">초월 세이렌 뽑기에서 만날 수 있어요!</p><button type="button" style="margin-top:8px;border:0;border-radius:13px;padding:13px 30px;background:#f0b82e;color:#342200;font-weight:900;cursor:pointer">확인</button></div>`
+          overlay.querySelector('button')?.addEventListener('click',()=>{try{localStorage.setItem(noticeKey,'1')}catch{} overlay.remove()})
+          document.body.append(overlay)
+        }
+      }
+
     } catch (error) {
       console.error(error)
       ui.showLoadError()

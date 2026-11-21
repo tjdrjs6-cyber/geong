@@ -1,1 +1,1 @@
-기존 거래소 및 클릭 수정 패치 적용 후 사용. 거래소 내 구매 확인/판매 취소 확인/완료/오류를 인게임 팝업으로 변경하고 기존 이미지로 품목 썸네일을 표시합니다. 변경 파일 2개만 덮어씌우세요.
+Fix: 50-10 client-side stage clamp and matching HP anchors; pet achievement MySQL result tuple unpacking; fresh achievement collection and correct pet portraits. Apply on latest expedition/battle/pet patch.

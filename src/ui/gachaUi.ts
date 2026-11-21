@@ -41,7 +41,7 @@ function installGameNumberFormatting(): void {
 
 const BATTLE_DIAMONDS=[1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10];
 const BATTLE_FRAGMENTS=[1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(19,Math.floor((Math.max(1,stage)-1)/10));return [BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]};
+const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(49,Math.floor((Math.max(1,stage)-1)/10));return zone<20?[BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]:[10,20]};
 const WEAPON_ACCESSORIES = [
   {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
   {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},
@@ -74,6 +74,13 @@ import { machineMarkup } from './toonMachine'
 
 const MACHINE_SPIN_SECONDS = 1.6
 /** Grades: 일반 · 레어(인어의섬) · 에픽(세이렌·시마지로·아노코·데카츠요) · 유니크(카레·풍뎅이). */
+const christmasRates: Record<string,number> = {
+  ...Object.fromEntries(['chiikawa','hachiware','usagi','momonga','kurimanju','shisa','kani','goblin','rakko','armor1','armor2','armor3','pajama_chiikawa','pajama_hachiware','pajama_usagi'].map(id=>[id,id==='chiikawa'?4.70:4.69])),
+  ...Object.fromEntries(['m_chiikawa','m_hachiware','m_usagi','m_momonga','m_kurimanju','m_shisa','m_kani','m_rakko','hanip','duip','honey'].map(id=>[id,1.94])),
+  ...Object.fromEntries(['siren','shimajiro','anoko','dekatsuyo','ode','staff_chiikawa','staff_hachiware','staff_usagi'].map(id=>[id,0.75])),
+  ...Object.fromEntries(['c_curry','h_curry','u_curry','ginger_chiikawa','ginger_hachiware','ginger_usagi','beetle','ode_prison','angel_momonga','devil_momonga'].map(id=>[id,0.20])),
+  christmas_chiikawa:0.075,christmas_hachiware:0.075,christmas_usagi:0.075,christmas_tree_usagi:0.075,
+}
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
@@ -106,6 +113,7 @@ export class GachaUi {
   private toastTimer = 0
   private results: RevealItem[] = []
   private resultKind: 'char' | 'deco' = 'char'
+  private legendaryTicketResult = false
   private house!: HouseView
   private houseBadgeBusy = false
   private userTab: 'char' | 'deco' | 'accessory' | 'house' = 'char'
@@ -638,7 +646,7 @@ export class GachaUi {
         <header class="weed-header"><button class="weed-back" data-action="close">← 가챠로</button><b>원정대</b><small>매일 오전 9시 갱신</small></header>
         <div class="expedition-server-tabs"><button data-action="exp-server" data-id="1">1서버</button><button data-action="exp-server" data-id="2">2서버</button><button data-action="exp-server" data-id="3">3서버</button></div>
         <div class="expedition-cave"><div class="expedition-hp-label">보스 체력 <b class="exp-hp">4,000,000</b> / 4,000,000</div><div class="expedition-hp-track"><div class="expedition-hp-fill"></div><span class="expedition-hp-percent">100%</span></div><div class="expedition-stage-label">1단계</div><div class="expedition-stage-transition" aria-hidden="true"><strong>STAGE CLEAR!</strong><span class="expedition-stage-next">다음 단계</span></div><div class="expedition-party"></div><img class="expedition-boss" src="/expedition_boss.png" alt="원정대 보스" /></div>
-        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-power-summary"></div><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 클리어 3,000코인·300다이아 / 2단계 클리어 5,000코인·500다이아 / 3단계 클리어 10,000코인·1,000다이아 · 매일 오전 9시 새 보스</p></div>
+        <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-power-summary"></div><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 클리어 10,000코인·500다이아 / 2단계 클리어 20,000코인·1,000다이아 / 3단계 클리어 30,000코인·1,500다이아 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -687,7 +695,7 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.04%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · DECO PICK UP</span><h2>데코 뽑기 등장!</h2><div class="pull-event-info"><b>데코 · 꾸미기 아이템</b><span>확률 보기에서 획득 확률 확인</span></div></div><img class="pull-deco-event-image" src="/assets/gacha/deco_event.png" alt="데코 뽑기 일러스트" /></div>
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · DECO PICK UP</span><h2>데코 뽑기 등장!</h2><div class="pull-event-info"><b>데코 · 꾸미기 아이템</b><span>확률 보기에서 획득 확률 확인</span></div></div><img class="pull-deco-event-image" src="/assets/gacha/deco_event.png" alt="데코 뽑기 일러스트" /></div>
           <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 10+1회`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
@@ -1225,8 +1233,9 @@ export class GachaUi {
     const showTitle=()=>{panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button data-tab="collection">컬렉션</button><button class="active" data-tab="title">칭호</button></div><p class="achievement-v23-empty">칭호는 아직 미구현 상태입니다.</p>';panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close;panel.querySelector<HTMLButtonElement>('[data-tab="collection"]')!.onclick=()=>void this.openAchievements('collection')}
     if(tab==='title'){showTitle();return}
     try {
+      this.achievementSnapshot=null // Always refresh collection after obtaining new pets.
       const data=await this.fetchAchievementsOnce()
-      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc((item.id.startsWith('keyring_')?(WEAPON_ACCESSORIES.find(a=>a.id===id)?.image||'/assets/chars/chiikawa_tab_icon.png'):(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')))+'" alt=""/><small>'+esc((item.id.startsWith('keyring_')?(WEAPON_ACCESSORIES.find(a=>a.id===id)?.name||id):(CHARACTERS.find(c=>c.id===id)?.name||id)))+((!item.id.startsWith('keyring_')&&CHARACTERS.find(c=>c.id===id)?.variant)?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+(item.power?'영구 전투력 +'+item.power:'수집 완료')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
+      panel.innerHTML='<button class="achievement-v23-close" aria-label="닫기">×</button><h2>업적</h2><div class="achievement-v23-tabs"><button class="active" data-tab="collection">컬렉션</button><button data-tab="title">칭호</button></div><p class="achievement-v23-summary">수령한 영구 전투력 +'+data.power+' · 토벌장 / 원정대 적용</p><div class="achievement-v23-items">'+data.items.map(item=>{const ready=item.ids.every(id=>item.owned.includes(id));return '<article class="achievement-v23-item achievement-tier-'+esc(item.tier)+'"><div><small>'+esc(item.tier)+'</small><b>'+esc(item.name)+'</b><span>'+item.owned.length+' / '+item.ids.length+' 수집</span></div><p>'+item.ids.map(id=>'<span class="achievement-v24-face '+(item.owned.includes(id)?'has':'')+'">'+(item.owned.includes(id)?'<img loading="eager" src="'+esc((item.id.startsWith('pet_')?'/assets/pets/'+id+'.png':item.id.startsWith('keyring_')?(WEAPON_ACCESSORIES.find(a=>a.id===id)?.image||'/assets/chars/chiikawa_tab_icon.png'):(CHARACTER_IMAGE_URLS[id]||'/assets/chars/chiikawa_tab_icon.png')))+'" alt=""/><small>'+esc((item.id.startsWith('pet_')?({momonga:'모몽가',kurimanju:'쿠리만쥬',usagi:'우사기',chiikawa:'치이카와',hachiware:'하치와레'} as Record<string,string>)[id]||id:item.id.startsWith('keyring_')?(WEAPON_ACCESSORIES.find(a=>a.id===id)?.name||id):(CHARACTERS.find(c=>c.id===id)?.name||id)))+((!item.id.startsWith('keyring_')&&!item.id.startsWith('pet_')&&CHARACTERS.find(c=>c.id===id)?.variant)?'('+esc(CHARACTERS.find(c=>c.id===id)!.variant)+')':'')+'</small>':'<strong class="achievement-v25-unknown">?</strong><small>미획득</small>')+'</span>').join('')+'</p><div class="achievement-v23-reward">보상: '+(item.power?'영구 전투력 +'+item.power:'수집 완료')+'</div><button data-claim="'+item.id+'" '+(!ready||item.claimed?'disabled':'')+'>'+(item.claimed?'수령 완료':ready?'보상 수령':'미완료')+'</button></article>'}).join('')+'</div>'
       panel.querySelector<HTMLButtonElement>('.achievement-v23-close')!.onclick=close
       panel.querySelector<HTMLButtonElement>('[data-tab="title"]')!.onclick=showTitle
       panel.querySelectorAll<HTMLButtonElement>('[data-claim]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{const response=await fetch('/api/achievements/claim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.claim})});if(!response.ok)throw Error('보상을 수령하지 못했어요.');const reward=await response.json() as {coins:number;power:number};await this.store.restore();this.achievementSnapshot=null;await this.refreshAchievementCombatLabels();await this.openAchievements('collection');void this.refreshAchievementReadyBadge();this.showAchievementReward(reward.coins,reward.power)}catch(error){btn.disabled=false;this.toast(error instanceof Error?error.message:'오류가 발생했어요')}})
@@ -1774,6 +1783,7 @@ export class GachaUi {
     if (action === 'mail-send' && button.dataset.nickname) { await this.sendMail(button.dataset.nickname); return }
     if (action === 'user-list') { this.renderUsers(); return }
     if (action === 'user-view' && button.dataset.nickname) { this.userTab = 'char'; this.renderUserDetail(button.dataset.nickname); return }
+    if (action === 'close' && this.screen==='result' && this.legendaryTicketResult) { this.legendaryTicketResult=false; this.show('storage'); return }
     if (action === 'close') { const reopen=this.screen==='result'; const kind=this.resultKind; this.show('title'); if(reopen){this.setPullMode(kind==='deco'?'deco':'char');const popup=this.root.querySelector<HTMLElement>('.pull-popup');if(popup)popup.hidden=false} return }
     if (action === 'result-collection') { this.show(this.resultKind === 'deco' ? 'decos' : 'collection'); return }
     if (action === 'retry') { this.actions.retry(); return }
@@ -1814,6 +1824,7 @@ export class GachaUi {
         return
       } finally { this.busy = false }
       this.audio.play('pickup')
+      this.legendaryTicketResult = false
       this.results = result.map(item => this.characterReveal(item))
       this.resultKind = 'char'
       this.revealing = true
@@ -1841,6 +1852,7 @@ export class GachaUi {
         return
       } finally { this.busy = false }
       this.audio.play('pickup')
+      this.legendaryTicketResult = false
       this.results = result.map(item => this.decoReveal(item))
       this.resultKind = 'deco'
       const duration = this.spinMachine('#f2b6c6')
@@ -3086,9 +3098,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     dialog.className='pull-rates-dialog'
     const tierOrder=['transcendent','legendary','super','rare','mermaid','normal'] as const
     const tierNames:Record<string,string>={transcendent:'초월',legendary:'레전더리',super:'유니크',rare:'에픽',mermaid:'레어',normal:'노멀'}
-    const bannerCharacters = this.christmasPull ? CHARACTERS.map(c=>({...c,probability: ({christmas_chiikawa:0.04,christmas_hachiware:0.04,christmas_usagi:0.04,christmas_tree_usagi:0.04,pajama_chiikawa:4.70,siren_curry:0,kurimanju_bean:0,rakko_limited:0,beetle_berserk:0,usagi_orange:0} as Record<string,number>)[c.id] ?? c.probability})) : CHARACTERS
+    const bannerCharacters = this.christmasPull ? CHARACTERS.map(c=>({...c,probability: christmasRates[c.id] ?? 0})) : CHARACTERS
     const gradeSummary=deco?'':`<div class="pull-rates-summary"><strong>전체 등급 뽑기 확률</strong><div class="pull-rates-grade-grid">${tierOrder.map(tier=>{const chance=bannerCharacters.filter(c=>c.tier===tier&&c.probability>0).reduce((sum,c)=>sum+c.probability,0);return `<span class="pull-grade-total pull-grade-${tier}"><b>${tierNames[tier]}</b> ${chance.toFixed(2)}%</span>`}).join('')}</div></div>`
-    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):bannerCharacters.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="eager" style="display:block!important;visibility:visible!important;opacity:1!important;width:52px!important;height:52px!important;object-fit:contain!important;flex:0 0 52px!important" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(2)}%</b></div>`).join('')}</div>${gradeSummary}<footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
+    dialog.innerHTML=`<div class="pull-rates-card" role="dialog" aria-modal="true" aria-label="뽑기 확률"><header><strong>${deco?'데코':'캐릭터'} 뽑기 확률</strong><button type="button" data-action="close-pull-rates" aria-label="확률창 닫기">×</button></header><div class="pull-rates-list">${deco?DECOS.map(d=>`<div class="pull-rate-row"><img src="${DECO_IMAGE_URLS[d.id]}" alt="" loading="lazy"/><span>${d.name}</span><b>${DECO_PROBABILITY.toFixed(4)}%</b></div>`).join(''):bannerCharacters.filter(c=>c.probability>0).sort((a,b)=>{const rank:Record<string,number>={transcendent:6,legendary:5,super:4,rare:3,mermaid:2,normal:1};return (rank[b.tier]||0)-(rank[a.tier]||0)||b.probability-a.probability}).map(c=>`<div class="pull-rate-row pull-rate-${c.tier}"><img src="${CHARACTER_IMAGE_URLS[c.id]}" alt="" loading="eager" style="display:block!important;visibility:visible!important;opacity:1!important;width:52px!important;height:52px!important;object-fit:contain!important;flex:0 0 52px!important" onerror="this.src='/assets/chars/chiikawa_tab_icon.png'"/><span>${fullName(c)}<small>${tierTag(c)}</small></span><b>${c.probability.toFixed(c.probability<0.1?3:2)}%</b></div>`).join('')}</div>${gradeSummary}<footer><button type="button" data-action="close-pull-rates">닫기</button></footer></div>`
     document.body.append(dialog)
     dialog.querySelectorAll<HTMLButtonElement>('[data-action="close-pull-rates"]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();dialog.remove()}))
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.remove()});dialog.querySelector<HTMLElement>('.pull-rates-list')?.addEventListener('touchmove',event=>event.stopPropagation(),{passive:true})
@@ -3164,7 +3176,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   private characterReveal(result: PullResult): RevealItem {
     const character = characterById(result.id)
-    return { image: CHARACTER_IMAGE_URLS[character.id], name: character.name, variant: character.variant, rare: character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary', grade: tierTag(character), chance: this.christmasPull ? (({christmas_chiikawa:0.04,christmas_hachiware:0.04,christmas_usagi:0.04,christmas_tree_usagi:0.04,pajama_chiikawa:4.70,siren_curry:0,kurimanju_bean:0,rakko_limited:0,beetle_berserk:0,usagi_orange:0} as Record<string,number>)[character.id] ?? character.probability) : character.probability, color: character.color, accent: character.accent,
+    return { image: CHARACTER_IMAGE_URLS[character.id], name: character.name, variant: character.variant, rare: character.tier === 'rare' || character.tier === 'super' || character.tier === 'legendary', grade: tierTag(character), chance: this.christmasPull ? (christmasRates[character.id] ?? 0) : character.probability, color: character.color, accent: character.accent,
       tag: result.duplicate ? '또 만났어요!' : `새 친구 등록 · +${result.bonus} 코인`, sub: result.duplicate ? '중복 · 이미 도감에 있어요' : `새 친구 · 도감 등록 +${result.bonus} 코인` }
   }
 
@@ -3726,6 +3738,78 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
             }
           }
         }).catch(()=>{if(this.storageTab==='inventory'&&inventoryAtRequest.isConnected){const note=document.createElement('small');note.className='tradeable-storage-item';note.textContent='거래 가능 수량을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.';inventoryAtRequest.prepend(note)}})
+      // Legendary draw tickets are individually tracked so a purchased ticket cannot be resold.
+      void fetch('/api/legend-tickets',{credentials:'include',cache:'no-store'})
+        .then(async r=>{if(!r.ok)throw Error('legend_tickets');return r.json() as Promise<{tickets:{id:number;trades:number}[]}>})
+        .then(data=>{
+          if(this.storageTab!=='inventory'||!grid.isConnected)return
+          const tickets=Array.isArray(data.tickets)?data.tickets:[]
+          if(!tickets.length)return
+          const card=document.createElement('article');card.className='storage-item legend-ticket-storage-item';card.setAttribute('role','listitem')
+          const image=document.createElement('img');image.src='/assets/items/legendary_draw_ticket.png';image.alt='레전더리 뽑기 티켓';image.style.cssText='width:60px;height:60px;object-fit:contain'
+          const title=document.createElement('b');title.textContent='레전더리 뽑기 티켓'
+          const detail=document.createElement('small');detail.textContent=`보유 ${tickets.length}개 · 거래 가능 ${tickets.filter(t=>t.trades===0).length}개`
+          const open=document.createElement('button');open.type='button';open.textContent='1개 개봉';open.className='storage-sell-btn'
+          open.addEventListener('click',async()=>{
+            if(open.disabled)return
+            const ticket=tickets[0];if(!ticket)return
+            const dialog=document.createElement('dialog');dialog.style.cssText='border:0;border-radius:18px;padding:20px;max-width:min(330px,90vw);background:#fff9eb;color:#674630;box-shadow:0 10px 35px #0005;z-index:99999'
+            dialog.innerHTML='<b>레전더리 뽑기 티켓</b><p>티켓 1개를 개봉하시겠습니까?</p><button data-no>취소</button> <button data-yes>개봉</button>'
+            document.body.appendChild(dialog);dialog.querySelector('[data-no]')?.addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal()
+            dialog.querySelector('[data-yes]')?.addEventListener('click',async()=>{
+              const yes=dialog.querySelector<HTMLButtonElement>('[data-yes]');if(yes)yes.disabled=true
+              try{const r=await fetch('/api/legend-tickets/open',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticketId:ticket.id})});const result=await r.json();if(!r.ok)throw Error(result.error||'개봉 실패');
+                // The server commits the reward first; sync the in-memory save before any UI refresh.
+                if(Array.isArray(result.owned))this.store.data.owned=result.owned
+                if(result.dupes&&typeof result.dupes==='object')this.store.dupes=result.dupes
+                dialog.close()
+                this.renderStorage()
+                this.renderWallet()
+                const reward=characterById(result.characterId as CharacterId)
+                if(!reward){this.toast('티켓 보상이 지급되었습니다. 도감에서 확인해 주세요.');return}
+                const reveal=this.characterReveal({id:reward.id,duplicate:!!result.duplicate,bonus:0} as PullResult)
+                reveal.tag=result.duplicate?'중복 캐릭터 +1':'레전더리 캐릭터 획득!'
+                reveal.sub=result.duplicate?'중복 보유 수량 +1':'새로운 레전더리 친구 획득'
+                this.legendaryTicketResult=true
+                this.results=[reveal]
+                this.resultKind='char'
+                this.renderResults()
+                this.revealing=true
+                // The normal capsule machine is only mounted on the draw screen.
+                // Legendary tickets are opened from inventory, so show a dedicated
+                // full-screen animation before the existing character reveal.
+                const sequence=++this.revealSequence
+                const animation=document.createElement('div')
+                animation.className='legend-ticket-opening-overlay'
+                animation.setAttribute('role','status')
+                animation.setAttribute('aria-label','레전더리 티켓 개봉 연출')
+                animation.innerHTML=`<style>
+                  .legend-ticket-opening-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#5a357d 0%,#211333 65%,#100d20 100%);overflow:hidden;pointer-events:auto;animation:legendOpenFadeIn .25s ease-out}
+                  .legend-ticket-opening-overlay .legend-open-rays{position:absolute;width:120vmax;height:120vmax;background:repeating-conic-gradient(from 0deg,#ffe5a829 0deg 12deg,transparent 12deg 30deg);animation:legendOpenRotate 4s linear infinite}
+                  .legend-ticket-opening-overlay .legend-open-ticket{position:relative;width:min(56vw,230px);max-height:50vh;object-fit:contain;filter:drop-shadow(0 0 28px #ffdf79);animation:legendOpenTicket 2.1s ease-in forwards}
+                  .legend-ticket-opening-overlay .legend-open-label{position:absolute;bottom:14%;font-weight:900;font-size:clamp(20px,5vw,36px);color:#fff3c0;text-shadow:0 3px 16px #100d20;animation:legendOpenLabel 1.9s ease-in-out forwards}
+                  .legend-ticket-opening-overlay .legend-open-flash{position:absolute;inset:0;background:#fff8d8;opacity:0;animation:legendOpenFlash 2.1s ease-out forwards}
+                  @keyframes legendOpenFadeIn{from{opacity:0}to{opacity:1}}
+                  @keyframes legendOpenRotate{to{transform:rotate(360deg)}}
+                  @keyframes legendOpenTicket{0%{transform:scale(.55) rotate(-12deg);opacity:0}25%{transform:scale(1) rotate(8deg);opacity:1}45%{transform:scale(1.1) rotate(-8deg)}65%{transform:scale(1.18) rotate(6deg)}85%{transform:scale(1.4) rotate(0)}100%{transform:scale(2.4);opacity:0}}
+                  @keyframes legendOpenLabel{0%,15%{opacity:0;transform:translateY(16px)}35%,75%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+                  @keyframes legendOpenFlash{0%,82%{opacity:0}94%{opacity:.95}100%{opacity:0}}
+                </style><div class="legend-open-rays"></div><img class="legend-open-ticket" src="/assets/items/legendary_draw_ticket.png" alt="레전더리 뽑기 티켓"/><div class="legend-open-label">레전더리 티켓 개봉!</div><div class="legend-open-flash"></div>`
+                document.body.appendChild(animation)
+                window.setTimeout(()=>{
+                  animation.remove()
+                  if(sequence!==this.revealSequence)return
+                  // Reuse the standard character-pull pop animation before showing results.
+                  // The pop layer lives at the gacha root and can display over inventory.
+                  this.renderResults()
+                  this.revealing=false
+                  this.renderWallet()
+                  void this.playPops([reveal],sequence)
+                },2250)
+              }catch(error){dialog.querySelector('p')!.textContent='개봉 실패: '+(error instanceof Error?error.message:'오류');if(yes)yes.disabled=false}
+            },{once:true})
+          });card.append(image,title,detail,open);grid.prepend(card);grid.querySelector('.misc-empty')?.remove()
+        }).catch(()=>{})
       // All pet box grades are separate 기타 items. Never render zero-quantity boxes.
       const inventoryGrid = grid
       void fetch('/api/pets', { credentials: 'include', cache: 'no-store' })
@@ -4281,7 +4365,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const overlay = this.root.querySelector<HTMLElement>('.battle-drop-overlay')
     const content = overlay?.querySelector<HTMLElement>('.battle-drop-content')
     if (!overlay || !content) return
-    const stage = Math.max(1, Math.min(200, this.store.battle?.stage ?? 1))
+    const stage = Math.max(1, Math.min(500, this.store.battle?.stage ?? 1))
     const zone = Math.floor((stage - 1) / 10) + 1
     const sub = ((stage - 1) % 10) + 1
     const diamonds = [1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10][zone - 1]
@@ -4294,6 +4378,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       + item('강화파편', `${fragments}개 지급`, '100%')
       + item('겅이복권', '1장 획득', '0.65%')
       + item('한계돌파석', '1개 획득', '0.01%')
+      + item('레전더리 뽑기 티켓', '1장 획득 · 일반 레전더리 랜덤', special ? '50% (운영/테스트)' : '0.01%')
       + (boxGrade ? item(`펫박스 (${boxGrade})`, '1개 획득', special ? '50% (운영/테스트)' : '0.3%') : item('펫박스', '5-1 스테이지부터 등장', '0%'))
       + '<p class="battle-drop-note">각 보상은 스테이지 클리어 시 개별 판정됩니다. 펫박스 등급은 스테이지 구간에 따라 달라집니다.</p>'
     if (overlay.parentElement !== this.root) this.root.appendChild(overlay)
@@ -4568,9 +4653,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (!list) return
     const subtitle = this.root.querySelector<HTMLElement>('.result-subtitle')
     const deco = this.resultKind === 'deco'
-    if (subtitle) subtitle.textContent = this.results.length > 1 ? `${this.results.length}개 캡슐에서 나온 ${deco ? '데코' : '친구'}들` : deco ? '캡슐에서 나온 데코예요.' : '캡슐에서 만난 친구예요.'
+    if (subtitle) subtitle.textContent = this.legendaryTicketResult ? '레전더리 티켓에서 얻은 친구예요.' : this.results.length > 1 ? `${this.results.length}개 캡슐에서 나온 ${deco ? '데코' : '친구'}들` : deco ? '캡슐에서 나온 데코예요.' : '캡슐에서 만난 친구예요.'
     const title = this.root.querySelector<HTMLElement>('#result-title')
-    if (title) title.textContent = deco ? '데코가 나왔어요' : '새로운 만남이에요'
+    if (title) title.textContent = this.legendaryTicketResult ? '티켓에서 얻은 친구예요' : deco ? '데코가 나왔어요' : '새로운 만남이에요'
+    const closeButton = this.root.querySelector<HTMLButtonElement>('.gacha-modal[data-screen="result"] button[data-action="close"]')
+    if (closeButton) closeButton.textContent = this.legendaryTicketResult ? '확인' : '계속 뽑기'
     const toCollection = this.root.querySelector<HTMLElement>('.result-collection')
     if (toCollection) toCollection.textContent = deco ? '데코 도감에서 확인하기' : '도감에서 확인하기'
     list.innerHTML = this.results.map((item, index) => {
