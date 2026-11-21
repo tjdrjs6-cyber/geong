@@ -1,1 +1,1 @@
-PvP weekly rewards UI patch. Apply on top of geong_staging_pvp_daily_red_dot_patch.zip. Modified: src/ui/gachaUi.ts, src/styles/gacha.css. No server changes.
+하위 메뉴의 빨간점이 표시되면 상위 메뉴에도 빨간점이 표시되도록 공통 스타일을 추가했습니다. 기존 상위 빨간점과 중복 표시하지 않습니다.

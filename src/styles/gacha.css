@@ -7596,3 +7596,23 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-screen .pvp-reward-rank p{font-size:13px;line-height:1.8;margin:5px 0 0;color:#775e6f}
 .pvp-screen .pvp-rewards-done{display:block;width:100%;margin-top:16px}
 @media(max-width:520px){.pvp-screen .weed-header{grid-template-columns:auto 1fr auto;gap:5px}.pvp-screen .weed-header .pvp-rewards-button{padding:7px 10px;font-size:12px}.pvp-screen .pvp-rewards-panel{padding:16px}}
+
+/* Parent menu notification: any visible child notification also marks its parent.
+   Existing parent dots take precedence to avoid two red dots on one button. */
+#ui .gacha-nav :is(.activity-menu,.myroom-menu,.market-menu,.community-menu):has(> :is(.activity-options,.myroom-options,.market-options,.community-options) .nav-button > i:not([hidden])) > :is(.nav-activity,.nav-myroom,.nav-market,.nav-community):not(:has(> i:not([hidden])))::after {
+  content:"" !important;
+  position:absolute !important;
+  top:3px !important;
+  right:3px !important;
+  left:auto !important;
+  bottom:auto !important;
+  display:block !important;
+  width:9px !important;
+  height:9px !important;
+  border-radius:50% !important;
+  border:1.5px solid #fff !important;
+  background:#ee384b !important;
+  box-shadow:0 0 0 1px rgba(175,25,45,.14) !important;
+  z-index:16 !important;
+  pointer-events:none !important;
+}
