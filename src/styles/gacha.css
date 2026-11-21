@@ -7536,3 +7536,16 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-screen .pvp-battle .pvp-combat-log{width:min(900px,100%);margin:0 auto;min-height:55px;text-align:center}
 .pvp-screen .pvp-battle>.pvp-primary{align-self:center}
 @media(max-width:550px){.pvp-screen .pvp-characters{grid-auto-rows:116px;max-height:244px;gap:4px}.pvp-screen .pvp-char img{height:67px}.pvp-screen .pvp-char small{font-size:8px}.pvp-screen .pvp-team-slot{min-height:84px;padding:3px}.pvp-screen .pvp-team-slot img{height:55px}.pvp-screen .pvp-battle-characters{grid-template-columns:minmax(0,1fr) 35px minmax(0,1fr);gap:3px;padding:7px;min-height:250px}.pvp-screen .pvp-fighters{gap:4px}.pvp-screen .pvp-fighter{min-height:85px}.pvp-screen .pvp-fighter img{height:72px}.pvp-screen .pvp-fighter span{font-size:8px}.pvp-screen .pvp-battle-head{gap:4px}.pvp-screen .pvp-speed,.pvp-screen .pvp-exit{padding:7px;font-size:11px}}
+
+/* PvP team strength and challenge cards: shared desktop/mobile layout */
+.pvp-screen .pvp-power-summary{background:#fff8fc;border:1px solid #ecd5e2;border-radius:14px;padding:12px;margin:9px 0 12px;font-family:inherit;color:#704d67}
+.pvp-screen .pvp-power-total{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;font-weight:800}
+.pvp-screen .pvp-power-total strong{font-size:19px;color:#b55288;font-variant-numeric:tabular-nums}
+.pvp-screen .pvp-power-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;margin-top:11px;font-size:11px;font-weight:700}
+.pvp-screen .pvp-power-breakdown span{background:#fff;border-radius:7px;padding:6px 7px}
+.pvp-screen .pvp-power-hint{display:block;margin-top:6px;font-size:10px;line-height:1.6}
+.pvp-screen .pvp-opponents,.pvp-screen .pvp-opponent,.pvp-screen .pvp-opponent *{font-family:inherit}
+.pvp-screen .pvp-opponent{padding:11px 9px;background:#fff9fc;border:1px solid #f0e0e9;border-radius:11px;margin:7px 0;font-size:13px}
+.pvp-screen .pvp-opponent span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pvp-screen .pvp-opponent small{font-size:11px;font-weight:700;color:#986f89}
+.pvp-screen .pvp-opponent button{flex-shrink:0;font-weight:800}

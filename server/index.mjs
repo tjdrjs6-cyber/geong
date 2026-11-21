@@ -1460,24 +1460,34 @@ async function pvpEnsure(id,conn=pool) {
 async function pvpOwned(id,conn=pool){
   const [r]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[id]);return r[0]?normalizeOwned(parseJson(r[0].owned)):[]
 }
+async function pvpPowerDetail(id,team,conn=pool){
+  const levels=await getLimitBreak(id,conn)
+  const character=team.reduce((sum,char)=>sum+boostedCharacterPower(char,levels),0)
+  const [forge]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[id])
+  const weapon=forge.length?forgeBonus(Number(forge[0].level)):0
+  const accessory=accessoryPower(await getAccessory(id,conn))
+  const achievement=await achievementPower(id,conn)
+  const researchLv=await researchLevel(id,conn)
+  const beforeResearch=character+weapon+accessory+achievement
+  const researched=researchPower(beforeResearch,researchLv)
+  const research=researched-beforeResearch
+  const [pet]=await conn.query('SELECT p.grade FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id WHERE e.account_id=?',[id])
+  const petRate=pet.length?({normal:.10,rare:.15,epic:.20,unique:.25}[pet[0].grade]||0):0
+  const petBonus=Math.floor(researched*petRate)
+  return {character,weapon,accessory,achievement,research,researchPercent:Number((researchLv*.3).toFixed(1)),pet:petBonus,petPercent:Math.round(petRate*100),total:researched+petBonus}
+}
 async function pvpView(id){
   await pvpEnsure(id)
   const clk=pvpClock()
   const [rows]=await pool.query('SELECT * FROM gm_pvp WHERE account_id=?',[id]);const me=rows[0]
+  const team=pvpTeam(me.team)
   const [ranking]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.wins,p.losses FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.season=? AND JSON_LENGTH(p.team)=5 ORDER BY p.score DESC,p.wins DESC,p.updated_ms ASC,p.account_id ASC LIMIT 50`,[clk.season])
-  const [opponents]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.team FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.account_id<>? AND JSON_LENGTH(p.team)=5 ORDER BY ABS(p.score-?) ASC,p.updated_ms DESC LIMIT 15`,[id,me.season===clk.season?me.score:1000])
+  const [opponents]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.team FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.account_id<>? AND JSON_LENGTH(p.team)=5 ORDER BY RAND() LIMIT 5`,[id])
+  const opponentsWithPower=await Promise.all(opponents.map(async o=>({...o,team:pvpTeam(o.team),power:(await pvpPowerDetail(o.account_id,pvpTeam(o.team))).total})))
   const [history]=await pool.query('SELECT defender,won,attacker_hp,defender_hp,created_ms FROM gm_pvp_matches WHERE attacker=? ORDER BY id DESC LIMIT 20',[id])
-  return {team:pvpTeam(me.team),owned:await pvpOwned(id),score:me.season===clk.season?me.score:1000,wins:me.season===clk.season?me.wins:0,losses:me.season===clk.season?me.losses:0,used:me.day_key===clk.dayKey?me.daily_used:0,seasonEnd:clk.seasonEnd,ranking,opponents:opponents.slice(0,3).map(o=>({...o,team:pvpTeam(o.team)})),history}
+  return {team,owned:await pvpOwned(id),power:team.length===5?await pvpPowerDetail(id,team):null,score:me.season===clk.season?me.score:1000,wins:me.season===clk.season?me.wins:0,losses:me.season===clk.season?me.losses:0,used:me.day_key===clk.dayKey?me.daily_used:0,seasonEnd:clk.seasonEnd,ranking,opponents:opponentsWithPower,history}
 }
-async function pvpStrength(id,team,conn=pool){
-  const levels=await getLimitBreak(id,conn)
-  const [forge]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[id])
-  const forgePower=forge.length?forgeBonus(Number(forge[0].level)):0
-  const [pet]=await conn.query('SELECT p.grade FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id WHERE e.account_id=?',[id])
-  const petMult=pet.length?({normal:1.10,rare:1.15,epic:1.20,unique:1.25}[pet[0].grade]||1):1
-  const base=team.reduce((sum,char)=>sum+boostedCharacterPower(char,levels),0)+forgePower
-  return Math.max(100,Math.round(base*petMult))
-}
+async function pvpStrength(id,team,conn=pool){return (await pvpPowerDetail(id,team,conn)).total}
 function pvpSimulate(a,b){
   const hp=[100000,100000],power=[a,b],events=[]
   const next=Array.from({length:10},()=>1+randomInt(1000)/1000)
@@ -1550,10 +1560,11 @@ const routes = {
       const theirTeam=pvpTeam(others[0].team)
       const myPower=await pvpStrength(a.id,myTeam,conn),theirPower=await pvpStrength(opponentId,theirTeam,conn)
       const sim=pvpSimulate(myPower,theirPower),seasonScore=me.season===clock.season?Number(me.score):1000
-      const score=Math.max(0,seasonScore+(sim.won?20:-10))
+      const scoreDelta=sim.won?(theirPower>myPower?30:10):-10
+      const score=Math.max(0,seasonScore+scoreDelta)
       await conn.query('UPDATE gm_pvp SET score=?,season=?,day_key=?,daily_used=?,wins=?,losses=?,updated_ms=? WHERE account_id=?',[score,clock.season,clock.dayKey,used+1,(me.season===clock.season?Number(me.wins):0)+(sim.won?1:0),(me.season===clock.season?Number(me.losses):0)+(sim.won?0:1),Date.now(),a.id])
       await conn.query('INSERT INTO gm_pvp_matches(season,attacker,defender,won,attacker_hp,defender_hp,events,created_ms) VALUES(?,?,?,?,?,?,?,?)',[clock.season,a.id,opponentId,sim.won?1:0,...sim.hp,JSON.stringify(sim.events),Date.now()])
-      return {...sim,score,used:used+1,myTeam,theirTeam,myPower,theirPower}
+      return {...sim,score,scoreDelta,used:used+1,myTeam,theirTeam,myPower,theirPower}
     })
     if(result.error)return send(res,409,result)
     send(res,200,result)

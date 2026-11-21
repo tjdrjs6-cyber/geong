@@ -659,12 +659,12 @@ export class GachaUi {
       <section class="weed-screen expedition-screen pvp-screen" data-screen="pvp" aria-hidden="true">
         <header class="weed-header"><button class="weed-back" data-action="close">← 돌아가기</button><b>PvP 아레나</b><small>일요일 20시 정산</small></header>
         <div class="pvp-main"><div class="pvp-top"><strong>WEEKLY ARENA</strong><span class="pvp-summary">정보를 불러오는 중...</span></div>
-          <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
+          <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-power-summary"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
           <div class="pvp-section"><h3>오늘의 도전 상대</h3><div class="pvp-opponents"></div></div>
           <div class="pvp-section pvp-battle" hidden><div class="pvp-battle-head"><button data-action="pvp-battle-exit" class="pvp-exit">← 아레나</button><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><button data-action="pvp-speed" class="pvp-speed">1배속</button></div><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"><div class="pvp-fighters pvp-fighters-self"></div><div class="pvp-versus">VS</div><div class="pvp-fighters pvp-fighters-enemy"></div></div><div class="pvp-combat-log"></div><button class="pvp-primary" data-action="pvp-skip">전투 연출 건너뛰기</button></div>
           <div class="pvp-section"><h3>주간 랭킹 TOP 50</h3><div class="pvp-ranking"></div></div>
           <div class="pvp-section"><h3>최근 전투</h3><div class="pvp-history"></div></div>
-          <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 승리 +20점 / 패배 -10점<br/>일요일 오후 8시 정산: 1위 레전더리 뽑기권 1개 + 한계돌파석 1개 + 3,000다이아 / 2위 한계돌파석 1개 + 3,000다이아 / 3위 3,000다이아</p>
+          <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 강한 상대 승리 +30점 / 낮거나 같은 상대 승리 +10점 / 패배 -10점<br/>일요일 오후 8시 정산: 1위 레전더리 뽑기권 1개 + 한계돌파석 1개 + 3,000다이아 / 2위 한계돌파석 1개 + 3,000다이아 / 3위 3,000다이아</p>
         </div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -1516,9 +1516,16 @@ export class GachaUi {
     set('.pvp-summary',`내 점수 <b>${state.score}</b> · ${state.wins}승 ${state.losses}패 · 남은 도전 <b>${5-state.used}/5</b>`)
     const portrait=(id:string)=>{const url=CHARACTER_IMAGE_URLS[id as CharacterId];return url?`<img src="${esc(url)}" alt="" loading="lazy"/>`:'<span>?</span>'}
     set('.pvp-team',Array.from({length:5},(_,i)=>{const id=this.pvpTeam[i];return `<div class="pvp-team-slot ${id?'filled':''}">${id?`${portrait(id)}<span>${esc(this.pvpName(id))}</span>`:`<span class="pvp-empty">${i+1}<small>선택</small></span>`}</div>`}).join(''))
+    const saved=state.team as string[]
+    const chosen=this.pvpTeam
+    const teamUnchanged=chosen.length===5&&chosen.every((id,i)=>id===saved[i])
+    const power=teamUnchanged?state.power:null
+    const fmt=(n:number)=>Number(n||0).toLocaleString('ko-KR')
+    const detail=power?`<div class="pvp-power-total">총 전투력 <strong>${fmt(power.total)}</strong></div><div class="pvp-power-breakdown"><span>캐릭터 ${fmt(power.character)}</span><span>무기 강화 +${fmt(power.weapon)}</span><span>액세서리 +${fmt(power.accessory)}</span><span>수집 업적 +${fmt(power.achievement)}</span><span>연구소 +${fmt(power.research)} (${power.researchPercent}%)</span><span>펫 효과 +${fmt(power.pet)} (${power.petPercent}%)</span></div>`:`<div class="pvp-power-total">편성 예상 캐릭터 전투력 <strong>${fmt(chosen.reduce((n,id)=>n+this.characterCombatPower(id as CharacterId),0))}</strong></div><small class="pvp-power-hint">팀 저장 시 무기·액세서리·업적·연구·펫 효과를 포함한 서버 기준 총 전투력이 표시됩니다.</small>`
+    set('.pvp-power-summary',detail)
     const sorted=[...(state.owned as string[])].sort((a,b)=>this.characterCombatPower(b as CharacterId)-this.characterCombatPower(a as CharacterId))
     set('.pvp-characters',sorted.map(id=>`<button data-action="pvp-select" data-id="${esc(id)}" class="pvp-char ${this.pvpTeam.includes(id)?'selected':''}" aria-pressed="${this.pvpTeam.includes(id)}">${portrait(id)}<b>${esc(this.pvpName(id))}</b><small>전투력 ${this.characterCombatPower(id as CharacterId).toLocaleString('ko-KR')}</small>${this.pvpTeam.includes(id)?'<em>선택됨</em>':''}</button>`).join(''))
-    set('.pvp-opponents',state.opponents.length?state.opponents.map((o:any)=>`<div class="pvp-opponent"><span><b>${esc(o.nickname||o.username)}</b> · ${o.score}점</span><button data-action="pvp-fight" data-id="${Number(o.account_id)}" ${state.used>=5||this.pvpTeam.length!==5?'disabled':''}>도전</button></div>`).join(''):'아직 편성된 상대가 없습니다. 다른 유저가 팀을 저장하면 표시됩니다.')
+    set('.pvp-opponents',state.opponents.length?state.opponents.map((o:any)=>`<div class="pvp-opponent"><span><b>${esc(o.nickname||o.username)}</b><small>${Number(o.score).toLocaleString()}점 · 총 전투력 ${Number(o.power||0).toLocaleString('ko-KR')}</small></span><button data-action="pvp-fight" data-id="${Number(o.account_id)}" ${state.used>=5||this.pvpTeam.length!==5?'disabled':''}>도전</button></div>`).join(''):'아직 편성된 상대가 없습니다. 다른 유저가 팀을 저장하면 표시됩니다.')
     set('.pvp-ranking',state.ranking.length?state.ranking.map((r:any,i:number)=>`<div class="pvp-rank"><b>${i+1}위</b><span>${esc(r.nickname||r.username)}</span><strong>${r.score}점</strong></div>`).join(''):'아직 이번 주 참가자가 없습니다.')
     set('.pvp-history',state.history.length?state.history.map((m:any)=>`<div class="pvp-rank"><b>${m.won?'승리':'패배'}</b><span>${new Date(Number(m.created_ms)).toLocaleString('ko-KR')}</span><strong>${Number(m.attacker_hp).toLocaleString()} : ${Number(m.defender_hp).toLocaleString()}</strong></div>`).join(''):'아직 전투 기록이 없습니다.')
   }
@@ -1565,7 +1572,7 @@ export class GachaUi {
       this.pvpAnimation=window.setInterval(()=>{
         if(this.screen!=='pvp'||battle.hidden){window.clearInterval(this.pvpAnimation);this.pvpBusy=false;return}
         const now=Date.now();elapsed+=(now-previous)/1000*this.pvpSpeed;previous=now;update()
-        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.toast(result.won?'PvP 승리! +20점':'PvP 패배 · -10점');battle.hidden=true;void this.openPvp()}
+        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.toast(result.won?`PvP 승리! +${result.scoreDelta}점`:'PvP 패배 · -10점');battle.hidden=true;void this.openPvp()}
       },70)
     }catch(e){this.pvpBusy=false;this.toast(e instanceof Error?e.message:'PvP 전투 실패')}
   }
