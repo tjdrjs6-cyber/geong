@@ -41,7 +41,7 @@ function installGameNumberFormatting(): void {
 
 const BATTLE_DIAMONDS=[1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10];
 const BATTLE_FRAGMENTS=[1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(49,Math.floor((Math.max(1,stage)-1)/10));return zone<20?[BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]:[10+(zone-19),20+(zone-19)]};
+const stageRewards=(stage:number):[number,number]=>{const zone=Math.min(49,Math.floor((Math.max(1,stage)-1)/10));return zone<20?[BATTLE_DIAMONDS[zone],BATTLE_FRAGMENTS[zone]]:[10,20]};
 const WEAPON_ACCESSORIES = [
   {id:'chiikawa_keyring',name:'치이카와 키링',image:'/assets/accessories/chiikawa_keyring.png?v=040'},
   {id:'hachiware_keyring',name:'하치와레 키링',image:'/assets/accessories/hachiware_keyring.png?v=040'},

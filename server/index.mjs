@@ -776,7 +776,7 @@ const BATTLE_REWARD_FRAGMENTS = [1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 
 function stageReward(stage) {
   const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
   const zone = Math.floor(n / 10)
-  return { diamonds: zone < 20 ? BATTLE_REWARD_DIAMONDS[zone] : 10 + (zone - 19), fragments: zone < 20 ? BATTLE_REWARD_FRAGMENTS[zone] : 20 + (zone - 19), coins: 0 }
+  return { diamonds: zone < 20 ? BATTLE_REWARD_DIAMONDS[zone] : 10, fragments: zone < 20 ? BATTLE_REWARD_FRAGMENTS[zone] : 20, coins: 0 }
 }
 
 function battleRow(row) {
