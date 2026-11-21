@@ -169,6 +169,7 @@ export class GachaUi {
   private pvpTeam: string[] = []
   private pvpAnimation = 0
   private pvpBusy = false
+  private pvpSpeed = 1
   private expedition: ExpeditionState | null = null
   private expeditionPrefetch: Promise<ExpeditionState> | null = null
   private expeditionServer = 1
@@ -660,7 +661,7 @@ export class GachaUi {
         <div class="pvp-main"><div class="pvp-top"><strong>WEEKLY ARENA</strong><span class="pvp-summary">정보를 불러오는 중...</span></div>
           <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
           <div class="pvp-section"><h3>오늘의 도전 상대</h3><div class="pvp-opponents"></div></div>
-          <div class="pvp-section pvp-battle" hidden><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"></div><div class="pvp-combat-log"></div><button class="pvp-primary" data-action="pvp-skip">전투 연출 건너뛰기</button></div>
+          <div class="pvp-section pvp-battle" hidden><div class="pvp-battle-head"><button data-action="pvp-battle-exit" class="pvp-exit">← 아레나</button><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><button data-action="pvp-speed" class="pvp-speed">1배속</button></div><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"><div class="pvp-fighters pvp-fighters-self"></div><div class="pvp-versus">VS</div><div class="pvp-fighters pvp-fighters-enemy"></div></div><div class="pvp-combat-log"></div><button class="pvp-primary" data-action="pvp-skip">전투 연출 건너뛰기</button></div>
           <div class="pvp-section"><h3>주간 랭킹 TOP 50</h3><div class="pvp-ranking"></div></div>
           <div class="pvp-section"><h3>최근 전투</h3><div class="pvp-history"></div></div>
           <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 승리 +20점 / 패배 -10점<br/>일요일 오후 8시 정산: 1위 레전더리 뽑기권 1개 + 한계돌파석 1개 + 3,000다이아 / 2위 한계돌파석 1개 + 3,000다이아 / 3위 3,000다이아</p>
@@ -1513,8 +1514,10 @@ export class GachaUi {
     const esc=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as Record<string,string>)[c]||c)
     const set=(selector:string,html:string)=>{const el=root.querySelector<HTMLElement>(selector);if(el)el.innerHTML=html}
     set('.pvp-summary',`내 점수 <b>${state.score}</b> · ${state.wins}승 ${state.losses}패 · 남은 도전 <b>${5-state.used}/5</b>`)
-    set('.pvp-team',Array.from({length:5},(_,i)=>`<div class="pvp-team-slot">${this.pvpTeam[i]?esc(this.pvpName(this.pvpTeam[i])):'빈 슬롯'}</div>`).join(''))
-    set('.pvp-characters',(state.owned as string[]).map(id=>`<button data-action="pvp-select" data-id="${esc(id)}" class="pvp-char ${this.pvpTeam.includes(id)?'selected':''}">${esc(this.pvpName(id))}</button>`).join(''))
+    const portrait=(id:string)=>{const url=CHARACTER_IMAGE_URLS[id as CharacterId];return url?`<img src="${esc(url)}" alt="" loading="lazy"/>`:'<span>?</span>'}
+    set('.pvp-team',Array.from({length:5},(_,i)=>{const id=this.pvpTeam[i];return `<div class="pvp-team-slot ${id?'filled':''}">${id?`${portrait(id)}<span>${esc(this.pvpName(id))}</span>`:`<span class="pvp-empty">${i+1}<small>선택</small></span>`}</div>`}).join(''))
+    const sorted=[...(state.owned as string[])].sort((a,b)=>this.characterCombatPower(b as CharacterId)-this.characterCombatPower(a as CharacterId))
+    set('.pvp-characters',sorted.map(id=>`<button data-action="pvp-select" data-id="${esc(id)}" class="pvp-char ${this.pvpTeam.includes(id)?'selected':''}" aria-pressed="${this.pvpTeam.includes(id)}">${portrait(id)}<b>${esc(this.pvpName(id))}</b><small>전투력 ${this.characterCombatPower(id as CharacterId).toLocaleString('ko-KR')}</small>${this.pvpTeam.includes(id)?'<em>선택됨</em>':''}</button>`).join(''))
     set('.pvp-opponents',state.opponents.length?state.opponents.map((o:any)=>`<div class="pvp-opponent"><span><b>${esc(o.nickname||o.username)}</b> · ${o.score}점</span><button data-action="pvp-fight" data-id="${Number(o.account_id)}" ${state.used>=5||this.pvpTeam.length!==5?'disabled':''}>도전</button></div>`).join(''):'아직 편성된 상대가 없습니다. 다른 유저가 팀을 저장하면 표시됩니다.')
     set('.pvp-ranking',state.ranking.length?state.ranking.map((r:any,i:number)=>`<div class="pvp-rank"><b>${i+1}위</b><span>${esc(r.nickname||r.username)}</span><strong>${r.score}점</strong></div>`).join(''):'아직 이번 주 참가자가 없습니다.')
     set('.pvp-history',state.history.length?state.history.map((m:any)=>`<div class="pvp-rank"><b>${m.won?'승리':'패배'}</b><span>${new Date(Number(m.created_ms)).toLocaleString('ko-KR')}</span><strong>${Number(m.attacker_hp).toLocaleString()} : ${Number(m.defender_hp).toLocaleString()}</strong></div>`).join(''):'아직 전투 기록이 없습니다.')
@@ -1528,27 +1531,42 @@ export class GachaUi {
     try{
       this.pvpBusy=true
       const result=await this.pvpRequest('/fight',{opponentId})
-      const root=this.root.querySelector<HTMLElement>('.pvp-screen');const battle=root?.querySelector<HTMLElement>('.pvp-battle');if(!root||!battle)return
+      const root=this.root.querySelector<HTMLElement>('.pvp-screen');const battle=root?.querySelector<HTMLElement>('.pvp-battle')
+      if(!root||!battle){this.pvpBusy=false;return}
       battle.hidden=false
+      this.pvpSpeed=1
+      const speed=root.querySelector<HTMLElement>('.pvp-speed');if(speed)speed.textContent='1배속'
+      const portrait=(id:string)=>{const url=CHARACTER_IMAGE_URLS[id as CharacterId];return url?`<img src="${url}" alt=""/>`:''}
+      const fighters=(team:string[],side:number)=>team.map((id,i)=>`<div class="pvp-fighter" data-side="${side}" data-slot="${i}">${portrait(id)}<span>${this.pvpName(id)}</span><i class="pvp-hit-number"></i></div>`).join('')
+      const self=root.querySelector<HTMLElement>('.pvp-fighters-self'),enemy=root.querySelector<HTMLElement>('.pvp-fighters-enemy')
+      if(self)self.innerHTML=fighters(result.myTeam||this.pvpTeam,0)
+      if(enemy)enemy.innerHTML=fighters(result.theirTeam||[],1)
       const events=result.events as Array<{t:number;side:number;slot:number;effect:string;damage:number;hp:number[]}>
       const maxTime=Math.min(60,events.length?events[events.length-1].t:60)
-      const update=(elapsed:number)=>{
-        const visible=events.filter(e=>e.t<=elapsed),last=visible[visible.length-1],hp=last?.hp||[100000,100000]
-        const el=(selector:string)=>root.querySelector<HTMLElement>(selector)
+      let elapsed=0,seen=0,previous=Date.now()
+      const el=(selector:string)=>root.querySelector<HTMLElement>(selector)
+      const update=()=>{
+        while(seen<events.length&&events[seen].t<=elapsed){
+          const e=events[seen++]
+          const fighter=root.querySelector<HTMLElement>(`.pvp-fighter[data-side="${e.side}"][data-slot="${e.slot}"]`)
+          if(fighter){fighter.classList.remove('pvp-attacking');void fighter.offsetWidth;fighter.classList.add('pvp-attacking')}
+          const target=root.querySelector<HTMLElement>(`.pvp-fighters-${e.side===0?'enemy':'self'} .pvp-fighter:nth-child(${(e.slot%5)+1})`)
+          if(target){target.classList.remove('pvp-damaged');void target.offsetWidth;target.classList.add('pvp-damaged');const num=target.querySelector<HTMLElement>('.pvp-hit-number');if(num){num.textContent=e.damage?`-${e.damage.toLocaleString()}`:String(e.effect);num.classList.remove('pvp-float');void num.offsetWidth;num.classList.add('pvp-float')}}
+        }
+        const last=events[Math.max(0,seen-1)],hp=seen?last.hp:[100000,100000]
         if(el('.pvp-hp-self'))el('.pvp-hp-self')!.style.width=`${hp[0]/1000}%`
         if(el('.pvp-hp-enemy'))el('.pvp-hp-enemy')!.style.width=`${hp[1]/1000}%`
         if(el('.pvp-hp-self-label'))el('.pvp-hp-self-label')!.textContent=hp[0].toLocaleString()
         if(el('.pvp-hp-enemy-label'))el('.pvp-hp-enemy-label')!.textContent=hp[1].toLocaleString()
         if(el('.pvp-timer'))el('.pvp-timer')!.textContent=`${Math.max(0,60-elapsed).toFixed(1)}초`
-        if(el('.pvp-combat-log'))el('.pvp-combat-log')!.textContent=visible.slice(-3).reverse().map(e=>`${e.side===0?'내 팀':'상대 팀'} ${e.slot+1}번 · ${e.effect} ${e.damage.toLocaleString()} 피해`).join(' / ')
+        if(el('.pvp-combat-log'))el('.pvp-combat-log')!.textContent=events.slice(Math.max(0,seen-3),seen).reverse().map(e=>`${e.side===0?'내 팀':'상대 팀'} ${e.slot+1}번 · ${e.effect} ${e.damage.toLocaleString()} 피해`).join(' / ')
       }
-      const started=Date.now();update(0)
-      window.clearInterval(this.pvpAnimation)
+      update();window.clearInterval(this.pvpAnimation)
       this.pvpAnimation=window.setInterval(()=>{
-        if(this.screen!=='pvp'){window.clearInterval(this.pvpAnimation);this.pvpBusy=false;return}
-        const elapsed=(Date.now()-started)/1000;update(elapsed)
-        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.toast(result.won?'PvP 승리! +20점':'PvP 패배 · -10점');void this.openPvp()}
-      },100)
+        if(this.screen!=='pvp'||battle.hidden){window.clearInterval(this.pvpAnimation);this.pvpBusy=false;return}
+        const now=Date.now();elapsed+=(now-previous)/1000*this.pvpSpeed;previous=now;update()
+        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.toast(result.won?'PvP 승리! +20점':'PvP 패배 · -10점');battle.hidden=true;void this.openPvp()}
+      },70)
     }catch(e){this.pvpBusy=false;this.toast(e instanceof Error?e.message:'PvP 전투 실패')}
   }
 
@@ -1804,6 +1822,8 @@ export class GachaUi {
     if (action === 'pvp-save') {await this.savePvp();return}
     if (action === 'pvp-select' && button?.dataset.id) {const id=button.dataset.id;this.pvpTeam=this.pvpTeam.includes(id)?this.pvpTeam.filter(x=>x!==id):this.pvpTeam.length<5?[...this.pvpTeam,id]:this.pvpTeam;this.renderPvp();return}
     if (action === 'pvp-fight' && button?.dataset.id) {await this.fightPvp(Number(button.dataset.id));return}
+    if (action === 'pvp-speed') {this.pvpSpeed=this.pvpSpeed===1?3:1;if(button)button.textContent=`${this.pvpSpeed}배속`;return}
+    if (action === 'pvp-battle-exit') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;const b=this.root.querySelector<HTMLElement>('.pvp-battle');if(b)b.hidden=true;void this.openPvp();return}
     if (action === 'pvp-skip') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;void this.openPvp();return}
     if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.expeditionPendingDamage.clear();this.show('expedition');return}
     if (action === 'exp-test-hp' || action === 'exp-test-respawn') {
