@@ -1568,11 +1568,16 @@ export class GachaUi {
     if(this.pvpBusy)return
     try{
       this.pvpBusy=true
+      const opponent=this.pvpState?.opponents?.find((entry:any)=>Number(entry.account_id)===opponentId)
       const result=await this.pvpRequest('/fight',{opponentId})
       // Refresh the remaining-attempt indicator after the server records the fight.
       void this.refreshPvpDailyDots()
       const root=this.root.querySelector<HTMLElement>('.pvp-screen');const battle=root?.querySelector<HTMLElement>('.pvp-battle')
       if(!root||!battle){this.pvpBusy=false;return}
+      const myName=root.querySelector<HTMLElement>('.pvp-hp-self')?.closest('div')?.querySelector('b')
+      const enemyName=root.querySelector<HTMLElement>('.pvp-hp-enemy')?.closest('div')?.querySelector('b')
+      if(myName)myName.textContent=this.store.user?.nickname||this.store.user?.username||'내 팀'
+      if(enemyName)enemyName.textContent=opponent?.nickname||opponent?.username||'상대 팀'
       battle.hidden=false
       this.pvpResult=null
       const overlay=battle.querySelector<HTMLElement>('.pvp-result-overlay');if(overlay)overlay.hidden=true
