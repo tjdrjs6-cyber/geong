@@ -7621,3 +7621,8 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-reward-items{display:flex;flex-direction:column;gap:8px;min-width:0}
 .pvp-reward-items>span{display:flex;align-items:center;gap:9px;min-height:24px;font-size:inherit;line-height:1.4}
 .pvp-reward-items img{width:24px;height:24px;object-fit:contain;flex:0 0 24px}
+
+/* PvP in-game confirmation dialogs */
+.pvp-action-dialog .pvp-action-message{margin:20px 0 24px;text-align:center;font:inherit;font-weight:700;color:#73526a;line-height:1.6}
+.pvp-action-dialog .pets-confirm-actions{display:flex;justify-content:center;gap:10px}
+.pvp-action-dialog .pets-confirm-actions button{min-width:100px}

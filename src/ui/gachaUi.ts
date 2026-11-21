@@ -1545,8 +1545,23 @@ export class GachaUi {
     set('.pvp-ranking',state.ranking.length?state.ranking.map((r:any,i:number)=>`<div class="pvp-rank"><b>${i+1}위</b><span>${esc(r.nickname||r.username)}</span><strong>${r.score}점</strong></div>`).join(''):'아직 이번 주 참가자가 없습니다.')
     set('.pvp-history',state.history.length?state.history.map((m:any)=>`<div class="pvp-rank"><b>${m.won?'승리':'패배'}</b><span>${new Date(Number(m.created_ms)).toLocaleString('ko-KR')}</span><strong>${Number(m.attacker_hp).toLocaleString()} : ${Number(m.defender_hp).toLocaleString()}</strong></div>`).join(''):'아직 전투 기록이 없습니다.')
   }
+  private pvpNotice(message:string,confirm=false):Promise<boolean>{
+    return new Promise(resolve=>{
+      const dialog=document.createElement('dialog')
+      dialog.className='combat-power-modal pvp-action-dialog'
+      dialog.innerHTML=`<div class="combat-power-modal-inner"><div class="combat-power-modal-title"><strong>PvP 아레나</strong></div><p class="pvp-action-message">${message}</p><div class="pets-confirm-actions">${confirm?'<button type="button" data-choice="no">취소</button>':''}<button type="button" data-choice="yes">${confirm?'도전하기':'확인'}</button></div></div>`
+      document.body.append(dialog)
+      let settled=false
+      const done=(ok:boolean)=>{if(settled)return;settled=true;resolve(ok);dialog.close()}
+      dialog.querySelector<HTMLButtonElement>('[data-choice="no"]')?.addEventListener('click',()=>done(false))
+      dialog.querySelector<HTMLButtonElement>('[data-choice="yes"]')?.addEventListener('click',()=>done(true))
+      dialog.addEventListener('cancel',e=>{e.preventDefault();done(false)})
+      dialog.addEventListener('close',()=>{if(!settled)resolve(false);dialog.remove()},{once:true})
+      dialog.showModal()
+    })
+  }
   private async savePvp():Promise<void>{
-    try{if(this.pvpTeam.length!==5){this.toast('캐릭터 5명을 선택해 주세요.');return}this.pvpState=await this.pvpRequest('/team',{team:this.pvpTeam});this.toast('PvP 팀을 저장했습니다.');this.renderPvp()}
+    try{if(this.pvpTeam.length!==5){this.toast('캐릭터 5명을 선택해 주세요.');return}this.pvpState=await this.pvpRequest('/team',{team:this.pvpTeam});this.renderPvp();await this.pvpNotice('팀 편성을 완료했습니다.')}
     catch(e){this.toast(e instanceof Error?e.message:'팀 저장 실패')}
   }
   private async fightPvp(opponentId:number):Promise<void>{
@@ -1872,7 +1887,7 @@ export class GachaUi {
     if (action === 'pvp-rewards-close') {const modal=this.root.querySelector<HTMLElement>('.pvp-rewards-modal');if(modal)modal.hidden=true;return}
     if (action === 'pvp-save') {await this.savePvp();return}
     if (action === 'pvp-select' && button?.dataset.id) {const id=button.dataset.id;this.pvpTeam=this.pvpTeam.includes(id)?this.pvpTeam.filter(x=>x!==id):this.pvpTeam.length<5?[...this.pvpTeam,id]:this.pvpTeam;this.renderPvp();return}
-    if (action === 'pvp-fight' && button?.dataset.id) {await this.fightPvp(Number(button.dataset.id));return}
+    if (action === 'pvp-fight' && button?.dataset.id) {if(this.pvpBusy)return;const opponentId=Number(button.dataset.id);if(await this.pvpNotice('도전하시겠습니까?',true))await this.fightPvp(opponentId);return}
     if (action === 'pvp-speed') {this.pvpSpeed=this.pvpSpeed===1?3:1;if(button)button.textContent=`${this.pvpSpeed}배속`;return}
     if (action === 'pvp-battle-exit') {return}
     if (action === 'pvp-skip') {this.showPvpResult();return}
