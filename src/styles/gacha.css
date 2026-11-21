@@ -7487,3 +7487,9 @@ body > .market-global-shortage-notice.is-visible {
 .trade-game-dialog-buttons{display:flex;gap:8px;justify-content:center}
 .trade-game-dialog-buttons button{border:1px solid #ad8a66;background:#fff1dc;color:#3a2a1e;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;pointer-events:auto!important}
 .trade-game-dialog-buttons [data-dialog-yes]{background:#78533c;color:#fff}
+
+/* Trade market: pet box rarity border, existing image only */
+.trade-product-icon.trade-box-normal{border:2px solid #b8aa95!important;box-sizing:border-box;border-radius:7px}
+.trade-product-icon.trade-box-rare{border:2px solid #3888e8!important;box-sizing:border-box;border-radius:7px}
+.trade-product-icon.trade-box-epic{border:2px solid #e04848!important;box-sizing:border-box;border-radius:7px}
+.trade-product-icon.trade-box-unique{border:2px solid #9a4fe0!important;box-sizing:border-box;border-radius:7px}
