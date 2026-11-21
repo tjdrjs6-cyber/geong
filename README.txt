@@ -1,1 +1,1 @@
-Apply after legendary ticket reward/reveal fix. Replace server/index.mjs. Future permanent legendary entries in SKILL_TIERS are included automatically; add new event/collab IDs to LEGEND_TICKET_EXCLUDED_IDS. Existing 4 permanent entries remain eligible.
+레전더리 티켓 개봉 연출 수정: 기타 인벤토리에서도 전용 티켓 애니메이션 2.25초 재생 후 기존 캐릭터 뽑기 결과 화면 표시. 이전 동적 당첨풀 패치와 호환. 변경 파일 1개.

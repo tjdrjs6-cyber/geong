@@ -3762,9 +3762,36 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
                 this.resultKind='char'
                 this.renderResults()
                 this.revealing=true
-                this.spinMachine(reward.accent)
+                // The normal capsule machine is only mounted on the draw screen.
+                // Legendary tickets are opened from inventory, so show a dedicated
+                // full-screen animation before the existing character reveal.
                 const sequence=++this.revealSequence
-                window.setTimeout(()=>{void this.playPops(this.results,sequence)},650)
+                const animation=document.createElement('div')
+                animation.className='legend-ticket-opening-overlay'
+                animation.setAttribute('role','status')
+                animation.setAttribute('aria-label','레전더리 티켓 개봉 연출')
+                animation.innerHTML=`<style>
+                  .legend-ticket-opening-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#5a357d 0%,#211333 65%,#100d20 100%);overflow:hidden;pointer-events:auto;animation:legendOpenFadeIn .25s ease-out}
+                  .legend-ticket-opening-overlay .legend-open-rays{position:absolute;width:120vmax;height:120vmax;background:repeating-conic-gradient(from 0deg,#ffe5a829 0deg 12deg,transparent 12deg 30deg);animation:legendOpenRotate 4s linear infinite}
+                  .legend-ticket-opening-overlay .legend-open-ticket{position:relative;width:min(56vw,230px);max-height:50vh;object-fit:contain;filter:drop-shadow(0 0 28px #ffdf79);animation:legendOpenTicket 2.1s ease-in forwards}
+                  .legend-ticket-opening-overlay .legend-open-label{position:absolute;bottom:14%;font-weight:900;font-size:clamp(20px,5vw,36px);color:#fff3c0;text-shadow:0 3px 16px #100d20;animation:legendOpenLabel 1.9s ease-in-out forwards}
+                  .legend-ticket-opening-overlay .legend-open-flash{position:absolute;inset:0;background:#fff8d8;opacity:0;animation:legendOpenFlash 2.1s ease-out forwards}
+                  @keyframes legendOpenFadeIn{from{opacity:0}to{opacity:1}}
+                  @keyframes legendOpenRotate{to{transform:rotate(360deg)}}
+                  @keyframes legendOpenTicket{0%{transform:scale(.55) rotate(-12deg);opacity:0}25%{transform:scale(1) rotate(8deg);opacity:1}45%{transform:scale(1.1) rotate(-8deg)}65%{transform:scale(1.18) rotate(6deg)}85%{transform:scale(1.4) rotate(0)}100%{transform:scale(2.4);opacity:0}}
+                  @keyframes legendOpenLabel{0%,15%{opacity:0;transform:translateY(16px)}35%,75%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+                  @keyframes legendOpenFlash{0%,82%{opacity:0}94%{opacity:.95}100%{opacity:0}}
+                </style><div class="legend-open-rays"></div><img class="legend-open-ticket" src="/assets/items/legendary_draw_ticket.png" alt="레전더리 뽑기 티켓"/><div class="legend-open-label">레전더리 티켓 개봉!</div><div class="legend-open-flash"></div>`
+                document.body.appendChild(animation)
+                window.setTimeout(()=>{
+                  animation.remove()
+                  if(sequence!==this.revealSequence)return
+                  // Reveal must be mounted on the draw screen, not hidden behind inventory.
+                  this.show('result')
+                  this.renderResults()
+                  this.revealing=false
+                  this.renderWallet()
+                },2250)
               }catch(error){dialog.querySelector('p')!.textContent='개봉 실패: '+(error instanceof Error?error.message:'오류');if(yes)yes.disabled=false}
             },{once:true})
           });card.append(image,title,detail,open);grid.prepend(card);grid.querySelector('.misc-empty')?.remove()
