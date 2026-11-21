@@ -7627,23 +7627,12 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-action-dialog .pets-confirm-actions{display:flex;justify-content:center;gap:10px}
 .pvp-action-dialog .pets-confirm-actions button{min-width:100px}
 
-/* Parent notification aggregation: driven by visible child indicators, not
-   by the parent button's own notification markup. */
-#ui .activity-menu:has(.activity-options .pvp-daily-dot:not([hidden])) > .nav-activity::after,
-#ui .activity-menu:has(.activity-options .geongi-keyring-dot:not([hidden])) > .nav-activity::after,
-#ui .activity-menu:has(.activity-options .wild-weed-alert-dot:not([hidden])) > .nav-activity::after,
-#ui .activity-menu:has(.activity-options .deployment-reset-dot:not([hidden])) > .nav-activity::after,
-#ui .activity-menu:has(.activity-options .geongi-first-menu-dot:not([hidden])) > .nav-activity::after,
-#ui .myroom-menu:has(.myroom-options :is(.geongi-equipment-dot,.geongi-first-menu-dot):not([hidden])) > .nav-myroom::after,
-#ui .market-menu:has(.market-options :is(.pepero-sale-dot,.geongi-first-menu-dot):not([hidden])) > .nav-market::after,
-#ui .community-menu:has(.community-options :is(.announcement-dot,.global-chat-dot,.geongi-first-menu-dot):not([hidden])) > .nav-community::after {
-  content:''!important;position:absolute!important;top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;
-  width:9px!important;height:9px!important;border-radius:50%!important;
-  border:1.5px solid #fff!important;background:#ee384b!important;
-  box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;z-index:30!important;pointer-events:none!important;
-}
-/* A parent has only one visible marker even when multiple children are pending. */
-#ui .activity-menu:has(.activity-options :is(.pvp-daily-dot,.geongi-keyring-dot,.wild-weed-alert-dot,.deployment-reset-dot,.geongi-first-menu-dot):not([hidden])) > .nav-activity > :is(.pvp-daily-dot,.geongi-keyring-dot,.wild-weed-alert-dot,.geongi-first-menu-dot),
-#ui .myroom-menu:has(.myroom-options :is(.geongi-equipment-dot,.geongi-first-menu-dot):not([hidden])) > .nav-myroom > :is(.geongi-equipment-dot,.geongi-first-menu-dot),
-#ui .market-menu:has(.market-options :is(.pepero-sale-dot,.geongi-first-menu-dot):not([hidden])) > .nav-market > :is(.pepero-sale-dot,.geongi-first-menu-dot),
-#ui .community-menu:has(.community-options :is(.announcement-dot,.global-chat-dot,.geongi-first-menu-dot):not([hidden])) > .nav-community > :is(.community-notice-dot,.geongi-first-menu-dot) {display:none!important}
+/* PvP 도전 상대: 우측 상단 인게임 새로고침 버튼 */
+.pvp-opponents-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;margin-bottom:10px;min-width:0}
+.pvp-opponents-heading h3{margin:0;min-width:0;flex:1;font:inherit;font-weight:800;color:#805879;line-height:1.35}
+.pvp-opponents-heading .pvp-refresh-button{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;white-space:nowrap;border:1px solid #c96699;border-bottom:3px solid #ad4d82;border-radius:13px;background:linear-gradient(180deg,#f5a4c7,#d875a5);color:#fff;padding:7px 10px;font:inherit;font-size:12px;font-weight:800;line-height:1.1;box-shadow:0 2px 5px #a74d7b24;cursor:pointer;max-width:56%}
+.pvp-opponents-heading .pvp-refresh-button .pvp-refresh-symbol{font-size:18px;font-weight:800;line-height:0.8}
+.pvp-opponents-heading .pvp-refresh-button small{font:inherit;font-size:10px;font-weight:700;opacity:.93;border-left:1px solid #ffffff80;padding-left:6px}
+.pvp-opponents-heading .pvp-refresh-button:active{transform:translateY(1px);border-bottom-width:2px}
+.pvp-opponents-heading .pvp-refresh-button:focus-visible{outline:2px solid #a3497c;outline-offset:3px}
+@media(max-width:360px){.pvp-opponents-heading .pvp-refresh-button{padding:7px 8px;gap:4px;font-size:11px}.pvp-opponents-heading .pvp-refresh-button small{font-size:9px;padding-left:4px}}
