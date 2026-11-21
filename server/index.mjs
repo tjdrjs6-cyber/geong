@@ -402,6 +402,7 @@ async function prepareDatabase() {
   if (!slotTable.length) await pool.query("INSERT IGNORE INTO gm_weed_slots (account_id, character_id, since_ms) SELECT account_id, character_id, since_ms FROM gm_weeding WHERE character_id <> ''")
   try { await pool.query('ALTER TABLE gm_weeding ADD COLUMN beetle TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   for (const field of ['diamonds', 'fragments']) { try { await pool.query(`ALTER TABLE gm_mail ADD COLUMN ${field} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error } }
+  for (const field of ['pvp_legend_tickets', 'pvp_breakthrough_stones']) { try { await pool.query(`ALTER TABLE gm_mail ADD COLUMN ${field} INT UNSIGNED NOT NULL DEFAULT 0`) } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error } }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN to_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   try { await pool.query('ALTER TABLE gm_mail ADD COLUMN from_deleted TINYINT(1) NOT NULL DEFAULT 0') } catch (error) { if (!error || error.code !== 'ER_DUP_FIELDNAME') throw error }
   // Promote only an existing account; never create an administrator implicitly.
@@ -673,20 +674,24 @@ async function sentToday(conn, accountId) {
   return Number(rows[0].total)
 }
 async function mailbox(accountId) {
-  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
-  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.diamonds, m.fragments, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
-  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [rows] = await pool.query('SELECT m.id, m.from_id, m.message, m.coins, m.diamonds, m.fragments, m.pvp_legend_tickets, m.pvp_breakthrough_stones, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.from_id WHERE m.to_id = ? AND m.to_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const mail = rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : String(row.message || '').startsWith('PvP 아레나') ? 'PvP 주간 보상' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), pvpLegendTickets: Number(row.pvp_legend_tickets), pvpBreakthroughStones: Number(row.pvp_breakthrough_stones), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
+  const [out] = await pool.query('SELECT m.id, m.message, m.coins, m.diamonds, m.fragments, m.pvp_legend_tickets, m.pvp_breakthrough_stones, m.created_ms, m.seen, m.claimed, a.nickname FROM gm_mail m LEFT JOIN gm_accounts a ON a.id = m.to_id WHERE m.from_id = ? AND m.from_deleted = 0 ORDER BY m.id DESC LIMIT ?', [accountId, MAILBOX_MAX])
+  const sent = out.map(row => ({ id: Number(row.id), to: row.nickname || '알 수 없음', message: row.message, coins: Number(row.coins), diamonds: Number(row.diamonds), fragments: Number(row.fragments), pvpLegendTickets: Number(row.pvp_legend_tickets), pvpBreakthroughStones: Number(row.pvp_breakthrough_stones), at: Number(row.created_ms), seen: Boolean(row.seen), claimed: Boolean(row.claimed) }))
   return { mail, sent, max: MAILBOX_MAX, unread: mail.filter(item => !item.seen).length, sentToday: await sentToday(pool, accountId), dailyLimit: MAIL_DAILY_COINS }
 }
 /** Hides a recipient's inbox letters beyond the newest MAILBOX_MAX; coins still waiting in them go to the recipient. */
 async function trimInbox(conn, toId) {
-  const [old] = await conn.query('SELECT id, coins, diamonds, fragments, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
+  const [old] = await conn.query('SELECT id, coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones, claimed FROM gm_mail WHERE to_id = ? AND to_deleted = 0 ORDER BY id DESC LIMIT 1000 OFFSET ?', [toId, MAILBOX_MAX])
   if (!old.length) return
   const coins = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.coins)), 0)
   await conn.query(`UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id IN (${old.map(() => '?').join(',')})`, old.map(row => row.id))
   const diamonds = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.diamonds)), 0)
   const fragments = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.fragments)), 0)
+  const pvpTickets = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.pvp_legend_tickets)), 0)
+  const pvpStones = old.reduce((sum, row) => sum + (row.claimed ? 0 : Number(row.pvp_breakthrough_stones)), 0)
+  if (pvpStones) { await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[toId]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[pvpStones,toId]) }
+  for(let n=0;n<pvpTickets;n++)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[toId])
   if (coins || diamonds || fragments) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [coins, diamonds, fragments, toId])
 }
 async function trimSent(conn, fromId) {
@@ -721,7 +726,7 @@ async function suggestions(account) {
   const [rows] = await pool.query('SELECT s.id, s.account_id, s.message, s.created_ms, s.reply, s.reply_ms, a.nickname FROM gm_suggest s LEFT JOIN gm_accounts a ON a.id = s.account_id ORDER BY s.id DESC LIMIT 100')
   const [today] = await pool.query('SELECT COUNT(*) AS n FROM gm_suggest WHERE account_id = ? AND day = ?', [account.id, checkInDay()])
   return {
-    items: rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
+    items: rows.map(row => ({ id: Number(row.id), from: Number(row.from_id) === 0 ? (String(row.message || '').startsWith('[판매 완료]') ? '광장 판매 알림' : String(row.message || '').startsWith('PvP 아레나') ? 'PvP 주간 보상' : '원정대 보상') : (row.nickname || '알 수 없음'), message: row.message, at: Number(row.created_ms), reply: row.reply || null, replyAt: row.reply_ms ? Number(row.reply_ms) : null, mine: Number(row.account_id) === Number(account.id) })),
     admin: Boolean(account.is_admin), todayCount: Number(today[0].n), dailyMax: SUGGEST_DAILY_MAX,
   }
 }
@@ -1519,9 +1524,7 @@ async function pvpSettle(){
         const [insert]=await conn.query('INSERT IGNORE INTO gm_pvp_awards(season,rank_no,account_id,created_ms) VALUES(?,?,?,?)',[ended,i+1,leaders[i].account_id,Date.now()])
         if(!insert.affectedRows)return
         const id=leaders[i].account_id
-        await conn.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,id,`PvP 아레나 주간 ${i+1}위 보상`,0,3000,checkInDay(),Date.now()])
-        if(i<2){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+1 WHERE account_id=?',[id])}
-        if(i===0)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[id])
+        await conn.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,pvp_legend_tickets,pvp_breakthrough_stones,sent_day,created_ms) VALUES(?,?,?,?,?,?,?,?,?)',[0,id,`PvP 아레나 주간 ${i+1}위 보상`,0,3000,i===0?1:0,i<2?1:0,checkInDay(),Date.now()])
       })
     }
   }catch(e){console.error('[pvp] settlement:',e)}finally{pvpSettlementBusy=false}
@@ -3064,21 +3067,27 @@ const routes = {
     let total = 0
     let diamondTotal = 0
     let fragmentTotal = 0
+    let pvpTicketTotal = 0
+    let pvpStoneTotal = 0
     try {
       await conn.beginTransaction()
       const [rows] = await conn.query(
         id == null
-          ? 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 FOR UPDATE'
-          : 'SELECT id, coins, diamonds, fragments FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0) AND to_deleted = 0 AND id = ? FOR UPDATE',
+          ? 'SELECT id, coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0 OR pvp_legend_tickets > 0 OR pvp_breakthrough_stones > 0) AND to_deleted = 0 FOR UPDATE'
+          : 'SELECT id, coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones FROM gm_mail WHERE to_id = ? AND claimed = 0 AND (coins > 0 OR diamonds > 0 OR fragments > 0 OR pvp_legend_tickets > 0 OR pvp_breakthrough_stones > 0) AND to_deleted = 0 AND id = ? FOR UPDATE',
         id == null ? [account.id] : [account.id, Number(id)],
       )
       total = rows.reduce((sum, row) => sum + Number(row.coins), 0)
       diamondTotal = rows.reduce((sum, row) => sum + Number(row.diamonds), 0)
       fragmentTotal = rows.reduce((sum, row) => sum + Number(row.fragments), 0)
+      pvpTicketTotal = rows.reduce((sum, row) => sum + Number(row.pvp_legend_tickets), 0)
+      pvpStoneTotal = rows.reduce((sum, row) => sum + Number(row.pvp_breakthrough_stones), 0)
       if (rows.length) {
         await conn.query(`UPDATE gm_mail SET claimed = 1, seen = 1 WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(row => row.id))
         await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [total, diamondTotal, fragmentTotal, account.id])
       }
+      if(pvpStoneTotal){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[account.id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[pvpStoneTotal,account.id])}
+      for(let n=0;n<pvpTicketTotal;n++)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[account.id])
       await conn.commit()
     } catch (error) {
       await conn.rollback().catch(() => {})
@@ -3225,12 +3234,14 @@ const routes = {
         const [r] = await conn.query('UPDATE gm_mail SET from_deleted = 1 WHERE id = ? AND from_id = ? AND from_deleted = 0', [id, account.id])
         return r.affectedRows ? { claimed: 0 } : { error: 'mail_not_found' }
       }
-      const [rows] = await conn.query('SELECT coins, diamonds, fragments, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
+      const [rows] = await conn.query('SELECT coins, diamonds, fragments, pvp_legend_tickets, pvp_breakthrough_stones, claimed FROM gm_mail WHERE id = ? AND to_id = ? AND to_deleted = 0 FOR UPDATE', [id, account.id])
       if (!rows[0]) return { error: 'mail_not_found' }
       // Deleting a letter never loses its coins: unclaimed coins are received first.
       const claimed = rows[0].claimed ? 0 : Number(rows[0].coins)
       await conn.query('UPDATE gm_mail SET to_deleted = 1, claimed = 1, seen = 1 WHERE id = ?', [id])
       if (!rows[0].claimed) await conn.query('UPDATE gm_saves SET gems = gems + ?, diamonds = diamonds + ?, fragments = fragments + ? WHERE account_id = ?', [claimed, Number(rows[0].diamonds), Number(rows[0].fragments), account.id])
+      if(!rows[0].claimed && Number(rows[0].pvp_breakthrough_stones)){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[account.id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[Number(rows[0].pvp_breakthrough_stones),account.id])}
+      if(!rows[0].claimed)for(let n=0;n<Number(rows[0].pvp_legend_tickets);n++)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[account.id])
       return { claimed }
     })
     if (outcome.error) return send(res, 404, { error: outcome.error })

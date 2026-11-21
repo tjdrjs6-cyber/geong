@@ -3796,7 +3796,9 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const list = this.root.querySelector<HTMLElement>('.mail-list')
     const summary = this.root.querySelector<HTMLElement>('.mail-summary')
     if (summary) summary.textContent = `편지함마다 최대 ${max}개까지 보관되고, 넘치면 가장 오래된 우편부터 지워져요. 오늘 보낸 코인 ${this.store.user?.admin ? '무제한' : `${box.sentToday} / ${box.dailyLimit}`}`
-    const waiting = box.mail.filter(item => (item.coins > 0 || item.diamonds > 0 || item.fragments > 0) && !item.claimed).length
+    const pvpMailItems = (item: {pvpLegendTickets?:number;pvpBreakthroughStones?:number}) => `레전더리 뽑기권 ${Number((item as any).pvpLegendTickets||0)}개 · 한계돌파석 ${Number((item as any).pvpBreakthroughStones||0)}개`
+    const hasMailReward = (item: {coins:number;diamonds:number;fragments:number;pvpLegendTickets?:number;pvpBreakthroughStones?:number}) => item.coins > 0 || item.diamonds > 0 || item.fragments > 0 || Number((item as any).pvpLegendTickets||0)>0 || Number((item as any).pvpBreakthroughStones||0)>0
+    const waiting = box.mail.filter(item => hasMailReward(item) && !item.claimed).length
     const all = this.root.querySelector<HTMLButtonElement>('.mail-claim-all')
     if (all) { all.hidden = !inbox; all.disabled = waiting === 0; all.textContent = waiting ? `첨부 보상 모두 받기 (${waiting}건)` : '받을 보상이 없어요' }
     if (!list) return
@@ -3805,13 +3807,13 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       list.innerHTML = box.mail.length ? box.mail.map(item => `<article class="mail-item${item.seen ? '' : ' is-new'}" role="listitem">
         <div class="mail-head"><b>${escapeHtml(item.from)}</b><small>${mailTime(item.at)}</small>${item.seen ? '' : '<em>NEW</em>'}${del(item.id, 'in')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? (item.claimed ? `<span class="mail-coins is-claimed">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령 완료` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받음`}</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 받기`}</button>`) : ''}
+        ${hasMailReward(item) ? (item.claimed ? `<span class="mail-coins is-claimed">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령 완료` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments}${Number((item as any).pvpLegendTickets||0)||Number((item as any).pvpBreakthroughStones||0)?` · ${pvpMailItems(item)}`:""} 받음`}</span>` : `<button class="mail-coins" data-action="mail-claim" data-id="${item.id}">${item.message?.startsWith("[판매 완료]") ? `판매대금 ${item.diamonds.toLocaleString("ko-KR")}다이아 수령` : `코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments}${Number((item as any).pvpLegendTickets||0)||Number((item as any).pvpBreakthroughStones||0)?` · ${pvpMailItems(item)}`:""} 받기`}</button>`) : ''}
       </article>`).join('') : '<p class="users-empty">아직 받은 편지가 없어요.</p>'
     } else {
       list.innerHTML = box.sent.length ? box.sent.map(item => `<article class="mail-item is-sent" role="listitem">
         <div class="mail-head"><b>To. ${escapeHtml(item.to)}</b><small>${mailTime(item.at)}</small><em class="mail-read">${item.seen ? '읽음' : '안 읽음'}</em>${del(item.id, 'sent')}</div>
         ${item.message ? `<p class="mail-text">${escapeHtml(item.message)}</p>` : ''}
-        ${(item.coins > 0 || item.diamonds > 0 || item.fragments > 0) ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 보냄${item.claimed ? ' · 받음' : ''}</span>` : ''}
+        ${hasMailReward(item) ? `<span class="mail-coins is-claimed">✿ 코인 ${item.coins} · 다이아 ${item.diamonds} · 강화파편 ${item.fragments} 보냄${item.claimed ? ' · 받음' : ''}</span>` : ''}
       </article>`).join('') : '<p class="users-empty">아직 보낸 편지가 없어요.</p>'
     }
   }
