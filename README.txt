@@ -1,1 +1,1 @@
-PvP 상단 겹침 수정, 전투 중 나가기 차단, 전투 완료/건너뛰기 모두 승리·패배 결과 연출 후 확인 버튼으로 나가기. 기존 최신 PvP 패치에 적용.
+PvP weekly rewards UI patch. Apply on top of geong_staging_pvp_daily_red_dot_patch.zip. Modified: src/ui/gachaUi.ts, src/styles/gacha.css. No server changes.

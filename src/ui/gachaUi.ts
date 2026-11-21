@@ -660,14 +660,15 @@ export class GachaUi {
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
       <section class="weed-screen expedition-screen pvp-screen" data-screen="pvp" aria-hidden="true">
-        <header class="weed-header"><button class="weed-back" data-action="close">← 돌아가기</button><b>PvP 아레나</b><small>일요일 20시 정산</small></header>
+        <header class="weed-header"><button class="weed-back" data-action="close">← 돌아가기</button><b>PvP 아레나</b><button type="button" class="pvp-rewards-button" data-action="pvp-rewards" aria-haspopup="dialog">보상</button></header>
         <div class="pvp-main"><div class="pvp-top"><strong>WEEKLY ARENA</strong><span class="pvp-summary">정보를 불러오는 중...</span></div>
           <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-power-summary"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
           <div class="pvp-section"><h3>오늘의 도전 상대</h3><div class="pvp-opponents"></div></div>
           <div class="pvp-section pvp-battle" hidden><div class="pvp-battle-head"><span class="pvp-battle-label">PvP 아레나</span><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><button data-action="pvp-speed" class="pvp-speed">1배속</button></div><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"><div class="pvp-fighters pvp-fighters-self"></div><div class="pvp-versus">VS</div><div class="pvp-fighters pvp-fighters-enemy"></div></div><div class="pvp-combat-log"></div><button class="pvp-primary pvp-skip" data-action="pvp-skip">전투 연출 건너뛰기</button><div class="pvp-result-overlay" hidden><div class="pvp-result-card"><div class="pvp-result-emblem"></div><h2 class="pvp-result-title"></h2><p class="pvp-result-score"></p><p class="pvp-result-hp"></p><button class="pvp-primary" data-action="pvp-result-confirm">결과 확인 · 아레나로</button></div></div></div>
           <div class="pvp-section"><h3>주간 랭킹 TOP 50</h3><div class="pvp-ranking"></div></div>
           <div class="pvp-section"><h3>최근 전투</h3><div class="pvp-history"></div></div>
-          <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 강한 상대 승리 +30점 / 낮거나 같은 상대 승리 +10점 / 패배 -10점<br/>일요일 오후 8시 정산: 1위 레전더리 뽑기권 1개 + 한계돌파석 1개 + 3,000다이아 / 2위 한계돌파석 1개 + 3,000다이아 / 3위 3,000다이아</p>
+          <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 강한 상대 승리 +30점 / 낮거나 같은 상대 승리 +10점 / 패배 -10점</p>
+          <div class="pvp-rewards-modal" hidden role="dialog" aria-modal="true" aria-label="PvP 주간 정산 보상"><div class="pvp-rewards-panel"><div class="pvp-rewards-heading"><div><small>WEEKLY REWARDS</small><h3>주간 랭킹 보상</h3><p>매주 일요일 오후 8시 정산</p></div><button type="button" data-action="pvp-rewards-close" aria-label="닫기">×</button></div><div class="pvp-reward-rank first"><span class="pvp-reward-place">1위</span><div><b>챔피언</b><p>레전더리 뽑기권 1개<br/>한계돌파석 1개<br/>다이아 3,000개</p></div></div><div class="pvp-reward-rank second"><span class="pvp-reward-place">2위</span><div><b>준우승</b><p>한계돌파석 1개<br/>다이아 3,000개</p></div></div><div class="pvp-reward-rank third"><span class="pvp-reward-place">3위</span><div><b>3위 입상</b><p>다이아 3,000개</p></div></div><button type="button" class="pvp-primary pvp-rewards-done" data-action="pvp-rewards-close">확인</button></div></div>
         </div>
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
@@ -1867,6 +1868,8 @@ export class GachaUi {
     if (action === 'research') { void this.openResearch(); return }
     if (action === 'house') { this.show('house'); return }
     if (action === 'pvp') {this.show('pvp');return}
+    if (action === 'pvp-rewards') {const modal=this.root.querySelector<HTMLElement>('.pvp-rewards-modal');if(modal)modal.hidden=false;return}
+    if (action === 'pvp-rewards-close') {const modal=this.root.querySelector<HTMLElement>('.pvp-rewards-modal');if(modal)modal.hidden=true;return}
     if (action === 'pvp-save') {await this.savePvp();return}
     if (action === 'pvp-select' && button?.dataset.id) {const id=button.dataset.id;this.pvpTeam=this.pvpTeam.includes(id)?this.pvpTeam.filter(x=>x!==id):this.pvpTeam.length<5?[...this.pvpTeam,id]:this.pvpTeam;this.renderPvp();return}
     if (action === 'pvp-fight' && button?.dataset.id) {await this.fightPvp(Number(button.dataset.id));return}

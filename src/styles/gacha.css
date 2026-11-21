@@ -7575,3 +7575,24 @@ body > .market-global-shortage-notice.is-visible {
 #ui button[data-action] > .pvp-daily-dot:not([hidden]){position:absolute!important;top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;width:9px!important;height:9px!important;min-width:9px!important;min-height:9px!important;border-radius:50%!important;border:1.5px solid #fff!important;background:#ee384b!important;box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;z-index:15!important;pointer-events:none!important}
 #ui button[data-action]:has(> .geongi-first-menu-dot:not([hidden])) > .pvp-daily-dot:not([hidden]){display:none!important}
 #ui button[data-action] > :is(.geongi-keyring-dot,.wild-weed-alert-dot):not([hidden]) ~ .pvp-daily-dot:not([hidden]){display:none!important}
+
+/* PvP weekly rewards: compact header entry and in-game modal */
+.pvp-screen .weed-header .pvp-rewards-button{position:static;justify-self:end;white-space:nowrap;padding:8px 14px;border:1px solid #e9bbd1;border-radius:13px;background:#fff5fa;color:#a84e81;font:inherit;font-size:13px;font-weight:900;cursor:pointer;box-shadow:0 2px 5px #a85c7b19}
+.pvp-screen .pvp-rewards-modal[hidden]{display:none!important}
+.pvp-screen .pvp-rewards-modal{position:fixed;inset:0;z-index:10000;display:flex;justify-content:center;align-items:center;padding:18px;background:#332435aa;backdrop-filter:blur(4px);box-sizing:border-box;font-family:inherit}
+.pvp-screen .pvp-rewards-panel{width:min(440px,100%);max-height:min(90vh,700px);overflow-y:auto;background:#fff9fc;border:2px solid #ecc9da;border-radius:22px;padding:20px;box-sizing:border-box;box-shadow:0 16px 50px #44283e55;color:#754a66}
+.pvp-screen .pvp-rewards-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.pvp-screen .pvp-rewards-heading small{font-size:11px;letter-spacing:.07em;color:#ce7fa5;font-weight:900}
+.pvp-screen .pvp-rewards-heading h3{font-size:21px;margin:5px 0;color:#824b6e;font-weight:900}
+.pvp-screen .pvp-rewards-heading p{font-size:12px;margin:0;color:#a17e92}
+.pvp-screen .pvp-rewards-heading button{flex-shrink:0;width:34px;height:34px;border:1px solid #ebcbdc;border-radius:11px;background:white;color:#9e6d88;font-size:22px;cursor:pointer}
+.pvp-screen .pvp-reward-rank{display:flex;gap:15px;align-items:center;border:1px solid #f0d8e4;border-radius:15px;background:#fff;padding:15px;margin:10px 0}
+.pvp-screen .pvp-reward-rank.first{background:#fff8e9;border-color:#efd69a}
+.pvp-screen .pvp-reward-rank.second{background:#f8f7fd;border-color:#ded9ed}
+.pvp-screen .pvp-reward-rank.third{background:#fff5f0;border-color:#ecd5c8}
+.pvp-screen .pvp-reward-place{min-width:52px;text-align:center;font-size:21px;font-weight:1000;color:#b76b91}
+.pvp-screen .pvp-reward-rank.first .pvp-reward-place{color:#b68a35}
+.pvp-screen .pvp-reward-rank b{font-size:15px;font-weight:900}
+.pvp-screen .pvp-reward-rank p{font-size:13px;line-height:1.8;margin:5px 0 0;color:#775e6f}
+.pvp-screen .pvp-rewards-done{display:block;width:100%;margin-top:16px}
+@media(max-width:520px){.pvp-screen .weed-header{grid-template-columns:auto 1fr auto;gap:5px}.pvp-screen .weed-header .pvp-rewards-button{padding:7px 10px;font-size:12px}.pvp-screen .pvp-rewards-panel{padding:16px}}
