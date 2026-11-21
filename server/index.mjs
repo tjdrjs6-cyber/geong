@@ -754,9 +754,9 @@ async function getWeed(accountId) {
 const STAGE_LIMIT_MS = 60_000
 const BATTLE_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
 // Geong Market 3.0: 30 zones, 300 stages; all rewards are integers.
-const MAX_BATTLE_STAGE = 200
+const MAX_BATTLE_STAGE = 500
 // Unified 100-stage HP table; proposed reduction followed by an additional 10% reduction.
-const BATTLE_HP_ANCHORS = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000]];
+const BATTLE_HP_ANCHORS = [[1, 1500], [10, 4000], [20, 9000], [30, 17000], [40, 29000], [50, 45000], [60, 65000], [70, 85000], [80, 108000], [90, 135000], [100, 165000], [110, 195000], [120, 225000], [130, 255000], [140, 285000], [150, 315000], [160, 345000], [170, 375000], [180, 405000], [190, 435000], [200, 465000], [210, 500000], [220, 535000], [230, 570000], [240, 605000], [250, 640000], [260, 675000], [270, 710000], [280, 745000], [290, 780000], [300, 815000], [310, 850000], [320, 885000], [330, 920000], [340, 955000], [350, 990000], [360, 1025000], [370, 1060000], [380, 1095000], [390, 1130000], [400, 1165000], [410, 1200000], [420, 1235000], [430, 1270000], [440, 1305000], [450, 1340000], [460, 1375000], [470, 1410000], [480, 1445000], [490, 1480000], [500, 1515000]];
 function stageHp(stage) {
   const s = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1));
   for (let i = 1; i < BATTLE_HP_ANCHORS.length; i++) {
@@ -766,7 +766,7 @@ function stageHp(stage) {
       return Math.round(startHp + (endHp - startHp) * (s - start) / (end - start));
     }
   }
-  return 465000;
+  return 1515000;
 }
 
 
@@ -775,8 +775,8 @@ const BATTLE_REWARD_DIAMONDS = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 
 const BATTLE_REWARD_FRAGMENTS = [1, 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 function stageReward(stage) {
   const n = Math.max(1, Math.min(MAX_BATTLE_STAGE, Number(stage) || 1)) - 1
-  const zone = Math.min(19, Math.floor(n / 10))
-  return { diamonds: BATTLE_REWARD_DIAMONDS[zone], fragments: BATTLE_REWARD_FRAGMENTS[zone], coins: 0 }
+  const zone = Math.floor(n / 10)
+  return { diamonds: zone < 20 ? BATTLE_REWARD_DIAMONDS[zone] : 10 + (zone - 19), fragments: zone < 20 ? BATTLE_REWARD_FRAGMENTS[zone] : 20 + (zone - 19), coins: 0 }
 }
 
 function battleRow(row) {
