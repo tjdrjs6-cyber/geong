@@ -7616,3 +7616,8 @@ body > .market-global-shortage-notice.is-visible {
   z-index:16 !important;
   pointer-events:none !important;
 }
+
+/* PvP 주간 보상: 등수별 보상 이미지와 텍스트 정렬 */
+.pvp-reward-items{display:flex;flex-direction:column;gap:8px;min-width:0}
+.pvp-reward-items>span{display:flex;align-items:center;gap:9px;min-height:24px;font-size:inherit;line-height:1.4}
+.pvp-reward-items img{width:24px;height:24px;object-fit:contain;flex:0 0 24px}
