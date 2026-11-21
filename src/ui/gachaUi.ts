@@ -84,7 +84,7 @@ const christmasRates: Record<string,number> = {
 const tierTag = (character: Character): string => character.tier === 'transcendent' ? '★ 초월' : character.tier === 'legendary' ? '★ 레전더리' : character.tier === 'super' ? '★ 유니크' : character.tier === 'rare' ? '★ 에픽' : character.tier === 'mermaid' ? '레어' : '노멀'
 const bonusTag = (character: Character): string => `${character.weedBonus ? `제초속도 +${character.weedBonus}%<br>` : ''}전투력 ${character.power}`
 
-type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'pet-catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'plaza' | 'pets' | 'expedition' | 'rps' | 'dopamine' | 'shop' | 'forge'
+type Screen = 'boot' | 'auth' | 'nickname' | 'title' | 'catalog' | 'pet-catalog' | 'collection' | 'decos' | 'result' | 'users' | 'weed' | 'battle' | 'house' | 'mail' | 'storage' | 'suggest' | 'featured' | 'claw' | 'announcements' | 'global-chat' | 'plaza' | 'pets' | 'expedition' | 'pvp' | 'rps' | 'dopamine' | 'shop' | 'forge'
 /** One capsule shown in the 뿅 reveal and the result list (character or deco). */
 type RevealItem = { image: string; name: string; variant?: string; rare: boolean; grade?: string; tag: string; chance: number; color: string; accent: string; sub: string }
 type Actions = { retry(): void }
@@ -165,6 +165,10 @@ export class GachaUi {
   private rpsState: RpsState | null = null
   private rpsTimer = 0
   private rpsResolving = false
+  private pvpState: any = null
+  private pvpTeam: string[] = []
+  private pvpAnimation = 0
+  private pvpBusy = false
   private expedition: ExpeditionState | null = null
   private expeditionPrefetch: Promise<ExpeditionState> | null = null
   private expeditionServer = 1
@@ -458,6 +462,8 @@ export class GachaUi {
       usersCard?.classList.remove('privacy-mode')
       usersCard?.querySelector<HTMLButtonElement>(':scope > button.modal-primary[data-action="close"]')?.removeAttribute('hidden')
     }
+    if (screen !== 'pvp') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false}
+    if (screen === 'pvp') void this.openPvp()
     if (screen === 'result') this.revealing = false
     this.root.querySelectorAll<HTMLElement>('[data-screen]').forEach(node => {
       const active = node.dataset.screen === screen
@@ -649,6 +655,17 @@ export class GachaUi {
         <div class="expedition-details"><div class="expedition-test-tools" hidden><button data-action="exp-test-hp">보스 HP 100</button><button data-action="exp-test-respawn">보스 재생성</button></div><p class="expedition-status">원정대 정보를 불러오는 중…</p><div class="expedition-power-summary"></div><div class="expedition-members"></div><div class="expedition-picker"></div><p class="expedition-help">서버당 10명 · 1인 1서버 · 같은 서버에서 캐릭터 변경 가능 · 1단계 클리어 10,000코인·500다이아 / 2단계 클리어 20,000코인·1,000다이아 / 3단계 클리어 30,000코인·1,500다이아 · 매일 오전 9시 새 보스</p></div>
         <div class="toast expedition-toast" aria-live="polite"></div>
       </section>
+      <section class="weed-screen expedition-screen pvp-screen" data-screen="pvp" aria-hidden="true">
+        <header class="weed-header"><button class="weed-back" data-action="close">← 돌아가기</button><b>PvP 아레나</b><small>일요일 20시 정산</small></header>
+        <div class="pvp-main"><div class="pvp-top"><strong>WEEKLY ARENA</strong><span class="pvp-summary">정보를 불러오는 중...</span></div>
+          <div class="pvp-section"><h3>내 방어팀 · 5명 편성</h3><div class="pvp-team"></div><div class="pvp-characters"></div><button class="pvp-primary" data-action="pvp-save">팀 편성 저장</button></div>
+          <div class="pvp-section"><h3>오늘의 도전 상대</h3><div class="pvp-opponents"></div></div>
+          <div class="pvp-section pvp-battle" hidden><h3>ARENA BATTLE <span class="pvp-timer">60.0초</span></h3><div class="pvp-health"><div><b>내 팀</b><div class="pvp-hp-track"><div class="pvp-hp-self"></div></div><span class="pvp-hp-self-label">100,000</span></div><div><b>상대 팀</b><div class="pvp-hp-track"><div class="pvp-hp-enemy"></div></div><span class="pvp-hp-enemy-label">100,000</span></div></div><div class="pvp-battle-characters"></div><div class="pvp-combat-log"></div><button class="pvp-primary" data-action="pvp-skip">전투 연출 건너뛰기</button></div>
+          <div class="pvp-section"><h3>주간 랭킹 TOP 50</h3><div class="pvp-ranking"></div></div>
+          <div class="pvp-section"><h3>최근 전투</h3><div class="pvp-history"></div></div>
+          <p class="pvp-rules">하루 5회 · 오전 9시 초기화 · 팀 체력 100,000 · 캐릭터별 1~2초 공격 · 60초 후 남은 체력으로 판정 · 승리 +20점 / 패배 -10점<br/>일요일 오후 8시 정산: 1위 레전더리 뽑기권 1개 + 한계돌파석 1개 + 3,000다이아 / 2위 한계돌파석 1개 + 3,000다이아 / 3위 3,000다이아</p>
+        </div>
+      </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
         <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong><img class="shop-header-face" src="/shop_armor_face.png" alt="갑옷씨 얼굴"/> 장터</strong><span aria-hidden="true"></span></header>
         <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button type="button" data-action="shop-tab" data-tab="buy">구매</button><button type="button" data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="deco">데코</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-bulk-fixed" hidden></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
@@ -685,7 +702,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button><button class="reward-chip dopamine-lobby-tab" data-action="dopamine"><span><b>도파민존</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><i class="deployment-reset-dot" data-deploy-dot="expedition" hidden></i>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><div class="community-menu"><button type="button" class="nav-button nav-community" data-action="community-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>커뮤니티<i class="community-notice-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="community-options" hidden><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button></div></div><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><i class="deployment-reset-dot" data-deploy-dot="weed" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><i class="deployment-reset-dot" data-deploy-dot="battle" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button><button type="button" class="nav-button" data-action="trade-market"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>유저 거래소</button></div></div><button type="button" class="nav-button nav-pets" data-action="pets"><span class="chiikawa-tab-icon"><img src="/assets/pets/box_normal.png" alt="" /></span>펫</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><div class="community-menu"><button type="button" class="nav-button nav-community" data-action="community-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>커뮤니티<i class="community-notice-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="community-options" hidden><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button></div></div><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><i class="deployment-reset-dot" data-deploy-dot="weed" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="pvp"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>PvP 아레나</button><button type="button" class="nav-button" data-action="battle"><i class="deployment-reset-dot" data-deploy-dot="battle" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>하우스</button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><i class="pepero-sale-dot" hidden></i><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button><button type="button" class="nav-button" data-action="trade-market"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>유저 거래소</button></div></div><button type="button" class="nav-button nav-pets" data-action="pets"><span class="chiikawa-tab-icon"><img src="/assets/pets/box_normal.png" alt="" /></span>펫</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -1479,6 +1496,62 @@ export class GachaUi {
     },450)
   }
 
+  private async pvpRequest(path:string,body?:object):Promise<any>{
+    const response=await fetch('/api/pvp'+path,{method:body?'POST':'GET',credentials:'include',cache:'no-store',headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})})
+    const result=await response.json()
+    if(!response.ok)throw new Error(({pvp_daily_limit:'오늘 도전 횟수 5회를 모두 사용했습니다.',pvp_team_invalid:'서로 다른 캐릭터 5명을 편성해 주세요.',pvp_not_owned:'보유하지 않은 캐릭터가 포함되어 있습니다.',pvp_opponent_invalid:'상대를 찾을 수 없습니다.'} as Record<string,string>)[result.error]||result.error||'PvP 요청 실패')
+    return result
+  }
+  private async openPvp():Promise<void>{
+    try{const state=await this.pvpRequest('');if(this.screen!=='pvp')return;this.pvpState=state;this.pvpTeam=[...state.team];this.renderPvp()}
+    catch(e){this.toast(e instanceof Error?e.message:'PvP 정보를 불러오지 못했습니다.')}
+  }
+  private pvpName(id:string):string{try{return fullName(characterById(id as CharacterId))}catch{return id}}
+  private renderPvp():void{
+    const state=this.pvpState;if(!state||this.screen!=='pvp')return
+    const root=this.root.querySelector<HTMLElement>('.pvp-screen');if(!root)return
+    const esc=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as Record<string,string>)[c]||c)
+    const set=(selector:string,html:string)=>{const el=root.querySelector<HTMLElement>(selector);if(el)el.innerHTML=html}
+    set('.pvp-summary',`내 점수 <b>${state.score}</b> · ${state.wins}승 ${state.losses}패 · 남은 도전 <b>${5-state.used}/5</b>`)
+    set('.pvp-team',Array.from({length:5},(_,i)=>`<div class="pvp-team-slot">${this.pvpTeam[i]?esc(this.pvpName(this.pvpTeam[i])):'빈 슬롯'}</div>`).join(''))
+    set('.pvp-characters',(state.owned as string[]).map(id=>`<button data-action="pvp-select" data-id="${esc(id)}" class="pvp-char ${this.pvpTeam.includes(id)?'selected':''}">${esc(this.pvpName(id))}</button>`).join(''))
+    set('.pvp-opponents',state.opponents.length?state.opponents.map((o:any)=>`<div class="pvp-opponent"><span><b>${esc(o.nickname||o.username)}</b> · ${o.score}점</span><button data-action="pvp-fight" data-id="${Number(o.account_id)}" ${state.used>=5||this.pvpTeam.length!==5?'disabled':''}>도전</button></div>`).join(''):'아직 편성된 상대가 없습니다. 다른 유저가 팀을 저장하면 표시됩니다.')
+    set('.pvp-ranking',state.ranking.length?state.ranking.map((r:any,i:number)=>`<div class="pvp-rank"><b>${i+1}위</b><span>${esc(r.nickname||r.username)}</span><strong>${r.score}점</strong></div>`).join(''):'아직 이번 주 참가자가 없습니다.')
+    set('.pvp-history',state.history.length?state.history.map((m:any)=>`<div class="pvp-rank"><b>${m.won?'승리':'패배'}</b><span>${new Date(Number(m.created_ms)).toLocaleString('ko-KR')}</span><strong>${Number(m.attacker_hp).toLocaleString()} : ${Number(m.defender_hp).toLocaleString()}</strong></div>`).join(''):'아직 전투 기록이 없습니다.')
+  }
+  private async savePvp():Promise<void>{
+    try{if(this.pvpTeam.length!==5){this.toast('캐릭터 5명을 선택해 주세요.');return}this.pvpState=await this.pvpRequest('/team',{team:this.pvpTeam});this.toast('PvP 팀을 저장했습니다.');this.renderPvp()}
+    catch(e){this.toast(e instanceof Error?e.message:'팀 저장 실패')}
+  }
+  private async fightPvp(opponentId:number):Promise<void>{
+    if(this.pvpBusy)return
+    try{
+      this.pvpBusy=true
+      const result=await this.pvpRequest('/fight',{opponentId})
+      const root=this.root.querySelector<HTMLElement>('.pvp-screen');const battle=root?.querySelector<HTMLElement>('.pvp-battle');if(!root||!battle)return
+      battle.hidden=false
+      const events=result.events as Array<{t:number;side:number;slot:number;effect:string;damage:number;hp:number[]}>
+      const maxTime=Math.min(60,events.length?events[events.length-1].t:60)
+      const update=(elapsed:number)=>{
+        const visible=events.filter(e=>e.t<=elapsed),last=visible[visible.length-1],hp=last?.hp||[100000,100000]
+        const el=(selector:string)=>root.querySelector<HTMLElement>(selector)
+        if(el('.pvp-hp-self'))el('.pvp-hp-self')!.style.width=`${hp[0]/1000}%`
+        if(el('.pvp-hp-enemy'))el('.pvp-hp-enemy')!.style.width=`${hp[1]/1000}%`
+        if(el('.pvp-hp-self-label'))el('.pvp-hp-self-label')!.textContent=hp[0].toLocaleString()
+        if(el('.pvp-hp-enemy-label'))el('.pvp-hp-enemy-label')!.textContent=hp[1].toLocaleString()
+        if(el('.pvp-timer'))el('.pvp-timer')!.textContent=`${Math.max(0,60-elapsed).toFixed(1)}초`
+        if(el('.pvp-combat-log'))el('.pvp-combat-log')!.textContent=visible.slice(-3).reverse().map(e=>`${e.side===0?'내 팀':'상대 팀'} ${e.slot+1}번 · ${e.effect} ${e.damage.toLocaleString()} 피해`).join(' / ')
+      }
+      const started=Date.now();update(0)
+      window.clearInterval(this.pvpAnimation)
+      this.pvpAnimation=window.setInterval(()=>{
+        if(this.screen!=='pvp'){window.clearInterval(this.pvpAnimation);this.pvpBusy=false;return}
+        const elapsed=(Date.now()-started)/1000;update(elapsed)
+        if(elapsed>=maxTime+0.3){window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;this.toast(result.won?'PvP 승리! +20점':'PvP 패배 · -10점');void this.openPvp()}
+      },100)
+    }catch(e){this.pvpBusy=false;this.toast(e instanceof Error?e.message:'PvP 전투 실패')}
+  }
+
   private async onClick(event: MouseEvent): Promise<void> {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]')
     const action = button?.dataset.action
@@ -1727,6 +1800,11 @@ export class GachaUi {
     if (action === 'decos') { this.show('decos'); return }
     if (action === 'research') { void this.openResearch(); return }
     if (action === 'house') { this.show('house'); return }
+    if (action === 'pvp') {this.show('pvp');return}
+    if (action === 'pvp-save') {await this.savePvp();return}
+    if (action === 'pvp-select' && button?.dataset.id) {const id=button.dataset.id;this.pvpTeam=this.pvpTeam.includes(id)?this.pvpTeam.filter(x=>x!==id):this.pvpTeam.length<5?[...this.pvpTeam,id]:this.pvpTeam;this.renderPvp();return}
+    if (action === 'pvp-fight' && button?.dataset.id) {await this.fightPvp(Number(button.dataset.id));return}
+    if (action === 'pvp-skip') {window.clearInterval(this.pvpAnimation);this.pvpAnimation=0;this.pvpBusy=false;void this.openPvp();return}
     if (action === 'expedition') {this.expeditionServer=1;this.expedition=null;this.expeditionPreviousHp.clear();this.expeditionPendingDamage.clear();this.show('expedition');return}
     if (action === 'exp-test-hp' || action === 'exp-test-respawn') {
       if(this.store.user?.username?.toLowerCase()!=='test')return

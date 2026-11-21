@@ -166,6 +166,18 @@ async function prepareDatabase() {
     show_house TINYINT(1) NOT NULL DEFAULT 1
   )`)
   try { await pool.query("ALTER TABLE gm_profile_privacy ADD COLUMN show_accessory TINYINT(1) NOT NULL DEFAULT 1") } catch(error) { if(error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pvp (
+    account_id BIGINT UNSIGNED PRIMARY KEY, team JSON NOT NULL, score INT NOT NULL DEFAULT 1000,
+    season VARCHAR(16) NOT NULL DEFAULT '', day_key VARCHAR(12) NOT NULL DEFAULT '', daily_used TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    wins INT NOT NULL DEFAULT 0, losses INT NOT NULL DEFAULT 0, updated_ms BIGINT NOT NULL DEFAULT 0)`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pvp_matches (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, season VARCHAR(16) NOT NULL,
+    attacker BIGINT UNSIGNED NOT NULL, defender BIGINT UNSIGNED NOT NULL, won TINYINT NOT NULL,
+    attacker_hp INT NOT NULL, defender_hp INT NOT NULL, events JSON NOT NULL,
+    created_ms BIGINT NOT NULL, INDEX(attacker,created_ms), INDEX(season,created_ms))`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_pvp_awards (
+    season VARCHAR(16) NOT NULL, rank_no TINYINT NOT NULL, account_id BIGINT UNSIGNED NOT NULL,
+    created_ms BIGINT NOT NULL, PRIMARY KEY(season,rank_no), UNIQUE KEY uq_pvp_award_account(season,account_id))`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(20) NOT NULL,
@@ -1430,7 +1442,123 @@ async function eventView(accountId){
     missions:Object.entries(EVENT_REWARDS).map(([id,reward])=>({id,reward,target:EVENT_TARGETS[id],progress:Math.min(EVENT_TARGETS[id],progress[id]?.progress||0),claimed:progress[id]?.claimed||false}))}
 }
 
+// Arena season ends every Sunday 20:00 Asia/Seoul; daily attempts reset at 09:00.
+function pvpClock(now=Date.now()) {
+  const local=new Date(now+9*3600000)
+  const hour=local.getUTCHours(), day=local.getUTCDay()
+  const dayDate=new Date(local.getTime()-(hour<9?86400000:0))
+  const dayKey=dayDate.toISOString().slice(0,10)
+  const daysUntilSunday=(7-day)%7
+  const close=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()+daysUntilSunday,20)).getTime()-9*3600000
+  const seasonEnd=(day===0&&hour>=20)?close+7*86400000:close
+  return {dayKey,season:new Date(seasonEnd).toISOString().slice(0,16),seasonEnd}
+}
+const pvpTeam = value => {try {const v=parseJson(value);return Array.isArray(v)?v.filter(id=>typeof id==='string').slice(0,5):[]}catch{return []}}
+async function pvpEnsure(id,conn=pool) {
+  await conn.query('INSERT IGNORE INTO gm_pvp(account_id,team) VALUES(?,?)',[id,'[]'])
+}
+async function pvpOwned(id,conn=pool){
+  const [r]=await conn.query('SELECT owned FROM gm_saves WHERE account_id=?',[id]);return r[0]?normalizeOwned(parseJson(r[0].owned)):[]
+}
+async function pvpView(id){
+  await pvpEnsure(id)
+  const clk=pvpClock()
+  const [rows]=await pool.query('SELECT * FROM gm_pvp WHERE account_id=?',[id]);const me=rows[0]
+  const [ranking]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.wins,p.losses FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.season=? AND JSON_LENGTH(p.team)=5 ORDER BY p.score DESC,p.wins DESC,p.updated_ms ASC,p.account_id ASC LIMIT 50`,[clk.season])
+  const [opponents]=await pool.query(`SELECT p.account_id,a.nickname,a.username,p.score,p.team FROM gm_pvp p JOIN gm_accounts a ON a.id=p.account_id WHERE p.account_id<>? AND JSON_LENGTH(p.team)=5 ORDER BY ABS(p.score-?) ASC,p.updated_ms DESC LIMIT 15`,[id,me.season===clk.season?me.score:1000])
+  const [history]=await pool.query('SELECT defender,won,attacker_hp,defender_hp,created_ms FROM gm_pvp_matches WHERE attacker=? ORDER BY id DESC LIMIT 20',[id])
+  return {team:pvpTeam(me.team),owned:await pvpOwned(id),score:me.season===clk.season?me.score:1000,wins:me.season===clk.season?me.wins:0,losses:me.season===clk.season?me.losses:0,used:me.day_key===clk.dayKey?me.daily_used:0,seasonEnd:clk.seasonEnd,ranking,opponents:opponents.slice(0,3).map(o=>({...o,team:pvpTeam(o.team)})),history}
+}
+async function pvpStrength(id,team,conn=pool){
+  const levels=await getLimitBreak(id,conn)
+  const [forge]=await conn.query('SELECT level FROM gm_forge WHERE account_id=?',[id])
+  const forgePower=forge.length?forgeBonus(Number(forge[0].level)):0
+  const [pet]=await conn.query('SELECT p.grade FROM gm_pet_equipped e JOIN gm_pets p ON p.id=e.pet_id WHERE e.account_id=?',[id])
+  const petMult=pet.length?({normal:1.10,rare:1.15,epic:1.20,unique:1.25}[pet[0].grade]||1):1
+  const base=team.reduce((sum,char)=>sum+boostedCharacterPower(char,levels),0)+forgePower
+  return Math.max(100,Math.round(base*petMult))
+}
+function pvpSimulate(a,b){
+  const hp=[100000,100000],power=[a,b],events=[]
+  const next=Array.from({length:10},()=>1+randomInt(1000)/1000)
+  for(let tick=0;tick<600&&hp[0]>0&&hp[1]>0;tick++){
+    const t=(tick+1)/10
+    for(let slot=0;slot<10;slot++){
+      if(next[slot]>t||hp[0]<=0||hp[1]<=0)continue
+      const side=slot<5?0:1,enemy=1-side
+      next[slot]=t+1+randomInt(1000)/1000
+      const evaded=randomInt(100)<10
+      const roll=randomInt(100),effect=roll<5?'강타':roll<20?'치명타':'일반'
+      const factor=effect==='강타'?1.8:effect==='치명타'?1.5:1
+      const damage=evaded?0:Math.max(1,Math.round(180*Math.sqrt(power[side]/1000)*(0.85+randomInt(301)/1000)*factor))
+      hp[enemy]=Math.max(0,hp[enemy]-damage)
+      events.push({t:Number(t.toFixed(1)),side,slot:slot%5,effect:evaded?'회피':effect,damage,hp:[...hp]})
+    }
+  }
+  return {won:hp[0]>hp[1],hp,events}
+}
+let pvpSettlementBusy=false
+async function pvpSettle(){
+  if(!ready||pvpSettlementBusy)return
+  pvpSettlementBusy=true
+  try{
+    const clk=pvpClock(),ended=new Date(clk.seasonEnd-7*86400000).toISOString().slice(0,16)
+    const [leaders]=await pool.query(`SELECT account_id FROM gm_pvp WHERE season=? AND JSON_LENGTH(team)=5 ORDER BY score DESC,wins DESC,updated_ms ASC,account_id ASC LIMIT 3`,[ended])
+    for(let i=0;i<leaders.length;i++){
+      await inTransaction(async conn=>{
+        const [insert]=await conn.query('INSERT IGNORE INTO gm_pvp_awards(season,rank_no,account_id,created_ms) VALUES(?,?,?,?)',[ended,i+1,leaders[i].account_id,Date.now()])
+        if(!insert.affectedRows)return
+        const id=leaders[i].account_id
+        await conn.query('INSERT INTO gm_mail(from_id,to_id,message,coins,diamonds,sent_day,created_ms) VALUES(?,?,?,?,?,?,?)',[0,id,`PvP 아레나 주간 ${i+1}위 보상`,0,3000,checkInDay(),Date.now()])
+        if(i<2){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+1 WHERE account_id=?',[id])}
+        if(i===0)await conn.query('INSERT INTO gm_legend_tickets(owner_id) VALUES(?)',[id])
+      })
+    }
+  }catch(e){console.error('[pvp] settlement:',e)}finally{pvpSettlementBusy=false}
+}
+
 const routes = {
+  'GET /api/pvp': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    send(res,200,await pvpView(a.id))
+  },
+  'POST /api/pvp/team': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    const {team}=await readJson(req)
+    if(!Array.isArray(team)||team.length!==5||new Set(team).size!==5||team.some(x=>typeof x!=='string'||!CHARACTER_IDS.includes(x)))return send(res,400,{error:'pvp_team_invalid'})
+    const owned=await pvpOwned(a.id)
+    if(team.some(x=>!owned.includes(x)))return send(res,400,{error:'pvp_not_owned'})
+    await pvpEnsure(a.id)
+    await pool.query('UPDATE gm_pvp SET team=?,updated_ms=? WHERE account_id=?',[JSON.stringify(team),Date.now(),a.id])
+    send(res,200,await pvpView(a.id))
+  },
+  'POST /api/pvp/fight': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
+    const {opponentId}=await readJson(req)
+    if(!Number.isSafeInteger(opponentId)||opponentId===Number(a.id))return send(res,400,{error:'pvp_opponent_invalid'})
+    const result=await inTransaction(async conn=>{
+      await pvpEnsure(a.id,conn)
+      const [mine]=await conn.query('SELECT * FROM gm_pvp WHERE account_id=? FOR UPDATE',[a.id]);const me=mine[0],clock=pvpClock()
+      const used=me.day_key===clock.dayKey?Number(me.daily_used):0
+      if(used>=5)return {error:'pvp_daily_limit'}
+      const myTeam=pvpTeam(me.team)
+      if(myTeam.length!==5)return {error:'pvp_team_invalid'}
+      const owned=await pvpOwned(a.id,conn)
+      if(myTeam.some(x=>!owned.includes(x)))return {error:'pvp_not_owned'}
+      const [others]=await conn.query('SELECT team FROM gm_pvp WHERE account_id=?',[opponentId])
+      if(!others.length||pvpTeam(others[0].team).length!==5)return {error:'pvp_opponent_invalid'}
+      const theirTeam=pvpTeam(others[0].team)
+      const myPower=await pvpStrength(a.id,myTeam,conn),theirPower=await pvpStrength(opponentId,theirTeam,conn)
+      const sim=pvpSimulate(myPower,theirPower),seasonScore=me.season===clock.season?Number(me.score):1000
+      const score=Math.max(0,seasonScore+(sim.won?20:-10))
+      await conn.query('UPDATE gm_pvp SET score=?,season=?,day_key=?,daily_used=?,wins=?,losses=?,updated_ms=? WHERE account_id=?',[score,clock.season,clock.dayKey,used+1,(me.season===clock.season?Number(me.wins):0)+(sim.won?1:0),(me.season===clock.season?Number(me.losses):0)+(sim.won?0:1),Date.now(),a.id])
+      await conn.query('INSERT INTO gm_pvp_matches(season,attacker,defender,won,attacker_hp,defender_hp,events,created_ms) VALUES(?,?,?,?,?,?,?,?)',[clock.season,a.id,opponentId,sim.won?1:0,...sim.hp,JSON.stringify(sim.events),Date.now()])
+      return {...sim,score,used:used+1,myTeam,theirTeam,myPower,theirPower}
+    })
+    if(result.error)return send(res,409,result)
+    send(res,200,result)
+  },
+
   'GET /api/rilakkuma-event': async (req,res)=>{
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
@@ -3249,4 +3377,6 @@ server.listen(PORT, () => {
   // Server-side progression must not depend on an expedition page visit.
   setInterval(expeditionBackgroundTick, EXP_TICK)
   setInterval(battleBackgroundTick, BATTLE_BACKGROUND_INTERVAL_MS)
+  setInterval(pvpSettle, 60_000)
+  setTimeout(pvpSettle, 10_000)
 })
