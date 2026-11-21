@@ -4622,6 +4622,20 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if (rewardCaption) rewardCaption.textContent = `${stageLabel} 스테이지 클리어 보상`
     // 60초 제한 내 처치 가능한 최소 전투력 (서버와 동일한 단계 HP).
     const recommended = Math.ceil(view.maxHp / 60)
+    // Auto-challenge the next stage only after the fallback stage has been cleared.
+    // Ordinary stage progression already happens on the server after each clear.
+    const pendingNext = this.store.battle?.retryStage === -(view.stage + 1)
+    if (this.screen === 'battle' && fighter && pendingNext && view.stage < 500 &&
+        view.power >= recommended + 200 && !this.battleActionBusy && !this.battleSyncing &&
+        !this.battleStageChanging) {
+      this.battleActionBusy = true
+      void this.store.retryBattleStage().then(() => {
+        this.lastEnemyHp = -1
+        if (this.screen === 'battle') this.renderBattleStatus()
+      }).catch(error => this.handleError(error)).finally(() => {
+        this.battleActionBusy = false
+      })
+    }
     const recValue = this.root.querySelector<HTMLElement>('.battle-recommended-value')
     if (recValue) recValue.textContent = recommended.toLocaleString('ko-KR')
     const recCompare = this.root.querySelector<HTMLElement>('.battle-recommended-compare')
