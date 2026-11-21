@@ -1,1 +1,1 @@
-하위 메뉴의 빨간점이 표시되면 상위 메뉴에도 빨간점이 표시되도록 공통 스타일을 추가했습니다. 기존 상위 빨간점과 중복 표시하지 않습니다.
+Apply after the latest PvP team save/challenge confirmation patch. Replace src/styles/gacha.css. Parent menu red dots reflect pending child menu dots, including PvP. No server changes.

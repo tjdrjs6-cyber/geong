@@ -7626,3 +7626,24 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-action-dialog .pvp-action-message{margin:20px 0 24px;text-align:center;font:inherit;font-weight:700;color:#73526a;line-height:1.6}
 .pvp-action-dialog .pets-confirm-actions{display:flex;justify-content:center;gap:10px}
 .pvp-action-dialog .pets-confirm-actions button{min-width:100px}
+
+/* Parent notification aggregation: driven by visible child indicators, not
+   by the parent button's own notification markup. */
+#ui .activity-menu:has(.activity-options .pvp-daily-dot:not([hidden])) > .nav-activity::after,
+#ui .activity-menu:has(.activity-options .geongi-keyring-dot:not([hidden])) > .nav-activity::after,
+#ui .activity-menu:has(.activity-options .wild-weed-alert-dot:not([hidden])) > .nav-activity::after,
+#ui .activity-menu:has(.activity-options .deployment-reset-dot:not([hidden])) > .nav-activity::after,
+#ui .activity-menu:has(.activity-options .geongi-first-menu-dot:not([hidden])) > .nav-activity::after,
+#ui .myroom-menu:has(.myroom-options :is(.geongi-equipment-dot,.geongi-first-menu-dot):not([hidden])) > .nav-myroom::after,
+#ui .market-menu:has(.market-options :is(.pepero-sale-dot,.geongi-first-menu-dot):not([hidden])) > .nav-market::after,
+#ui .community-menu:has(.community-options :is(.announcement-dot,.global-chat-dot,.geongi-first-menu-dot):not([hidden])) > .nav-community::after {
+  content:''!important;position:absolute!important;top:3px!important;right:3px!important;left:auto!important;bottom:auto!important;
+  width:9px!important;height:9px!important;border-radius:50%!important;
+  border:1.5px solid #fff!important;background:#ee384b!important;
+  box-shadow:0 0 0 1px rgba(175,25,45,.14)!important;z-index:30!important;pointer-events:none!important;
+}
+/* A parent has only one visible marker even when multiple children are pending. */
+#ui .activity-menu:has(.activity-options :is(.pvp-daily-dot,.geongi-keyring-dot,.wild-weed-alert-dot,.deployment-reset-dot,.geongi-first-menu-dot):not([hidden])) > .nav-activity > :is(.pvp-daily-dot,.geongi-keyring-dot,.wild-weed-alert-dot,.geongi-first-menu-dot),
+#ui .myroom-menu:has(.myroom-options :is(.geongi-equipment-dot,.geongi-first-menu-dot):not([hidden])) > .nav-myroom > :is(.geongi-equipment-dot,.geongi-first-menu-dot),
+#ui .market-menu:has(.market-options :is(.pepero-sale-dot,.geongi-first-menu-dot):not([hidden])) > .nav-market > :is(.pepero-sale-dot,.geongi-first-menu-dot),
+#ui .community-menu:has(.community-options :is(.announcement-dot,.global-chat-dot,.geongi-first-menu-dot):not([hidden])) > .nav-community > :is(.community-notice-dot,.geongi-first-menu-dot) {display:none!important}
