@@ -137,18 +137,22 @@ async function prepareDatabase() {
     id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`)
-  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
-  // Upgrade the shared pool once when the prize schedule changes from A-G to A-L.
+  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([3,3,3,3,3,3,3,3,76])])
+  // Upgrade the shared pool once to the A-H rare-keyring / I blank schedule.
   const [lotteryPoolRows] = await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
   const existingLotteryPool = lotteryPoolRows.length ? (typeof lotteryPoolRows[0].remaining === 'string' ? JSON.parse(lotteryPoolRows[0].remaining) : lotteryPoolRows[0].remaining) : null
-  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 12) {
-    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
+  let lotteryScheduleMigrated = false
+  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 9) {
+    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([3,3,3,3,3,3,3,3,76])])
+    // Existing users' awarded items are unaffected; old draw history is cleared below after table creation.
+    lotteryScheduleMigrated = true
   }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_lottery_history (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, account_id BIGINT UNSIGNED NOT NULL,
     grade CHAR(1) NOT NULL, character_id VARCHAR(40), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX (account_id)
   )`)
+  if (lotteryScheduleMigrated) await pool.query('DELETE FROM gm_lottery_history')
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_rps (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     slot VARCHAR(24) NOT NULL DEFAULT '',
@@ -1370,9 +1374,9 @@ async function wildWeedState(accountId, db=pool) {
   const weeds=active.map(w=>({id:Number(w.id),x:Number(w.pos_x),y:Number(w.pos_y),type:w.weed_type==='golden'?'golden':'normal'}))
   return {visible:weeds.length>0,weeds,x:weeds[0]?.x??50,y:weeds[0]?.y??70,type:weeds[0]?.type??'normal',count:Number(base.inventory),goldenCount:Number(base.golden_inventory),slot,nextAt:(slot+1)*WILD_WEED_HOUR}
 }
-const LOTTERY_IDS = ['halloween_chiikawa','halloween_hachiware','halloween_usagi',null,null,null,null,null,null,null,null,null]
-const LOTTERY_ACCESSORIES = [null,null,null,'chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring',null]
-const LOTTERY_GRADES = 'ABCDEFGHIJKL'.split('')
+const LOTTERY_IDS = Array(9).fill(null)
+const LOTTERY_ACCESSORIES = ['chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring',null]
+const LOTTERY_GRADES = 'ABCDEFGHI'.split('')
 const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:1})
 let lotteryNoticeTablesReady = null
 async function ensureLotteryNoticeTables(){
@@ -1722,7 +1726,7 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
-    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade<>'L' ORDER BY h.id DESC LIMIT 12`)
+    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade IN ('A','B','C','D','E','F','G','H') ORDER BY h.id DESC LIMIT 12`)
     await ensureLotteryNoticeTables()
     const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
@@ -1736,14 +1740,14 @@ const routes = {
     try{
       await conn.beginTransaction()
       await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
-      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,2,2,2,2,2,2,2,2,81])])
+      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([3,3,3,3,3,3,3,3,76])])
       await conn.query('DELETE FROM gm_lottery_history')
       await ensureLotteryNoticeTables()
       await conn.query('INSERT INTO gm_lottery_reset_events () VALUES ()')
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{ok:true,...lotteryView([1,1,1,2,2,2,2,2,2,2,2,81]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
+    send(res,200,{ok:true,...lotteryView([3,3,3,3,3,3,3,3,76]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
   },
   'POST /api/lottery/reset-seen': async (req,res) => {
     const account=await currentAccount(req)
@@ -1872,22 +1876,8 @@ const routes = {
     if(outcome.error)return send(res,409,outcome)
     send(res,200,{ok:true,market:await marketState(account.id),save:await getSave(account.id)})
   },
-  'POST /api/shop/pepero': async (req,res) => {
-    const account=await currentAccount(req)
-    if(!account)return send(res,401,{error:'login_required'})
-    await readJson(req)
-    if(checkInDay()>'2026-11-18')return send(res,409,{error:'limited_sale_ended'})
-    const result=await inTransaction(async conn=>{
-      const [rows]=await conn.query('SELECT gems,owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
-      if(!rows.length)return {error:'login_required'}
-      const owned=normalizeOwned(parseJson(rows[0].owned))
-      if(owned.includes('pepero_chiikawa'))return {error:'limited_already_owned'}
-      if(Number(rows[0].gems)<1 && !rpsAdmin(account))return {error:'not_enough_coins'}
-      await conn.query('UPDATE gm_saves SET gems=gems-?,owned=? WHERE account_id=?',[rpsAdmin(account)?0:1,JSON.stringify([...owned,'pepero_chiikawa']),account.id])
-      return {ok:true}
-    })
-    if(result.error)return send(res,409,result)
-    send(res,200,{save:await getSave(account.id)})
+  'POST /api/shop/pepero': async (_req,res) => {
+    send(res,410,{error:'limited_sale_ended'})
   },
   'POST /api/shop/buy': async (_req,res) => {
     send(res,410,{error:'shop_purchase_discontinued'})
