@@ -226,3 +226,11 @@
 .house-care-track{height:7px;background:#e8dcd7;border-radius:9px;overflow:hidden;margin-top:3px}.house-care-track i{display:block;height:100%;background:#e9a5b4;border-radius:9px}
 .house-care-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:11px}.house-care-actions button{border:1px solid #e9b8c3;background:#fff0f4;border-radius:10px;padding:9px 4px;color:#774955;font-weight:700;font-size:11px;cursor:pointer}
 .house-care-actions button:active{transform:scale(.98)}
+
+/* House care panel must remain tappable on short/mobile viewports. */
+#ui .house-screen .house-care{flex:0 0 auto;max-height:min(35dvh,240px);overflow-y:auto;overscroll-behavior:contain;position:relative;z-index:3;margin:5px auto;padding:9px 12px}
+#ui .house-screen .house-care-actions button{min-height:36px;touch-action:manipulation}
+#ui .house-screen .house-scroll-viewport{flex-shrink:1;max-height:36dvh !important;height:36dvh !important}
+#ui .house-screen .house-tools{position:relative;z-index:4;overflow-y:auto;max-height:72px}
+#ui .house-screen .house-panel{min-height:80px}
+@media(max-height:700px){#ui .house-screen .house-scroll-viewport{height:29dvh !important;max-height:29dvh !important}#ui .house-screen .house-care{max-height:39dvh}}
