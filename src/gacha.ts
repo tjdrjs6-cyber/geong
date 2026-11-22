@@ -1,6 +1,5 @@
 import './styles/main.css'
 import './styles/gacha.css'
-import { installRilakkumaEvent } from './ui/rilakkumaEvent'
 import { Audio } from './engine/audio'
 import { SaveStore } from './engine/save'
 import { CHARACTERS } from './game/collection'
@@ -44,7 +43,7 @@ function keepPageAtTop(): void {
   soon()
 }
 keepPageAtTop()
-installRilakkumaEvent()
+
 
 /** Warm the image cache while the account request is running. Keep this bounded so boot
  * does not wait for the entire collection and does not flood mobile connections. */
