@@ -218,3 +218,11 @@
   width:100% !important; height:100% !important;
   object-fit:contain !important; transform:none !important;
 }
+
+/* House tamagotchi: one shared responsive layout on desktop/mobile. */
+.house-care{margin:10px auto;padding:12px;max-width:660px;width:calc(100% - 20px);border:1px solid rgba(180,130,130,.35);border-radius:15px;background:var(--panel-bg,#fff8f1);color:#5e4141;box-sizing:border-box}
+.house-care-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:10px}.house-care-head span{font-size:11px}
+.house-care-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.house-care-stats>div>span{font-size:11px}
+.house-care-track{height:7px;background:#e8dcd7;border-radius:9px;overflow:hidden;margin-top:3px}.house-care-track i{display:block;height:100%;background:#e9a5b4;border-radius:9px}
+.house-care-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:11px}.house-care-actions button{border:1px solid #e9b8c3;background:#fff0f4;border-radius:10px;padding:9px 4px;color:#774955;font-weight:700;font-size:11px;cursor:pointer}
+.house-care-actions button:active{transform:scale(.98)}

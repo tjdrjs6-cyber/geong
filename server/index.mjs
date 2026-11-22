@@ -286,6 +286,10 @@ async function prepareDatabase() {
     salt VARCHAR(64) NOT NULL,
     last_slot BIGINT NOT NULL DEFAULT 0
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_care (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    state_json JSON NOT NULL
+  )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_house (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     layout JSON NOT NULL
@@ -634,6 +638,16 @@ async function withSave(accountId, change) {
   } finally {
     conn.release()
   }
+}
+
+function houseCareDecay(raw, now) {
+  const s=raw && typeof raw==='object' ? raw : {}
+  const elapsed=Math.min(12,Math.max(0,(now-(Number(s.updatedAt)||now))/3600000))
+  const val=(key,rate)=>Math.max(0,Math.min(100,Math.round((Number.isFinite(Number(s[key]))?Number(s[key]):100)-elapsed*rate)))
+  return { hunger:val('hunger',4),happy:val('happy',3),clean:val('clean',2),energy:val('energy',0),
+    level:Math.max(1,Math.min(100,Number(s.level)||1)),exp:Math.max(0,Number(s.exp)||0),
+    affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
+    cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now }
 }
 
 /** Per-account house-coin row (created with a secret random salt on first use). */
@@ -2786,6 +2800,54 @@ const routes = {
     })
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
+  },
+  'GET /api/house/care': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const [rows] = await pool.query('SELECT state_json FROM gm_house_care WHERE account_id=?', [account.id])
+    send(res, 200, { care: houseCareDecay(rows[0] ? parseJson(rows[0].state_json) : null, Date.now()) })
+  },
+  'POST /api/house/care': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { action } = await readJson(req)
+    const rules = {
+      feed: { key:'hunger', limit:75, gain:25, cost:100, cooldown:300000, exp:5 },
+      snack: { key:'hunger', limit:90, gain:10, extra:'happy', extraGain:15, cost:200, cooldown:600000, exp:5 },
+      play: { key:'happy', limit:75, gain:25, cost:0, cooldown:600000, exp:10 },
+      wash: { key:'clean', limit:65, gain:35, cost:100, cooldown:900000, exp:5 },
+      sleep: { key:'energy', limit:80, gain:20, cost:0, cooldown:3600000, exp:5 },
+      pet: { key:null, cost:0, cooldown:1800000, exp:3 }
+    }
+    const rule = rules[action]
+    if (!rule) return send(res, 400, { error:'invalid_care_action' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)', [account.id, JSON.stringify(houseCareDecay(null,Date.now()))])
+      const [rows] = await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE', [account.id])
+      const now=Date.now(), care=houseCareDecay(parseJson(rows[0].state_json),now)
+      if ((care.cooldowns[action]||0)>now) { await conn.rollback(); return send(res,409,{error:'care_cooldown',nextAt:care.cooldowns[action]}) }
+      const allowed=action==='snack' ? care.hunger<=90 || care.happy<=85 : !rule.key || care[rule.key]<=rule.limit
+      if (!allowed) { await conn.rollback(); return send(res,409,{error:'care_full'}) }
+      if (rule.cost) {
+        const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?', [rule.cost,account.id,rule.cost])
+        if (!paid.affectedRows) { await conn.rollback(); return send(res,409,{error:'insufficient_coins'}) }
+      }
+      if (rule.key) care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
+      if (rule.extra) care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
+      if (action==='play') care.energy=Math.max(0,care.energy-10)
+      if (action==='pet') care.affection=Math.min(1000,care.affection+5)
+      care.cooldowns[action]=now+rule.cooldown
+      const day=new Date(now+9*3600000).toISOString().slice(0,10)
+      if (care.expDay!==day) {care.expDay=day;care.expToday=0}
+      const earned=Math.min(rule.exp,Math.max(0,300-care.expToday))
+      care.expToday+=earned;care.exp+=earned
+      while (care.level<100 && care.exp>=care.level*50) {care.exp-=care.level*50;care.level++}
+      await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
+      await conn.commit()
+      send(res,200,{care,spent:rule.cost,earned})
+    } catch(error) {await conn.rollback();throw error} finally {conn.release()}
   },
   'GET /api/house/coin': async (req, res) => {
     const account = await currentAccount(req)

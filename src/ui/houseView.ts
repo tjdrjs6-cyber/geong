@@ -2,7 +2,7 @@ import './houseRedesign.css'
 import { CHARACTERS, characterById, fullName, type CharacterId } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
 import { DECOS, DECO_IMAGE_URLS, HOUSE_MAX_FRIENDS, HOUSE_MAX_PIECES, decoById, type DecoId, type HouseLayout } from '../game/decos'
-import type { HouseCoin, RemoteGachaStore } from '../game/remoteStore'
+import type { HouseCoin, HouseCareState, RemoteGachaStore } from '../game/remoteStore'
 
 type Selection = { kind: 'piece' | 'friend'; index: number } | null
 /** Characters always render above every deco, whatever their position. */
@@ -43,6 +43,8 @@ export class HouseView {
   private selected: Selection = null
   private tab: 'floor' | 'wall' | 'friend' = 'floor'
   private saveTimer = 0
+  private care: HouseCareState | null = null
+  private careBusy = false
   private coin: HouseCoin | null = null
   private coinNextAt = 0
   private coinClockSkew = 0
@@ -75,6 +77,7 @@ export class HouseView {
     this.layout.friends = this.layout.friends.filter(friend => this.store.data.owned.includes(friend.id as CharacterId))
     this.selected = null
     this.render()
+    void this.loadCare()
     this.wanderTimers.forEach(timer => window.clearTimeout(timer))
     this.wanderTimers = []
     const generation = ++this.wanderGeneration
@@ -86,6 +89,7 @@ export class HouseView {
 
   /** Handles house-specific button actions; returns true when the action was consumed. */
   handle(action: string, button: HTMLElement): boolean {
+    if (action.startsWith('house-care-')) {void this.performCare(action.slice('house-care-'.length));return true}
     if (action === 'house-coin') return true
     if (action === 'house-tab') { this.tab = button.dataset.tab === 'friend' ? 'friend' : button.dataset.tab === 'wall' ? 'wall' : 'floor'; this.renderPanel(); return true }
     if (action === 'house-add' && button.dataset.id) { this.addPiece(button.dataset.id as DecoId); return true }
@@ -111,6 +115,36 @@ export class HouseView {
     return false
   }
 
+  private async loadCare():Promise<void> {
+    try {this.care=(await this.store.houseCare()).care;this.renderCare()}
+    catch(error){this.hooks.error(error)}
+  }
+  private async performCare(action:string):Promise<void> {
+    if(this.careBusy)return
+    this.careBusy=true
+    try {
+      const result=await this.store.houseCareAction(action)
+      this.care=result.care
+      this.renderCare()
+      this.hooks.wallet()
+      this.hooks.toast(`치이카와 돌보기 완료! 경험치 +${result.earned}`)
+    } catch(error) {
+      const code=(error as {code?:string}).code
+      if(code==='care_full')this.hooks.toast('아직 돌봄이 필요하지 않아요!')
+      else if(code==='care_cooldown')this.hooks.toast('조금 뒤에 다시 돌봐주세요!')
+      else if(code==='insufficient_coins')this.hooks.toast('코인이 부족해요!')
+      else this.hooks.error(error)
+    } finally {this.careBusy=false}
+  }
+  private renderCare():void {
+    const el=this.root.querySelector<HTMLElement>('.house-care')
+    if(!el)return
+    const c=this.care
+    if(!c){el.innerHTML='<p>치이카와 육성 정보를 불러오는 중…</p>';return}
+    const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy]]
+    const actions:[string,string,number][]=[['feed','밥주기',100],['snack','간식주기',200],['play','놀아주기',0],['wash','씻기기',100],['sleep','재우기',0],['pet','쓰다듬기',0]]
+    el.innerHTML=`<div class="house-care-head"><strong>치이카와 키우기 · LV.${c.level}</strong><span>EXP ${c.exp}/${c.level*50} · 친밀도 ${c.affection}</span></div><div class="house-care-stats">${stats.map(([name,n])=>`<div><span>${name} ${n}%</span><div class="house-care-track"><i style="width:${n}%"></i></div></div>`).join('')}</div><div class="house-care-actions">${actions.map(([key,name,cost])=>`<button type="button" data-action="house-care-${key}">${name}${cost?' · '+cost+'코인':''}</button>`).join('')}</div>`
+  }
   private get isOpen(): boolean { return this.root.classList.contains('is-active') }
   /** Fetch this hour's coin; re-check when the next one is due (an untaken coin vanishes then). */
   private async loadCoin(): Promise<void> {

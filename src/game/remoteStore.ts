@@ -338,6 +338,12 @@ export class RemoteGachaStore {
     return { claimed: result.claimed, box: result }
   }
   /** This hour's house coin (null once taken); it disappears when the next one appears at nextAt. */
+  async houseCare(): Promise<{care:HouseCareState}> { return request('house/care') }
+  async houseCareAction(action:string): Promise<{care:HouseCareState;spent:number;earned:number}> {
+    const result=await request<{care:HouseCareState;spent:number;earned:number}>('house/care',{action})
+    if(result.spent) this.data.gems=Math.max(0,this.data.gems-result.spent)
+    return result
+  }
   async houseCoin(): Promise<HouseCoinState> {
     return request<HouseCoinState>('house/coin')
   }
@@ -502,3 +508,5 @@ export class RemoteGachaStore {
 
 type WeedResult = { save: GachaSave; weed: WeedState | null; earned: number; now: number }
 type BattleResult = { cleared?: {stage:number;coins:number;fragments:number}[]; failedStage?:number; save: GachaSave; battle: BattleState; earned: number; now: number }
+
+export type HouseCareState = {hunger:number;happy:number;clean:number;energy:number;level:number;exp:number;affection:number;cooldowns:Record<string,number>;updatedAt:number}
