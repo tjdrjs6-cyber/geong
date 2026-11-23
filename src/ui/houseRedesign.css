@@ -385,3 +385,10 @@
 #ui .house-screen .house-build-spot{pointer-events:auto !important;width:100%;height:75%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;border:1px dashed #cba18d !important;border-radius:9px;background:#fffaf0c9 !important;color:#765448;font-size:10px;padding:3px;white-space:normal;cursor:pointer}
 #ui .house-screen .house-build-spot small{font-size:9px;line-height:1.25}
 #ui .house-screen .house-single-chiikawa{z-index:20 !important;pointer-events:auto !important}
+
+/* Cardinal-point placement on the diamond floor (N arcade, E bed, W kitchen, S shower). */
+#ui .house-screen .house-life-cell:nth-child(1){left:50% !important;top:36% !important}
+#ui .house-screen .house-life-cell:nth-child(2){left:50% !important;top:76% !important}
+#ui .house-screen .house-life-cell:nth-child(3){left:73% !important;top:57% !important}
+#ui .house-screen .house-life-cell:nth-child(4){left:27% !important;top:57% !important}
+#ui .house-screen .house-life-cell:nth-child(4).is-built img{transform:scaleX(-1)}

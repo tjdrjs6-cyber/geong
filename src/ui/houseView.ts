@@ -51,7 +51,7 @@ export class HouseView {
     },3200)
   }
   private dropFacility():void{
-    const spots=[{id:'arcade',x:34,y:49},{id:'shower',x:66,y:49},{id:'bed',x:34,y:64},{id:'kitchen',x:66,y:64}]
+    const spots=[{id:'arcade',x:50,y:39},{id:'shower',x:50,y:76},{id:'bed',x:73,y:57},{id:'kitchen',x:27,y:57}]
     const hit=spots.map(p=>({...p,d:Math.hypot((this.chiPos.x-p.x)/1.15,(this.chiPos.y-p.y)/1.0)})).sort((a,b)=>a.d-b.d)[0]
     if(!hit||hit.d>14)return
     const building=this.life.buildings[hit.id]
