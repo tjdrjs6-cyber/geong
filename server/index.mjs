@@ -2806,7 +2806,7 @@ const routes = {
   'GET /api/house/life': async (req,res) => {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT state_json FROM gm_house_life WHERE account_id=?',[account.id])
-    send(res,200,{life:rows[0]?parseJson(rows[0].state_json):{buildings:{},snacks:{}}})
+    const raw=rows[0]?parseJson(rows[0].state_json):null;send(res,200,{life:({...(raw||{}),buildings:Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}])),snacks:(raw?.snacks||{})})})
   },
   'POST /api/house/life': async (req,res) => {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
@@ -2818,13 +2818,9 @@ const routes = {
       await conn.beginTransaction()
       await conn.query('INSERT IGNORE INTO gm_house_life (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify({buildings:{},snacks:{}})])
       const [rows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
-      const life=parseJson(rows[0].state_json)||{};life.buildings=life.buildings||{};life.snacks=life.snacks||{}
+      const raw=parseJson(rows[0].state_json)||{};const life=({...(raw||{}),buildings:Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}])),snacks:(raw?.snacks||{})})
       let spent=0,prize=null
-      if(action==='build') {
-        if(!Object.hasOwn(costs,id))return await conn.rollback(),send(res,400,{error:'invalid_building'})
-        if(life.buildings[id])return await conn.rollback(),send(res,409,{error:'already_built'})
-        spent=costs[id];life.buildings[id]={level:1,readyAt:Date.now()+({arcade:900000,shower:600000,bed:180000,kitchen:300000}[id])}
-      } else if(action==='pull') {
+      if(action==='pull') {
         spent=10000;const roll=randomInt(100);let cursor=0
         for(const [key,value] of Object.entries(snacks)){cursor+=value.weight;if(roll<cursor){prize={id:key,name:value.name};break}}
         life.snacks[prize.id]=(life.snacks[prize.id]||0)+1
@@ -2862,7 +2858,7 @@ const routes = {
       const now=Date.now(), care=houseCareDecay(parseJson(rows[0].state_json),now)
       const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
       const life=lifeRows[0]?parseJson(lifeRows[0].state_json):{buildings:{},snacks:{}}
-      life.buildings=life.buildings||{};life.snacks=life.snacks||{}
+      life.buildings=Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}]));life.snacks=life.snacks||{}
       const needs={feed:'kitchen',wash:'shower',play:'arcade',sleep:'bed'}
       if(needs[action]&&(!life.buildings[needs[action]]||life.buildings[needs[action]].readyAt>now)){await conn.rollback();return send(res,409,{error:'building_required'})}
       if(action==='snack'&&(!['candy','cookie','pudding','cake','lunch'].includes(snackId)||!(life.snacks[snackId]>0))){await conn.rollback();return send(res,409,{error:'snack_required'})}
@@ -2925,7 +2921,7 @@ const routes = {
       if(action==='mini-start'){
         const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
         const arcade=lifeRows[0]&&parseJson(lifeRows[0].state_json)?.buildings?.arcade
-        if(!arcade||arcade.readyAt>now){await conn.rollback();return send(res,409,{error:'building_required'})}
+        // Arcade is installed for every player; no construction check is required.
         if((care.cooldowns.play||0)>now){await conn.rollback();return send(res,409,{error:'care_cooldown'})}
         if(care.happy>75){await conn.rollback();return send(res,409,{error:'care_full'})}
         if(care.mini&&now-care.mini.startedAt<30000){await conn.rollback();return send(res,409,{error:'mini_in_progress'})}

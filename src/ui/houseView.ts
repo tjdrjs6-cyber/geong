@@ -42,7 +42,7 @@ export class HouseView {
     return [{id:'arcade',x:50,y:41},{id:'shower',x:50,y:72},{id:'bed',x:77,y:57},{id:'kitchen',x:23,y:57}]
   }
   private nearFurniture(x:number,y:number):boolean{
-    return this.facilitySpots().some(p=>this.life.buildings[p.id]&&Math.hypot((x-p.x)/1.25,y-p.y)<12)
+    return this.facilitySpots().some(p=>Math.hypot((x-p.x)/1.25,y-p.y)<12)
   }
   private placeChiikawa():void{
     const chi=this.root.querySelector<HTMLElement>('.house-single-chiikawa')
@@ -68,8 +68,7 @@ export class HouseView {
     const spots=this.facilitySpots()
     const hit=spots.map(p=>({...p,d:Math.hypot((this.chiPos.x-p.x)/1.15,(this.chiPos.y-p.y)/1.0)})).sort((a,b)=>a.d-b.d)[0]
     if(!hit||hit.d>16)return
-    const building=this.life.buildings[hit.id]
-    if(!building||building.readyAt>Date.now()){this.hooks.toast('시설을 먼저 건설하고 완공을 기다려주세요.');return}
+    // Every facility is installed by default.
     const facility=facilities.find(f=>f.id===hit.id)
     if(!facility)return
     this.lastInteraction=Date.now()
@@ -150,7 +149,7 @@ export class HouseView {
   private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.5부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
-    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell ${ready?'is-built':''}" data-facility="${f.id}" aria-label="${f.name}">${b?`<img src="${f.img}" alt="${f.name}" draggable="false"/><span class="house-facility-label">${f.name}${ready?'':' · 건설 중'}</span>`:`<button class="house-build-spot" data-action="house-build" data-id="${f.id}"><strong>${f.name}</strong><small>건설 ${f.price.toLocaleString()}코인</small></button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
+    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{return `<section class="house-life-cell is-built" data-facility="${f.id}" aria-label="${f.name}"><img src="${f.img}" alt="${f.name}" draggable="false"/><span class="house-facility-label">${f.name}</span></section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
     this.placeChiikawa();this.attachChiDrag()
   }
   private renderCare():void{
