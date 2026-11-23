@@ -296,3 +296,39 @@
 .house-mini-pointer{position:absolute;left:0;top:0;width:5px;height:100%;background:#e0788b;border-radius:3px}
 .house-quests{display:flex;flex-wrap:wrap;gap:5px}.house-quests span{font-size:10px;padding:5px 7px;background:#fff3e8;border-radius:7px}
 .house-diary{font-size:11px;line-height:1.8;color:#7d605a}
+/* Tamagotchi care interface, shared across PC and mobile. */
+#ui .house-screen .house-care{background:#fff9f2;border:1px solid #e8d3c5;border-radius:18px;padding:0;max-height:42dvh;overflow-y:auto;box-shadow:0 3px 12px #755c4610}
+#ui .house-screen .tama-shell{padding:12px;color:#654d43}
+#ui .house-screen .tama-top,#ui .house-screen .tama-exp-label,#ui .house-screen .tama-stat-label{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#ui .house-screen .tama-title{display:flex;flex-direction:column;gap:2px}
+#ui .house-screen .tama-title strong{font-size:17px;color:#674a48}
+#ui .house-screen .tama-title span,.tama-panel-heading small{font-size:10px;color:#9d8276;font-weight:400}
+#ui .house-screen .tama-level{border-radius:999px;background:#f4cbd2;color:#794a57;font-weight:800;font-size:12px;padding:6px 12px}
+#ui .house-screen .tama-exp{margin:10px 0}.tama-exp-label{font-size:10px;margin-bottom:5px}
+#ui .house-screen .tama-mood{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:#f8e8dc;margin:9px 0}
+#ui .house-screen .tama-mood.feeling-good{background:#e8f4e8}
+#ui .house-screen .tama-mood.needs-care{background:#fff0e3}
+#ui .house-screen .tama-mood strong{font-size:13px}.tama-mood span{font-size:10px;color:#806d61}
+#ui .house-screen .tama-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:11px 0 12px}
+#ui .house-screen .tama-stat{background:#fff;border:1px solid #f0e2d7;border-radius:11px;padding:9px}
+#ui .house-screen .tama-stat-label{font-size:11px}.tama-stat-label b{font-size:11px}
+#ui .house-screen .tama-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;border-bottom:1px solid #ead8ca;padding-bottom:7px}
+#ui .house-screen .tama-tabs button{border:0;border-radius:9px;background:#f4ebe5;color:#846d62;padding:9px 2px;font-size:10px;font-weight:700;cursor:pointer;min-width:0}
+#ui .house-screen .tama-tabs button.active{background:#e8aab7;color:#fff}
+#ui .house-screen .tama-tab-content{padding:12px 2px 4px;min-height:115px}
+#ui .house-screen .tama-panel-heading{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:800;margin-bottom:10px}
+#ui .house-screen .tama-care-hint{font-size:10px;line-height:1.8;background:#fff;border-radius:9px;padding:8px;color:#8c7165}
+#ui .house-screen .tama-pet{display:flex;align-items:center;gap:10px;margin:9px 0}
+#ui .house-screen .tama-pet button,#ui .house-screen .tama-main-button{background:#f7d5df;border:1px solid #e6b1bf;border-radius:10px;padding:9px 14px;color:#7e4b5a;font-weight:800;cursor:pointer}
+#ui .house-screen .tama-pet span{font-size:10px;color:#93786c}
+#ui .house-screen .tama-snack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#ui .house-screen .tama-snack-grid button{display:flex;justify-content:space-between;align-items:center;gap:5px;border:1px solid #e8d2c1;border-radius:11px;background:#fff;padding:11px 8px;color:#6c5144;cursor:pointer}
+#ui .house-screen .tama-snack-grid button span{font-size:10px;color:#9b7d6d}
+#ui .house-screen .tama-snack-grid button:disabled{opacity:.45;cursor:not-allowed}
+#ui .house-screen .tama-note{font-size:10px;color:#957e72;line-height:1.5}
+#ui .house-screen .tama-mission-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+#ui .house-screen .tama-mission-list>div{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1px solid #f0e2d7;border-radius:9px;padding:9px;font-size:11px}
+#ui .house-screen .tama-mission-list b{color:#b17d57}
+#ui .house-screen .house-diary>div{padding:8px;border-bottom:1px solid #f1e3d8}
+#ui .house-screen .house-life-cell small{font-size:9px}
+@media(max-width:480px){#ui .house-screen .tama-shell{padding:10px}#ui .house-screen .tama-tabs button{font-size:9px;padding:8px 1px}#ui .house-screen .tama-title strong{font-size:15px}}

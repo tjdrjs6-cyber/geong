@@ -18,6 +18,7 @@ export class HouseView {
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private lastInteraction=Date.now()
   private dragging=false
+  private activeTab: 'care'|'snack'|'mission'|'diary'='care'
   private miniActive=false
   private miniStarted=0
   private miniTick:ReturnType<typeof setInterval>|null=null
@@ -61,7 +62,8 @@ export class HouseView {
   }
   private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
   handle(action:string,button:HTMLElement):boolean{
-    if(action==='house-build'||action==='house-upgrade'){const id=button.dataset.id;if(id)void this.build(action==='house-build'?'build':'upgrade',id);return true}
+    if(action==='house-build'){const id=button.dataset.id;if(id)void this.build(id);return true}
+    if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.renderCare()}return true}
     if(action.startsWith('house-care-')){void this.performCare(action.slice(11),button.dataset.snack);return true}
     if(action==='house-mini-start'){void this.adventure('mini-start');return true}
     if(action==='house-mini-stop'){void this.adventure('mini-stop');return true}
@@ -70,9 +72,9 @@ export class HouseView {
     if(action==='house-coin')return true
     return false
   }
-  private async build(action:'build'|'upgrade',id:string):Promise<void>{
+  private async build(id:string):Promise<void>{
     if(this.busy)return;this.busy=true
-    try{const result=await this.store.houseLifeAction(action,id);this.life=result.life;this.renderLot();this.renderCare();this.hooks.wallet();this.hooks.toast(action==='build'?'시설 건설을 시작했어요!':'시설 업그레이드 완료!')}
+    try{const result=await this.store.houseLifeAction('build',id);this.life=result.life;this.renderLot();this.renderCare();this.hooks.wallet();this.hooks.toast('시설 건설을 시작했어요!')}
     catch(e){this.fail(e)}finally{this.busy=false}
   }
   private async performCare(action:string,snackId?:string):Promise<void>{
@@ -101,7 +103,7 @@ export class HouseView {
   private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.5부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
-    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell"><strong>${f.name}</strong>${b?`<img src="${f.img}" alt="${f.name}"/><small>${ready?`LV.${b.level}`:'건설 중'}</small>${ready&&b.level<3?`<button data-action="house-upgrade" data-id="${f.id}">강화 ${b.level===1?'100,000':'300,000'}코인</button>`:''}${ready?`<button data-action="house-care-${f.action}">이용하기</button>`:''}`:`<div class="house-life-placeholder">미건설</div><button data-action="house-build" data-id="${f.id}">건설 ${f.price.toLocaleString()}코인</button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
+    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell"><strong>${f.name}</strong>${b?`<img src="${f.img}" alt="${f.name}"/><small>${ready?'설치 완료':'건설 중'}</small>${ready?`<button data-action="house-care-${f.action}">이용하기</button>`:''}`:`<div class="house-life-placeholder">미건설</div><button data-action="house-build" data-id="${f.id}">건설 ${f.price.toLocaleString()}코인</button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
     this.placeChiikawa();this.attachChiDrag()
   }
   private renderCare():void{
@@ -114,14 +116,15 @@ export class HouseView {
     const currentDay=c.questDay===today
     const canClaim=missions.some(([id])=>currentDay&&(c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]&&!c.claimed?.includes(id))
     const diary=(c.diary||[]).slice(0,6)
-    el.innerHTML=`<div class="house-care-head"><strong>치이카와의 하루 · LV.${c.level}</strong><span>EXP ${c.exp}/${c.level*50} · 친밀도 ${c.affection}</span></div>
-    <div class="house-mood">${emotion} · 성격: ${c.level>=10?(c.personality||'미발견'):'LV.10에 발견'}</div>
-    <div class="house-care-stats">${stats.map(([name,n])=>`<div><span>${name} ${n}%</span><div class="house-care-track"><i style="width:${n}%"></i></div></div>`).join('')}</div>
-    <div class="house-care-actions"><button data-action="house-care-pet">쓰다듬기</button><button data-action="house-event" ${c.level<5?'disabled':''}>랜덤 이벤트 (${c.eventCount||0}/3)</button></div>
-    <section class="house-tama-section"><strong>게임기 미니게임</strong><p>게임기를 건설한 뒤 움직이는 막대를 중앙에 멈춰보세요.</p><div class="house-mini-bar"><span class="house-mini-target"></span><i class="house-mini-pointer"></i></div><button data-action="${this.miniActive?'house-mini-stop':'house-mini-start'}">${this.miniActive?'여기서 멈추기!':'게임 시작'}</button></section>
-    <section class="house-tama-section"><strong>오늘의 미션</strong><div class="house-quests">${missions.map(([id,name,coins])=>`<span>${name} ${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'미완료'} · ${coins.toLocaleString()}코인 ${c.claimed?.includes(id)?'(수령)':''}</span>`).join('')}</div><button data-action="house-claim" ${canClaim?'':'disabled'}>완료 보상 받기</button></section>
-    <section class="house-tama-section"><strong>성장 일기</strong><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/</g,'&lt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div></section>
-    <div class="house-snack-list"><strong>간식주기 · 보유 간식</strong>${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}>${name} (${this.life.snacks[id]||0})</button>`).join('')}</div>`
+    const moodClass=c.hunger<30||c.happy<35||c.clean<30||c.energy<30?'needs-care':'feeling-good'
+    const tabs:[string,string][]=[['care','돌보기'],['snack','간식'],['mission','오늘의 할 일'],['diary','성장 일기']]
+    const statCards=stats.map(([name,n])=>`<div class="tama-stat"><div class="tama-stat-label"><span>${name}</span><b>${n}%</b></div><div class="house-care-track"><i style="width:${n}%;background:${n<30?'#e8a28d':n<60?'#e6c084':'#91cdb4'}"></i></div></div>`).join('')
+    const carePanel=`<div class="tama-panel-heading">치이카와 돌보기 <small>시설을 눌러 직접 돌봐주세요</small></div><div class="tama-care-hint">부엌 · 밥주기　 샤워장 · 씻기기　 침대 · 재우기　 게임기 · 놀아주기</div><div class="tama-pet"><button data-action="house-care-pet">쓰다듬기</button><span>친밀도를 올려주세요</span></div><section class="house-tama-section"><strong>게임기 타이밍 챌린지</strong><p>게임기 건설 후 게이지를 중앙에 멈춰보세요.</p><div class="house-mini-bar"><span class="house-mini-target"></span><i class="house-mini-pointer"></i></div><button data-action="${this.miniActive?'house-mini-stop':'house-mini-start'}">${this.miniActive?'여기서 멈추기!':'게임 시작'}</button></section><section class="house-tama-section"><strong>깜짝 생활 이벤트</strong><p>LV.5부터 하루 최대 3번 참여할 수 있어요.</p><button data-action="house-event" ${c.level<5?'disabled':''}>이벤트 확인 (${c.eventCount||0}/3)</button></section>`
+    const snackPanel=`<div class="tama-panel-heading">간식 주기 <small>뽑기에서 얻은 간식을 먹여주세요</small></div><div class="tama-snack-grid">${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}><strong>${name}</strong><span>보유 ${this.life.snacks[id]||0}개</span></button>`).join('')}</div><p class="tama-note">간식시설은 필요하지 않습니다. 간식뽑기는 1회 10,000코인입니다.</p>`
+    const missionPanel=`<div class="tama-panel-heading">오늘의 할 일 <small>매일 치이카와와 추억을 쌓아보세요</small></div><div class="tama-mission-list">${missions.map(([id,name,coins])=>`<div><span>${name}</span><span>${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'진행 전'}</span><b>${coins.toLocaleString()}코인 ${c.claimed?.includes(id)?'· 수령 완료':''}</b></div>`).join('')}</div><button class="tama-main-button" data-action="house-claim" ${canClaim?'':'disabled'}>미션 보상 받기</button>`
+    const diaryPanel=`<div class="tama-panel-heading">성장 일기 <small>치이카와와 함께한 기록</small></div><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div>`
+    const panels:Record<string,string>={care:carePanel,snack:snackPanel,mission:missionPanel,diary:diaryPanel}
+    el.innerHTML=`<div class="tama-shell"><div class="tama-top"><div class="tama-title"><strong>치이카와 키우기</strong><span>나의 작은 친구</span></div><div class="tama-level">LV.${c.level}</div></div><div class="tama-exp"><div class="tama-exp-label"><span>성장 경험치</span><b>${c.exp} / ${c.level*50} EXP</b></div><div class="house-care-track"><i style="width:${Math.min(100,c.exp/Math.max(1,c.level*50)*100)}%"></i></div></div><div class="tama-mood ${moodClass}"><strong>${emotion}</strong><span>성격: ${c.level>=10?(c.personality||'미발견'):'LV.10에 발견'} · 친밀도 ${c.affection}</span></div><div class="tama-stats">${statCards}</div><div class="tama-tabs" role="tablist">${tabs.map(([id,name])=>`<button role="tab" aria-selected="${this.activeTab===id}" class="${this.activeTab===id?'active':''}" data-action="house-tab" data-tab="${id}">${name}</button>`).join('')}</div><div class="tama-tab-content">${panels[this.activeTab]}</div></div>`
     if(this.miniActive)this.startMiniAnimation()
   }
 }

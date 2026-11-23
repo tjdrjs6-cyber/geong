@@ -2824,11 +2824,6 @@ const routes = {
         if(!Object.hasOwn(costs,id))return await conn.rollback(),send(res,400,{error:'invalid_building'})
         if(life.buildings[id])return await conn.rollback(),send(res,409,{error:'already_built'})
         spent=costs[id];life.buildings[id]={level:1,readyAt:Date.now()+({arcade:900000,shower:600000,bed:180000,kitchen:300000}[id])}
-      } else if(action==='upgrade') {
-        if(!Object.hasOwn(costs,id)||!life.buildings[id])return await conn.rollback(),send(res,409,{error:'building_required'})
-        if(life.buildings[id].level>=3)return await conn.rollback(),send(res,409,{error:'max_level'})
-        if(life.buildings[id].readyAt>Date.now())return await conn.rollback(),send(res,409,{error:'building_in_progress'})
-        spent=life.buildings[id].level===1?100000:300000;life.buildings[id].level++;life.buildings[id].readyAt=Date.now()
       } else if(action==='pull') {
         spent=10000;const roll=randomInt(100);let cursor=0
         for(const [key,value] of Object.entries(snacks)){cursor+=value.weight;if(roll<cursor){prize={id:key,name:value.name};break}}
