@@ -370,3 +370,18 @@
 #ui .house-screen .tama-drawer .tama-stat{padding:6px;}
 #ui .house-screen .tama-drawer .tama-tab-content{padding:6px 0 0;min-height:0;}
 @media(max-width:600px){#ui .house-screen .house-scroll-viewport{height:55dvh !important;min-height:275px !important;margin:5px 6px 0;border-width:6px;}#ui .house-screen .house-care{margin:0 6px 6px !important;}#ui .house-screen .tama-device{border-width:6px;padding:4px 6px 8px;}#ui .house-screen .tama-game-key span{font-size:19px;}#ui .house-screen .tama-game-key small{font-size:9px;}#ui .house-screen .tama-drawer{max-height:53dvh;}}
+
+/* Furniture is physically placed on the diamond floor; no "use" buttons/cards. */
+#ui .house-screen .house-life-grid{z-index:9 !important;pointer-events:none !important}
+#ui .house-screen .house-life-cell{width:23% !important;height:15% !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;overflow:visible !important;pointer-events:none !important;display:flex !important;align-items:center;justify-content:center}
+#ui .house-screen .house-life-cell:nth-child(1){left:34% !important;top:49% !important}
+#ui .house-screen .house-life-cell:nth-child(2){left:66% !important;top:49% !important}
+#ui .house-screen .house-life-cell:nth-child(3){left:34% !important;top:64% !important}
+#ui .house-screen .house-life-cell:nth-child(4){left:66% !important;top:64% !important}
+#ui .house-screen .house-life-cell.is-built img{display:block;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;object-fit:contain;filter:drop-shadow(0 3px 2px #614a3d2b);pointer-events:none}
+#ui .house-screen .house-life-cell.is-using img{animation:houseFacilityUse .3s ease-in-out 3 alternate}
+@keyframes houseFacilityUse{to{transform:translateY(-4px) scale(1.04)}}
+#ui .house-screen .house-facility-label{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;background:#fff9f1c9;color:#75534d;border-radius:5px;padding:1px 4px;pointer-events:none}
+#ui .house-screen .house-build-spot{pointer-events:auto !important;width:100%;height:75%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;border:1px dashed #cba18d !important;border-radius:9px;background:#fffaf0c9 !important;color:#765448;font-size:10px;padding:3px;white-space:normal;cursor:pointer}
+#ui .house-screen .house-build-spot small{font-size:9px;line-height:1.25}
+#ui .house-screen .house-single-chiikawa{z-index:20 !important;pointer-events:auto !important}
