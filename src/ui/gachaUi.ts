@@ -641,16 +641,8 @@ export class GachaUi {
           <b id="house-title">하우스</b>
           <div class="wallet weed-wallet" aria-label="보유 코인"><img class="coin-icon" src="/assets/coin.png" alt="코인"/><strong class="wallet-value">${STARTING_COINS}</strong><span>코인</span><small class="wallet-rate" title="제초장 자동 수입 (하우스 코인 제외)"></small></div>
         </header>
-        <div class="house-scroll-viewport" aria-label="세로형 하우스 꾸미기 영역"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div><p class="house-empty">텅 빈 공터예요. 아래에서 데코를 꺼내 꾸며 보세요!</p></div></div>
-        <div class="house-tools" hidden><b class="house-tools-name"></b><button data-action="house-flip">↔ 뒤집기</button><button data-action="house-smaller">－ 작게</button><button data-action="house-bigger">＋ 크게</button><button data-action="house-remove">넣기</button><button data-action="house-done">완료</button></div>
+        <div class="house-scroll-viewport" aria-label="치이카와 생활시설"><div class="house-lot">${houseLotMarkup()}<div class="house-items"></div></div></div>
         <div class="house-care" aria-label="치이카와 키우기"><p>육성 정보를 불러오는 중…</p></div>
-        <div class="weed-panel house-panel">
-          <div class="field-info-sticky">
-          <div class="house-panel-head"><div class="auth-tabs house-tabs" role="tablist"><button type="button" class="auth-tab is-active" data-action="house-tab" data-tab="floor" role="tab" aria-selected="true">🪑 데코(바닥)</button><button type="button" class="auth-tab" data-action="house-tab" data-tab="wall" role="tab" aria-selected="false">🖼 데코(벽)</button></div><span class="house-meta"><b class="house-count">0 / 20</b> · <span class="house-save">자동 저장</span></span></div>
-          <p class="weed-rule">데코를 눌러 공터에 꺼내고, 끌어서 옮겨요. 놓인 데코를 누르면 뒤집기·크기·넣기를 할 수 있어요.</p>
-                    </div>
-          <div class="house-inventory" role="list" aria-label="꺼낼 데코"></div>
-        </div>
         <div class="toast house-toast" aria-live="polite"></div>
       </section>
       <section class="weed-screen expedition-screen" data-screen="expedition" aria-hidden="true">
@@ -674,7 +666,7 @@ export class GachaUi {
       </section>
       <section class="shop-screen" data-screen="shop" aria-hidden="true" aria-label="장터">
         <header class="shop-header"><button type="button" data-action="close">← 가챠로</button><strong><img class="shop-header-face" src="/shop_armor_face.png" alt="갑옷씨 얼굴"/> 장터</strong><span aria-hidden="true"></span></header>
-        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button type="button" data-action="shop-tab" data-tab="buy">구매</button><button type="button" data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="deco">데코</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-bulk-fixed" hidden></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
+        <div class="shop-scene"><img class="shop-armor-clerk" src="/shop_armor_clerk.png" alt="상점에 앉아 있는 갑옷씨" draggable="false"/><div class="shop-panel"><div class="shop-tabs"><button type="button" data-action="shop-tab" data-tab="buy">구매</button><button type="button" data-action="shop-tab" data-tab="sell">판매</button></div><div class="shop-sell-categories" hidden><button type="button" data-action="shop-sell-category" data-tab="char" class="is-active">캐릭터</button><button type="button" data-action="shop-sell-category" data-tab="inventory">기타</button></div><div class="shop-bulk-fixed" hidden></div><div class="shop-items"></div></div></div><div class="shop-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="shop-dialog-message"><div class="shop-dialog-card"><p id="shop-dialog-message"></p><div class="shop-dialog-actions"><button type="button" data-action="shop-dialog-cancel">취소</button><button type="button" data-action="shop-dialog-confirm">확인</button></div></div></div>
       </section>
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>겅이복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
@@ -718,15 +710,15 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 데코 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · DECO PICK UP</span><h2>데코 뽑기 등장!</h2><div class="pull-event-info"><b>데코 · 꾸미기 아이템</b><span>확률 보기에서 획득 확률 확인</span></div></div><img class="pull-deco-event-image" src="/assets/gacha/deco_event.png" alt="데코 뽑기 일러스트" /></div>
-          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row">${DECO_PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button deco-pull pull-${option.count}" data-action="deco-pull" data-count="${option.count}"><span><b>${option.count === 1 ? '데코 1회' : `데코 10+1회`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 간식 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · SNACK PICK UP</span><h2>간식 뽑기 등장!</h2><div class="pull-event-info"><b>간식 1개 확정 획득</b><span>확률 보기에서 획득 확률 확인</span></div></div><p class="house-snack-banner">1회 10,000코인 · 간식 1개 확정</p></div>
+          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row"><button class="pull-button deco-pull" data-action="snack-pull" data-count="1"><span><b>간식 1회</b><small>10,000 코인</small></span></button>
           ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
           </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
           </div>
         </div></footer>
         <div class="free-note" hidden>캐릭터 뽑기 하루 10회 무료 · 남은 무료 뽑기 <b class="free-pull-remaining">10</b>회</div>
-        <div class="free-note">캐릭터 뽑기는 50다이아, 데코 뽑기는 100다이아부터 이용할 수 있어요.</div>
+        <div class="free-note">캐릭터 뽑기는 50다이아, 간식 뽑기는 10,000코인부터 이용할 수 있어요.</div>
         <div class="toast" aria-live="polite"></div>
       </main>
       <div class="insufficient-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="insufficient-title" aria-describedby="insufficient-message">
@@ -744,9 +736,7 @@ export class GachaUi {
           <p class="collection-summary">확인할 도감을 선택해 주세요.</p>
           <div class="catalog-choice-list">
             <button type="button" class="catalog-choice-button" data-action="collection"><img src="/assets/chars/chiikawa_tab_icon.png" alt=""/><span><b>캐릭터 도감</b><small><span class="collection-count">0 / ${CHARACTERS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
-            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">확인 중</span> 수집</small></span><span aria-hidden="true">›</span></button>
-            <button type="button" class="catalog-choice-button" data-action="decos"><img src="/assets/chars/hachiware_face.png" alt=""/><span><b>데코 도감</b><small><span class="deco-count">0 / ${DECOS.length}</span> 수집</small></span><span aria-hidden="true">›</span></button>
-            <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 48</span> 수집</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" class="catalog-choice-button" data-action="pet-catalog"><img src="/assets/pets/box_normal.png" alt=""/><span><b>펫 도감</b><small><span class="pet-catalog-count">확인 중</span> 수집</small></span><span aria-hidden="true">›</span></button>            <button type="button" class="catalog-choice-button" data-action="accessory-catalog"><img src="/assets/accessories/chiikawa_keyring.png?v=039" alt=""/><span><b>무기 액세서리 도감</b><small><span class="accessory-count">0 / 48</span> 수집</small></span><span aria-hidden="true">›</span></button>
           </div>
         </div>
       </section>
@@ -762,16 +752,7 @@ export class GachaUi {
           <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
         </div>
       </section>
-      <section class="gacha-modal" data-screen="decos" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decos-title">
-        <div class="modal-card collection-card">
-          <button class="modal-close" data-action="close" aria-label="닫기">×</button>
-          <div class="collection-info-sticky"><div class="modal-kicker">HOUSE DECO</div><h2 id="decos-title">데코 도감</h2>
-          <p class="collection-summary">데코 ${DECOS.length}종</p></div>
-          <div class="collection-grid deco-grid"></div>
-          <div class="duplicate-note">새 데코 등록 +${DECO_NEW_BONUS}코인 · 중복 데코는 하우스에 하나 더 놓을 수 있어요</div>
-          <button class="modal-primary" data-action="catalog-back">← 뒤로가기</button>
-        </div>
-      </section>
+
       <section class="gacha-modal" data-screen="announcements" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="modal-card collection-card users-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
@@ -846,7 +827,7 @@ export class GachaUi {
         <div class="modal-card collection-card storage-card">
           <button class="modal-close" data-action="close" aria-label="닫기">×</button>
           <div class="modal-kicker">STORAGE</div><h2 id="storage-title">인벤토리</h2><div class="storage-diamonds" aria-label="인벤토리 강화파편"><img class="diamond-icon" src="/assets/enhancement_fragment.png" alt="강화파편"/> 강화파편 <strong class="fragment-value">0</strong>개</div>
-          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="deco" role="tab"><img class="storage-tab-face" src="/assets/chars/hachiware_face.png" alt=""/> 데코</button><button class="auth-tab" data-action="storage-tab" data-tab="accessory" role="tab"><img class="storage-tab-face" src="/assets/accessories/shisa_keyring.png" alt=""/> 무기 액세서리</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 기타</button></div>
+          <div class="auth-tabs user-tabs" role="tablist"><button class="auth-tab is-active" data-action="storage-tab" data-tab="char" role="tab"><img class="storage-tab-face" src="/assets/chars/chiikawa_face_claw.png" alt=""/> 캐릭터</button><button class="auth-tab" data-action="storage-tab" data-tab="accessory" role="tab"><img class="storage-tab-face" src="/assets/accessories/shisa_keyring.png" alt=""/> 무기 액세서리</button><button class="auth-tab" data-action="storage-tab" data-tab="inventory" role="tab"><img class="storage-tab-face" src="/assets/chars/usagi_face_claw.png" alt=""/> 기타</button></div>
           <p class="collection-summary storage-summary"></p>
           <div class="storage-grid" role="list"></div>
         </div>
@@ -1869,7 +1850,7 @@ export class GachaUi {
     if (action === 'catalog-back') { this.show('catalog'); return }
     if (action === 'catalog') { const c=this.root.querySelector<HTMLElement>('.accessory-count');if(c)c.textContent=`${WEAPON_ACCESSORIES.reduce((n,item)=>n+ALCHEMY_GRADES.filter(g=>((this.store.accessory.discovered||[]).includes(`${item.id}:${g.id}`)||(g.id==='normal'?(this.store.accessory.counts?.[item.id]||0):(this.store.accessory.grades?.[item.id]?.[g.id]||0))>0)).length,0)} / 48`;this.show('catalog'); return }
     if (action === 'collection') { this.show('collection'); return }
-    if (action === 'decos') { this.show('decos'); return }
+    if (action === 'decos') { this.show('catalog'); return }
     if (action === 'research') { void this.openResearch(); return }
     if (action === 'house') { this.show('house'); return }
     if (action === 'pvp') {this.show('pvp');return}
@@ -1941,7 +1922,7 @@ export class GachaUi {
     if (action === 'mail-claim-all') { await this.claimMail(); return }
     if (action === 'mail-tab' && button.dataset.tab) { this.mailTab = button.dataset.tab === 'sent' ? 'sent' : 'in'; if (this.lastBox) this.renderMail(this.lastBox); return }
     if (action === 'mail-delete' && button.dataset.id) { await this.deleteMail(Number(button.dataset.id), button.dataset.box === 'sent' ? 'sent' : 'in'); return }
-    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderStorage(); return }
+    if (action === 'storage-tab' && button.dataset.tab) { this.storageTab = button.dataset.tab === 'inventory' ? 'inventory' : button.dataset.tab === 'accessory' ? 'accessory' : 'char'; this.renderStorage(); return }
     if (action === 'storage-bulk-sell') { await this.sellBulk(button); return }
     if (action === 'sell' && button.dataset.id && button.dataset.kind) { await this.sell(button.dataset.kind === 'deco' ? 'deco' : 'char', button.dataset.id, Number(button.dataset.count) || 1, button); return }
     if (action === 'suggest-reply' && button.dataset.id) { await this.replySuggestion(Number(button.dataset.id)); return }
@@ -2003,6 +1984,11 @@ export class GachaUi {
       this.renderFreePullStatus()
       this.renderResults()
       window.setTimeout(() => { void this.playPops(this.results, sequence) }, 180)
+      return
+    }
+    if(action==='snack-pull'){
+      if(this.busy)return;this.busy=true
+      try{const result=await this.store.houseLifeAction('pull');this.renderWallet();this.setPullMode('deco');this.toast(`간식 획득: ${result.prize?.name||'간식'}!`)}catch(error){this.handleError(error)}finally{this.busy=false}
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -3194,9 +3180,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
       pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
-    this.root.querySelectorAll<HTMLButtonElement>('[data-action="deco-pull"]').forEach(pullButton => {
-      pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < decoPullCost(Number(pullButton.dataset.count) as DecoPullCount))
-    })
+    this.root.querySelectorAll<HTMLButtonElement>('[data-action="snack-pull"]').forEach(pullButton => { pullButton.disabled = this.busy || (!this.isAdmin && this.store.data.gems < 10000) })
     const decoCount = this.root.querySelector<HTMLElement>('.deco-count')
     if (decoCount) decoCount.textContent = `${Object.keys(this.store.decos).length} / ${DECOS.length}`
   }
@@ -3262,6 +3246,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private openPullRatesDialog():void {
     document.querySelector('.pull-rates-dialog')?.remove()
     const deco=this.root.querySelector('.pull-popup')?.classList.contains('is-deco')??false
+    if(deco){this.toast('간식뽑기: 사탕 35%, 쿠키 30%, 푸딩 20%, 딸기 케이크 10%, 특제 도시락 5%');return}
     const dialog=document.createElement('div')
     dialog.className='pull-rates-dialog'
     const tierOrder=['transcendent','legendary','super','rare','mermaid','normal'] as const
@@ -3314,6 +3299,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(decoPanel)decoPanel.hidden=mode==='char'
     this.renderFreePullStatus()
     this.renderPullRates(mode)
+    const balance=this.root.querySelector<HTMLElement>('.pull-popup-balance')
+    if(balance)balance.innerHTML=mode==='deco'?`<img src="/assets/coin.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 코인 <strong>${this.store.data.gems.toLocaleString('ko-KR')}</strong>`:`<img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">${(this.store.data.diamonds??0).toLocaleString('ko-KR')}</strong>`
     this.renderChristmasBanner()
     this.root.querySelectorAll<HTMLButtonElement>('.pull-mode-button').forEach(tab => {
       const active = tab.dataset.mode === mode

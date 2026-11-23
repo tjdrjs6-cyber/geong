@@ -338,9 +338,14 @@ export class RemoteGachaStore {
     return { claimed: result.claimed, box: result }
   }
   /** This hour's house coin (null once taken); it disappears when the next one appears at nextAt. */
+  houseLife():Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>}}>{return request('house/life')}
+  async houseLifeAction(action:'build'|'upgrade'|'pull',id?:string):Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string}}>{
+    const result=await request<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string}}>('house/life',{action,id})
+    this.data.gems=Math.max(0,this.data.gems-result.spent);return result
+  }
   async houseCare(): Promise<{care:HouseCareState}> { return request('house/care') }
-  async houseCareAction(action:string): Promise<{care:HouseCareState;spent:number;earned:number}> {
-    const result=await request<{care:HouseCareState;spent:number;earned:number}>('house/care',{action})
+  async houseCareAction(action:string,snackId?:string): Promise<{care:HouseCareState;spent:number;earned:number}> {
+    const result=await request<{care:HouseCareState;spent:number;earned:number}>('house/care',{action,snackId})
     if(result.spent) this.data.gems=Math.max(0,this.data.gems-result.spent)
     return result
   }

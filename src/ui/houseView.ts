@@ -1,385 +1,48 @@
 import './houseRedesign.css'
-import { characterById, fullName, type CharacterId } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
-import { DECOS, DECO_IMAGE_URLS, HOUSE_MAX_FRIENDS, HOUSE_MAX_PIECES, decoById, type DecoId, type HouseLayout } from '../game/decos'
-import type { HouseCoin, HouseCareState, RemoteGachaStore } from '../game/remoteStore'
+import type { HouseLayout } from '../game/decos'
+import type { RemoteGachaStore,HouseCareState } from '../game/remoteStore'
 
-type Selection = { kind: 'piece' | 'friend'; index: number } | null
-/** Characters always render above every deco, whatever their position. */
-const FRIEND_LAYER = 5000
-const HOUSE_CHIIKAWA_ID: CharacterId = 'chiikawa'
-const defaultChiikawa = () => ({ id: HOUSE_CHIIKAWA_ID, x: 50, y: 59, s: 1, f: false })
-type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
-
-const HOUSE_BG_URL = '/assets/bg/house_room_test09.png'
-const isWallDeco = (id: DecoId): boolean => decoById(id).zone === 'wall'
-// Geometry follows the un-stretched 1086×1448 background: upper red trim,
-// yellow wall/floor boundary and the diamond-shaped floor.
-// Exact boundary slopes derived from the supplied 1086 x 1448 room artwork.
-const wallTop = (x: number): number => 22.5 + 0.350 * Math.abs(x - 50)
-const wallBottom = (x: number): number => 38.4 + 0.338 * Math.abs(x - 50)
-const floorTop = (x: number): number => wallBottom(x) + 0.8
-const floorBottom = (x: number): number => 76.9 - 0.394 * Math.abs(x - 50)
-const clamp = (n: number, low: number, high: number): number => Math.min(high, Math.max(low, n))
-
-
-
-/** House background: the user's hand-drawn stone room with a window to the forest. */
-export function houseLotMarkup(): string {
-  return `<img class="house-bg" src="${HOUSE_BG_URL}" alt="" aria-hidden="true" draggable="false" />`
-}
-
-/** House editor: drag pieces around the lot, tap to select, then flip / resize / put away. Saves automatically. */
-/** Read-only house picture (used to visit another user's house). */
-export function houseVisitMarkup(layout: HouseLayout): string {
-  const items = layout.pieces.map(piece => `<div class="house-piece${piece.f ? ' is-flipped' : ''}" style="left:${piece.x}%;top:${piece.y}%;--s:${piece.s};z-index:${Math.round(piece.y * 10)}"><img src="${DECO_IMAGE_URLS[piece.id]}" alt="${decoById(piece.id).name}" draggable="false" /></div>`)
-  layout.friends.filter(friend => friend.id === HOUSE_CHIIKAWA_ID).slice(0, 1).forEach(friend => {
-    const character = characterById(friend.id as CharacterId)
-    items.push(`<div class="house-piece house-friend${friend.f ? ' is-flipped' : ''}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
-  })
-  return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${items.join('')}</div>${items.length ? '' : '<p class="house-visit-empty">아직 꾸민 데코가 없어요</p>'}</div></div>`
-}
-
+type Hooks={toast(text:string):void;error(error:unknown):void;wallet():void;coinAvailable(available:boolean):void}
+type Life={buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>}
+const facilities=[{id:'arcade',name:'게임기',price:100000,img:'/assets/house/arcade.png',action:'play'},{id:'shower',name:'샤워장',price:80000,img:'/assets/house/shower.png',action:'wash'},{id:'bed',name:'침대',price:30000,img:'/assets/house/bed.png',action:'sleep'},{id:'kitchen',name:'부엌',price:50000,img:'/assets/house/kitchen.png',action:'feed'}] as const
+const snackNames:Record<string,string>={candy:'사탕',cookie:'쿠키',pudding:'푸딩',cake:'딸기 케이크',lunch:'특제 도시락'}
+const bg='/assets/bg/house_room_test09.png'
+export function houseLotMarkup():string{return `<img class="house-bg" src="${bg}" alt="" draggable="false"/>`}
+export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items"><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="치이카와"/></div></div></div>`}
 export class HouseView {
-  private layout: HouseLayout = { pieces: [], friends: [] }
-  private selected: Selection = null
-  private tab: 'floor' | 'wall' = 'floor'
-  private saveTimer = 0
-  private care: HouseCareState | null = null
-  private careBusy = false
-  private coin: HouseCoin | null = null
-  private coinNextAt = 0
-  private coinClockSkew = 0
-  private coinTimer = 0
-  private coinBusy = false
-  private wanderTimers: number[] = []
-  private wanderGeneration = 0
-  private drag: { pointerId: number; startX: number; startY: number; originX: number; originY: number; moved: boolean } | null = null
-
-  constructor(private readonly root: HTMLElement, private readonly store: RemoteGachaStore, private readonly hooks: Hooks) {
-    const lot = this.lot
-    lot.addEventListener('pointerdown', event => this.onPointerDown(event))
-    lot.addEventListener('pointermove', event => this.onPointerMove(event))
-    lot.addEventListener('pointerup', event => this.onPointerUp(event))
-    lot.addEventListener('pointercancel', event => this.onPointerUp(event))
-  }
-
-  private get lot(): HTMLElement { return this.root.querySelector<HTMLElement>('.house-lot')! }
-
-  /** Called whenever the house screen opens. */
-  open(): void {
-    const saved = structuredClone(this.store.house) as HouseLayout & { friend?: HouseLayout['friends'][number] | null }
-    this.layout = { pieces: (saved.pieces ?? []).slice(0, HOUSE_MAX_PIECES), friends: (saved.friends ?? (saved.friend ? [saved.friend] : [])).slice(0, HOUSE_MAX_FRIENDS) }
-    // Drop anything the player no longer owns (keeps the saved layout valid).
-    const used: Partial<Record<DecoId, number>> = {}
-    this.layout.pieces = this.layout.pieces.filter(piece => {
-      used[piece.id] = (used[piece.id] ?? 0) + 1
-      return used[piece.id]! <= (this.store.decos[piece.id] ?? 0)
-    })
-    this.layout.friends = [this.layout.friends.find(friend => friend.id === HOUSE_CHIIKAWA_ID) ?? defaultChiikawa()]
-    // Remove previously placed characters and persist the one-character house.
-    this.changed()
-    this.selected = null
-    this.render()
-    void this.loadCare()
-    this.wanderTimers.forEach(timer => window.clearTimeout(timer))
-    this.wanderTimers = []
-    const generation = ++this.wanderGeneration
-    this.layout.friends.forEach((_, index) => this.scheduleWander(index, generation, 700 + index * 1650 + Math.random() * 1100))
-    this.hooks.coinAvailable(false)
-    this.coin = null
-    this.renderCoin()
-  }
-
-  /** Handles house-specific button actions; returns true when the action was consumed. */
-  handle(action: string, button: HTMLElement): boolean {
-    if (action.startsWith('house-care-')) {void this.performCare(action.slice('house-care-'.length));return true}
-    if (action === 'house-coin') return true
-    if (action === 'house-tab') { this.tab = button.dataset.tab === 'wall' ? 'wall' : 'floor'; this.renderPanel(); return true }
-    if (action === 'house-add' && button.dataset.id) { this.addPiece(button.dataset.id as DecoId); return true }
-    if (action === 'house-friend') return true
-    if (action === 'house-flip') { this.mutateSelected(item => { item.f = !item.f }); return true }
-    if (action === 'house-bigger' || action === 'house-smaller') {
-      const step = action === 'house-bigger' ? 0.15 : -0.15
-      const selected = this.selected?.kind === 'piece' ? this.layout.pieces[this.selected.index] : this.selected?.kind === 'friend' ? this.layout.friends[this.selected.index] : null
-      if (selected) {
-        selected.s = Math.round(Math.min(1.6, Math.max(0.6, (selected.s ?? 1) + step)) * 100) / 100
-        this.changed()
-      }
-      return true
-    }
-    if (action === 'house-remove') {
-      if (this.selected?.kind === 'piece') this.layout.pieces.splice(this.selected.index, 1)
-      else if (this.selected?.kind === 'friend') { this.hooks.toast('치이카와는 하우스에서 항상 함께해요!'); return true }
-      this.selected = null
-      this.changed()
-      return true
-    }
-    if (action === 'house-done') { this.selected = null; this.renderLot(); return true }
+  private life:Life={buildings:{},snacks:{}}
+  private care:HouseCareState|null=null
+  private busy=false
+  constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
+  open():void{this.hooks.coinAvailable(false);this.renderLot();void this.load()}
+  private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
+  handle(action:string,button:HTMLElement):boolean{
+    if(action==='house-build'||action==='house-upgrade'){const id=button.dataset.id;if(id)void this.build(action==='house-build'?'build':'upgrade',id);return true}
+    if(action.startsWith('house-care-')){void this.performCare(action.slice(11),button.dataset.snack);return true}
+    if(action==='house-coin')return true
     return false
   }
-
-  private async loadCare():Promise<void> {
-    try {this.care=(await this.store.houseCare()).care;this.renderCare()}
-    catch(error){this.hooks.error(error)}
+  private async build(action:'build'|'upgrade',id:string):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{const result=await this.store.houseLifeAction(action,id);this.life=result.life;this.renderLot();this.renderCare();this.hooks.wallet();this.hooks.toast(action==='build'?'시설 건설을 시작했어요!':'시설 업그레이드 완료!')}
+    catch(e){this.fail(e)}finally{this.busy=false}
   }
-  private async performCare(action:string):Promise<void> {
-    if(this.careBusy)return
-    this.careBusy=true
-    try {
-      const result=await this.store.houseCareAction(action)
-      this.care=result.care
-      this.renderCare()
-      this.hooks.wallet()
-      this.hooks.toast(`치이카와 돌보기 완료! 경험치 +${result.earned}`)
-    } catch(error) {
-      const code=(error as {code?:string}).code
-      if(code==='care_full')this.hooks.toast('아직 돌봄이 필요하지 않아요!')
-      else if(code==='care_cooldown')this.hooks.toast('조금 뒤에 다시 돌봐주세요!')
-      else if(code==='insufficient_coins')this.hooks.toast('코인이 부족해요!')
-      else this.hooks.error(error)
-    } finally {this.careBusy=false}
+  private async performCare(action:string,snackId?:string):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{const result=await this.store.houseCareAction(action,snackId);this.care=result.care;await this.refreshLife();this.renderCare();this.hooks.wallet();this.hooks.toast(`돌보기 완료! 경험치 +${result.earned}`)}
+    catch(e){this.fail(e)}finally{this.busy=false}
   }
-  private renderCare():void {
-    const el=this.root.querySelector<HTMLElement>('.house-care')
-    if(!el)return
-    const c=this.care
-    if(!c){el.innerHTML='<p>치이카와 육성 정보를 불러오는 중…</p>';return}
+  private async refreshLife():Promise<void>{this.life=(await this.store.houseLife()).life;this.renderLot()}
+  private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
+  private renderLot():void{
+    const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
+    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell"><strong>${f.name}</strong>${b?`<img src="${f.img}" alt="${f.name}"/><small>${ready?`LV.${b.level}`:'건설 중'}</small>${ready&&b.level<3?`<button data-action="house-upgrade" data-id="${f.id}">강화 ${b.level===1?'100,000':'300,000'}코인</button>`:''}${ready?`<button data-action="house-care-${f.action}">이용하기</button>`:''}`:`<div class="house-life-placeholder">미건설</div><button data-action="house-build" data-id="${f.id}">건설 ${f.price.toLocaleString()}코인</button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와"/>`
+  }
+  private renderCare():void{
+    const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
+    const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
     const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy]]
-    const actions:[string,string,number][]=[['feed','밥주기',100],['snack','간식주기',200],['play','놀아주기',0],['wash','씻기기',100],['sleep','재우기',0],['pet','쓰다듬기',0]]
-    el.innerHTML=`<div class="house-care-head"><strong>치이카와 키우기 · LV.${c.level}</strong><span>EXP ${c.exp}/${c.level*50} · 친밀도 ${c.affection}</span></div><div class="house-care-stats">${stats.map(([name,n])=>`<div><span>${name} ${n}%</span><div class="house-care-track"><i style="width:${n}%"></i></div></div>`).join('')}</div><div class="house-care-actions">${actions.map(([key,name,cost])=>`<button type="button" data-action="house-care-${key}">${name}${cost?' · '+cost+'코인':''}</button>`).join('')}</div>`
-  }
-  private get isOpen(): boolean { return this.root.classList.contains('is-active') }
-  /** Fetch this hour's coin; re-check when the next one is due (an untaken coin vanishes then). */
-  private async loadCoin(): Promise<void> {
-    try {
-      const state = await this.store.houseCoin()
-      this.coin = state.coin
-      this.coinNextAt = state.nextAt
-      this.coinClockSkew = state.now - Date.now()
-      this.hooks.coinAvailable(Boolean(state.coin))
-    } catch { this.coin = null }
-    this.renderCoin()
-    window.clearInterval(this.coinTimer)
-    this.coinTimer = window.setInterval(() => {
-      if (!this.isOpen) { window.clearInterval(this.coinTimer); return }
-      if (Date.now() + this.coinClockSkew >= this.coinNextAt) { void this.loadCoin(); return }
-      this.renderCoin()
-    }, 15000)
-  }
-  private renderCoin(): void {
-    const button = this.lot.querySelector<HTMLButtonElement>('.house-coin')
-    const timer = this.lot.querySelector<HTMLElement>('.house-coin-timer')
-    if (!button || !timer) return
-    const left = Math.max(0, this.coinNextAt - (Date.now() + this.coinClockSkew))
-    const minutes = Math.max(1, Math.ceil(left / 60000))
-    if (this.coin) {
-      button.hidden = false
-      button.style.left = `${this.coin.x}%`
-      button.style.top = `${this.coin.y}%`
-      button.querySelector<HTMLElement>('.house-coin-amount')!.textContent = `+${this.coin.coins}`
-      timer.textContent = `✿ 코인이 떴어요! ${minutes}분 뒤 사라져요`
-    } else {
-      button.hidden = true
-      timer.textContent = this.coinNextAt ? `✿ 다음 코인까지 ${minutes}분` : ''
-    }
-  }
-  private async takeCoin(): Promise<void> {
-    if (!this.coin || this.coinBusy) return
-    this.coinBusy = true
-    const coin = this.coin
-    const button = this.lot.querySelector<HTMLElement>('.house-coin')
-    button?.classList.add('is-taking')
-    try {
-      const result = await this.store.claimHouseCoin(coin.slot)
-      this.coin = null
-      this.hooks.coinAvailable(false)
-      this.coinNextAt = result.nextAt
-      this.hooks.wallet()
-      this.hooks.toast(`✿ 코인 ${result.coins}개를 주웠어요!`)
-    } catch (error) {
-      this.hooks.error(error)
-      await this.loadCoin()
-    } finally {
-      this.coinBusy = false
-      button?.classList.remove('is-taking')
-      this.renderCoin()
-    }
-  }
-  /** 2% grid with wall/floor geometry constraints. */
-  private snap(value: number, low: number, high: number): number {
-    return clamp(Math.round(value / 2) * 2, low, high)
-  }
-
-  /** Each character has an independent clock and direction, never a shared tick. */
-  private scheduleWander(index: number, generation: number, delay: number): void {
-    const timer = window.setTimeout(() => {
-      if (generation !== this.wanderGeneration || !this.isOpen) return
-      const friend = this.layout.friends[index]
-      const node = this.lot.querySelector<HTMLElement>(`.house-friend[data-index="${index}"]`)
-      if (friend && node && !this.drag && !(this.selected?.kind === 'friend' && this.selected.index === index)) {
-        const dx = (Math.random() - 0.5) * (9 + index * 4)
-        const x = clamp(friend.x + dx, 17, 83)
-        const y = clamp(friend.y + (Math.random() - 0.5) * (4 + index * 2), floorTop(x) + 4, floorBottom(x) - 3)
-        node.style.left = `${x}%`
-        node.style.top = `${y}%`
-        node.style.transitionDuration = `${1.8 + index * .65 + Math.random() * 1.2}s`
-        node.classList.toggle('is-walking-left', dx < 0)
-      }
-      this.scheduleWander(index, generation, 2400 + index * 1200 + Math.random() * 3200)
-    }, delay)
-    this.wanderTimers[index] = timer
-  }
-
-  private remaining(id: DecoId): number {
-    return (this.store.decos[id] ?? 0) - this.layout.pieces.filter(piece => piece.id === id).length
-  }
-
-  private addPiece(id: DecoId): void {
-    if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
-    if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
-    const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    const x = this.snap(50 + jitter, 12, 88)
-    const y = isWallDeco(id) ? this.snap((wallTop(x) + wallBottom(x)) / 2, wallTop(x) + 2, wallBottom(x) - 2) : this.snap((floorTop(x) + floorBottom(x)) / 2, floorTop(x) + 2, floorBottom(x) - 2)
-    this.layout.pieces.push({ id, x, y, s: 1, f: false })
-    this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
-    this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
-    this.changed()
-  }
-
-  private mutateSelected(change: (item: { f: boolean }) => void): void {
-    if (this.selected?.kind === 'piece') change(this.layout.pieces[this.selected.index])
-    else if (this.selected?.kind === 'friend' && this.layout.friends[this.selected.index]) change(this.layout.friends[this.selected.index])
-    else return
-    this.changed()
-  }
-
-  private changed(): void {
-    this.render()
-    this.setSaveState('저장 중…')
-    window.clearTimeout(this.saveTimer)
-    this.saveTimer = window.setTimeout(() => { void this.save() }, 700)
-  }
-
-  private async save(): Promise<void> {
-    try {
-      await this.store.saveHouse(this.layout)
-      this.setSaveState('저장됨 ✓')
-    } catch (error) {
-      this.setSaveState('저장 실패')
-      this.hooks.error(error)
-    }
-  }
-
-  private setSaveState(text: string): void {
-    const node = this.root.querySelector<HTMLElement>('.house-save')
-    if (node) node.textContent = text
-  }
-
-  private render(): void { this.renderLot(); this.renderPanel() }
-
-  private renderLot(): void {
-    const layer = this.lot.querySelector<HTMLElement>('.house-items')
-    if (!layer) return
-    const pieces = this.layout.pieces.map((piece, index) => {
-      const selected = this.selected?.kind === 'piece' && this.selected.index === index
-      return `<div class="house-piece${selected ? ' is-selected' : ''}${piece.f ? ' is-flipped' : ''}" data-kind="piece" data-index="${index}" style="left:${piece.x}%;top:${piece.y}%;--s:${piece.s};z-index:${Math.round(piece.y * 10)}"><img src="${DECO_IMAGE_URLS[piece.id]}" alt="${decoById(piece.id).name}" draggable="false" /></div>`
-    })
-    this.layout.friends.forEach((friend, index) => {
-      const character = characterById(friend.id as CharacterId)
-      const selected = this.selected?.kind === 'friend' && this.selected.index === index
-      pieces.push(`<div class="house-piece house-friend${selected ? ' is-selected' : ''}${friend.f ? ' is-flipped' : ''}" data-kind="friend" data-index="${index}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
-    })
-    layer.innerHTML = pieces.join('')
-    this.lot.classList.toggle('house-grid-visible', this.selected?.kind === 'piece')
-    this.lot.classList.toggle('house-grid-wall', this.selected?.kind === 'piece' && isWallDeco(this.layout.pieces[this.selected.index]?.id))
-    const empty = this.lot.querySelector<HTMLElement>('.house-empty')
-    if (empty) empty.hidden = pieces.length > 0
-    const tools = this.root.querySelector<HTMLElement>('.house-tools')
-    if (tools) {
-      tools.hidden = !this.selected
-      const label = tools.querySelector<HTMLElement>('.house-tools-name')
-      if (label) label.textContent = this.selected?.kind === 'piece' ? decoById(this.layout.pieces[this.selected.index].id).name : this.selected?.kind === 'friend' && this.layout.friends[this.selected.index] ? characterById(this.layout.friends[this.selected.index].id as CharacterId).name : ''
-      tools.querySelectorAll<HTMLButtonElement>('[data-action="house-bigger"],[data-action="house-smaller"]').forEach(button => { button.hidden = !this.selected })
-      const remove = tools.querySelector<HTMLButtonElement>('[data-action="house-remove"]')
-      if (remove) remove.hidden = this.selected?.kind === 'friend'
-    }
-  }
-
-  private renderPanel(): void {
-    this.root.querySelectorAll<HTMLButtonElement>('[data-action="house-tab"]').forEach(button => {
-      const active = button.dataset.tab === this.tab
-      button.classList.toggle('is-active', active)
-      button.setAttribute('aria-selected', String(active))
-    })
-    const list = this.root.querySelector<HTMLElement>('.house-inventory')
-    if (!list) return
-    const owned = DECOS.filter(deco => (this.store.decos[deco.id] ?? 0) > 0 && isWallDeco(deco.id) === (this.tab === 'wall'))
-    list.innerHTML = owned.length
-      ? owned.map(deco => {
-        const left = this.remaining(deco.id)
-        return `<button class="house-slot${left <= 0 ? ' is-used' : ''}" data-action="house-add" data-id="${deco.id}" role="listitem"><img src="${DECO_IMAGE_URLS[deco.id]}" alt="" /><span>${deco.name}</span><em>${left} / ${this.store.decos[deco.id]}</em></button>`
-      }).join('')
-      : '<p class="weed-empty">아직 데코가 없어요. 가챠 화면에서 데코를 모아 보세요!</p>'
-    const count = this.root.querySelector<HTMLElement>('.house-count')
-    if (count) count.textContent = `데코 ${this.layout.pieces.length} / ${HOUSE_MAX_PIECES}`
-    const floorTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="floor"]')
-    if (floorTab) floorTab.textContent = `🪑 데코(바닥)`
-    const wallTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="wall"]')
-    if (wallTab) wallTab.textContent = `🖼 데코(벽)`
-  }
-
-  private onPointerDown(event: PointerEvent): void {
-    const target = (event.target as HTMLElement).closest<HTMLElement>('.house-piece')
-    if (!target) {
-      if (this.selected) { this.selected = null; this.renderLot() }
-      return
-    }
-    event.preventDefault()
-    const kind = target.dataset.kind
-    this.selected = { kind: kind === 'friend' ? 'friend' : 'piece', index: Number(target.dataset.index) }
-    const item = this.selectedItem()
-    if (!item) return
-    this.drag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: item.x, originY: item.y, moved: false }
-    this.lot.setPointerCapture(event.pointerId)
-    this.renderLot()
-  }
-
-  private onPointerMove(event: PointerEvent): void {
-    if (!this.drag || event.pointerId !== this.drag.pointerId) return
-    const item = this.selectedItem()
-    if (!item) return
-    const rect = this.lot.getBoundingClientRect()
-    const dx = (event.clientX - this.drag.startX) / rect.width * 100
-    const dy = (event.clientY - this.drag.startY) / rect.height * 100
-    if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
-    const x = this.snap(this.drag.originX + dx, 8, 92)
-    item.x = x
-    if (this.selected?.kind === 'piece') {
-      const piece = this.layout.pieces[this.selected.index]
-      const wall = isWallDeco(piece.id)
-      const low = wall ? wallTop(x) + 2 : floorTop(x) + 2
-      const high = wall ? wallBottom(x) - 2 : floorBottom(x) - 2
-      item.y = this.snap(this.drag.originY + dy, low, high)
-    } else {
-      item.y = clamp(this.drag.originY + dy, floorTop(x) + 3, floorBottom(x) - 2)
-    }
-    const isFriend = this.selected?.kind === 'friend'
-    const node = this.lot.querySelector<HTMLElement>(`.house-piece[data-kind="${isFriend ? 'friend' : 'piece'}"][data-index="${this.selected!.index}"]`)
-    if (node) { node.style.left = `${item.x}%`; node.style.top = `${item.y}%`; node.style.zIndex = String((isFriend ? FRIEND_LAYER : 0) + Math.round(item.y * 10)) }
-  }
-
-  private onPointerUp(event: PointerEvent): void {
-    if (!this.drag || event.pointerId !== this.drag.pointerId) return
-    const moved = this.drag.moved
-    this.drag = null
-    if (this.lot.hasPointerCapture(event.pointerId)) this.lot.releasePointerCapture(event.pointerId)
-    if (moved) this.changed()
-  }
-
-  private selectedItem(): { x: number; y: number } | null {
-    if (this.selected?.kind === 'piece') return this.layout.pieces[this.selected.index] ?? null
-    if (this.selected?.kind === 'friend') return this.layout.friends[this.selected.index] ?? null
-    return null
+    el.innerHTML=`<div class="house-care-head"><strong>치이카와 키우기 · LV.${c.level}</strong><span>EXP ${c.exp}/${c.level*50} · 친밀도 ${c.affection}</span></div><div class="house-care-stats">${stats.map(([name,n])=>`<div><span>${name} ${n}%</span><div class="house-care-track"><i style="width:${n}%"></i></div></div>`).join('')}</div><div class="house-care-actions"><button data-action="house-care-pet">쓰다듬기</button></div><div class="house-snack-list"><strong>간식주기 · 보유 간식</strong>${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}>${name} (${this.life.snacks[id]||0})</button>`).join('')}</div>`
   }
 }

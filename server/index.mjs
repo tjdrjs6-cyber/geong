@@ -286,6 +286,7 @@ async function prepareDatabase() {
     salt VARCHAR(64) NOT NULL,
     last_slot BIGINT NOT NULL DEFAULT 0
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_life (account_id BIGINT UNSIGNED PRIMARY KEY, state_json JSON NOT NULL)` )
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_care (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     state_json JSON NOT NULL
@@ -2801,6 +2802,42 @@ const routes = {
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
   },
+  'GET /api/house/life': async (req,res) => {
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const [rows]=await pool.query('SELECT state_json FROM gm_house_life WHERE account_id=?',[account.id])
+    send(res,200,{life:rows[0]?parseJson(rows[0].state_json):{buildings:{},snacks:{}}})
+  },
+  'POST /api/house/life': async (req,res) => {
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {action,id}=await readJson(req)
+    const costs={arcade:100000,shower:80000,bed:30000,kitchen:50000}
+    const snacks={candy:{name:'사탕',weight:35},cookie:{name:'쿠키',weight:30},pudding:{name:'푸딩',weight:20},cake:{name:'딸기 케이크',weight:10},lunch:{name:'특제 도시락',weight:5}}
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_house_life (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify({buildings:{},snacks:{}})])
+      const [rows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
+      const life=parseJson(rows[0].state_json)||{};life.buildings=life.buildings||{};life.snacks=life.snacks||{}
+      let spent=0,prize=null
+      if(action==='build') {
+        if(!Object.hasOwn(costs,id))return await conn.rollback(),send(res,400,{error:'invalid_building'})
+        if(life.buildings[id])return await conn.rollback(),send(res,409,{error:'already_built'})
+        spent=costs[id];life.buildings[id]={level:1,readyAt:Date.now()+({arcade:900000,shower:600000,bed:180000,kitchen:300000}[id])}
+      } else if(action==='upgrade') {
+        if(!Object.hasOwn(costs,id)||!life.buildings[id])return await conn.rollback(),send(res,409,{error:'building_required'})
+        if(life.buildings[id].level>=3)return await conn.rollback(),send(res,409,{error:'max_level'})
+        if(life.buildings[id].readyAt>Date.now())return await conn.rollback(),send(res,409,{error:'building_in_progress'})
+        spent=life.buildings[id].level===1?100000:300000;life.buildings[id].level++;life.buildings[id].readyAt=Date.now()
+      } else if(action==='pull') {
+        spent=10000;const roll=randomInt(100);let cursor=0
+        for(const [key,value] of Object.entries(snacks)){cursor+=value.weight;if(roll<cursor){prize={id:key,name:value.name};break}}
+        life.snacks[prize.id]=(life.snacks[prize.id]||0)+1
+      } else return await conn.rollback(),send(res,400,{error:'invalid_action'})
+      if(!account.is_admin){const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?',[spent,account.id,spent]);if(!paid.affectedRows)return await conn.rollback(),send(res,409,{error:'insufficient_coins'})}
+      await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id])
+      await conn.commit();send(res,200,{life,spent:account.is_admin?0:spent,prize})
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+  },
   'GET /api/house/care': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
@@ -2810,10 +2847,10 @@ const routes = {
   'POST /api/house/care': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
-    const { action } = await readJson(req)
+    const { action, snackId } = await readJson(req)
     const rules = {
       feed: { key:'hunger', limit:75, gain:25, cost:100, cooldown:300000, exp:5 },
-      snack: { key:'hunger', limit:90, gain:10, extra:'happy', extraGain:15, cost:200, cooldown:600000, exp:5 },
+      snack: { key:'hunger', limit:90, gain:10, extra:'happy', extraGain:15, cost:0, cooldown:600000, exp:5 },
       play: { key:'happy', limit:75, gain:25, cost:0, cooldown:600000, exp:10 },
       wash: { key:'clean', limit:65, gain:35, cost:100, cooldown:900000, exp:5 },
       sleep: { key:'energy', limit:80, gain:20, cost:0, cooldown:3600000, exp:5 },
@@ -2827,6 +2864,13 @@ const routes = {
       await conn.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)', [account.id, JSON.stringify(houseCareDecay(null,Date.now()))])
       const [rows] = await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE', [account.id])
       const now=Date.now(), care=houseCareDecay(parseJson(rows[0].state_json),now)
+      const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
+      const life=lifeRows[0]?parseJson(lifeRows[0].state_json):{buildings:{},snacks:{}}
+      life.buildings=life.buildings||{};life.snacks=life.snacks||{}
+      const needs={feed:'kitchen',wash:'shower',play:'arcade',sleep:'bed'}
+      if(needs[action]&&(!life.buildings[needs[action]]||life.buildings[needs[action]].readyAt>now)){await conn.rollback();return send(res,409,{error:'building_required'})}
+      if(action==='snack'&&(!['candy','cookie','pudding','cake','lunch'].includes(snackId)||!(life.snacks[snackId]>0))){await conn.rollback();return send(res,409,{error:'snack_required'})}
+
       if ((care.cooldowns[action]||0)>now) { await conn.rollback(); return send(res,409,{error:'care_cooldown',nextAt:care.cooldowns[action]}) }
       const allowed=action==='snack' ? care.hunger<=90 || care.happy<=85 : !rule.key || care[rule.key]<=rule.limit
       if (!allowed) { await conn.rollback(); return send(res,409,{error:'care_full'}) }
@@ -2834,8 +2878,13 @@ const routes = {
         const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?', [rule.cost,account.id,rule.cost])
         if (!paid.affectedRows) { await conn.rollback(); return send(res,409,{error:'insufficient_coins'}) }
       }
-      if (rule.key) care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
-      if (rule.extra) care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
+      if(action==='snack'){
+        const bonuses={candy:[5,5],cookie:[10,5],pudding:[10,15],cake:[15,25],lunch:[25,35]}
+        const [h,happy]=bonuses[snackId];care.hunger=Math.min(100,care.hunger+h);care.happy=Math.min(100,care.happy+happy)
+        life.snacks[snackId]--;await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id])
+      }
+      if (rule.key&&action!=='snack') care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
+      if (rule.extra&&action!=='snack') care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
       if (action==='play') care.energy=Math.max(0,care.energy-10)
       if (action==='pet') care.affection=Math.min(1000,care.affection+5)
       care.cooldowns[action]=now+rule.cooldown
@@ -2846,7 +2895,7 @@ const routes = {
       while (care.level<100 && care.exp>=care.level*50) {care.exp-=care.level*50;care.level++}
       await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
       await conn.commit()
-      send(res,200,{care,spent:rule.cost,earned})
+      send(res,200,{care,life,spent:rule.cost,earned})
     } catch(error) {await conn.rollback();throw error} finally {conn.release()}
   },
   'GET /api/house/coin': async (req, res) => {
