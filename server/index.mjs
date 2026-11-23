@@ -641,12 +641,35 @@ async function withSave(accountId, change) {
   }
 }
 
+
+const HOUSE_LEVEL_TOTALS = [0,150,350,600,900,1250,1650,2100,2550,3000]
+function houseLevelFromTotal(total) {let level=1;while(level<10 && total>=HOUSE_LEVEL_TOTALS[level])level++;return level}
+function houseNextExp(level){return level>=10?0:HOUSE_LEVEL_TOTALS[level]-HOUSE_LEVEL_TOTALS[level-1]}
+function houseApplyExp(care, earned, now){
+  if(!earned)return
+  const old=care.level;let total=HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,old-1))]+care.exp+earned
+  total=Math.min(3000,total);care.level=houseLevelFromTotal(total)
+  care.exp=care.level===10?0:total-HOUSE_LEVEL_TOTALS[care.level-1]
+  if(care.level!==old){care.diary.unshift({at:now,text:`LV.${care.level}에 도달했어요!`});care.diary=care.diary.slice(0,25)}
+}
+function housePickPersonality(care){
+ const counts=care.actionCounts||{}
+ const scores=[['먹보',(counts.feed||0)+(counts.snack||0)],['장난꾸러기',counts.play||0],['잠꾸러기',counts.sleep||0],['애교쟁이',(counts.pet||0)+(counts.wash||0)]]
+ const max=Math.max(...scores.map(x=>x[1]));const tied=scores.filter(x=>x[1]===max)
+ const last=care.lastCareAction||'';const category={feed:'먹보',snack:'먹보',play:'장난꾸러기',sleep:'잠꾸러기',pet:'애교쟁이',wash:'애교쟁이'}[last]
+ return tied.find(x=>x[0]===category)?.[0]||tied[0][0]
+}
+function houseEnsurePersonality(care,now){if(care.level>=3&&(!care.personality||care.personality==='미발견')){care.personality=housePickPersonality(care);care.diary.unshift({at:now,text:`${care.personality} 성격을 발견했어요!`})}}
+
 function houseCareDecay(raw, now) {
   const s=raw && typeof raw==='object' ? raw : {}
   const elapsed=Math.min(12,Math.max(0,(now-(Number(s.updatedAt)||now))/3600000))
   const val=(key,rate)=>Math.max(0,Math.min(100,Math.round((Number.isFinite(Number(s[key]))?Number(s[key]):100)-elapsed*rate)))
-  return { hunger:val('hunger',4),happy:val('happy',3),clean:val('clean',2),energy:val('energy',0),
-    level:Math.max(1,Math.min(100,Number(s.level)||1)),exp:Math.max(0,Number(s.exp)||0),
+  const legacyTotal=Math.max(0,((Number(s.level)||1)-1)*(Number(s.level)||1)*25+(Number(s.exp)||0))
+  const total=Math.min(3000,Math.max(0,s.houseLevelV2?HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,(Number(s.level)||1)-1))]+(Number(s.exp)||0):Math.round(legacyTotal*3000/247500)))
+  const convertedLevel=houseLevelFromTotal(total)
+  return { houseLevelV2:true,lastCareAction:s.lastCareAction||'', hunger:val('hunger',4),happy:val('happy',3),clean:val('clean',2),energy:val('energy',0),
+    level:convertedLevel,exp:convertedLevel===10?0:total-HOUSE_LEVEL_TOTALS[convertedLevel-1],
     affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
     cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
     personality:s.personality||'미발견', milestones:Array.isArray(s.milestones)?s.milestones:[], diary:Array.isArray(s.diary)?s.diary:[], quests:s.quests&&typeof s.quests==='object'?s.quests:{}, questDay:s.questDay||'',claimed:Array.isArray(s.claimed)?s.claimed:[], eventCount:Number(s.eventCount)||0,eventDay:s.eventDay||'',eventReadyAt:Number(s.eventReadyAt)||0, mini:s.mini||null, miniWins:Number(s.miniWins)||0, petCount:Number(s.petCount)||0, actionCounts:s.actionCounts&&typeof s.actionCounts==='object'?s.actionCounts:{} }
@@ -2882,9 +2905,8 @@ const routes = {
       const questDay=new Date(now+9*3600000).toISOString().slice(0,10)
       if(care.questDay!==questDay){care.questDay=questDay;care.quests={};care.claimed=[]}
       care.quests[action]=(care.quests[action]||0)+1
-      care.actionCounts[action]=(Number(care.actionCounts[action])||0)+1
+      care.actionCounts[action]=(Number(care.actionCounts[action])||0)+1;care.lastCareAction=action
       if(action==='pet')care.petCount++
-      if(care.level>=10 && care.personality==='미발견'){const scores=[['먹보',care.actionCounts.feed||0],['장난꾸러기',care.actionCounts.play||0],['잠꾸러기',care.actionCounts.sleep||0],['애교쟁이',care.petCount||0]];care.personality=scores.sort((a,b)=>b[1]-a[1])[0][0]}
       const label={feed:'처음 밥을 먹었어요',snack:'맛있는 간식을 먹었어요',play:'게임기로 놀았어요',wash:'깨끗하게 씻었어요',sleep:'포근하게 잠들었어요',pet:'쓰다듬어 주었어요'}[action]
       if(label && !care.milestones.includes(action)){care.milestones.push(action);care.diary.unshift({at:now,text:label});care.diary=care.diary.slice(0,25)}
       care.cooldowns[action]=now+rule.cooldown
@@ -2892,16 +2914,11 @@ const routes = {
       if (care.expDay!==day) {care.expDay=day;care.expToday=0}
       const earned=Math.min(rule.exp,Math.max(0,300-care.expToday))
       care.expToday+=earned;care.exp+=earned
-      const previousLevel=care.level
-      while (care.level<100 && care.exp>=care.level*50) {care.exp-=care.level*50;care.level++}
-      if(care.level!==previousLevel){care.diary.unshift({at:now,text:`LV.${care.level}에 도달했어요!`});care.diary=care.diary.slice(0,25)}
-      const levelRewards={10:5000,20:10000,30:15000,50:30000,75:50000,100:100000}
-      let levelCoins=0
-      for(const [lv,reward] of Object.entries(levelRewards))if(previousLevel<Number(lv)&&care.level>=Number(lv))levelCoins+=reward
-      if(levelCoins){await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[levelCoins,account.id]);care.diary.unshift({at:now,text:`성장 보상 ${levelCoins.toLocaleString()}코인 획득!`})}
+      houseApplyExp(care,earned,now)
+      houseEnsurePersonality(care,now)
       await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
       await conn.commit()
-      send(res,200,{care,life,spent:rule.cost,earned,levelCoins})
+      send(res,200,{care,life,spent:rule.cost,earned,levelCoins:0})
     } catch(error) {await conn.rollback();throw error} finally {conn.release()}
   },
   'POST /api/house/adventure': async (req,res) => {
@@ -2934,20 +2951,26 @@ const routes = {
         const perfect=Math.abs(position-50)<=8
         earned=perfect?15:5;care.happy=Math.min(100,care.happy+(perfect?35:15));care.energy=Math.max(0,care.energy-10)
         care.mini=null;care.miniWins+=(perfect?1:0);care.cooldowns.play=now+600000;care.actionCounts.play=(care.actionCounts.play||0)+1;care.quests.play=(care.quests.play||0)+1
-        if(care.level>=10&&care.personality==='미발견')care.personality='장난꾸러기'
+        care.lastCareAction='play'
         if(!care.milestones.includes('play')){care.milestones.push('play');care.diary.unshift({at:now,text:'게임기를 처음 이용했어요'})}
         message=perfect?'대성공! 행복 +35':'게임 완료! 행복 +15'
       }else if(action==='event'){
-        if(care.level<5||care.eventCount>=3||now<care.eventReadyAt){await conn.rollback();return send(res,409,{error:'event_unavailable'})}
-        const messages=['치이카와가 반갑게 인사했어요!','치이카와가 즐겁게 뛰어놀았어요!','치이카와가 작은 선물을 발견했어요!']
-        care.eventCount++;care.eventReadyAt=now+3*3600000;care.happy=Math.min(100,care.happy+5);coins=300;message=messages[randomInt(messages.length)]
+        if(care.level<2||care.eventCount>=3||now<care.eventReadyAt){await conn.rollback();return send(res,409,{error:'event_unavailable'})}
+        const common=[{text:'반짝이는 동전을 발견했어요!',coins:1000},{text:'기분 좋은 하루예요!',happy:10},{text:'맛있는 음식이 생각나요!',hunger:10},{text:'낮잠을 즐겼어요!',energy:10},{text:'깨끗해져서 상쾌해요!',clean:10},{text:'치이카와가 애교를 부려요!',affection:10},{text:'오늘도 즐거워!',exp:10}]
+        const special={먹보:{text:'부엌에서 맛있는 간식을 생각했어요!',hunger:15},장난꾸러기:{text:'게임기에서 한 판 더 놀고 싶어요!',happy:15},잠꾸러기:{text:'침대에서 꾸벅꾸벅 졸았어요!',energy:15},애교쟁이:{text:'나랑 놀아줘! 치이카와가 다가왔어요!',affection:15}}
+        const chosen=(special[care.personality]&&randomInt(10)<3)?special[care.personality]:common[randomInt(common.length)]
+        care.eventCount++;care.eventReadyAt=now+3*3600000
+        for(const stat of ['happy','hunger','clean','energy'])if(chosen[stat])care[stat]=Math.min(100,care[stat]+chosen[stat])
+        if(chosen.affection)care.affection=Math.min(1000,care.affection+chosen.affection)
+        coins=chosen.coins||0;earned=chosen.exp||0;message=chosen.text
         care.diary.unshift({at:now,text:message})
       }else if(action==='claim'){
         const eligible=missions.filter(([id,,count])=>(care.quests[id]||0)>=count&&!care.claimed.includes(id))
         if(!eligible.length){await conn.rollback();return send(res,409,{error:'no_quest_reward'})}
         coins=eligible.reduce((sum,item)=>sum+item[3],0);care.claimed.push(...eligible.map(item=>item[0]));message=`일일 미션 ${eligible.length}개 보상 수령!`
       }
-      if(earned){if(care.expDay!==day){care.expDay=day;care.expToday=0}earned=Math.min(earned,Math.max(0,300-care.expToday));care.expToday+=earned;care.exp+=earned;while(care.level<100&&care.exp>=care.level*50){care.exp-=care.level*50;care.level++}}
+      if(earned){if(care.expDay!==day){care.expDay=day;care.expToday=0}earned=Math.min(earned,Math.max(0,300-care.expToday));care.expToday+=earned;houseApplyExp(care,earned,now)}
+      houseEnsurePersonality(care,now)
       care.diary=care.diary.slice(0,25)
       if(coins)await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[coins,account.id])
       await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])

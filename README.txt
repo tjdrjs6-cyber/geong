@@ -1,1 +1,1 @@
-기존 키우기 바닥 영역 수정 패치 적용 후 덮어쓰기. 4개 시설은 모든 유저에게 즉시 설치된 것으로 처리됩니다. 기존 간식 및 육성 데이터 유지. 서버 재배포 필요.
+LV.10 / 3000 EXP / no level rewards / LV.2 events / LV.3 personality. Apply after four facilities preinstalled patch. Existing growth progress is converted proportionally once.
