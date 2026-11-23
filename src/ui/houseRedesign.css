@@ -283,3 +283,16 @@
   transition:left 3.2s ease,top 3.2s ease;
 }
 #ui .house-screen .house-single-chiikawa.is-dragging{cursor:grabbing;transition:none !important}
+/* Tamagotchi panel: compact shared layout for desktop and mobile. */
+#ui .house-screen .house-care{max-height:42dvh;overflow-y:auto;scrollbar-width:thin}
+#ui .house-screen .house-scroll-viewport{height:39dvh !important;max-height:39dvh !important;min-height:240px}
+.house-mood{font-size:12px;font-weight:700;color:#b36879;background:#fff0f2;border-radius:9px;padding:7px 10px;margin:5px 0 9px}
+.house-tama-section{border-top:1px solid #efd8cd;margin-top:10px;padding-top:9px;font-size:12px}
+.house-tama-section>strong{display:block;margin-bottom:5px}.house-tama-section p{font-size:11px;margin:4px 0 7px;color:#886b60}
+.house-tama-section button{border:1px solid #d9a4ac;background:#fff0f4;border-radius:9px;color:#784951;padding:7px 12px;margin-top:6px;font-weight:700;cursor:pointer}
+.house-tama-section button:disabled,.house-care-actions button:disabled{opacity:.45;cursor:not-allowed}
+.house-mini-bar{position:relative;height:20px;border-radius:9px;background:#f2e0d9;margin:10px 3px 4px;overflow:hidden}
+.house-mini-target{position:absolute;left:42%;width:16%;height:100%;background:#9fd9b3}
+.house-mini-pointer{position:absolute;left:0;top:0;width:5px;height:100%;background:#e0788b;border-radius:3px}
+.house-quests{display:flex;flex-wrap:wrap;gap:5px}.house-quests span{font-size:10px;padding:5px 7px;background:#fff3e8;border-radius:7px}
+.house-diary{font-size:11px;line-height:1.8;color:#7d605a}

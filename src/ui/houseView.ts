@@ -18,6 +18,9 @@ export class HouseView {
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private lastInteraction=Date.now()
   private dragging=false
+  private miniActive=false
+  private miniStarted=0
+  private miniTick:ReturnType<typeof setInterval>|null=null
   constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
   open():void{
     this.hooks.coinAvailable(false)
@@ -60,6 +63,10 @@ export class HouseView {
   handle(action:string,button:HTMLElement):boolean{
     if(action==='house-build'||action==='house-upgrade'){const id=button.dataset.id;if(id)void this.build(action==='house-build'?'build':'upgrade',id);return true}
     if(action.startsWith('house-care-')){void this.performCare(action.slice(11),button.dataset.snack);return true}
+    if(action==='house-mini-start'){void this.adventure('mini-start');return true}
+    if(action==='house-mini-stop'){void this.adventure('mini-stop');return true}
+    if(action==='house-event'){void this.adventure('event');return true}
+    if(action==='house-claim'){void this.adventure('claim');return true}
     if(action==='house-coin')return true
     return false
   }
@@ -73,8 +80,25 @@ export class HouseView {
     try{const result=await this.store.houseCareAction(action,snackId);this.care=result.care;await this.refreshLife();this.renderCare();this.hooks.wallet();this.hooks.toast(`돌보기 완료! 경험치 +${result.earned}`)}
     catch(e){this.fail(e)}finally{this.busy=false}
   }
+  private async adventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{
+      const result=await this.store.houseAdventure(action);this.care=result.care
+      if(action==='mini-start'){this.miniActive=true;this.miniStarted=Date.now();this.startMiniAnimation()}
+      if(action==='mini-stop'){this.miniActive=false;this.stopMiniAnimation()}
+      this.renderCare();this.hooks.wallet();this.hooks.toast(result.message+(result.coins?` · ${result.coins.toLocaleString()}코인`:''))
+    }catch(e){if(action==='mini-stop'){this.miniActive=false;this.stopMiniAnimation()}this.fail(e)}finally{this.busy=false}
+  }
+  private startMiniAnimation():void{
+    this.stopMiniAnimation();this.miniTick=setInterval(()=>{
+      const el=this.root.querySelector<HTMLElement>('.house-mini-pointer');if(!el)return
+      const phase=((Date.now()-this.miniStarted)%2200)/2200
+      el.style.left=`${phase<=.5?phase*200:(1-phase)*200}%`
+    },50)
+  }
+  private stopMiniAnimation():void{if(this.miniTick){clearInterval(this.miniTick);this.miniTick=null}}
   private async refreshLife():Promise<void>{this.life=(await this.store.houseLife()).life;this.renderLot()}
-  private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
+  private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.5부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
     el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell"><strong>${f.name}</strong>${b?`<img src="${f.img}" alt="${f.name}"/><small>${ready?`LV.${b.level}`:'건설 중'}</small>${ready&&b.level<3?`<button data-action="house-upgrade" data-id="${f.id}">강화 ${b.level===1?'100,000':'300,000'}코인</button>`:''}${ready?`<button data-action="house-care-${f.action}">이용하기</button>`:''}`:`<div class="house-life-placeholder">미건설</div><button data-action="house-build" data-id="${f.id}">건설 ${f.price.toLocaleString()}코인</button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
@@ -84,6 +108,20 @@ export class HouseView {
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
     const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy]]
-    el.innerHTML=`<div class="house-care-head"><strong>치이카와 키우기 · LV.${c.level}</strong><span>EXP ${c.exp}/${c.level*50} · 친밀도 ${c.affection}</span></div><div class="house-care-stats">${stats.map(([name,n])=>`<div><span>${name} ${n}%</span><div class="house-care-track"><i style="width:${n}%"></i></div></div>`).join('')}</div><div class="house-care-actions"><button data-action="house-care-pet">쓰다듬기</button></div><div class="house-snack-list"><strong>간식주기 · 보유 간식</strong>${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}>${name} (${this.life.snacks[id]||0})</button>`).join('')}</div>`
+    const emotion=c.hunger<30?'배가 고파요':c.happy<35?'심심해요':c.clean<30?'씻고 싶어요':c.energy<30?'졸려요':c.happy>=80?'아주 행복해요':'기분이 좋아요'
+    const missions:[string,string,number][]=[['feed','밥주기',1000],['play','게임하기',1500],['pet','쓰다듬기',500]]
+    const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10)
+    const currentDay=c.questDay===today
+    const canClaim=missions.some(([id])=>currentDay&&(c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]&&!c.claimed?.includes(id))
+    const diary=(c.diary||[]).slice(0,6)
+    el.innerHTML=`<div class="house-care-head"><strong>치이카와의 하루 · LV.${c.level}</strong><span>EXP ${c.exp}/${c.level*50} · 친밀도 ${c.affection}</span></div>
+    <div class="house-mood">${emotion} · 성격: ${c.level>=10?(c.personality||'미발견'):'LV.10에 발견'}</div>
+    <div class="house-care-stats">${stats.map(([name,n])=>`<div><span>${name} ${n}%</span><div class="house-care-track"><i style="width:${n}%"></i></div></div>`).join('')}</div>
+    <div class="house-care-actions"><button data-action="house-care-pet">쓰다듬기</button><button data-action="house-event" ${c.level<5?'disabled':''}>랜덤 이벤트 (${c.eventCount||0}/3)</button></div>
+    <section class="house-tama-section"><strong>게임기 미니게임</strong><p>게임기를 건설한 뒤 움직이는 막대를 중앙에 멈춰보세요.</p><div class="house-mini-bar"><span class="house-mini-target"></span><i class="house-mini-pointer"></i></div><button data-action="${this.miniActive?'house-mini-stop':'house-mini-start'}">${this.miniActive?'여기서 멈추기!':'게임 시작'}</button></section>
+    <section class="house-tama-section"><strong>오늘의 미션</strong><div class="house-quests">${missions.map(([id,name,coins])=>`<span>${name} ${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'미완료'} · ${coins.toLocaleString()}코인 ${c.claimed?.includes(id)?'(수령)':''}</span>`).join('')}</div><button data-action="house-claim" ${canClaim?'':'disabled'}>완료 보상 받기</button></section>
+    <section class="house-tama-section"><strong>성장 일기</strong><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/</g,'&lt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div></section>
+    <div class="house-snack-list"><strong>간식주기 · 보유 간식</strong>${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}>${name} (${this.life.snacks[id]||0})</button>`).join('')}</div>`
+    if(this.miniActive)this.startMiniAnimation()
   }
 }

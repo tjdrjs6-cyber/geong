@@ -349,6 +349,7 @@ export class RemoteGachaStore {
     if(result.spent) this.data.gems=Math.max(0,this.data.gems-result.spent)
     return result
   }
+  async houseAdventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>{const result=await request<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>('house/adventure',{action});if(result.coins)this.data.gems+=result.coins;return result}
   async houseCoin(): Promise<HouseCoinState> {
     return request<HouseCoinState>('house/coin')
   }
@@ -514,4 +515,4 @@ export class RemoteGachaStore {
 type WeedResult = { save: GachaSave; weed: WeedState | null; earned: number; now: number }
 type BattleResult = { cleared?: {stage:number;coins:number;fragments:number}[]; failedStage?:number; save: GachaSave; battle: BattleState; earned: number; now: number }
 
-export type HouseCareState = {hunger:number;happy:number;clean:number;energy:number;level:number;exp:number;affection:number;cooldowns:Record<string,number>;updatedAt:number}
+export type HouseCareState = {personality?:string;milestones?:string[];diary?:{at:number;text:string}[];questDay?:string;quests?:Record<string,number>;claimed?:string[];eventCount?:number;eventReadyAt?:number;mini?:{startedAt:number;nonce:string}|null;miniWins?:number;actionCounts?:Record<string,number>;hunger:number;happy:number;clean:number;energy:number;level:number;exp:number;affection:number;cooldowns:Record<string,number>;updatedAt:number}
