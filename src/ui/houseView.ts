@@ -19,6 +19,7 @@ export class HouseView {
   private lastInteraction=Date.now()
   private dragging=false
   private activeTab: 'care'|'snack'|'mission'|'diary'='care'
+  private infoOpen=false
   private miniActive=false
   private miniStarted=0
   private miniTick:ReturnType<typeof setInterval>|null=null
@@ -62,8 +63,9 @@ export class HouseView {
   }
   private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
   handle(action:string,button:HTMLElement):boolean{
+    if(action==='house-info'){this.infoOpen=!this.infoOpen;this.renderCare();return true}
     if(action==='house-build'){const id=button.dataset.id;if(id)void this.build(id);return true}
-    if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.renderCare()}return true}
+    if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.infoOpen=true;this.renderCare()}return true}
     if(action.startsWith('house-care-')){void this.performCare(action.slice(11),button.dataset.snack);return true}
     if(action==='house-mini-start'){void this.adventure('mini-start');return true}
     if(action==='house-mini-stop'){void this.adventure('mini-stop');return true}
@@ -124,7 +126,11 @@ export class HouseView {
     const missionPanel=`<div class="tama-panel-heading">오늘의 할 일 <small>매일 치이카와와 추억을 쌓아보세요</small></div><div class="tama-mission-list">${missions.map(([id,name,coins])=>`<div><span>${name}</span><span>${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'진행 전'}</span><b>${coins.toLocaleString()}코인 ${c.claimed?.includes(id)?'· 수령 완료':''}</b></div>`).join('')}</div><button class="tama-main-button" data-action="house-claim" ${canClaim?'':'disabled'}>미션 보상 받기</button>`
     const diaryPanel=`<div class="tama-panel-heading">성장 일기 <small>치이카와와 함께한 기록</small></div><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div>`
     const panels:Record<string,string>={care:carePanel,snack:snackPanel,mission:missionPanel,diary:diaryPanel}
-    el.innerHTML=`<div class="tama-shell"><div class="tama-top"><div class="tama-title"><strong>치이카와 키우기</strong><span>나의 작은 친구</span></div><div class="tama-level">LV.${c.level}</div></div><div class="tama-exp"><div class="tama-exp-label"><span>성장 경험치</span><b>${c.exp} / ${c.level*50} EXP</b></div><div class="house-care-track"><i style="width:${Math.min(100,c.exp/Math.max(1,c.level*50)*100)}%"></i></div></div><div class="tama-mood ${moodClass}"><strong>${emotion}</strong><span>성격: ${c.level>=10?(c.personality||'미발견'):'LV.10에 발견'} · 친밀도 ${c.affection}</span></div><div class="tama-stats">${statCards}</div><div class="tama-tabs" role="tablist">${tabs.map(([id,name])=>`<button role="tab" aria-selected="${this.activeTab===id}" class="${this.activeTab===id?'active':''}" data-action="house-tab" data-tab="${id}">${name}</button>`).join('')}</div><div class="tama-tab-content">${panels[this.activeTab]}</div></div>`
+    const heartCount=Math.max(0,Math.min(4,Math.ceil((c.hunger+c.happy+c.clean+c.energy)/100)))
+    const hearts=Array.from({length:4},(_,i)=>`<span class="tama-heart ${i<heartCount?'filled':''}" aria-hidden="true">♥</span>`).join('')
+    const miniStats=`<div class="tama-game-hud" aria-label="육성 상태"><div class="tama-hearts" title="종합 컨디션">${hearts}</div><div class="tama-hud-level">LV.${c.level}</div><div class="tama-hud-mood">${emotion}</div></div>`
+    const menu:[string,string,string][]=[['care','⌂','돌보기'],['snack','▣','간식'],['mission','☆','미션'],['diary','▤','일기']]
+    el.innerHTML=`<div class="tama-device">${miniStats}<div class="tama-game-menu" role="tablist">${menu.map(([id,icon,name])=>`<button class="tama-game-key ${this.activeTab===id&&this.infoOpen?'selected':''}" role="tab" aria-selected="${this.activeTab===id&&this.infoOpen}" data-action="house-tab" data-tab="${id}" title="${name}"><span aria-hidden="true">${icon}</span><small>${name}</small></button>`).join('')}<button class="tama-game-key tama-info-key" data-action="house-info" title="상태 보기"><span aria-hidden="true">${this.infoOpen?'×':'☰'}</span><small>${this.infoOpen?'닫기':'상태'}</small></button></div><div class="tama-drawer ${this.infoOpen?'is-open':''}" ${this.infoOpen?'':'hidden'}><div class="tama-drawer-head"><strong>${this.activeTab==='care'?'치이카와 돌보기':this.activeTab==='snack'?'간식 보관함':this.activeTab==='mission'?'오늘의 할 일':'성장 일기'}</strong><button data-action="house-info" aria-label="닫기">×</button></div><div class="tama-drawer-summary"><div class="tama-level">LV.${c.level}</div><span>친밀도 ${c.affection} · ${c.level>=10?(c.personality||'성격 미발견'):'LV.10 성격 발견'}</span></div><div class="tama-exp"><div class="tama-exp-label"><span>성장 경험치</span><b>${c.exp} / ${c.level*50}</b></div><div class="house-care-track"><i style="width:${Math.min(100,c.exp/Math.max(1,c.level*50)*100)}%"></i></div></div><div class="tama-stats">${statCards}</div><div class="tama-tab-content">${panels[this.activeTab]}</div></div></div>`
     if(this.miniActive)this.startMiniAnimation()
   }
 }

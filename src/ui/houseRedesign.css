@@ -332,3 +332,41 @@
 #ui .house-screen .house-diary>div{padding:8px;border-bottom:1px solid #f1e3d8}
 #ui .house-screen .house-life-cell small{font-size:9px}
 @media(max-width:480px){#ui .house-screen .tama-shell{padding:10px}#ui .house-screen .tama-tabs button{font-size:9px;padding:8px 1px}#ui .house-screen .tama-title strong{font-size:15px}}
+
+/* Handheld Tamagotchi-inspired interface; reuse existing house background and character assets. */
+#ui .house-screen{background:#f6eaf0 !important;}
+#ui .house-screen .weed-header{background:#f8e4ed !important;border-bottom:2px solid #c69aae !important;}
+#ui .house-screen .house-scroll-viewport{height:min(62dvh,570px) !important;max-height:none !important;min-height:300px !important;flex:1 1 auto;overflow:hidden !important;background:#e9f4fc;border:8px solid #e9b9d0;border-bottom:0;border-radius:26px 26px 0 0;box-shadow:inset 0 0 0 3px #fff8fb,0 4px 0 #bc8da4;margin:8px 10px 0;box-sizing:border-box;}
+#ui .house-screen .house-lot{background:#dceef7;}
+#ui .house-screen .house-life-grid{z-index:9;}
+#ui .house-screen .house-life-cell{width:21% !important;height:14% !important;background:rgba(255,251,249,.76) !important;border:1px solid #e3b9c6 !important;border-radius:10px !important;}
+#ui .house-screen .house-life-cell:nth-child(1){left:29%;top:45%}
+#ui .house-screen .house-life-cell:nth-child(2){left:71%;top:45%}
+#ui .house-screen .house-life-cell:nth-child(3){left:29%;top:66%}
+#ui .house-screen .house-life-cell:nth-child(4){left:71%;top:66%}
+#ui .house-screen .house-life-cell strong{font-size:10px;color:#765b75}
+#ui .house-screen .house-life-cell button{background:#fff0f6;color:#81576c;border-color:#d5a3b7;}
+#ui .house-screen .house-single-chiikawa{width:17% !important;height:15% !important;z-index:15;filter:drop-shadow(0 2px 2px #7e687b44)}
+#ui .house-screen .house-care{overflow:visible !important;max-height:none !important;flex:0 0 auto !important;margin:0 10px 10px !important;padding:0 !important;background:transparent !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;position:relative;z-index:20;}
+#ui .house-screen .tama-device{background:#e9b9d0;border:8px solid #e9b9d0;border-top:0;border-radius:0 0 26px 26px;box-shadow:inset 0 -3px 0 #c58ca7,0 4px 10px #7a62741c;padding:5px 8px 10px;position:relative;color:#754b65;}
+#ui .house-screen .tama-game-hud{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:5px 8px;border-radius:12px;background:#fff8fc;min-height:27px;font-size:11px;}
+#ui .house-screen .tama-hearts{display:flex;gap:3px;font-size:21px;line-height:1;letter-spacing:-2px;}
+#ui .house-screen .tama-heart{color:#e6d7e1;text-shadow:0 1px #bca9b7;}
+#ui .house-screen .tama-heart.filled{color:#e88cac;text-shadow:1px 1px #b66c8d;}
+#ui .house-screen .tama-hud-level{font-weight:900;white-space:nowrap;}
+#ui .house-screen .tama-hud-mood{max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;}
+#ui .house-screen .tama-game-menu{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:9px 0 2px;}
+#ui .house-screen .tama-game-key{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;min-width:0;border:2px solid #c6a2bd;background:linear-gradient(#fff9fd,#e9e7f5);border-radius:13px;color:#83668a;padding:4px 2px;box-shadow:0 3px 0 #bc90ad;cursor:pointer;touch-action:manipulation;}
+#ui .house-screen .tama-game-key span{font-size:22px;line-height:1.1;font-weight:900;}
+#ui .house-screen .tama-game-key small{font-size:10px;font-weight:800;}
+#ui .house-screen .tama-game-key.selected{background:#ffe7f1;border-color:#dc84ab;transform:translateY(2px);box-shadow:0 1px 0 #bc90ad;}
+#ui .house-screen .tama-drawer[hidden]{display:none !important;}
+#ui .house-screen .tama-drawer{position:absolute;left:0;right:0;bottom:100%;max-height:min(55dvh,440px);overflow-y:auto;overscroll-behavior:contain;background:#fff9f4;border:3px solid #d9a8bc;border-radius:16px 16px 0 0;padding:11px;box-shadow:0 -5px 15px #67435a24;scrollbar-width:thin;}
+#ui .house-screen .tama-drawer-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#785267;margin-bottom:8px;}
+#ui .house-screen .tama-drawer-head button{border:0;background:#f5e2eb;border-radius:8px;padding:3px 10px;font-size:20px;color:#80576a;cursor:pointer;}
+#ui .house-screen .tama-drawer-summary{display:flex;align-items:center;gap:8px;font-size:11px;}
+#ui .house-screen .tama-drawer .tama-exp{margin:6px 0;}
+#ui .house-screen .tama-drawer .tama-stats{margin:8px 0;gap:5px;}
+#ui .house-screen .tama-drawer .tama-stat{padding:6px;}
+#ui .house-screen .tama-drawer .tama-tab-content{padding:6px 0 0;min-height:0;}
+@media(max-width:600px){#ui .house-screen .house-scroll-viewport{height:55dvh !important;min-height:275px !important;margin:5px 6px 0;border-width:6px;}#ui .house-screen .house-care{margin:0 6px 6px !important;}#ui .house-screen .tama-device{border-width:6px;padding:4px 6px 8px;}#ui .house-screen .tama-game-key span{font-size:19px;}#ui .house-screen .tama-game-key small{font-size:9px;}#ui .house-screen .tama-drawer{max-height:53dvh;}}
