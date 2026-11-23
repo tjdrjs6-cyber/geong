@@ -392,3 +392,32 @@
 #ui .house-screen .house-life-cell:nth-child(3){left:73% !important;top:57% !important}
 #ui .house-screen .house-life-cell:nth-child(4){left:27% !important;top:57% !important}
 #ui .house-screen .house-life-cell:nth-child(4).is-built img{transform:scaleX(-1)}
+
+/* Floor footprint correction: positions are relative to the full house stage,
+   not a nested 70%-wide grid. Keep the same geometry on PC and mobile. */
+#ui .house-screen .house-life-grid{
+  position:absolute !important;inset:0 !important;left:0 !important;top:0 !important;
+  width:100% !important;height:100% !important;display:block !important;
+  transform:none !important;pointer-events:none !important;
+}
+#ui .house-screen .house-life-cell{
+  position:absolute !important;transform:translate(-50%,-50%) !important;
+  width:21% !important;height:17% !important;min-height:0 !important;
+  margin:0 !important;overflow:visible !important;
+}
+/* North game, east bed, west mirrored kitchen, south shower. */
+#ui .house-screen .house-life-cell[data-facility="arcade"]{left:50% !important;top:41% !important;width:18% !important;height:17% !important}
+#ui .house-screen .house-life-cell[data-facility="bed"]{left:77% !important;top:57% !important;width:23% !important;height:17% !important}
+#ui .house-screen .house-life-cell[data-facility="kitchen"]{left:23% !important;top:57% !important;width:23% !important;height:17% !important}
+#ui .house-screen .house-life-cell[data-facility="shower"]{left:50% !important;top:72% !important;width:17% !important;height:16% !important}
+#ui .house-screen .house-life-cell[data-facility="kitchen"].is-built img{
+  transform:scaleX(-1) !important;
+  animation:none !important;
+}
+/* Animate the container rather than the image: using the kitchen cannot undo its mirror. */
+#ui .house-screen .house-life-cell.is-using{animation:houseFacilityUseFrame .3s ease-in-out 3 alternate}
+#ui .house-screen .house-life-cell.is-using img{animation:none !important}
+@keyframes houseFacilityUseFrame{
+  to{filter:brightness(1.08) drop-shadow(0 0 5px #ffe4aa)}
+}
+#ui .house-screen .house-single-chiikawa{z-index:21 !important}

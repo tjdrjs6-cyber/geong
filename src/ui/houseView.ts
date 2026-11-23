@@ -31,10 +31,18 @@ export class HouseView {
     try{const saved=JSON.parse(localStorage.getItem('geong-house-chi-position')||'null');if(saved&&Number.isFinite(saved.x)&&Number.isFinite(saved.y))this.chiPos=this.clampPosition(saved.x,saved.y)}catch{}
     this.renderLot();this.startRoaming();void this.load()
   }
+  // The room floor is a diamond. Coordinates refer to the character's feet,
+  // not its image box. Keep a safe inset so the sprite cannot leave the floor.
   private clampPosition(x:number,y:number):{x:number;y:number}{
-    // Diamond-shaped floor; keep the character inside the central walkable area.
-    const cy=Math.max(43,Math.min(72,y));const width=31*(1-Math.abs(cy-57.5)/18);const half=Math.max(8,width)
-    return {x:Math.max(50-half,Math.min(50+half,x)),y:cy}
+    const cy=Math.max(42,Math.min(73,y))
+    const halfWidth=Math.max(7,33*(1-Math.abs(cy-57.5)/22))
+    return {x:Math.max(50-halfWidth,Math.min(50+halfWidth,x)),y:cy}
+  }
+  private facilitySpots(){
+    return [{id:'arcade',x:50,y:41},{id:'shower',x:50,y:72},{id:'bed',x:77,y:57},{id:'kitchen',x:23,y:57}]
+  }
+  private nearFurniture(x:number,y:number):boolean{
+    return this.facilitySpots().some(p=>this.life.buildings[p.id]&&Math.hypot((x-p.x)/1.25,y-p.y)<12)
   }
   private placeChiikawa():void{
     const chi=this.root.querySelector<HTMLElement>('.house-single-chiikawa')
@@ -45,15 +53,21 @@ export class HouseView {
     if(this.roamTimer)clearInterval(this.roamTimer)
     this.roamTimer=setInterval(()=>{
       if(this.dragging||this.busy||this.root.getAttribute('aria-hidden')==='true'||Date.now()-this.lastInteraction<1800)return
-      // Keep roaming inside the walkable diamond, rather than jumping outside the room.
-      this.chiPos=this.clampPosition(this.chiPos.x+(Math.random()-.5)*19,this.chiPos.y+(Math.random()-.5)*12)
+      // Choose a reachable point on the floor without walking through furniture.
+      for(let attempt=0;attempt<12;attempt++){
+        const candidate=this.clampPosition(this.chiPos.x+(Math.random()-.5)*24,this.chiPos.y+(Math.random()-.5)*15)
+        if(!this.nearFurniture(candidate.x,candidate.y)){
+          this.chiPos=candidate
+          break
+        }
+      }
       this.placeChiikawa()
     },3200)
   }
   private dropFacility():void{
-    const spots=[{id:'arcade',x:50,y:39},{id:'shower',x:50,y:76},{id:'bed',x:73,y:57},{id:'kitchen',x:27,y:57}]
+    const spots=this.facilitySpots()
     const hit=spots.map(p=>({...p,d:Math.hypot((this.chiPos.x-p.x)/1.15,(this.chiPos.y-p.y)/1.0)})).sort((a,b)=>a.d-b.d)[0]
-    if(!hit||hit.d>14)return
+    if(!hit||hit.d>16)return
     const building=this.life.buildings[hit.id]
     if(!building||building.readyAt>Date.now()){this.hooks.toast('시설을 먼저 건설하고 완공을 기다려주세요.');return}
     const facility=facilities.find(f=>f.id===hit.id)
