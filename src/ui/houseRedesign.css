@@ -251,3 +251,35 @@
 .house-screen .house-snack-list button{border:1px solid #d4ad95;border-radius:8px;background:#fff6e9;padding:6px;font-size:12px}
 .house-screen .house-snack-list button:disabled{opacity:.4}
 @media(max-width:600px){.house-screen .house-life-grid{gap:4px}.house-screen .house-life-cell{padding:2px}.house-screen .house-life-cell button{font-size:9px;padding:2px}.house-screen .house-scroll-viewport{height:49vh;min-height:300px}}
+
+/* Diamond-floor house: four compact, non-overlapping build sectors. */
+#ui .house-screen .house-life-grid{
+  position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;
+  display:block !important;pointer-events:none;z-index:10;
+}
+#ui .house-screen .house-life-cell{
+  position:absolute !important;width:24% !important;height:15% !important;
+  padding:2px !important;gap:1px !important;
+  background:rgba(255,250,244,.83) !important;
+  border:1px dashed #c9a891 !important;border-radius:8px !important;
+  transform:translate(-50%,-50%);pointer-events:auto;
+  box-shadow:0 1px 3px #795a3b18;
+}
+#ui .house-screen .house-life-cell:nth-child(1){left:34%;top:46%}
+#ui .house-screen .house-life-cell:nth-child(2){left:66%;top:46%}
+#ui .house-screen .house-life-cell:nth-child(3){left:34%;top:66%}
+#ui .house-screen .house-life-cell:nth-child(4){left:66%;top:66%}
+#ui .house-screen .house-life-cell strong{font-size:clamp(8px,2vw,11px);line-height:1.1}
+#ui .house-screen .house-life-cell img{max-height:51%;max-width:85%;object-fit:contain}
+#ui .house-screen .house-life-placeholder{font-size:9px;padding:0}
+#ui .house-screen .house-life-cell small{font-size:9px;line-height:1}
+#ui .house-screen .house-life-cell button{font-size:clamp(7px,1.6vw,9px);line-height:1.1;padding:2px 3px;max-width:98%;white-space:normal}
+#ui .house-screen .house-single-chiikawa{
+  position:absolute !important;left:50%;top:56%;bottom:auto !important;
+  width:12% !important;height:10% !important;max-width:none !important;
+  transform:translate(-50%,-50%) !important;object-fit:contain;
+  z-index:14;pointer-events:auto !important;cursor:grab;touch-action:none;
+  user-select:none;-webkit-user-drag:none;
+  transition:left 3.2s ease,top 3.2s ease;
+}
+#ui .house-screen .house-single-chiikawa.is-dragging{cursor:grabbing;transition:none !important}

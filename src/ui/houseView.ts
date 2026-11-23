@@ -14,8 +14,48 @@ export class HouseView {
   private life:Life={buildings:{},snacks:{}}
   private care:HouseCareState|null=null
   private busy=false
+  private chiPos={x:50,y:56}
+  private roamTimer:ReturnType<typeof setInterval>|null=null
+  private lastInteraction=Date.now()
+  private dragging=false
   constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
-  open():void{this.hooks.coinAvailable(false);this.renderLot();void this.load()}
+  open():void{
+    this.hooks.coinAvailable(false)
+    try{const saved=JSON.parse(localStorage.getItem('geong-house-chi-position')||'null');if(saved&&Number.isFinite(saved.x)&&Number.isFinite(saved.y))this.chiPos=this.clampPosition(saved.x,saved.y)}catch{}
+    this.renderLot();this.startRoaming();void this.load()
+  }
+  private clampPosition(x:number,y:number):{x:number;y:number}{
+    // Diamond-shaped floor; keep the character inside the central walkable area.
+    const cy=Math.max(43,Math.min(72,y));const width=31*(1-Math.abs(cy-57.5)/18);const half=Math.max(8,width)
+    return {x:Math.max(50-half,Math.min(50+half,x)),y:cy}
+  }
+  private placeChiikawa():void{
+    const chi=this.root.querySelector<HTMLElement>('.house-screen .house-single-chiikawa')
+    if(!chi)return
+    chi.style.left=`${this.chiPos.x}%`;chi.style.top=`${this.chiPos.y}%`
+  }
+  private startRoaming():void{
+    if(this.roamTimer)clearInterval(this.roamTimer)
+    this.roamTimer=setInterval(()=>{
+      if(this.dragging||Date.now()-this.lastInteraction<6500||!this.root.querySelector('.house-screen:not([aria-hidden="true"])'))return
+      this.chiPos=this.clampPosition(this.chiPos.x+(Math.random()-.5)*15,this.chiPos.y+(Math.random()-.5)*10)
+      this.placeChiikawa()
+    },4800)
+  }
+  private attachChiDrag():void{
+    const chi=this.root.querySelector<HTMLElement>('.house-screen .house-single-chiikawa')
+    const lot=this.root.querySelector<HTMLElement>('.house-screen .house-lot')
+    if(!chi||!lot)return
+    chi.addEventListener('pointerdown',(e:PointerEvent)=>{
+      e.preventDefault();this.dragging=true;this.lastInteraction=Date.now();chi.classList.add('is-dragging');chi.setPointerCapture(e.pointerId)
+    })
+    chi.addEventListener('pointermove',(e:PointerEvent)=>{
+      if(!this.dragging)return
+      const r=lot.getBoundingClientRect();this.chiPos=this.clampPosition((e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100);this.placeChiikawa()
+    })
+    const end=()=>{if(!this.dragging)return;this.dragging=false;chi.classList.remove('is-dragging');this.lastInteraction=Date.now();try{localStorage.setItem('geong-house-chi-position',JSON.stringify(this.chiPos))}catch{}}
+    chi.addEventListener('pointerup',end);chi.addEventListener('pointercancel',end);chi.addEventListener('lostpointercapture',end)
+  }
   private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
   handle(action:string,button:HTMLElement):boolean{
     if(action==='house-build'||action==='house-upgrade'){const id=button.dataset.id;if(id)void this.build(action==='house-build'?'build':'upgrade',id);return true}
@@ -37,7 +77,8 @@ export class HouseView {
   private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
-    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell"><strong>${f.name}</strong>${b?`<img src="${f.img}" alt="${f.name}"/><small>${ready?`LV.${b.level}`:'건설 중'}</small>${ready&&b.level<3?`<button data-action="house-upgrade" data-id="${f.id}">강화 ${b.level===1?'100,000':'300,000'}코인</button>`:''}${ready?`<button data-action="house-care-${f.action}">이용하기</button>`:''}`:`<div class="house-life-placeholder">미건설</div><button data-action="house-build" data-id="${f.id}">건설 ${f.price.toLocaleString()}코인</button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와"/>`
+    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{const b=this.life.buildings[f.id],ready=b&&b.readyAt<=Date.now();return `<section class="house-life-cell"><strong>${f.name}</strong>${b?`<img src="${f.img}" alt="${f.name}"/><small>${ready?`LV.${b.level}`:'건설 중'}</small>${ready&&b.level<3?`<button data-action="house-upgrade" data-id="${f.id}">강화 ${b.level===1?'100,000':'300,000'}코인</button>`:''}${ready?`<button data-action="house-care-${f.action}">이용하기</button>`:''}`:`<div class="house-life-placeholder">미건설</div><button data-action="house-build" data-id="${f.id}">건설 ${f.price.toLocaleString()}코인</button>`}</section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
+    this.placeChiikawa();this.attachChiDrag()
   }
   private renderCare():void{
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
