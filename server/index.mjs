@@ -668,7 +668,7 @@ function houseCareDecay(raw, now) {
   const legacyTotal=Math.max(0,((Number(s.level)||1)-1)*(Number(s.level)||1)*25+(Number(s.exp)||0))
   const total=Math.min(3000,Math.max(0,s.houseLevelV2?HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,(Number(s.level)||1)-1))]+(Number(s.exp)||0):Math.round(legacyTotal*3000/247500)))
   const convertedLevel=houseLevelFromTotal(total)
-  return { houseLevelV2:true,lastCareAction:s.lastCareAction||'', hunger:val('hunger',4),happy:val('happy',3),clean:val('clean',2),energy:val('energy',0),
+  return { houseLevelV2:true,lastCareAction:s.lastCareAction||'', hunger:val('hunger',5),happy:val('happy',4),clean:val('clean',3+(s.messAt&&s.messAt<now?2:0)),energy:Math.min(100,val('energy',3)+Math.max(0,Math.min(now,s.sleepUntil||0)-Math.max(now-12*3600000,s.updatedAt||now))/60000), health:Math.max(0,Math.min(100,(s.health??100)-elapsed*((s.hunger<25||s.clean<25)?2:0))), messAt:s.messAt||0, bornAt:s.bornAt||now, favorite:s.favorite||'', tasted:s.tasted||[], memories:s.memories||[], sleepUntil:s.sleepUntil||0,
     level:convertedLevel,exp:convertedLevel===10?0:total-HOUSE_LEVEL_TOTALS[convertedLevel-1],
     affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
     cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
@@ -2869,7 +2869,7 @@ const routes = {
       play: { key:'happy', limit:75, gain:25, cost:0, cooldown:600000, exp:10 },
       wash: { key:'clean', limit:65, gain:35, cost:100, cooldown:900000, exp:5 },
       sleep: { key:'energy', limit:80, gain:20, cost:0, cooldown:3600000, exp:5 },
-      pet: { key:null, cost:0, cooldown:1800000, exp:3 }
+      pet: { key:null, cost:0, cooldown:1800000, exp:3 }, tidy:{key:null,cost:0,cooldown:1000,exp:5}, medicine:{key:null,cost:0,cooldown:3600000,exp:5}
     }
     const rule = rules[action]
     if (!rule) return send(res, 400, { error:'invalid_care_action' })
@@ -2887,6 +2887,7 @@ const routes = {
       if(action==='snack'&&(!['candy','cookie','pudding','cake','lunch'].includes(snackId)||!(life.snacks[snackId]>0))){await conn.rollback();return send(res,409,{error:'snack_required'})}
 
       if ((care.cooldowns[action]||0)>now) { await conn.rollback(); return send(res,409,{error:'care_cooldown',nextAt:care.cooldowns[action]}) }
+      if((action==='tidy'&&(!care.messAt||care.messAt>now))||(action==='medicine'&&care.health>=100)){await conn.rollback();return send(res,409,{error:'care_full'})}
       const allowed=action==='snack' ? care.hunger<=90 || care.happy<=85 : !rule.key || care[rule.key]<=rule.limit
       if (!allowed) { await conn.rollback(); return send(res,409,{error:'care_full'}) }
       if (rule.cost) {
@@ -2900,6 +2901,11 @@ const routes = {
       }
       if (rule.key&&action!=='snack') care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
       if (rule.extra&&action!=='snack') care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
+      if(action==='feed'||action==='snack'){if(!care.messAt)care.messAt=now+30*60000}
+      if(action==='tidy'){care.messAt=0;care.clean=Math.min(100,care.clean+10)}
+      if(action==='medicine')care.health=Math.min(100,care.health+30)
+      if(action==='sleep')care.sleepUntil=now+30*60000
+      if(action==='snack'&&care.level>=4){if(!care.favorite)care.favorite=['candy','cookie','pudding','cake','lunch'][randomInt(5)];if(!care.tasted.includes(snackId))care.tasted.push(snackId);if(snackId===care.favorite){care.happy=Math.min(100,care.happy+10);care.affection=Math.min(1000,care.affection+5)}}
       if (action==='play') care.energy=Math.max(0,care.energy-10)
       if (action==='pet') care.affection=Math.min(1000,care.affection+5)
       const questDay=new Date(now+9*3600000).toISOString().slice(0,10)
@@ -2913,7 +2919,7 @@ const routes = {
       const day=new Date(now+9*3600000).toISOString().slice(0,10)
       if (care.expDay!==day) {care.expDay=day;care.expToday=0}
       const earned=Math.min(rule.exp,Math.max(0,300-care.expToday))
-      care.expToday+=earned;care.exp+=earned
+      care.expToday+=earned
       houseApplyExp(care,earned,now)
       houseEnsurePersonality(care,now)
       await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
@@ -2958,12 +2964,13 @@ const routes = {
         if(care.level<2||care.eventCount>=3||now<care.eventReadyAt){await conn.rollback();return send(res,409,{error:'event_unavailable'})}
         const common=[{text:'반짝이는 동전을 발견했어요!',coins:1000},{text:'기분 좋은 하루예요!',happy:10},{text:'맛있는 음식이 생각나요!',hunger:10},{text:'낮잠을 즐겼어요!',energy:10},{text:'깨끗해져서 상쾌해요!',clean:10},{text:'치이카와가 애교를 부려요!',affection:10},{text:'오늘도 즐거워!',exp:10}]
         const special={먹보:{text:'부엌에서 맛있는 간식을 생각했어요!',hunger:15},장난꾸러기:{text:'게임기에서 한 판 더 놀고 싶어요!',happy:15},잠꾸러기:{text:'침대에서 꾸벅꾸벅 졸았어요!',energy:15},애교쟁이:{text:'나랑 놀아줘! 치이카와가 다가왔어요!',affection:15}}
+        if(care.level>=5)common.push({text:'하치와레가 놀러 왔어요!',happy:15},{text:'우사기와 함께 놀았어요!',affection:10});if(care.level>=7)common.push({text:'숨바꼭질을 즐겼어요!',happy:15});
         const chosen=(special[care.personality]&&randomInt(10)<3)?special[care.personality]:common[randomInt(common.length)]
         care.eventCount++;care.eventReadyAt=now+3*3600000
         for(const stat of ['happy','hunger','clean','energy'])if(chosen[stat])care[stat]=Math.min(100,care[stat]+chosen[stat])
         if(chosen.affection)care.affection=Math.min(1000,care.affection+chosen.affection)
         coins=chosen.coins||0;earned=chosen.exp||0;message=chosen.text
-        care.diary.unshift({at:now,text:message})
+        care.diary.unshift({at:now,text:message});if(!care.memories.includes(message))care.memories.push(message)
       }else if(action==='claim'){
         const eligible=missions.filter(([id,,count])=>(care.quests[id]||0)>=count&&!care.claimed.includes(id))
         if(!eligible.length){await conn.rollback();return send(res,409,{error:'no_quest_reward'})}
