@@ -430,3 +430,9 @@
 
 /* House-only custom care artwork. */
 #ui .house-screen .house-care-mess{position:absolute;left:59%;top:63%;width:4.25%;height:3.75%;object-fit:contain;transform:translate(-50%,-50%);z-index:20;pointer-events:none;user-select:none}
+
+/* Roaming actor and click-to-talk, shared PC/mobile. */
+#ui .house-screen .house-roaming-actor{position:absolute;width:17%;height:15%;transform:translate(-50%,-50%);z-index:21;pointer-events:none;transition:left 2.2s ease-in-out,top 2.2s ease-in-out}
+#ui .house-screen .house-roaming-actor .house-single-chiikawa{left:0 !important;top:0 !important;width:100% !important;height:100% !important;transform:none !important;pointer-events:auto !important;cursor:pointer;touch-action:manipulation}
+#ui .house-screen .house-roaming-actor .house-life-bubble{position:absolute;left:50%;bottom:100%;top:auto;transform:translateX(-50%);white-space:nowrap;background:white;color:#59483e;padding:5px 10px;border-radius:12px;font-size:clamp(10px,2.5vw,13px);pointer-events:none;z-index:22}
+#ui .house-screen .house-roaming-actor .house-life-bubble[hidden]{display:none !important}

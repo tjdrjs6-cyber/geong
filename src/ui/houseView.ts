@@ -11,6 +11,8 @@ export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class=
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
   private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number})|null=null
+  private chiPos={x:50,y:56}
+  private bubbleTimer:ReturnType<typeof setTimeout>|null=null
   private busy=false
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private activeTab: 'care'|'snack'|'mission'|'diary'='care'
@@ -23,14 +25,38 @@ export class HouseView {
     this.hooks.coinAvailable(false)
     this.renderLot();this.startRoaming();void this.load()
   }
+  private placeChiikawa():void{
+    const actor=this.root.querySelector<HTMLElement>('.house-roaming-actor');if(!actor)return
+    actor.style.left=`${this.chiPos.x}%`;actor.style.top=`${this.chiPos.y}%`
+  }
   private startRoaming():void{
     if(this.roamTimer)clearInterval(this.roamTimer)
     this.roamTimer=setInterval(()=>{
-      const c=this.care
+      const lot=this.root.querySelector<HTMLElement>('.house-lot')
+      if(!lot||!lot.getClientRects().length||this.root.getAttribute('aria-hidden')==='true')return
       this.syncMess()
-      const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble')
-      if(bubble)bubble.textContent=c?.sleepUntil&&c.sleepUntil>Date.now()?'쿨쿨…':c&&c.hunger<30?'배고파…':c&&c.energy<30?'졸려…':c&&c.clean<30?'씻고 싶어…':c&&c.happy<35?'놀고 싶어…':'기분 좋아!'
+      if(this.busy||this.bubbleTimer|| (this.care?.sleepUntil??0)>Date.now()||Math.random()<.25)return
+      const y=Math.max(49,Math.min(65,this.chiPos.y+(Math.random()-.5)*14))
+      const half=Math.max(5,25*(1-Math.abs(y-57.5)/19))
+      const x=Math.max(50-half,Math.min(50+half,this.chiPos.x+(Math.random()-.5)*24))
+      this.chiPos={x,y};this.placeChiikawa()
     },3200)
+  }
+  private speak():void{
+    const c=this.care
+    const lines=!c?['안녕!','반가워!']:
+      (c.sleepUntil??0)>Date.now()?['쿨쿨…','조금만 더 잘래…']:
+      (c.health??100)<50?['몸이 안 좋아…','약 먹고 싶어…']:
+      c.hunger<30?['배고파…','맛있는 거 먹고 싶어!']:
+      c.clean<50?['꼬질꼬질해…','씻고 싶어!']:
+      c.energy<30?['졸려…','조금 쉬고 싶어.']:
+      c.happy<35?['나랑 놀아줘…','심심해…']:
+      c.messAt&&c.messAt<=Date.now()?['응가했어…','청소해 줘!']:
+      ['오늘도 기분이 좋아!','너랑 함께 있어서 행복해!','반가워!','같이 놀자!']
+    const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble');if(!bubble)return
+    bubble.textContent=lines[Math.floor(Math.random()*lines.length)];bubble.hidden=false
+    if(this.bubbleTimer)clearTimeout(this.bubbleTimer)
+    this.bubbleTimer=setTimeout(()=>{bubble.hidden=true;this.bubbleTimer=null},3000)
   }
   private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
   handle(action:string,button:HTMLElement):boolean{
@@ -102,7 +128,12 @@ export class HouseView {
   }
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
-    el.innerHTML=`<img class="house-single-chiikawa" src="/assets/house/care-chiikawa.png" alt="노말 치이카와" draggable="false"/><div class="house-life-bubble" style="position:absolute;left:50%;top:22%;transform:translateX(-50%);background:white;color:#59483e;padding:5px 10px;border-radius:12px;pointer-events:none;z-index:20">안녕!</div>`
+    if(this.bubbleTimer){clearTimeout(this.bubbleTimer);this.bubbleTimer=null}
+    el.innerHTML=`<div class="house-roaming-actor"><img class="house-single-chiikawa" src="/assets/house/care-chiikawa.png" alt="치이카와" draggable="false" role="button" tabindex="0"/><div class="house-life-bubble" hidden aria-live="polite"></div></div>`
+    const img=el.querySelector<HTMLImageElement>('.house-single-chiikawa')!
+    img.addEventListener('click',()=>this.speak())
+    img.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();this.speak()}})
+    this.placeChiikawa()
     this.syncMess()
   }
   private renderCare():void{
