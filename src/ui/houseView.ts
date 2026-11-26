@@ -22,9 +22,14 @@ export class HouseView {
   private infoOpen=true
   private careDialog:HTMLDialogElement|null=null
   constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
+  private loadedUser:string|undefined
+  private loadPending:Promise<void>|null=null
+  close():void{if(this.careClock)clearInterval(this.careClock);this.careClock=null;if(this.roamTimer)clearInterval(this.roamTimer);this.roamTimer=null}
   open():void{
     this.hooks.coinAvailable(false)
-    this.renderLot();this.startRoaming();void this.load()
+    const user=this.store.user?.username
+    if(this.loadedUser!==user){this.care=null;this.life={buildings:{},snacks:{}};this.loadedUser=user;this.loadPending=null}
+    this.renderLot();this.renderCare();this.startRoaming();void this.load()
     if(this.careClock)clearInterval(this.careClock)
     this.careClock=setInterval(()=>this.updateCareClock(),1000)
   }
@@ -82,7 +87,7 @@ export class HouseView {
     if(this.bubbleTimer)clearTimeout(this.bubbleTimer)
     this.bubbleTimer=setTimeout(()=>{bubble.hidden=true;this.bubbleTimer=null},3000)
   }
-  private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
+  private load():Promise<void>{if(this.loadPending)return this.loadPending;const user=this.store.user?.username;const task=Promise.all([this.store.houseLife(),this.store.houseCare()]).then(([life,care])=>{if(this.store.user?.username!==user||this.loadedUser!==user)return;this.life=life.life;this.care=care.care;this.syncMess();this.renderCare()}).catch(e=>{if(this.root.getAttribute('aria-hidden')!=='true')this.hooks.error(e)}).finally(()=>{if(this.loadPending===task)this.loadPending=null});this.loadPending=task;return task}
   handle(action:string,button:HTMLElement):boolean{
     if(action==='house-info'){this.infoOpen=!this.infoOpen;this.renderCare();return true}
     if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.infoOpen=true;this.renderCare()}return true}
@@ -120,7 +125,7 @@ export class HouseView {
   private async confirmCare(action:string,snackId?:string):Promise<void>{
     if(this.busy||this.careDialog)return
     this.busy=true
-    try{this.care=(await this.store.houseCare()).care;this.renderCare()}catch{this.showCareDialog('돌보기 안내','현재 상태를 확인하지 못했습니다. 다시 시도해 주세요.');return}finally{this.busy=false}
+    try{if(this.loadPending)await this.loadPending;this.care=(await this.store.houseCare()).care;this.renderCare()}catch{this.showCareDialog('돌보기 안내','현재 상태를 확인하지 못했습니다. 다시 시도해 주세요.');return}finally{this.busy=false}
     const prompts:Record<string,[string,string]>={feed:['먹이기','치이카와에게 밥을 먹이시겠습니까?\n1,000코인 · 배부름 +25%'],wash:['씻기기','치이카와를 씻기시겠습니까?\n무료 · 청결 +35%'],sleep:['재우기','치이카와를 재우시겠습니까?\n무료 · 체력 +20%'],play:['놀아주기','치이카와와 놀아주시겠습니까?\n무료 · 행복 +25% · 체력 -10% · 친밀도 +10'],medicine:['약 먹이기','치이카와에게 약을 먹이시겠습니까?\n5,000코인 · 건강 +30%'],tidy:['청소','하우스를 청소하시겠습니까?\n응가 제거'],pet:['쓰다듬기','치이카와를 쓰다듬으시겠습니까?\n친밀도 +5'],snack:['간식','치이카와에게 간식을 먹이시겠습니까?']}
     const prompt=prompts[action];if(!prompt)return
     const unavailable=this.careUnavailable(action,snackId);if(unavailable){this.showCareDialog(`${prompt[0]} 안내`,unavailable);return}

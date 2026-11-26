@@ -461,9 +461,12 @@ export class GachaUi {
     }catch(e){this.dopamineRevealing=false;this.handleError(e);await this.openDopamine()}
     finally{this.dopamineBusy=false;this.renderDopamine()}
   }
+  private titleRefreshAt=0
+  private titleRefreshUser:string|undefined
   show(screen: Screen): void {
     // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
     if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.finishLottery()
+    if(this.screen==='house'&&screen!=='house')this.house.close()
     this.screen = screen
     if (screen !== 'lobby') { const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=true }
     if (screen !== 'users') {
@@ -505,7 +508,7 @@ export class GachaUi {
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
     if (screen === 'title' && this.store.user) window.setTimeout(() => { if (!this.showTutorialOnce()) this.showUpdateNoticeOnce() }, 200)
-    if (screen === 'title') { void this.refreshPvpDailyDots();this.prefetchQuickPanels(); void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
+    if (screen === 'title') { this.renderWallet(); this.renderHero(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); window.setTimeout(()=>{if(this.screen!=='title')return;this.renderCollection();this.refreshMailBadge();if(Date.now()-this.titleRefreshAt<5000 && this.titleRefreshUser===this.store.user?.username)return;this.titleRefreshAt=Date.now();this.titleRefreshUser=this.store.user?.username;void this.refreshPvpDailyDots();this.prefetchQuickPanels();void this.loadWildWeed();void this.refreshAnnouncementDot();void this.refreshGlobalChatDot();void this.refreshExpeditionBadge(true);void this.refreshRpsBadge();void this.refreshHouseCoinBadge();void this.refreshAchievementReadyBadge()},100) }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
 
@@ -1997,8 +2000,8 @@ export class GachaUi {
       if(this.busy)return;const count=Number(button.dataset.count);if(![1,10].includes(count))return
       if(!this.pullConfirmed){this.askPullConfirmation('snack',count);return}
       const cost=count===10?2000:200;if(!this.isAdmin&&(this.store.data.diamonds??0)<cost){this.showInsufficient(cost);return}
-      this.busy=true
-      try{const result=await this.store.houseLifeAction('pull',count===10?'11':'1');this.renderWallet();this.setPullMode('deco');const prizes=result.prizes??(result.prize?[result.prize]:[]);this.openSnackDialog('간식 뽑기 결과',prizes.map(v=>{const item=HOUSE_SNACK_DISPLAY.find(x=>x.id===v.id);return item?`<div class="result-friend result-tier-deco" style="--friend:#fff3e8;--accent:#e99aae"><span class="result-avatar"><img src="/assets/house/snack-${item.id}.png" alt="${item.name}" style="width:64px;height:64px;object-fit:contain"/></span><span><b>${item.name}</b><small>친밀도 +${item.bond}</small></span><span class="result-chance">${item.rate}%</span></div>`:''}).join(''),`${prizes.length}개 간식을 획득했어요.`)}catch(error){if((error as {code?:string}).code==='insufficient_diamonds')this.showInsufficient(cost);else this.handleError(error)}finally{this.busy=false}
+      this.busy=true;this.renderWallet()
+      try{const result=await this.store.houseLifeAction('pull',count===10?'11':'1');this.renderWallet();const prizes=result.prizes??(result.prize?[result.prize]:[]);this.openSnackDialog('간식 뽑기 결과',prizes.map(v=>{const item=HOUSE_SNACK_DISPLAY.find(x=>x.id===v.id);return item?`<div class="result-friend result-tier-deco" style="--friend:#fff3e8;--accent:#e99aae"><span class="result-avatar"><img src="/assets/house/snack-${item.id}.png" alt="${item.name}" style="width:64px;height:64px;object-fit:contain"/></span><span><b>${item.name}</b><small>친밀도 +${item.bond}</small></span><span class="result-chance">${item.rate}%</span></div>`:''}).join(''),`${prizes.length}개 간식을 획득했어요.`)}catch(error){if((error as {code?:string}).code==='insufficient_diamonds')this.showInsufficient(cost);else this.handleError(error)}finally{this.busy=false;this.renderWallet()}
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -4229,7 +4232,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   private async loadSuggest(): Promise<void> {
     const list = this.root.querySelector<HTMLElement>('.suggest-list')
-    if (list) list.innerHTML = '<p class="users-empty">건의함을 여는 중이에요…</p>'
+    if (list && !list.childElementCount) list.innerHTML = '<p class="users-empty">건의함을 여는 중이에요…</p>'
     const form = this.root.querySelector<HTMLFormElement>('.suggest-form')
     if (form && !form.dataset.bound) {
       form.dataset.bound = '1'
