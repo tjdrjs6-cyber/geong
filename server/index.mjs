@@ -796,7 +796,7 @@ async function suggestions(account) {
 const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1,1,1,1,1,1]
 const FORGE_COSTS = [{"coins":200,"fragments":0},{"coins":400,"fragments":0},{"coins":600,"fragments":0},{"coins":800,"fragments":0},{"coins":1000,"fragments":0},{"coins":1200,"fragments":60},{"coins":1400,"fragments":60},{"coins":1600,"fragments":60},{"coins":1800,"fragments":60},{"coins":2000,"fragments":60},{"coins":2500,"fragments":180},{"coins":2900,"fragments":180},{"coins":3300,"fragments":180},{"coins":3650,"fragments":180},{"coins":4000,"fragments":180},{"coins":4500,"fragments":450},{"coins":5100,"fragments":450},{"coins":5700,"fragments":450},{"coins":6350,"fragments":450},{"coins":7000,"fragments":450},{"coins":8000,"fragments":900},{"coins":9000,"fragments":1050},{"coins":10000,"fragments":1200},{"coins":11000,"fragments":1500},{"coins":12000,"fragments":1500},{"coins":13000,"fragments":1800},{"coins":14500,"fragments":1800},{"coins":16000,"fragments":2250},{"coins":18000,"fragments":2250},{"coins":20000,"fragments":3000}]
-const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885'
+const forgeGuaranteed = account => account.username === 'tjdrjs885'
 const FORGE_POWER = [10, 23, 36, 49, 62, 75, 105, 135, 165, 195, 225, 280, 335, 390, 445, 500, 600, 700, 800, 900, 1000, 1110, 1230, 1360, 1500, 1650, 1810, 1975, 2145, 2320, 2500]
 const forgeBonus = level => FORGE_POWER[Math.max(0, Math.min(30, Number(level) || 0))]
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
