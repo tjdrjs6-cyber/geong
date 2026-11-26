@@ -2884,12 +2884,12 @@ const routes = {
     if (!account) return send(res, 401, { error: 'login_required' })
     const { action, snackId } = await readJson(req)
     const rules = {
-      feed: { key:'hunger', limit:75, gain:25, cost:100, cooldown:300000, exp:5 },
+      feed: { key:'hunger', limit:75, gain:25, cost:1000, cooldown:300000, exp:5 },
       snack: { key:'hunger', limit:90, gain:10, extra:'happy', extraGain:15, cost:0, cooldown:600000, exp:5 },
       play: { key:'happy', limit:75, gain:25, cost:0, cooldown:600000, exp:10 },
-      wash: { key:'clean', limit:65, gain:35, cost:100, cooldown:900000, exp:5 },
+      wash: { key:'clean', limit:65, gain:35, cost:0, cooldown:900000, exp:5 },
       sleep: { key:'energy', limit:80, gain:20, cost:0, cooldown:3600000, exp:5 },
-      pet: { key:null, cost:0, cooldown:1800000, exp:3 }, tidy:{key:null,cost:0,cooldown:1000,exp:5}, medicine:{key:null,cost:0,cooldown:3600000,exp:5}
+      pet: { key:null, cost:0, cooldown:1800000, exp:3 }, tidy:{key:null,cost:0,cooldown:1000,exp:5}, medicine:{key:null,cost:5000,cooldown:3600000,exp:5}
     }
     const rule = rules[action]
     if (!rule) return send(res, 400, { error:'invalid_care_action' })
@@ -2921,7 +2921,7 @@ const routes = {
       if (rule.key&&action!=='snack') care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
       if (rule.extra&&action!=='snack') care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
       if(action==='feed'||action==='snack'){if(!care.messAt)care.messAt=now+30*60000}
-      if(action==='tidy'){care.messAt=0;care.clean=Math.min(100,care.clean+10)}
+      if(action==='tidy'){care.messAt=0}
       if(action==='medicine')care.health=Math.min(100,care.health+30)
       if(action==='sleep')care.sleepUntil=now+30*60000
       if(action==='snack'&&care.level>=4){if(!care.favorite)care.favorite=['candy','cookie','pudding','cake','lunch'][randomInt(5)];if(!care.tasted.includes(snackId))care.tasted.push(snackId);if(snackId===care.favorite){care.happy=Math.min(100,care.happy+10);care.affection=Math.min(1000,care.affection+5)}}
@@ -2959,8 +2959,8 @@ const routes = {
       const now=Date.now(),care=houseCareDecay(parseJson(rows[0].state_json),now),day=new Date(now+9*3600000).toISOString().slice(0,10)
       if(care.questDay!==day){care.questDay=day;care.claimed=[];care.quests={}}
       if(care.eventDay!==day){care.eventDay=day;care.eventCount=0}
-      const missions=[['feed','밥주기',1,1000],['play','게임하기',1,1500],['pet','쓰다듬기',1,500]]
-      let earned=0,coins=0,message=''
+      const missions=[['feed','밥주기',1,500],['play','놀아주기',1,500],['pet','쓰다듬기',1,500]]
+      let earned=0,coins=0,diamonds=0,message=''
       if(action==='mini-start'){
         const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
         const arcade=lifeRows[0]&&parseJson(lifeRows[0].state_json)?.buildings?.arcade
@@ -2994,14 +2994,14 @@ const routes = {
       }else if(action==='claim'){
         const eligible=missions.filter(([id,,count])=>(care.quests[id]||0)>=count&&!care.claimed.includes(id))
         if(!eligible.length){await conn.rollback();return send(res,409,{error:'no_quest_reward'})}
-        coins=eligible.reduce((sum,item)=>sum+item[3],0);care.claimed.push(...eligible.map(item=>item[0]));message=`일일 미션 ${eligible.length}개 보상 수령!`
+        diamonds=eligible.reduce((sum,item)=>sum+item[3],0);care.claimed.push(...eligible.map(item=>item[0]));message=`일일 미션 ${eligible.length}개 보상 수령!`
       }
       if(earned){if(care.expDay!==day){care.expDay=day;care.expToday=0}earned=Math.min(earned,Math.max(0,300-care.expToday));care.expToday+=earned;houseApplyExp(care,earned,now)}
       houseEnsurePersonality(care,now)
       care.diary=care.diary.slice(0,25)
-      if(coins)await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[coins,account.id])
+      if(coins||diamonds)await conn.query('UPDATE gm_saves SET gems=gems+?, diamonds=diamonds+? WHERE account_id=?',[coins,diamonds,account.id])
       await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
-      await conn.commit();send(res,200,{care,earned,coins,message,serverNow:now})
+      await conn.commit();send(res,200,{care,earned,coins,diamonds,message,serverNow:now})
     }catch(error){await conn.rollback();throw error}finally{conn.release()}
   },
   'GET /api/house/coin': async (req, res) => {

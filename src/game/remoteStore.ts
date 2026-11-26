@@ -349,7 +349,7 @@ export class RemoteGachaStore {
     if(result.spent) this.data.gems=Math.max(0,this.data.gems-result.spent)
     return result
   }
-  async houseAdventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>{const result=await request<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>('house/adventure',{action});if(result.coins)this.data.gems+=result.coins;return result}
+  async houseAdventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<{care:HouseCareState;earned:number;coins:number;diamonds:number;message:string;serverNow:number}>{const result=await request<{care:HouseCareState;earned:number;coins:number;diamonds:number;message:string;serverNow:number}>('house/adventure',{action});if(result.coins)this.data.gems+=result.coins;if(result.diamonds)this.data.diamonds=(this.data.diamonds??0)+result.diamonds;return result}
   async houseCoin(): Promise<HouseCoinState> {
     return request<HouseCoinState>('house/coin')
   }
