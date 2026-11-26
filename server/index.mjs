@@ -341,8 +341,12 @@ async function prepareDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_forge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     weapon VARCHAR(12) NOT NULL,
-    level TINYINT UNSIGNED NOT NULL DEFAULT 0
+    level TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    pity DECIMAL(5,2) UNSIGNED NOT NULL DEFAULT 0
   )`)
+  try { await pool.query('ALTER TABLE gm_forge ADD COLUMN pity DECIMAL(5,2) UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  const [forgePityColumns] = await pool.query("SHOW COLUMNS FROM gm_forge LIKE 'pity'")
+  if (!String(forgePityColumns[0]?.Type).toLowerCase().startsWith('decimal(5,2)')) await pool.query('ALTER TABLE gm_forge MODIFY COLUMN pity DECIMAL(5,2) UNSIGNED NOT NULL DEFAULT 0')
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_diamond_recharge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     last_ms BIGINT NOT NULL
@@ -672,6 +676,7 @@ function houseCareDecay(raw, now) {
     const fresh=houseCareDecay(null,now)
     // Keep already claimed rewards for the same day to prevent duplicate payouts.
     if(s.questDay===new Date(now+9*3600000).toISOString().slice(0,10)){fresh.questDay=s.questDay;fresh.claimed=s.claimed||[]}
+    fresh.heartNotice=s.heartNotice;
     return fresh
   }
   const elapsed=Math.max(0,(now-(Number(s.updatedAt)||now))/3600000)
@@ -684,7 +689,26 @@ function houseCareDecay(raw, now) {
     affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
     cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
     personality:s.personality||'미발견', milestones:Array.isArray(s.milestones)?s.milestones:[], diary:Array.isArray(s.diary)?s.diary:[], quests:s.quests&&typeof s.quests==='object'?s.quests:{}, questDay:s.questDay||'',claimed:Array.isArray(s.claimed)?s.claimed:[], eventCount:Number(s.eventCount)||0,eventDay:s.eventDay||'',eventReadyAt:Number(s.eventReadyAt)||0, mini:s.mini||null, miniWins:Number(s.miniWins)||0, petCount:Number(s.petCount)||0, actionCounts:s.actionCounts&&typeof s.actionCounts==='object'?s.actionCounts:{} }
+  care.heartNotice=s.heartNotice;
   return houseMarkDeath(care,now)
+}
+async function houseHeartNotice(req,res,ack){
+  const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+  const conn=await pool.getConnection()
+  try{
+    await conn.beginTransaction()
+    const now=Date.now()
+    await conn.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify(houseCareDecay(null,now))])
+    const [rows]=await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE',[account.id])
+    const raw=parseJson(rows[0].state_json),care=houseCareDecay(raw,now)
+    const hearts=Math.max(0,Math.min(4,Math.ceil((care.hunger+care.happy+care.clean+care.energy)/100)))
+    const prev=raw.heartNotice
+    const pending=!ack && Boolean(prev && (prev.pending || hearts<prev.hearts))
+    const notice={hearts,pending}
+    const saved=Boolean(raw.deadAt)!==Boolean(care.deadAt)?care:raw
+    if(!prev||prev.hearts!==hearts||prev.pending!==pending||saved!==raw){saved.heartNotice=notice;await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(saved),account.id])}
+    await conn.commit();send(res,200,{pending,hearts})
+  }catch(e){await conn.rollback();throw e}finally{conn.release()}
 }
 function houseMarkDeath(care,now){
   if(care.hunger+care.happy+care.clean+care.energy<=0){care.deadAt=care.deadAt||now;care.sleepUntil=0;care.messAt=0;care.mini=null}
@@ -792,7 +816,7 @@ async function suggestions(account) {
 const FORGE_WEAPONS = ['pink', 'blue', 'yellow']
 const FORGE_CHANCES = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,4,3,2,1,1,1,1,1,1,1]
 const FORGE_COSTS = [{"coins":200,"fragments":0},{"coins":400,"fragments":0},{"coins":600,"fragments":0},{"coins":800,"fragments":0},{"coins":1000,"fragments":0},{"coins":1200,"fragments":60},{"coins":1400,"fragments":60},{"coins":1600,"fragments":60},{"coins":1800,"fragments":60},{"coins":2000,"fragments":60},{"coins":2500,"fragments":180},{"coins":2900,"fragments":180},{"coins":3300,"fragments":180},{"coins":3650,"fragments":180},{"coins":4000,"fragments":180},{"coins":4500,"fragments":450},{"coins":5100,"fragments":450},{"coins":5700,"fragments":450},{"coins":6350,"fragments":450},{"coins":7000,"fragments":450},{"coins":8000,"fragments":900},{"coins":9000,"fragments":1050},{"coins":10000,"fragments":1200},{"coins":11000,"fragments":1500},{"coins":12000,"fragments":1500},{"coins":13000,"fragments":1800},{"coins":14500,"fragments":1800},{"coins":16000,"fragments":2250},{"coins":18000,"fragments":2250},{"coins":20000,"fragments":3000}]
-const forgeGuaranteed = account => account.username === 'test' || account.username === 'tjdrjs885'
+const forgeGuaranteed = account => account.username === 'tjdrjs885'
 const FORGE_POWER = [10, 23, 36, 49, 62, 75, 105, 135, 165, 195, 225, 280, 335, 390, 445, 500, 600, 700, 800, 900, 1000, 1110, 1230, 1360, 1500, 1650, 1810, 1975, 2145, 2320, 2500]
 const forgeBonus = level => FORGE_POWER[Math.max(0, Math.min(30, Number(level) || 0))]
 const ACCESSORY_IDS = ["chiikawa_keyring", "hachiware_keyring", "usagi_keyring", "momonga_keyring", "kurimanju_keyring", "shisa_keyring", "kani_keyring", "rakko_keyring"]
@@ -813,9 +837,9 @@ async function getAccessory(accountId, conn=pool) {
   return {count:counts.chiikawa_keyring,counts,grades,discovered:discoveryRows.map(r=>`${r.accessory_id}:${r.grade}`),equipped,equippedGrade:equipped?equippedGrade:'normal'}
 }
 async function getForge(accountId) {
-  const [rows] = await pool.query('SELECT weapon, level FROM gm_forge WHERE account_id = ?', [accountId])
+  const [rows] = await pool.query('SELECT weapon, level, pity FROM gm_forge WHERE account_id = ?', [accountId])
   const accessory=await getAccessory(accountId)
-  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), bonus: forgeBonus(Number(rows[0].level))+accessoryPower(accessory), accessoryBonus:accessoryPower(accessory) } : null
+  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), pity: Number(rows[0].pity), bonus: forgeBonus(Number(rows[0].level))+accessoryPower(accessory), accessoryBonus:accessoryPower(accessory) } : null
 }
 async function accountState(accountId) {
   const box = await mailbox(accountId)
@@ -2070,7 +2094,7 @@ const routes = {
       if (rows.length) { await conn.rollback(); return send(res,409,{error:'forge_already_selected'}) }
       await conn.query('INSERT INTO gm_forge(account_id,weapon,level) VALUES(?,?,0)',[account.id,weapon])
       await conn.commit()
-      send(res,200,{forge:{weapon,level:0,bonus:10}})
+      send(res,200,{forge:{weapon,level:0,bonus:10,pity:0}})
     } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
   },
   'POST /api/forge/upgrade': async (req, res) => {
@@ -2081,7 +2105,7 @@ const routes = {
     try {
       await conn.beginTransaction()
       const [saves] = await conn.query('SELECT gems,fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
-      const [rows] = await conn.query('SELECT weapon,level FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
+      const [rows] = await conn.query('SELECT weapon,level,pity FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
       if (!rows.length) {await conn.rollback();return send(res,409,{error:'forge_no_weapon'})}
       const level=Number(rows[0].level)
       if(level>=30){await conn.rollback();return send(res,409,{error:'forge_max'})}
@@ -2100,12 +2124,15 @@ const routes = {
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
       }
-      const success=forgeGuaranteed(account) || randomInt(100)<FORGE_CHANCES[level]
+      const pity=Math.min(100,Math.max(0,Number(rows[0].pity)||0))
+      const success=forgeGuaranteed(account) || pity>=100 || randomInt(100)<FORGE_CHANCES[level]
+      const nextPity=success?0:Math.min(100,pity+FORGE_CHANCES[level]/2)
       await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[rpsAdmin(account)?0:coins,rpsAdmin(account)?0:fragments,earned,account.id])
-      if(success) await conn.query('UPDATE gm_forge SET level=level+1 WHERE account_id=?',[account.id])
+      await conn.query('UPDATE gm_forge SET level=?,pity=? WHERE account_id=?',[level+(success?1:0),nextPity,account.id])
       await conn.commit()
       const newLevel=level+(success?1:0)
-      send(res,200,{success,forge:await getForge(account.id),save:await getSave(account.id)})
+      const forge=await getForge(account.id)
+      send(res,200,{success,forge:{...forge,pity:nextPity},save:await getSave(account.id)})
     } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
   },
   'GET /api/rps': async(req,res) => {
@@ -2891,6 +2918,8 @@ const routes = {
       await conn.commit();send(res,200,{life,spent:account.is_admin?0:spent,prize,prizes})
     }catch(error){await conn.rollback();throw error}finally{conn.release()}
   },
+  'GET /api/house/heart-notice': async (req,res) => houseHeartNotice(req,res,false),
+  'POST /api/house/heart-notice': async (req,res) => houseHeartNotice(req,res,true),
   'GET /api/house/care': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
