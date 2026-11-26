@@ -154,10 +154,11 @@ export class HouseView {
     const img=this.root.querySelector<HTMLImageElement>('.house-items .house-single-chiikawa');if(!img)return
     const c=this.care
     const sleeping=(c?.sleepUntil??0)>Date.now()
+    const sick=c!==null&&(c.health??100)<50
     const tired=c!==null&&c.energy<50
     const hungry=c!==null&&c.hunger<50
     const dirty=c!==null&&c.clean<50
-    const variant=sleeping?'sleeping':tired?'tired':hungry?'hungry':dirty?'dirty':''
+    const variant=sleeping?'sleeping':sick?'sick':tired?'tired':hungry?'hungry':dirty?'dirty':''
     const src=`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
     if(img.getAttribute('src')!==src)img.src=src
     if(variant==='hungry'){
@@ -167,7 +168,7 @@ export class HouseView {
       img.style.removeProperty('transform-origin')
       img.style.removeProperty('transform')
     }
-    img.alt=sleeping?'잠자는 치이카와':tired?'졸린 치이카와':hungry?'배고픈 치이카와':dirty?'꼬질꼬질한 치이카와':'치이카와'
+    img.alt=sleeping?'잠자는 치이카와':sick?'아픈 치이카와':tired?'졸린 치이카와':hungry?'배고픈 치이카와':dirty?'꼬질꼬질한 치이카와':'치이카와'
   }
   private syncMess():void{
     this.syncAppearance()
