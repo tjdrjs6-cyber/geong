@@ -7644,3 +7644,9 @@ body > .market-global-shortage-notice.is-visible {
   opacity: .55 !important; filter: grayscale(1); cursor: not-allowed !important;
 }
 .nav-button[data-action="house"] small, .pull-mode-button[data-mode="deco"] small { font-size: .7em; white-space: nowrap; }
+
+#ui .lottery-board-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px auto;width:100%;max-width:240px}
+#ui .lottery-board-nav button{width:34px;height:30px;border:1px solid #b98d77;border-radius:8px;background:#fff4dc;color:#69483b;font-size:24px;line-height:1;cursor:pointer}
+#ui .lottery-board-nav button:disabled{opacity:.35;cursor:default}
+#ui .lottery-board-label{min-width:75px;text-align:center;font-size:14px}
+#ui .lottery-playing .lottery-board-nav{display:none}
