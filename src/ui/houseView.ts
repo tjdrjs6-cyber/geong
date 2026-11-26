@@ -68,7 +68,15 @@ export class HouseView {
   private stopMiniAnimation():void{if(this.miniTick){clearInterval(this.miniTick);this.miniTick=null}}
   private async refreshLife():Promise<void>{this.life=(await this.store.houseLife()).life;this.renderLot()}
   private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.2부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
+  private syncAppearance():void{
+    const img=this.root.querySelector<HTMLImageElement>('.house-items .house-single-chiikawa');if(!img)return
+    const dirty=this.care!==null&&this.care.clean<50
+    const src=dirty?'/assets/house/care-chiikawa-dirty.png':'/assets/house/care-chiikawa.png'
+    if(img.getAttribute('src')!==src)img.src=src
+    img.alt=dirty?'꼬질꼬질한 치이카와':'치이카와'
+  }
   private syncMess():void{
+    this.syncAppearance()
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
     const due=!!this.care?.messAt&&this.care.messAt<=Date.now()
     const existing=el.querySelector<HTMLImageElement>('.house-care-mess')
@@ -98,6 +106,7 @@ export class HouseView {
     this.syncMess()
   }
   private renderCare():void{
+    this.syncAppearance()
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
     const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy],['건강',Math.round(c.health??100)]]
