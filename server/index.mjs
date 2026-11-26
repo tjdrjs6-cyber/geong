@@ -139,6 +139,7 @@ async function prepareDatabase() {
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`)
   await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
+  for(let board=2;board<=5;board++) await pool.query("INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (?, ?)",[board,JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
   // Upgrade the shared pool once to the 200-ticket clinic schedule.
   const [lotteryPoolRows] = await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
   const existingLotteryPool = lotteryPoolRows.length ? (typeof lotteryPoolRows[0].remaining === 'string' ? JSON.parse(lotteryPoolRows[0].remaining) : lotteryPoolRows[0].remaining) : null
@@ -153,6 +154,7 @@ async function prepareDatabase() {
     grade CHAR(1) NOT NULL, character_id VARCHAR(40), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX (account_id)
   )`)
+  try { await pool.query('ALTER TABLE gm_lottery_history ADD COLUMN board_id TINYINT UNSIGNED NOT NULL DEFAULT 1') } catch(error) { if(error.code !== 'ER_DUP_FIELDNAME') throw error }
   if (lotteryScheduleMigrated) await pool.query('DELETE FROM gm_lottery_history')
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_rps (
     account_id BIGINT UNSIGNED PRIMARY KEY,
@@ -1767,8 +1769,10 @@ const routes = {
   'GET /api/lottery': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
-    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade IN ('A','B','C','D','E','F','G','H','I','J','K','L') ORDER BY h.id DESC LIMIT 12`)
+    const board=Number(new URL(req.url,'http://local').searchParams.get('board')??1)
+    if(!Number.isInteger(board)||board<1||board>5)return send(res,400,{error:'invalid_board'})
+    const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=?',[board])
+    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.board_id=? AND h.grade IN ('A','B','C','D','E','F','G','H','I','J','K','L') ORDER BY h.id DESC LIMIT 12`,[board])
     await ensureLotteryNoticeTables()
     const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
@@ -1778,12 +1782,14 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     if(!(String(account.username).toLowerCase()==='tjdrjs885' || (process.env.TEST_SERVER==='true' && String(account.username).toLowerCase()==='test')))return send(res,403,{error:'operator_only'})
+    const {board=1}=await readJson(req)
+    if(!Number.isInteger(board)||board<1||board>5)return send(res,400,{error:'invalid_board'})
     const conn=await pool.getConnection()
     try{
       await conn.beginTransaction()
-      await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
-      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
-      await conn.query('DELETE FROM gm_lottery_history')
+      await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=? FOR UPDATE',[board])
+      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=?',[JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175]),board])
+      await conn.query('DELETE FROM gm_lottery_history WHERE board_id=?',[board])
       await ensureLotteryNoticeTables()
       await conn.query('INSERT INTO gm_lottery_reset_events () VALUES ()')
       await conn.commit()
@@ -1805,13 +1811,14 @@ const routes = {
   'POST /api/lottery/buy': async (req,res) => {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
-    const {count}=await readJson(req)
+    const {count,board=1}=await readJson(req)
+    if(!Number.isInteger(board)||board<1||board>5)return send(res,400,{error:'invalid_board'})
     if(!Number.isSafeInteger(count)||count<1||count>200)return send(res,400,{error:'invalid_count'})
     const conn=await pool.getConnection()
     let outcome
     try {
       await conn.beginTransaction()
-      const [poolRows]=await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
+      const [poolRows]=await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=? FOR UPDATE',[board])
       const remaining=parseJson(poolRows[0].remaining)
       if(count>remaining.reduce((a,b)=>a+b,0)) {outcome={error:'sold_out'}}
       else {
@@ -1842,15 +1849,15 @@ const routes = {
               if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)
               collectionBonus+=bonus
               results.push({grade:'L',id,duplicate,bonus})
-              await conn.query('INSERT INTO gm_announcements (message,created_ms) VALUES (?,?)',[`${account.nickname||account.username}님이 겅이복권 라스트원상 우사기(괴물화)를 획득했습니다!`,Date.now()])
+              await conn.query('INSERT INTO gm_announcements (message,created_ms) VALUES (?,?)',[`${account.nickname||account.username}님이 겅이복권 ${board}판 라스트원상 우사기(괴물화)를 획득했습니다!`,Date.now()])
               remaining.splice(0,remaining.length,...[1,1,1,1,1,1,1,1,2,5,10,175])
             }
           }
-          await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
+          await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=?',[JSON.stringify(remaining),board])
           await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[unlimitedLottery(account)?0:count,collectionBonus,JSON.stringify(owned),account.id])
           if(!unlimitedLottery(account)) await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=ticket_qty-LEAST(ticket_qty,?) WHERE account_id=?',[count,account.id])
           await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
-          for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
+          for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id,board_id) VALUES (?,?,?,?)',[account.id,result.grade,result.id,board])
           outcome={...lotteryView(remaining),unlimited:unlimitedLottery(account),tickets:Number(saves[0].lottery_tickets)-(unlimitedLottery(account)?0:count),results}
         }
       }

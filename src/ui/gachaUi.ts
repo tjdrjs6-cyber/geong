@@ -161,6 +161,8 @@ export class GachaUi {
   private lotteryTimer=0
   private lotteryAutoReveal=false
   private lotteryAnimating=false
+  private lotteryBoard=1
+  private lotteryLoading=false
   private lotteryBusy=false
   private lotteryPointerStart=0
   private lotteryRefreshing=0
@@ -674,7 +676,7 @@ export class GachaUi {
       <section class="rps-screen lottery-screen" data-screen="rps" aria-hidden="true">
         <header class="rps-header"><button class="rps-back" data-action="close">← 로비로</button><b>겅이복권</b><button data-action="lottery-skip" class="lottery-skip" hidden>SKIP »</button></header>
         <div class="rps-scene lottery-scene">
-          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/lottery_ticket_custom.png" alt="복권"/> 보유 겅이복권 <strong class="lottery-balance-value">0</strong></div></div>
+          <div class="lottery-heading"><h2><img class="lottery-title-icon" src="/assets/lottery_ticket_custom.png" alt=""/> 겅이복권</h2><div class="lottery-board-nav"><button data-action="lottery-prev" aria-label="이전 판">‹</button><strong class="lottery-board-label">1 / 5판</strong><button data-action="lottery-next" aria-label="다음 판">›</button></div><p class="lottery-status">남은 복권 확인 중...</p><div class="lottery-balance"><img src="/assets/lottery_ticket_custom.png" alt="복권"/> 보유 겅이복권 <strong class="lottery-balance-value">0</strong></div></div>
           <div class="lottery-prizes"></div><button class="lottery-reset" data-action="lottery-reset" hidden>↻ 겅이복권 초기화 (운영자 전용)</button>
           <div class="lottery-ticket" hidden><div class="lottery-ticket-under"></div><div class="lottery-ticket-cover"><div class="lottery-ticket-top"></div><div class="lottery-ticket-peel"><span>점선 안쪽을 오른쪽으로 뜯어주세요 →</span></div></div></div>
           <div class="lottery-winners" aria-live="polite"></div>
@@ -1747,6 +1749,7 @@ export class GachaUi {
     if (action === 'dopamine-confirm-open') {if(!this.dopamineBusy&&!this.dopamineState?.played){this.dopamineConfirmOpen=true;this.renderDopamine()}return}
     if (action === 'dopamine-confirm-cancel') {this.dopamineConfirmOpen=false;this.renderDopamine();return}
     if (action === 'dopamine-play') {await this.playDopamine();return}
+    if(action==='lottery-prev'||action==='lottery-next'){await this.changeLotteryBoard(action==='lottery-prev'?-1:1);return}
     if (action === 'lottery-reset') {await this.resetLottery();return}
     if (action === 'lottery-all') {await this.chooseLotteryCount();return}
     if (action === 'lottery-buy') {await this.buyLottery();return}
@@ -2775,12 +2778,24 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.setHouseCoinDot(false)
   }
 
+  private async changeLotteryBoard(delta:number):Promise<void>{
+    if(this.lotteryBusy||this.lotteryLoading||this.lotteryResults.length)return
+    const next=this.lotteryBoard+delta;if(next<1||next>5)return
+    this.lotteryLoading=true
+    try{const state=await this.store.lottery(next);this.lotteryBoard=next;this.lotteryState=state;const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input)input.value='1';this.renderLottery()}
+    catch(e){this.handleError(e)}finally{this.lotteryLoading=false;this.renderLottery()}
+  }
   private async refreshLotteryLive():Promise<void>{
-    try{const state=await this.store.lottery();if(this.screen==='rps'&&!this.lotteryResults.length){this.lotteryState=state;this.renderLottery()}}catch{}
+    if(this.lotteryBusy||this.lotteryLoading||this.lotteryResults.length)return
+    const board=this.lotteryBoard
+    try{const state=await this.store.lottery(board);if(this.screen==='rps'&&board===this.lotteryBoard&&!this.lotteryLoading&&!this.lotteryBusy&&!this.lotteryResults.length){this.lotteryState=state;this.renderLottery()}}catch{}
   }
   private async openLottery():Promise<void>{
-    try{this.lotteryState=await this.store.lottery();this.lotteryResults=[];this.lotteryRevealed=0;this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing');this.renderLottery();void this.showLotteryResetNotice()}
+    if(this.lotteryLoading)return
+    this.lotteryLoading=true
+    try{this.lotteryState=await this.store.lottery(this.lotteryBoard);this.lotteryResults=[];this.lotteryRevealed=0;this.root.querySelector('.lottery-screen')?.classList.remove('lottery-playing');this.renderLottery();void this.showLotteryResetNotice()}
     catch{const el=this.root.querySelector<HTMLElement>('.lottery-status');if(el)el.textContent='복권 정보를 불러오지 못했습니다.'}
+    finally{this.lotteryLoading=false;this.renderLottery()}
   }
   private updateLotteryPrice():void{
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1)
@@ -2794,6 +2809,8 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
   private renderLottery():void{
     const state=this.lotteryState;if(!state)return
+    const label=this.root.querySelector<HTMLElement>('.lottery-board-label');if(label)label.textContent=`${this.lotteryBoard} / 5판`
+    for(const [action,edge] of [['lottery-prev',1],['lottery-next',5]] as const){const button=this.root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);if(button)button.disabled=this.lotteryBoard===edge||this.lotteryBusy||this.lotteryLoading||!!this.lotteryResults.length}
     const status=this.root.querySelector<HTMLElement>('.lottery-status')
     if(status)status.textContent=`전체 200장 · 남은 복권 ${state.total}장`
     const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=state.unlimited?'무제한':String(state.tickets)
@@ -2804,7 +2821,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(prizes)prizes.innerHTML=state.remaining.map((n,i)=>`<div class="lottery-prize${n===0?' lottery-sold-out':''}"><b>${i===11?'꽝':'ABCDEFGHIJK'[i]+'상'}</b>${i<8?`<img src="${CHARACTER_IMAGE_URLS[ids[i]]}" alt=""/><span>${fullName(characterById(ids[i]))}</span>`:i<11?`<img src="/assets/pets/box_normal.png" alt=""/><span>${petNames[i-8]}</span>`:'<span>미당첨</span>'}<small>${n}장 · ${state.total?(n/state.total*100).toFixed(2):'0.00'}%</small>${n===0?'<img class="lottery-sold-stamp" src="/assets/lottery_sold_out.png" alt="품절"/>':''}</div>`).join('')+`<div class="lottery-prize" style="grid-column:1/-1"><b>라스트원상</b><img src="${CHARACTER_IMAGE_URLS.usagi_monster}" alt=""/><span>우사기(괴물화) · 마지막 복권 확정 지급</span></div>`
     const winners=this.root.querySelector<HTMLElement>('.lottery-winners');if(winners){winners.replaceChildren();const label=document.createElement('strong');label.textContent='최근 당첨';winners.append(label);if(state.winners?.length){for(const w of state.winners){const item=document.createElement('span');item.className='lottery-winner-item';item.textContent=`${w.nickname} · ${this.lotteryGradeName(w.grade)}`;winners.append(item)}}else{const empty=document.createElement('span');empty.textContent='아직 당첨자가 없습니다.';winners.append(empty)}}
     const input=this.root.querySelector<HTMLInputElement>('.lottery-count');if(input){input.max=String(state.total);input.disabled=state.total===0;if(Number(input.value)>state.total)input.value=String(Math.max(1,state.total))}
-    const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=this.lotteryBusy
+    const buy=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-buy"]');if(buy)buy.disabled=this.lotteryBusy||this.lotteryLoading
     this.updateLotteryPrice()
   }
   private async showLotteryResetNotice():Promise<void>{
@@ -2813,7 +2830,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const dialog=document.createElement('dialog');dialog.id='lottery-reset-notice';dialog.className='lottery-alert'
     const panel=document.createElement('div');panel.className='lottery-alert-inner'
     const title=document.createElement('h3');title.textContent='겅이복권 안내'
-    const body=document.createElement('p');body.textContent='상위상이 전부 품절되어 겅이복권이 초기화되었습니다.'
+    const body=document.createElement('p');body.textContent='겅이복권 일부 판이 운영자에 의해 초기화되었습니다.'
     const close=document.createElement('button');close.textContent='닫기';close.addEventListener('click',()=>dialog.close())
     panel.append(title,body,close);dialog.append(panel);document.body.append(dialog)
     dialog.addEventListener('close',()=>{
@@ -2877,30 +2894,33 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
   private async resetLottery():Promise<void>{
     if(!['test','tjdrjs885'].includes(this.store.user?.username?.toLowerCase()||''))return
-    if(!window.confirm('공용 복권 200장과 당첨자 기록을 초기화할까요? 모든 유저에게 적용됩니다.'))return
+    if(this.lotteryBusy||this.lotteryLoading||this.lotteryResults.length)return
+    if(!window.confirm(`${this.lotteryBoard}판 복권 200장과 당첨자 기록을 초기화할까요?`))return
+    this.lotteryBusy=true
     try{
-      const state=await this.store.lotteryReset()
+      const state=await this.store.lotteryReset(this.lotteryBoard)
       this.lotteryState=state;this.lotteryResults=[];this.lotteryRevealed=0
       this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
       this.root.querySelector<HTMLElement>('[data-action="lottery-skip"]')?.setAttribute('hidden','')
       const results=this.root.querySelector<HTMLElement>('.lottery-results');if(results)results.innerHTML=''
-      this.renderLottery();this.lotteryTopPopup('공용 겅이복권 200장이 초기화되었습니다.')
-    }catch(e){this.handleError(e)}
+      this.renderLottery();this.lotteryTopPopup(`${this.lotteryBoard}판 겅이복권 200장이 초기화되었습니다.`)
+    }catch(e){this.handleError(e)}finally{this.lotteryBusy=false;this.renderLottery()}
   }
   private async buyLottery():Promise<void>{
-    if(this.lotteryBusy)return
-    if(!this.lotteryState){this.lotteryTopPopup('복권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');void this.loadLottery();return}
+    if(this.lotteryBusy||this.lotteryLoading)return
+    if(!this.lotteryState){this.lotteryTopPopup('복권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');void this.openLottery();return}
     if(this.lotteryResults.length){this.lotteryTopPopup('진행 중인 복권 결과를 먼저 확인해주세요.');return}
     if(this.lotteryState.total<1){this.lotteryTopPopup('현재 남은 복권이 없습니다.');return}
     if(!this.lotteryState.unlimited&&this.lotteryState.tickets<1){this.lotteryTopPopup('보유한 겅이복권이 없습니다.');return}
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
     if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.lotteryTopPopup('사용할 복권 수량을 확인해주세요.');return}
     if(!this.lotteryState.unlimited&&count>this.lotteryState.tickets){this.lotteryTopPopup(`겅이복권이 부족합니다. (보유 ${this.lotteryState.tickets}개)`);return}
-    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${this.lotteryState.unlimited?'0 (무제한)':count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
-    if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
+    const board=this.lotteryBoard
+    const confirmed=await this.lotteryConfirm(`${board}판\n구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${this.lotteryState.unlimited?'0 (무제한)':count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
+    if(!confirmed||this.lotteryBusy||this.lotteryLoading||board!==this.lotteryBoard||this.lotteryResults.length)return
     this.lotteryBusy=true
     try{
-      const result=await this.store.lotteryBuy(count)
+      const result=await this.store.lotteryBuy(count,board)
       this.lotteryState=result;this.lotteryResults=result.results;this.lotteryRevealed=0;this.lotteryAutoReveal=false;this.lotteryAnimating=false
       this.renderWallet()
       this.root.querySelector('.lottery-screen')?.classList.add('lottery-playing')
