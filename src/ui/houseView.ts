@@ -13,7 +13,7 @@ type VisitCare = Pick<HouseCareState,'level'|'affection'|'hunger'|'happy'|'clean
 export function houseVisitMarkup(layout:HouseLayout):string{
   const c=(layout as HouseLayout & {visitCare?:VisitCare|null}).visitCare
   const variant=c?(c.sleepUntil>Date.now()?'sleeping':c.health<50?'sick':c.energy<50?'tired':c.hunger<50?'hungry':c.clean<50?'dirty':''):''
-  const actor=c&&!c.deadAt?`<img src="${!variant&&c.costume==='pink'?'/assets/house/costume-pink-worn.png':`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`}" alt="치이카와" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
+  const actor=c&&!c.deadAt?`<img src="${c.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`}" alt="치이카와" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
   const room=`<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${actor}</div></div></div>`
   if(!c)return room+`<p class="user-house-note">키우기 정보를 확인할 수 없습니다.</p>`
   if(c.deadAt)return room+`<p class="user-house-note">치이카와가 사망했습니다.</p>`
@@ -25,7 +25,7 @@ export function houseVisitMarkup(layout:HouseLayout):string{
 }
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
-  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string})|null=null
+  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string;pinkOwned?:boolean})|null=null
   private chiPos={x:50,y:56}
   private bubbleTimer:ReturnType<typeof setTimeout>|null=null
   private busy=false
@@ -199,7 +199,7 @@ export class HouseView {
     const hungry=c!==null&&c.hunger<50
     const dirty=c!==null&&c.clean<50
     const variant=sleeping?'sleeping':sick?'sick':tired?'tired':hungry?'hungry':dirty?'dirty':''
-    const src=!variant&&c?.costume==='pink'?'/assets/house/costume-pink-worn.png':`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
+    const src=c?.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
     if(img.getAttribute('src')!==src)img.src=src
     if(variant==='hungry'){
       img.style.setProperty('transform-origin','50% 100%')
@@ -236,12 +236,12 @@ export class HouseView {
   }
   private openCostumes():void{
     if(!this.care||this.care.deadAt||this.busy)return
-    const owned=this.store.user?.username?.toLowerCase()==='test'
-    const dialog=document.createElement('dialog');dialog.style.cssText='width:min(320px,90vw);max-height:85dvh;overflow:auto;border:1px solid #d9aabd;border-radius:16px;padding:16px;background:#fff5f8;color:#654b58;text-align:center;z-index:9999';
-    dialog.innerHTML=`<h3 style="margin:0 0 12px">치이카와 옷장</h3>${owned?`<img src="/assets/house/costume-pink-item.png" alt="파자마(핑크)" style="width:100px;height:100px;object-fit:contain"><p>파자마(핑크) · 보유 1개</p><button type="button" class="costume-toggle">${this.care.costume==='pink'?'의상 해제':'의상 착용'}</button>`:'<p>보유한 의상이 없습니다.</p>'}<p><button type="button" class="costume-close">닫기</button></p>`
+    const owned=!!this.care.pinkOwned||this.store.user?.username?.toLowerCase()==='test'
+    const dialog=document.createElement('dialog');dialog.style.cssText='position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(320px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #d9aabd;border-radius:24px;padding:20px;box-shadow:0 12px 40px #80546b44;background:#fff5f8;color:#654b58;text-align:center;z-index:9999';
+    dialog.innerHTML=`<h3 style="margin:0 0 12px">치이카와의 옷장</h3>${owned?`<img src="/assets/house/costume-pink-item.png" alt="파자마(핑크)" style="width:100px;height:100px;object-fit:contain"><p>파자마(핑크) · 보유 1개</p><button type="button" class="costume-toggle" style="background:#e9b4ca;color:#654b58;border:0;border-radius:14px;padding:12px 24px;font-weight:bold">${this.care.costume==='pink'?'의상 해제':'의상 착용'}</button>`:'<p>보유한 의상이 없습니다. 장터에서 파자마(핑크)를 만나보세요.</p>'}<p><button type="button" class="costume-close" style="background:white;color:#80546b;border:1px solid #e9b4ca;border-radius:12px;padding:8px 24px">닫기</button></p>`
     const close=()=>{dialog.close();dialog.remove()};dialog.querySelector<HTMLButtonElement>('.costume-close')!.onclick=close;dialog.addEventListener('cancel',e=>{e.preventDefault();close()});
     const toggle=dialog.querySelector<HTMLButtonElement>('.costume-toggle');if(toggle)toggle.onclick=async()=>{if(this.busy)return;this.busy=true;toggle.disabled=true;try{if(this.loadPending)await this.loadPending;const result=await this.store.houseCareAction('costume',this.care?.costume==='pink'?'none':'pink');this.care=result.care;this.renderCare();close()}catch(e){this.hooks.error(e);toggle.disabled=false}finally{this.busy=false}};
-    this.root.append(dialog);dialog.showModal()
+    document.body.append(dialog);dialog.showModal()
   }
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
@@ -250,7 +250,7 @@ export class HouseView {
     const img=el.querySelector<HTMLImageElement>('.house-single-chiikawa')!
     img.addEventListener('click',()=>this.speak())
     img.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();this.speak()}})
-    const lot=el.closest<HTMLElement>('.house-lot');if(lot){lot.querySelector('.house-costume-button')?.remove();const button=document.createElement('button');button.type='button';button.className='house-costume-button';button.textContent='의상';button.style.cssText='position:absolute;right:8px;bottom:8px;z-index:12;padding:8px 13px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold;pointer-events:auto';button.onclick=()=>this.openCostumes();lot.append(button)}
+    const lot=el.closest<HTMLElement>('.house-lot');const viewport=lot?.closest<HTMLElement>('.house-scroll-viewport')||lot;if(viewport){viewport.querySelector('.house-costume-button')?.remove();viewport.style.position='relative';const button=document.createElement('button');button.type='button';button.className='house-costume-button';button.textContent='의상';button.style.cssText='position:absolute;right:12px;bottom:12px;z-index:40;box-sizing:border-box;min-height:36px;white-space:nowrap;padding:7px 12px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold;pointer-events:auto';button.onclick=()=>this.openCostumes();viewport.append(button)}
     this.placeChiikawa()
     this.syncMess()
   }
