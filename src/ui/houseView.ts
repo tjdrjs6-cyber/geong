@@ -59,7 +59,7 @@ export class HouseView {
       const lot=this.root.querySelector<HTMLElement>('.house-lot')
       if(!lot||!lot.getClientRects().length||this.root.getAttribute('aria-hidden')==='true')return
       this.syncMess()
-      if(this.busy||this.bubbleTimer|| (this.care?.sleepUntil??0)>Date.now()||Math.random()<.25)return
+      if(!this.care||this.busy||this.bubbleTimer||(this.care.sleepUntil??0)>Date.now()||(this.care.health??100)<50||Math.random()<.25)return
       const y=Math.max(49,Math.min(65,this.chiPos.y+(Math.random()-.5)*14))
       const half=Math.max(5,25*(1-Math.abs(y-57.5)/19))
       const x=Math.max(50-half,Math.min(50+half,this.chiPos.x+(Math.random()-.5)*24))
@@ -155,6 +155,17 @@ export class HouseView {
     const c=this.care
     const sleeping=(c?.sleepUntil??0)>Date.now()
     const sick=c!==null&&(c.health??100)<50
+    const actor=img.closest<HTMLElement>('.house-roaming-actor')
+    if(actor){
+      if(sick&&actor.dataset.sickStill!=='true'){
+        const style=getComputedStyle(actor),parent=actor.offsetParent as HTMLElement|null
+        const x=parseFloat(style.left),y=parseFloat(style.top)
+        if(parent&&parent.clientWidth&&parent.clientHeight&&Number.isFinite(x)&&Number.isFinite(y))this.chiPos={x:x/parent.clientWidth*100,y:y/parent.clientHeight*100}
+        actor.style.transition='none';actor.dataset.sickStill='true';this.placeChiikawa()
+      }else if(!sick&&actor.dataset.sickStill==='true'){
+        actor.style.removeProperty('transition');delete actor.dataset.sickStill
+      }
+    }
     const tired=c!==null&&c.energy<50
     const hungry=c!==null&&c.hunger<50
     const dirty=c!==null&&c.clean<50
