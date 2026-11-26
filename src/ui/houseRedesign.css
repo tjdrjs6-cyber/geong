@@ -421,3 +421,9 @@
   to{filter:brightness(1.08) drop-shadow(0 0 5px #ffe4aa)}
 }
 #ui .house-screen .house-single-chiikawa{z-index:21 !important}
+
+/* Direct care controls, shared across desktop and mobile. */
+#ui .house-screen .house-single-chiikawa{left:50% !important;top:56% !important;pointer-events:none !important;cursor:default;touch-action:auto;transition:none !important}
+#ui .house-screen .tama-direct-care{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+#ui .house-screen .tama-direct-care button{min-width:0;padding:10px 2px;border:1px solid #c6a2bd;border-radius:10px;background:#fff8fc;color:#754b65;font-weight:800;font-size:clamp(10px,2.5vw,13px);cursor:pointer;touch-action:manipulation}
+#ui .house-screen .tama-pet{flex-wrap:wrap}

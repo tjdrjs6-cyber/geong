@@ -2902,8 +2902,6 @@ const routes = {
       const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
       const life=lifeRows[0]?parseJson(lifeRows[0].state_json):{buildings:{},snacks:{}}
       life.buildings=Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}]));life.snacks=life.snacks||{}
-      const needs={feed:'kitchen',wash:'shower',play:'arcade',sleep:'bed'}
-      if(needs[action]&&(!life.buildings[needs[action]]||life.buildings[needs[action]].readyAt>now)){await conn.rollback();return send(res,409,{error:'building_required'})}
       if(action==='snack'&&(!['candy','cookie','pudding','cake','lunch'].includes(snackId)||!(life.snacks[snackId]>0))){await conn.rollback();return send(res,409,{error:'snack_required'})}
 
       if ((care.cooldowns[action]||0)>now) { await conn.rollback(); return send(res,409,{error:'care_cooldown',nextAt:care.cooldowns[action]}) }
