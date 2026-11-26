@@ -38,7 +38,9 @@ export class HouseView {
       const action=el.dataset.careClock||''
       const due=Math.max(c.cooldowns[action]||0,action==='sleep'?sleep:0)
       let label=due>now?this.remaining(due-now):'대기시간 없음'
-      if(action==='sleep'&&sleep>now)label='수면 중'
+      const blocked=sleep>now&&['feed','wash','play','sleep'].includes(action)
+      if(['feed','wash','play','sleep'].includes(action)){const button=el.closest('button');if(button)button.disabled=blocked}
+      if(blocked)label='수면 중'
       if(action==='tidy'&&due<=now)label=c.messAt&&c.messAt<=now?'이용 가능':c.messAt?`응가까지 ${this.remaining(c.messAt-now)}`:'청소할 응가 없음'
       if(action==='pet'&&due<=now)label='이용 가능'
       el.textContent=label;el.classList.toggle('ready',label==='이용 가능'||label==='대기시간 없음')
@@ -100,6 +102,7 @@ export class HouseView {
   }
   private confirmCare(action:string,snackId?:string):void{
     if(this.busy||this.careDialog)return
+    if((this.care?.sleepUntil??0)>Date.now()&&['feed','wash','play','sleep'].includes(action)){this.showCareDialog('수면 중','치이카와가 일어난 뒤 돌봐주세요.');return}
     const prompts:Record<string,[string,string]>={feed:['먹이기','치이카와에게 밥을 먹이시겠습니까?\n100코인 · 배부름 +25%'],wash:['씻기기','치이카와를 씻기시겠습니까?\n100코인 · 청결 +35%'],sleep:['재우기','치이카와를 재우시겠습니까?\n체력 +20%'],play:['놀아주기','치이카와와 놀아주시겠습니까?\n행복 +25% · 체력 -10%'],medicine:['약 먹이기','치이카와에게 약을 먹이시겠습니까?\n건강 +30%'],tidy:['청소','하우스를 청소하시겠습니까?\n청결 +10%'],pet:['쓰다듬기','치이카와를 쓰다듬으시겠습니까?\n친밀도 +5'],snack:['간식','치이카와에게 간식을 먹이시겠습니까?']}
     const prompt=prompts[action];if(!prompt)return
     this.showCareDialog(prompt[0],prompt[1],()=>void this.performCare(action,snackId,prompt[0]))
@@ -116,7 +119,7 @@ export class HouseView {
       this.showCareDialog(`${label} 완료!`,[...changes,`경험치 +${result.earned}`,result.spent?`${result.spent.toLocaleString()}코인 사용`:''].filter(Boolean).join('\n'))
     }catch(e){
       const err=e as {code?:string;nextAt?:number};const remaining=Math.ceil(((err.nextAt??this.care?.cooldowns[action]??0)-Date.now())/1000)
-      const messages:Record<string,string>={care_full:action==='tidy'?'청소할 응가가 없어요.':action==='medicine'?'아직 약이 필요하지 않아요.':'아직 돌봄이 필요하지 않아요.',care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:'코인이 부족해요.',snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
+      const messages:Record<string,string>={care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:action==='tidy'?'청소할 응가가 없어요.':action==='medicine'?'아직 약이 필요하지 않아요.':'아직 돌봄이 필요하지 않아요.',care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:'코인이 부족해요.',snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
       this.showCareDialog(`${label} 안내`,messages[err.code||'']||'처리 결과를 확인하지 못했습니다. 상태를 새로 확인한 뒤 다시 시도해 주세요.')
     }finally{this.busy=false}
   }

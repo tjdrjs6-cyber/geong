@@ -451,3 +451,6 @@
 #ui .house-screen .tama-sleep-clock[hidden]{display:none!important}
 #ui .house-screen .tama-care-clock{display:block;margin-top:4px;font-size:clamp(9px,2vw,11px);font-weight:600;color:#916478;font-variant-numeric:tabular-nums;white-space:normal}
 #ui .house-screen .tama-care-clock.ready{color:#32845b}
+
+#ui .house-screen .tama-direct-care button:disabled{background:#e8e5e8;color:#8b858b;border-color:#d0cbd0;cursor:not-allowed;opacity:0.8}
+#ui .house-screen .tama-direct-care button:disabled .tama-care-clock{color:#777078}
