@@ -676,6 +676,7 @@ function houseCareDecay(raw, now) {
     const fresh=houseCareDecay(null,now)
     // Keep already claimed rewards for the same day to prevent duplicate payouts.
     if(s.questDay===new Date(now+9*3600000).toISOString().slice(0,10)){fresh.questDay=s.questDay;fresh.claimed=s.claimed||[]}
+    fresh.heartNotice=s.heartNotice;
     return fresh
   }
   const elapsed=Math.max(0,(now-(Number(s.updatedAt)||now))/3600000)
@@ -688,7 +689,26 @@ function houseCareDecay(raw, now) {
     affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
     cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
     personality:s.personality||'미발견', milestones:Array.isArray(s.milestones)?s.milestones:[], diary:Array.isArray(s.diary)?s.diary:[], quests:s.quests&&typeof s.quests==='object'?s.quests:{}, questDay:s.questDay||'',claimed:Array.isArray(s.claimed)?s.claimed:[], eventCount:Number(s.eventCount)||0,eventDay:s.eventDay||'',eventReadyAt:Number(s.eventReadyAt)||0, mini:s.mini||null, miniWins:Number(s.miniWins)||0, petCount:Number(s.petCount)||0, actionCounts:s.actionCounts&&typeof s.actionCounts==='object'?s.actionCounts:{} }
+  care.heartNotice=s.heartNotice;
   return houseMarkDeath(care,now)
+}
+async function houseHeartNotice(req,res,ack){
+  const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+  const conn=await pool.getConnection()
+  try{
+    await conn.beginTransaction()
+    const now=Date.now()
+    await conn.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify(houseCareDecay(null,now))])
+    const [rows]=await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE',[account.id])
+    const raw=parseJson(rows[0].state_json),care=houseCareDecay(raw,now)
+    const hearts=Math.max(0,Math.min(4,Math.ceil((care.hunger+care.happy+care.clean+care.energy)/100)))
+    const prev=raw.heartNotice
+    const pending=!ack && Boolean(prev && (prev.pending || hearts<prev.hearts))
+    const notice={hearts,pending}
+    const saved=Boolean(raw.deadAt)!==Boolean(care.deadAt)?care:raw
+    if(!prev||prev.hearts!==hearts||prev.pending!==pending||saved!==raw){saved.heartNotice=notice;await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(saved),account.id])}
+    await conn.commit();send(res,200,{pending,hearts})
+  }catch(e){await conn.rollback();throw e}finally{conn.release()}
 }
 function houseMarkDeath(care,now){
   if(care.hunger+care.happy+care.clean+care.energy<=0){care.deadAt=care.deadAt||now;care.sleepUntil=0;care.messAt=0;care.mini=null}
@@ -2898,6 +2918,8 @@ const routes = {
       await conn.commit();send(res,200,{life,spent:account.is_admin?0:spent,prize,prizes})
     }catch(error){await conn.rollback();throw error}finally{conn.release()}
   },
+  'GET /api/house/heart-notice': async (req,res) => houseHeartNotice(req,res,false),
+  'POST /api/house/heart-notice': async (req,res) => houseHeartNotice(req,res,true),
   'GET /api/house/care': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
