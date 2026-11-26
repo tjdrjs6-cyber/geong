@@ -12,10 +12,11 @@ export function houseLotMarkup():string{return `<img class="house-bg" src="${bg}
 export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items"><img class="house-single-chiikawa" src="/assets/house/care-chiikawa.png" alt="치이카와"/></div></div></div>`}
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
-  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number})|null=null
+  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number})|null=null
   private chiPos={x:50,y:56}
   private bubbleTimer:ReturnType<typeof setTimeout>|null=null
   private busy=false
+  private nextDeathCheck=0
   private careClock:ReturnType<typeof setInterval>|null=null
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private activeTab: 'care'|'snack'|'mission'|'diary'='care'
@@ -29,7 +30,7 @@ export class HouseView {
     this.hooks.coinAvailable(false)
     const user=this.store.user?.username
     if(this.loadedUser!==user){this.care=null;this.life={buildings:{},snacks:{}};this.loadedUser=user;this.loadPending=null}
-    this.renderLot();this.renderCare();this.startRoaming();void this.load()
+    this.nextDeathCheck=Date.now()+60000;this.renderLot();this.renderCare();this.startRoaming();void this.load()
     if(this.careClock)clearInterval(this.careClock)
     this.careClock=setInterval(()=>this.updateCareClock(),1000)
   }
@@ -40,6 +41,13 @@ export class HouseView {
     const c=this.care;if(!c)return
     const now=Date.now(), sleep=c.sleepUntil??0
     this.syncAppearance()
+    if(c.deadAt){
+      const left=c.deadAt+86400000-now
+      const clock=this.root.querySelector<HTMLElement>('.tama-death-clock');if(clock)clock.textContent=this.remaining(left)
+      const restart=this.root.querySelector<HTMLButtonElement>('[data-action="house-restart"]');if(restart)restart.disabled=left>0
+      return
+    }
+    if(now>=this.nextDeathCheck&&!this.busy){this.nextDeathCheck=now+60000;void this.load()}
     const banner=this.root.querySelector<HTMLElement>('.tama-sleep-clock')
     if(banner){banner.hidden=sleep<=now;banner.textContent=sleep>now?`수면 중 · 기상까지 ${this.remaining(sleep-now)} · ${new Date(sleep).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Seoul'})} 기상 예정`:''}
     this.root.querySelectorAll<HTMLElement>('[data-care-clock]').forEach(el=>{
@@ -64,7 +72,7 @@ export class HouseView {
       const lot=this.root.querySelector<HTMLElement>('.house-lot')
       if(!lot||!lot.getClientRects().length||this.root.getAttribute('aria-hidden')==='true')return
       this.syncMess()
-      if(!this.care||this.busy||this.bubbleTimer||(this.care.sleepUntil??0)>Date.now()||(this.care.health??100)<50||Math.random()<.25)return
+      if(!this.care||this.care.deadAt||this.busy||this.bubbleTimer||(this.care.sleepUntil??0)>Date.now()||(this.care.health??100)<50||Math.random()<.25)return
       const y=Math.max(49,Math.min(65,this.chiPos.y+(Math.random()-.5)*14))
       const half=Math.max(5,25*(1-Math.abs(y-57.5)/19))
       const x=Math.max(50-half,Math.min(50+half,this.chiPos.x+(Math.random()-.5)*24))
@@ -73,6 +81,7 @@ export class HouseView {
   }
   private speak():void{
     const c=this.care
+    if(c?.deadAt)return
     const lines=!c?['안녕!','반가워!']:
       (c.sleepUntil??0)>Date.now()?['쿨쿨…','조금만 더 잘래…']:
       (c.health??100)<50?['몸이 안 좋아…','약 먹고 싶어…']:
@@ -89,6 +98,8 @@ export class HouseView {
   }
   private load():Promise<void>{if(this.loadPending)return this.loadPending;const user=this.store.user?.username;const task=Promise.all([this.store.houseLife(),this.store.houseCare()]).then(([life,care])=>{if(this.store.user?.username!==user||this.loadedUser!==user)return;this.life=life.life;this.care=care.care;this.syncMess();this.renderCare()}).catch(e=>{if(this.root.getAttribute('aria-hidden')!=='true')this.hooks.error(e)}).finally(()=>{if(this.loadPending===task)this.loadPending=null});this.loadPending=task;return task}
   handle(action:string,button:HTMLElement):boolean{
+    if(action==='house-restart'){if(this.care?.deadAt&&Date.now()>=this.care.deadAt+86400000)void this.load();return true}
+    if(this.care?.deadAt&&(/^(house-care-|house-tab|house-info|house-event|house-claim)/.test(action)))return true
     if(action==='house-info'){this.infoOpen=!this.infoOpen;this.renderCare();return true}
     if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.infoOpen=true;this.renderCare()}return true}
     if(action.startsWith('house-care-')){this.confirmCare(action.slice(11),button.dataset.snack);return true}
@@ -143,7 +154,7 @@ export class HouseView {
       this.showCareDialog(`${label} 완료!`,[...changes,`경험치 +${result.earned}`,result.spent?`${result.spent.toLocaleString()}코인 사용`:''].filter(Boolean).join('\n'))
     }catch(e){
       const err=e as {code?:string;nextAt?:number};const remaining=Math.ceil(((err.nextAt??this.care?.cooldowns[action]??0)-Date.now())/1000)
-      const messages:Record<string,string>={care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
+      const messages:Record<string,string>={care_dead:'치이카와가 사망했습니다.',care_restarted:'새로운 치이카와를 만나 주세요.',care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
       this.showCareDialog(`${label} 안내`,messages[err.code||'']||'처리 결과를 확인하지 못했습니다. 상태를 새로 확인한 뒤 다시 시도해 주세요.')
     }finally{this.busy=false}
   }
@@ -158,6 +169,7 @@ export class HouseView {
   private syncAppearance():void{
     const img=this.root.querySelector<HTMLImageElement>('.house-items .house-single-chiikawa');if(!img)return
     const c=this.care
+    const dead=!!c?.deadAt;img.style.visibility=dead?'hidden':'';if(dead){const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble');if(bubble)bubble.hidden=true;return}
     const sleeping=(c?.sleepUntil??0)>Date.now()
     const sick=c!==null&&(c.health??100)<50
     const actor=img.closest<HTMLElement>('.house-roaming-actor')
@@ -189,7 +201,7 @@ export class HouseView {
   private syncMess():void{
     this.syncAppearance()
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
-    const due=!!this.care?.messAt&&this.care.messAt<=Date.now()
+    const due=!this.care?.deadAt&&!!this.care?.messAt&&this.care.messAt<=Date.now()
     const existing=el.querySelector<HTMLImageElement>('.house-care-mess')
     if(due&&!existing){
       // Stable pseudo-random position from the persisted mess timestamp.
@@ -224,6 +236,7 @@ export class HouseView {
     this.syncAppearance()
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
+    if(c.deadAt){this.infoOpen=false;el.innerHTML=`<div class="tama-device"><div style="padding:16px;text-align:center"><div style="color:#aaa;font-size:24px">♡ ♡ ♡ ♡</div><h3>치이카와가 사망했습니다.</h3><p>다시 키우기까지 남은 시간</p><strong class="tama-death-clock">${this.remaining(c.deadAt+86400000-Date.now())}</strong><p>24시간 이후 새로운 치이카와를 만날 수 있습니다.</p><button class="tama-main-button" data-action="house-restart" ${Date.now()<c.deadAt+86400000?'disabled':''}>다시 키우기</button></div></div>`;return}
     const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy],['건강',Math.round(c.health??100)]]
     const emotion=c.hunger<50?'배가 고파요':c.happy<35?'심심해요':c.clean<30?'씻고 싶어요':c.energy<50?'졸려요':c.happy>=80?'아주 행복해요':'기분이 좋아요'
     const missions:[string,string,number][]=[['feed','밥주기',500],['play','놀아주기',500],['pet','쓰다듬기',500]]
