@@ -2996,7 +2996,10 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
       this.lotteryTimer=window.setTimeout(()=>{
         skip.remove();this.hidePop()
         if(this.screen==='rps'&&this.lotteryResults.length){
-          if(this.lotteryAutoReveal||this.lotteryResults[this.lotteryRevealed+1]?.grade==='L')complete()
+          // A final-ticket prize must be shown before its separate Last One reveal.
+          const nextIsLastOne=this.lotteryResults[this.lotteryRevealed+1]?.grade==='L'
+          if(nextIsLastOne||r.grade==='L')this.showLotteryWinPopup(r,complete)
+          else if(this.lotteryAutoReveal)complete()
           else this.showLotteryWinPopup(r,complete)
         }
       },1000)
@@ -3011,7 +3014,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const img=document.createElement('img');img.src=r.petGrade?'/assets/pets/box_normal.png':r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS];img.alt='당첨 상품'
     const name=document.createElement('strong');name.textContent=r.petGrade?this.lotteryPetName(r.petGrade):r.accessoryId?`레어 ${({'chiikawa_keyring':'치이카와','hachiware_keyring':'하치와레','usagi_keyring':'우사기','momonga_keyring':'모몽가','kurimanju_keyring':'쿠리만쥬','shisa_keyring':'시사','kani_keyring':'카니','rakko_keyring':'랏코'} as Record<string,string>)[r.accessoryId]} 키링`:fullName(characterById(r.id as CharacterId))
     const message=document.createElement('p');message.textContent=r.petGrade?'펫상자 1개 획득!':r.accessoryId?'레어 무기 액세서리 1개 획득!':r.duplicate?'중복 캐릭터! 보관함에 추가되었어요.':'새 친구가 도감에 등록됐어요!'
-    const button=document.createElement('button');button.textContent='다음 복권 확인';button.onclick=()=>dialog.close()
+    const button=document.createElement('button');button.textContent=this.lotteryResults[this.lotteryRevealed+1]?.grade==='L'?'라스트원상 확인':r.grade==='L'?'획득 결과 확인':'다음 복권 확인';button.onclick=()=>dialog.close()
     card.append(heading,img,name,message,button);dialog.append(card);document.body.append(dialog)
     dialog.addEventListener('close',()=>{dialog.remove();next()},{once:true})
     dialog.showModal()
