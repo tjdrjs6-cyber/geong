@@ -2945,9 +2945,46 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.renderLotteryResults()
     window.clearTimeout(this.lotteryTimer)
     this.lotteryTimer=window.setTimeout(()=>{
-      if(r.id||r.accessoryId||r.petGrade)this.showLotteryWinPopup(r,()=>this.showLotteryTicket())
+      if(r.id||r.accessoryId||r.petGrade)this.playLotteryWin(r)
       else this.showLotteryTicket()
     },460)
+  }
+  private createLegendOpening(image:string,label:string):HTMLElement {
+  const animation=document.createElement('div')
+  animation.className='legend-ticket-opening-overlay'
+  animation.setAttribute('role','status')
+  animation.setAttribute('aria-label','레전더리 티켓 개봉 연출')
+  animation.innerHTML=`<style>
+    .legend-ticket-opening-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#5a357d 0%,#211333 65%,#100d20 100%);overflow:hidden;pointer-events:auto;animation:legendOpenFadeIn .25s ease-out}
+    .legend-ticket-opening-overlay .legend-open-rays{position:absolute;width:120vmax;height:120vmax;background:repeating-conic-gradient(from 0deg,#ffe5a829 0deg 12deg,transparent 12deg 30deg);animation:legendOpenRotate 4s linear infinite}
+    .legend-ticket-opening-overlay .legend-open-ticket{position:relative;width:min(56vw,230px);max-height:50vh;object-fit:contain;filter:drop-shadow(0 0 28px #ffdf79);animation:legendOpenTicket 2.1s ease-in forwards}
+    .legend-ticket-opening-overlay .legend-open-label{position:absolute;bottom:14%;font-weight:900;font-size:clamp(20px,5vw,36px);color:#fff3c0;text-shadow:0 3px 16px #100d20;animation:legendOpenLabel 1.9s ease-in-out forwards}
+    .legend-ticket-opening-overlay .legend-open-flash{position:absolute;inset:0;background:#fff8d8;opacity:0;animation:legendOpenFlash 2.1s ease-out forwards}
+    @keyframes legendOpenFadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes legendOpenRotate{to{transform:rotate(360deg)}}
+    @keyframes legendOpenTicket{0%{transform:scale(.55) rotate(-12deg);opacity:0}25%{transform:scale(1) rotate(8deg);opacity:1}45%{transform:scale(1.1) rotate(-8deg)}65%{transform:scale(1.18) rotate(6deg)}85%{transform:scale(1.4) rotate(0)}100%{transform:scale(2.4);opacity:0}}
+    @keyframes legendOpenLabel{0%,15%{opacity:0;transform:translateY(16px)}35%,75%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+    @keyframes legendOpenFlash{0%,82%{opacity:0}94%{opacity:.95}100%{opacity:0}}
+  </style><div class="legend-open-rays"></div><img class="legend-open-ticket" src="${image}" alt=""/><div class="legend-open-label">${label}</div><div class="legend-open-flash"></div>`
+  document.body.appendChild(animation)
+    return animation
+  }
+  private playLotteryWin(r:typeof this.lotteryResults[number]):void {
+    const name=this.lotteryGradeName(r.grade)
+    const image=r.petGrade?'/assets/pets/box_normal.png':r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS]
+    const item:RevealItem=r.id?this.characterReveal({id:r.id as CharacterId,duplicate:r.duplicate,bonus:0} as PullResult):{image,name:r.petGrade?this.lotteryPetName(r.petGrade):this.lotteryAccessoryName(r.accessoryId!),rare:true,grade:r.petGrade?({epic:'에픽',rare:'레어',normal:'노말'} as Record<string,string>)[r.petGrade]:'레어',tag:'',sub:'',chance:0,color:'#fff1dc',accent:'#e4b65b'}
+    item.rare=true;item.tag=`${name} 당첨!`
+    const animation=this.createLegendOpening('/assets/lottery_ticket_custom.png',`${name} 당첨!`)
+    animation.classList.add('lottery-opening-overlay')
+    this.lotteryTimer=window.setTimeout(()=>{
+      animation.remove()
+      if(this.screen!=='rps'||!this.lotteryResults.length)return
+      this.popReveal(item,0,1)
+      this.lotteryTimer=window.setTimeout(()=>{
+        this.hidePop()
+        if(this.screen==='rps'&&this.lotteryResults.length)this.showLotteryWinPopup(r,()=>this.showLotteryTicket())
+      },1000)
+    },2250)
   }
   private showLotteryWinPopup(r:{grade:string;id:string|null;accessoryId?:string|null;petGrade?:string|null;duplicate:boolean;bonus?:number},next:()=>void):void{
     if(!r.id&&!r.accessoryId&&!r.petGrade){next();return}
@@ -2983,6 +3020,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   }
   private skipLottery():void{
     const completedResults=[...this.lotteryResults]
+    document.querySelectorAll('.lottery-opening-overlay').forEach(node=>node.remove());this.hidePop()
     window.clearTimeout(this.lotteryTimer);document.getElementById('lottery-win-dialog')?.remove();this.lotteryRevealed=this.lotteryResults.length
     this.renderLotteryResults()
     this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
@@ -3941,23 +3979,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
                 // Legendary tickets are opened from inventory, so show a dedicated
                 // full-screen animation before the existing character reveal.
                 const sequence=++this.revealSequence
-                const animation=document.createElement('div')
-                animation.className='legend-ticket-opening-overlay'
-                animation.setAttribute('role','status')
-                animation.setAttribute('aria-label','레전더리 티켓 개봉 연출')
-                animation.innerHTML=`<style>
-                  .legend-ticket-opening-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#5a357d 0%,#211333 65%,#100d20 100%);overflow:hidden;pointer-events:auto;animation:legendOpenFadeIn .25s ease-out}
-                  .legend-ticket-opening-overlay .legend-open-rays{position:absolute;width:120vmax;height:120vmax;background:repeating-conic-gradient(from 0deg,#ffe5a829 0deg 12deg,transparent 12deg 30deg);animation:legendOpenRotate 4s linear infinite}
-                  .legend-ticket-opening-overlay .legend-open-ticket{position:relative;width:min(56vw,230px);max-height:50vh;object-fit:contain;filter:drop-shadow(0 0 28px #ffdf79);animation:legendOpenTicket 2.1s ease-in forwards}
-                  .legend-ticket-opening-overlay .legend-open-label{position:absolute;bottom:14%;font-weight:900;font-size:clamp(20px,5vw,36px);color:#fff3c0;text-shadow:0 3px 16px #100d20;animation:legendOpenLabel 1.9s ease-in-out forwards}
-                  .legend-ticket-opening-overlay .legend-open-flash{position:absolute;inset:0;background:#fff8d8;opacity:0;animation:legendOpenFlash 2.1s ease-out forwards}
-                  @keyframes legendOpenFadeIn{from{opacity:0}to{opacity:1}}
-                  @keyframes legendOpenRotate{to{transform:rotate(360deg)}}
-                  @keyframes legendOpenTicket{0%{transform:scale(.55) rotate(-12deg);opacity:0}25%{transform:scale(1) rotate(8deg);opacity:1}45%{transform:scale(1.1) rotate(-8deg)}65%{transform:scale(1.18) rotate(6deg)}85%{transform:scale(1.4) rotate(0)}100%{transform:scale(2.4);opacity:0}}
-                  @keyframes legendOpenLabel{0%,15%{opacity:0;transform:translateY(16px)}35%,75%{opacity:1;transform:translateY(0)}100%{opacity:0}}
-                  @keyframes legendOpenFlash{0%,82%{opacity:0}94%{opacity:.95}100%{opacity:0}}
-                </style><div class="legend-open-rays"></div><img class="legend-open-ticket" src="/assets/items/legendary_draw_ticket.png" alt="레전더리 뽑기 티켓"/><div class="legend-open-label">레전더리 티켓 개봉!</div><div class="legend-open-flash"></div>`
-                document.body.appendChild(animation)
+                const animation=this.createLegendOpening('/assets/items/legendary_draw_ticket.png','레전더리 티켓 개봉!')
                 window.setTimeout(()=>{
                   animation.remove()
                   if(sequence!==this.revealSequence)return
