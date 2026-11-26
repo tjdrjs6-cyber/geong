@@ -1,5 +1,4 @@
 import './houseRedesign.css'
-import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
 import type { HouseLayout } from '../game/decos'
 import type { RemoteGachaStore,HouseCareState } from '../game/remoteStore'
 
@@ -8,7 +7,7 @@ type Life={buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<
 const snackNames:Record<string,string>={candy:'사탕',cookie:'쿠키',pudding:'푸딩',cake:'딸기 케이크',lunch:'특제 도시락'}
 const bg='/assets/bg/house_room_test09.png'
 export function houseLotMarkup():string{return `<img class="house-bg" src="${bg}" alt="" draggable="false"/>`}
-export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items"><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="치이카와"/></div></div></div>`}
+export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items"><img class="house-single-chiikawa" src="/assets/house/care-chiikawa.png" alt="치이카와"/></div></div></div>`}
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
   private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number})|null=null
@@ -28,6 +27,7 @@ export class HouseView {
     if(this.roamTimer)clearInterval(this.roamTimer)
     this.roamTimer=setInterval(()=>{
       const c=this.care
+      this.syncMess()
       const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble')
       if(bubble)bubble.textContent=c?.sleepUntil&&c.sleepUntil>Date.now()?'쿨쿨…':c&&c.hunger<30?'배고파…':c&&c.energy<30?'졸려…':c&&c.clean<30?'씻고 싶어…':c&&c.happy<35?'놀고 싶어…':'기분 좋아!'
     },3200)
@@ -68,9 +68,18 @@ export class HouseView {
   private stopMiniAnimation():void{if(this.miniTick){clearInterval(this.miniTick);this.miniTick=null}}
   private async refreshLife():Promise<void>{this.life=(await this.store.houseLife()).life;this.renderLot()}
   private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.2부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
+  private syncMess():void{
+    const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
+    const due=!!this.care?.messAt&&this.care.messAt<=Date.now()
+    const existing=el.querySelector('.house-care-mess')
+    if(due&&!existing)el.insertAdjacentHTML('beforeend','<img class="house-care-mess" src="/assets/house/care-mess.png" alt="응가" draggable="false"/>')
+    if(!due&&existing)existing.remove()
+    const tidy=this.root.querySelector<HTMLButtonElement>('[data-action="house-care-tidy"]');if(tidy)tidy.disabled=!due
+  }
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
-    el.innerHTML=`<img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/><div class="house-life-bubble" style="position:absolute;left:50%;top:22%;transform:translateX(-50%);background:white;color:#59483e;padding:5px 10px;border-radius:12px;pointer-events:none;z-index:20">안녕!</div>`
+    el.innerHTML=`<img class="house-single-chiikawa" src="/assets/house/care-chiikawa.png" alt="노말 치이카와" draggable="false"/><div class="house-life-bubble" style="position:absolute;left:50%;top:22%;transform:translateX(-50%);background:white;color:#59483e;padding:5px 10px;border-radius:12px;pointer-events:none;z-index:20">안녕!</div>`
+    this.syncMess()
   }
   private renderCare():void{
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
