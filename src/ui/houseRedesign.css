@@ -445,3 +445,9 @@
 #ui .house-care-dialog-actions{display:flex;gap:8px}
 #ui .house-care-dialog-actions button{flex:1;padding:11px;border:1px solid #c6a2bd;border-radius:10px;background:#fff;color:#754b65;font-weight:800;cursor:pointer}
 #ui .house-care-dialog-actions button:last-child{background:#a66d94;color:white}
+
+/* Live care timers, shared desktop/mobile. */
+#ui .house-screen .tama-sleep-clock{margin:6px 0;padding:8px;border-radius:10px;background:#e9e8f6;color:#625780;text-align:center;font-size:clamp(10px,2.5vw,13px);font-weight:700;font-variant-numeric:tabular-nums}
+#ui .house-screen .tama-sleep-clock[hidden]{display:none!important}
+#ui .house-screen .tama-care-clock{display:block;margin-top:4px;font-size:clamp(9px,2vw,11px);font-weight:600;color:#916478;font-variant-numeric:tabular-nums;white-space:normal}
+#ui .house-screen .tama-care-clock.ready{color:#32845b}
