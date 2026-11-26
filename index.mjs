@@ -2536,6 +2536,11 @@ const routes = {
     care.pinkOwned=true;await c.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),a.id]);await c.commit();return send(res,200,{ok:true});
     }catch(e){await c.rollback();throw e}finally{c.release()}
   },
+  'GET /api/house/costume-shop': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const [rows]=await pool.query('SELECT state_json FROM gm_house_care WHERE account_id=?',[a.id]);
+    return send(res,200,{pinkOwned:String(a.username).toLowerCase()==='test'||!!parseJson(rows[0]?.state_json||'{}')?.pinkOwned,pinkSale:Date.now()<Date.parse('2026-12-05T00:00:00+09:00')});
+  },
   'GET /api/trade/market': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const [drops]=await pool.query("SELECT l.id,l.seller_id,l.kind,l.quantity,l.unit_price,a.nickname FROM gm_drop_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.unit_price,l.id LIMIT 300");

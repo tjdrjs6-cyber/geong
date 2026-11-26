@@ -33,7 +33,7 @@ export class HouseView {
   private careClock:ReturnType<typeof setInterval>|null=null
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private activeTab: 'care'|'snack'|'mission'|'diary'='care'
-  private infoOpen=true
+  private infoOpen=false
   private careDialog:HTMLDialogElement|null=null
   constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
   private loadedUser:string|undefined
@@ -237,11 +237,11 @@ export class HouseView {
   private openCostumes():void{
     if(!this.care||this.care.deadAt||this.busy)return
     const owned=!!this.care.pinkOwned||this.store.user?.username?.toLowerCase()==='test'
-    const dialog=document.createElement('dialog');dialog.style.cssText='width:min(320px,90vw);max-height:85dvh;overflow:auto;border:1px solid #d9aabd;border-radius:24px;padding:20px;box-shadow:0 12px 40px #80546b44;background:#fff5f8;color:#654b58;text-align:center;z-index:9999';
+    const dialog=document.createElement('dialog');dialog.style.cssText='position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(320px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #d9aabd;border-radius:24px;padding:20px;box-shadow:0 12px 40px #80546b44;background:#fff5f8;color:#654b58;text-align:center;z-index:9999';
     dialog.innerHTML=`<h3 style="margin:0 0 12px">치이카와의 옷장</h3>${owned?`<img src="/assets/house/costume-pink-item.png" alt="파자마(핑크)" style="width:100px;height:100px;object-fit:contain"><p>파자마(핑크) · 보유 1개</p><button type="button" class="costume-toggle" style="background:#e9b4ca;color:#654b58;border:0;border-radius:14px;padding:12px 24px;font-weight:bold">${this.care.costume==='pink'?'의상 해제':'의상 착용'}</button>`:'<p>보유한 의상이 없습니다. 장터에서 파자마(핑크)를 만나보세요.</p>'}<p><button type="button" class="costume-close" style="background:white;color:#80546b;border:1px solid #e9b4ca;border-radius:12px;padding:8px 24px">닫기</button></p>`
-    const close=()=>{dialog.close();dialog.remove()};dialog.querySelector<HTMLButtonElement>('.costume-close')!.onclick=close;dialog.addEventListener('cancel',e=>{e.preventDefault();close()});
+    const costumeButton=this.root.querySelector<HTMLElement>('.house-costume-button');if(costumeButton)costumeButton.style.display='none';const close=()=>{dialog.close();dialog.remove();this.renderCare()};dialog.querySelector<HTMLButtonElement>('.costume-close')!.onclick=close;dialog.addEventListener('cancel',e=>{e.preventDefault();close()});
     const toggle=dialog.querySelector<HTMLButtonElement>('.costume-toggle');if(toggle)toggle.onclick=async()=>{if(this.busy)return;this.busy=true;toggle.disabled=true;try{if(this.loadPending)await this.loadPending;const result=await this.store.houseCareAction('costume',this.care?.costume==='pink'?'none':'pink');this.care=result.care;this.renderCare();close()}catch(e){this.hooks.error(e);toggle.disabled=false}finally{this.busy=false}};
-    this.root.append(dialog);dialog.showModal()
+    document.body.append(dialog);dialog.showModal()
   }
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
@@ -250,12 +250,13 @@ export class HouseView {
     const img=el.querySelector<HTMLImageElement>('.house-single-chiikawa')!
     img.addEventListener('click',()=>this.speak())
     img.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();this.speak()}})
-    const lot=el.closest<HTMLElement>('.house-lot');if(lot){lot.querySelector('.house-costume-button')?.remove();const button=document.createElement('button');button.type='button';button.className='house-costume-button';button.textContent='의상';button.style.cssText='position:absolute;right:8px;bottom:8px;z-index:12;padding:8px 13px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold;pointer-events:auto';button.onclick=()=>this.openCostumes();lot.append(button)}
+    const lot=el.closest<HTMLElement>('.house-lot');const viewport=lot?.closest<HTMLElement>('.house-scroll-viewport')||lot;if(viewport){viewport.querySelector('.house-costume-button')?.remove();viewport.style.position='relative';const button=document.createElement('button');button.type='button';button.className='house-costume-button';button.textContent='의상';button.style.cssText='position:absolute;right:12px;bottom:12px;z-index:40;box-sizing:border-box;min-height:36px;white-space:nowrap;padding:7px 12px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold;pointer-events:auto';button.onclick=()=>this.openCostumes();button.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':'';viewport.append(button)}
     this.placeChiikawa()
     this.syncMess()
   }
   private renderCare():void{
     this.syncAppearance()
+    const costumeButton=this.root.querySelector<HTMLElement>('.house-costume-button');if(costumeButton)costumeButton.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':''
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
     if(c.deadAt){this.infoOpen=false;el.innerHTML=`<div class="tama-device"><div style="padding:16px;text-align:center"><div style="color:#aaa;font-size:24px">♡ ♡ ♡ ♡</div><h3>치이카와가 사망했습니다.</h3><p>다시 키우기까지 남은 시간</p><strong class="tama-death-clock">${this.remaining(c.deadAt+86400000-Date.now())}</strong><p>24시간 이후 새로운 치이카와를 만날 수 있습니다.</p><button class="tama-main-button" data-action="house-restart" ${Date.now()<c.deadAt+86400000?'disabled':''}>다시 키우기</button></div></div>`;return}
