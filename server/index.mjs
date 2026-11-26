@@ -341,8 +341,10 @@ async function prepareDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_forge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     weapon VARCHAR(12) NOT NULL,
-    level TINYINT UNSIGNED NOT NULL DEFAULT 0
+    level TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    pity TINYINT UNSIGNED NOT NULL DEFAULT 0
   )`)
+  try { await pool.query('ALTER TABLE gm_forge ADD COLUMN pity TINYINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_diamond_recharge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     last_ms BIGINT NOT NULL
@@ -813,9 +815,9 @@ async function getAccessory(accountId, conn=pool) {
   return {count:counts.chiikawa_keyring,counts,grades,discovered:discoveryRows.map(r=>`${r.accessory_id}:${r.grade}`),equipped,equippedGrade:equipped?equippedGrade:'normal'}
 }
 async function getForge(accountId) {
-  const [rows] = await pool.query('SELECT weapon, level FROM gm_forge WHERE account_id = ?', [accountId])
+  const [rows] = await pool.query('SELECT weapon, level, pity FROM gm_forge WHERE account_id = ?', [accountId])
   const accessory=await getAccessory(accountId)
-  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), bonus: forgeBonus(Number(rows[0].level))+accessoryPower(accessory), accessoryBonus:accessoryPower(accessory) } : null
+  return rows[0] ? { weapon: rows[0].weapon, level: Number(rows[0].level), pity: Number(rows[0].pity), bonus: forgeBonus(Number(rows[0].level))+accessoryPower(accessory), accessoryBonus:accessoryPower(accessory) } : null
 }
 async function accountState(accountId) {
   const box = await mailbox(accountId)
@@ -2070,7 +2072,7 @@ const routes = {
       if (rows.length) { await conn.rollback(); return send(res,409,{error:'forge_already_selected'}) }
       await conn.query('INSERT INTO gm_forge(account_id,weapon,level) VALUES(?,?,0)',[account.id,weapon])
       await conn.commit()
-      send(res,200,{forge:{weapon,level:0,bonus:10}})
+      send(res,200,{forge:{weapon,level:0,bonus:10,pity:0}})
     } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
   },
   'POST /api/forge/upgrade': async (req, res) => {
@@ -2081,7 +2083,7 @@ const routes = {
     try {
       await conn.beginTransaction()
       const [saves] = await conn.query('SELECT gems,fragments FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
-      const [rows] = await conn.query('SELECT weapon,level FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
+      const [rows] = await conn.query('SELECT weapon,level,pity FROM gm_forge WHERE account_id=? FOR UPDATE',[account.id])
       if (!rows.length) {await conn.rollback();return send(res,409,{error:'forge_no_weapon'})}
       const level=Number(rows[0].level)
       if(level>=30){await conn.rollback();return send(res,409,{error:'forge_max'})}
@@ -2100,12 +2102,15 @@ const routes = {
         earned=settled.kills
         await conn.query('UPDATE gm_battle SET since_ms=?,damage=? WHERE account_id=?',[settled.since,settled.damage,account.id])
       }
-      const success=forgeGuaranteed(account) || randomInt(100)<FORGE_CHANCES[level]
+      const pity=Math.min(100,Math.max(0,Number(rows[0].pity)||0))
+      const success=forgeGuaranteed(account) || pity>=100 || randomInt(100)<FORGE_CHANCES[level]
+      const nextPity=success?0:Math.min(100,pity+FORGE_CHANCES[level])
       await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[rpsAdmin(account)?0:coins,rpsAdmin(account)?0:fragments,earned,account.id])
-      if(success) await conn.query('UPDATE gm_forge SET level=level+1 WHERE account_id=?',[account.id])
+      await conn.query('UPDATE gm_forge SET level=?,pity=? WHERE account_id=?',[level+(success?1:0),nextPity,account.id])
       await conn.commit()
       const newLevel=level+(success?1:0)
-      send(res,200,{success,forge:await getForge(account.id),save:await getSave(account.id)})
+      const forge=await getForge(account.id)
+      send(res,200,{success,forge:{...forge,pity:nextPity},save:await getSave(account.id)})
     } catch(e) {await conn.rollback().catch(()=>{});throw e} finally {conn.release()}
   },
   'GET /api/rps': async(req,res) => {
