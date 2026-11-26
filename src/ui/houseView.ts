@@ -1,376 +1,191 @@
 import './houseRedesign.css'
-import { CHARACTERS, characterById, fullName, type CharacterId } from '../game/collection'
 import { CHARACTER_IMAGE_URLS } from '../game/characterImageUrls'
-import { DECOS, DECO_IMAGE_URLS, HOUSE_MAX_FRIENDS, HOUSE_MAX_PIECES, decoById, type DecoId, type HouseLayout } from '../game/decos'
-import type { HouseCoin, RemoteGachaStore } from '../game/remoteStore'
+import type { HouseLayout } from '../game/decos'
+import type { RemoteGachaStore,HouseCareState } from '../game/remoteStore'
 
-type Selection = { kind: 'piece' | 'friend'; index: number } | null
-/** Characters always render above every deco, whatever their position. */
-const FRIEND_LAYER = 5000
-type Hooks = { toast(text: string): void; error(error: unknown): void; wallet(): void; coinAvailable(available: boolean): void }
-
-const HOUSE_BG_URL = '/assets/bg/house_room_test09.png'
-const isWallDeco = (id: DecoId): boolean => decoById(id).zone === 'wall'
-// Geometry follows the un-stretched 1086×1448 background: upper red trim,
-// yellow wall/floor boundary and the diamond-shaped floor.
-// Exact boundary slopes derived from the supplied 1086 x 1448 room artwork.
-const wallTop = (x: number): number => 22.5 + 0.350 * Math.abs(x - 50)
-const wallBottom = (x: number): number => 38.4 + 0.338 * Math.abs(x - 50)
-const floorTop = (x: number): number => wallBottom(x) + 0.8
-const floorBottom = (x: number): number => 76.9 - 0.394 * Math.abs(x - 50)
-const clamp = (n: number, low: number, high: number): number => Math.min(high, Math.max(low, n))
-
-
-
-/** House background: the user's hand-drawn stone room with a window to the forest. */
-export function houseLotMarkup(): string {
-  return `<img class="house-bg" src="${HOUSE_BG_URL}" alt="" aria-hidden="true" draggable="false" />`
-}
-
-/** House editor: drag pieces around the lot, tap to select, then flip / resize / put away. Saves automatically. */
-/** Read-only house picture (used to visit another user's house). */
-export function houseVisitMarkup(layout: HouseLayout): string {
-  const items = layout.pieces.map(piece => `<div class="house-piece${piece.f ? ' is-flipped' : ''}" style="left:${piece.x}%;top:${piece.y}%;--s:${piece.s};z-index:${Math.round(piece.y * 10)}"><img src="${DECO_IMAGE_URLS[piece.id]}" alt="${decoById(piece.id).name}" draggable="false" /></div>`)
-  layout.friends.forEach(friend => {
-    const character = characterById(friend.id as CharacterId)
-    items.push(`<div class="house-piece house-friend${friend.f ? ' is-flipped' : ''}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
-  })
-  return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${items.join('')}</div>${items.length ? '' : '<p class="house-visit-empty">아직 꾸민 데코가 없어요</p>'}</div></div>`
-}
-
+type Hooks={toast(text:string):void;error(error:unknown):void;wallet():void;coinAvailable(available:boolean):void}
+type Life={buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>}
+const facilities=[{id:'arcade',name:'게임기',price:100000,img:'/assets/house/arcade.png',action:'play'},{id:'shower',name:'샤워장',price:80000,img:'/assets/house/shower.png',action:'wash'},{id:'bed',name:'침대',price:30000,img:'/assets/house/bed.png',action:'sleep'},{id:'kitchen',name:'부엌',price:50000,img:'/assets/house/kitchen.png',action:'feed'}] as const
+const snackNames:Record<string,string>={candy:'사탕',cookie:'쿠키',pudding:'푸딩',cake:'딸기 케이크',lunch:'특제 도시락'}
+const bg='/assets/bg/house_room_test09.png'
+export function houseLotMarkup():string{return `<img class="house-bg" src="${bg}" alt="" draggable="false"/>`}
+export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items"><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="치이카와"/></div></div></div>`}
 export class HouseView {
-  private layout: HouseLayout = { pieces: [], friends: [] }
-  private selected: Selection = null
-  private tab: 'floor' | 'wall' | 'friend' = 'floor'
-  private saveTimer = 0
-  private coin: HouseCoin | null = null
-  private coinNextAt = 0
-  private coinClockSkew = 0
-  private coinTimer = 0
-  private coinBusy = false
-  private wanderTimers: number[] = []
-  private wanderGeneration = 0
-  private drag: { pointerId: number; startX: number; startY: number; originX: number; originY: number; moved: boolean } | null = null
-
-  constructor(private readonly root: HTMLElement, private readonly store: RemoteGachaStore, private readonly hooks: Hooks) {
-    const lot = this.lot
-    lot.addEventListener('pointerdown', event => this.onPointerDown(event))
-    lot.addEventListener('pointermove', event => this.onPointerMove(event))
-    lot.addEventListener('pointerup', event => this.onPointerUp(event))
-    lot.addEventListener('pointercancel', event => this.onPointerUp(event))
-  }
-
-  private get lot(): HTMLElement { return this.root.querySelector<HTMLElement>('.house-lot')! }
-
-  /** Called whenever the house screen opens. */
-  open(): void {
-    const saved = structuredClone(this.store.house) as HouseLayout & { friend?: HouseLayout['friends'][number] | null }
-    this.layout = { pieces: (saved.pieces ?? []).slice(0, HOUSE_MAX_PIECES), friends: (saved.friends ?? (saved.friend ? [saved.friend] : [])).slice(0, HOUSE_MAX_FRIENDS) }
-    // Drop anything the player no longer owns (keeps the saved layout valid).
-    const used: Partial<Record<DecoId, number>> = {}
-    this.layout.pieces = this.layout.pieces.filter(piece => {
-      used[piece.id] = (used[piece.id] ?? 0) + 1
-      return used[piece.id]! <= (this.store.decos[piece.id] ?? 0)
-    })
-    this.layout.friends = this.layout.friends.filter(friend => this.store.data.owned.includes(friend.id as CharacterId))
-    this.selected = null
-    this.render()
-    this.wanderTimers.forEach(timer => window.clearTimeout(timer))
-    this.wanderTimers = []
-    const generation = ++this.wanderGeneration
-    this.layout.friends.forEach((_, index) => this.scheduleWander(index, generation, 700 + index * 1650 + Math.random() * 1100))
+  private life:Life={buildings:{},snacks:{}}
+  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number})|null=null
+  private busy=false
+  private chiPos={x:50,y:56}
+  private roamTimer:ReturnType<typeof setInterval>|null=null
+  private lastInteraction=Date.now()
+  private dragging=false
+  private dragStart:{x:number;y:number}|null=null
+  private dragMoved=false
+  private activeTab: 'care'|'snack'|'mission'|'diary'='care'
+  private infoOpen=false
+  private miniActive=false
+  private miniStarted=0
+  private miniTick:ReturnType<typeof setInterval>|null=null
+  constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
+  open():void{
     this.hooks.coinAvailable(false)
-    this.coin = null
-    this.renderCoin()
+    try{const saved=JSON.parse(localStorage.getItem('geong-house-chi-position')||'null');if(saved&&Number.isFinite(saved.x)&&Number.isFinite(saved.y))this.chiPos=this.clampPosition(saved.x,saved.y)}catch{}
+    this.renderLot();this.startRoaming();void this.load()
   }
-
-  /** Handles house-specific button actions; returns true when the action was consumed. */
-  handle(action: string, button: HTMLElement): boolean {
-    if (action === 'house-coin') return true
-    if (action === 'house-tab') { this.tab = button.dataset.tab === 'friend' ? 'friend' : button.dataset.tab === 'wall' ? 'wall' : 'floor'; this.renderPanel(); return true }
-    if (action === 'house-add' && button.dataset.id) { this.addPiece(button.dataset.id as DecoId); return true }
-    if (action === 'house-friend' && button.dataset.id) { this.placeFriend(button.dataset.id as CharacterId); return true }
-    if (action === 'house-flip') { this.mutateSelected(item => { item.f = !item.f }); return true }
-    if (action === 'house-bigger' || action === 'house-smaller') {
-      const step = action === 'house-bigger' ? 0.15 : -0.15
-      const selected = this.selected?.kind === 'piece' ? this.layout.pieces[this.selected.index] : this.selected?.kind === 'friend' ? this.layout.friends[this.selected.index] : null
-      if (selected) {
-        selected.s = Math.round(Math.min(1.6, Math.max(0.6, (selected.s ?? 1) + step)) * 100) / 100
-        this.changed()
+  // The room floor is a diamond. Coordinates refer to the character's feet,
+  // not its image box. Keep a safe inset so the sprite cannot leave the floor.
+  private clampPosition(x:number,y:number):{x:number;y:number}{
+    const cy=Math.max(42,Math.min(73,y))
+    const halfWidth=Math.max(7,33*(1-Math.abs(cy-57.5)/22))
+    return {x:Math.max(50-halfWidth,Math.min(50+halfWidth,x)),y:cy}
+  }
+  private facilitySpots(){
+    return [{id:'arcade',x:50,y:41},{id:'shower',x:50,y:72},{id:'bed',x:77,y:57},{id:'kitchen',x:23,y:57}]
+  }
+  private nearFurniture(x:number,y:number):boolean{
+    return this.facilitySpots().some(p=>Math.hypot((x-p.x)/1.25,y-p.y)<12)
+  }
+  private placeChiikawa():void{
+    const chi=this.root.querySelector<HTMLElement>('.house-single-chiikawa')
+    if(!chi)return
+    chi.style.left=`${this.chiPos.x}%`;chi.style.top=`${this.chiPos.y}%`
+  }
+  private startRoaming():void{
+    if(this.roamTimer)clearInterval(this.roamTimer)
+    this.roamTimer=setInterval(()=>{
+      if(this.dragging||this.busy||this.root.getAttribute('aria-hidden')==='true'||Date.now()-this.lastInteraction<1800)return
+      const c=this.care
+      const lot=this.root.querySelector<HTMLElement>('.house-lot')
+      if(!lot||!lot.getClientRects().length)return
+      const hour=(new Date().getUTCHours()+9)%24
+      lot.style.filter=hour>=23||hour<7?'brightness(.78)':'none'
+      const need=c&&(c.hunger<30?'kitchen':c.energy<30?'bed':c.clean<30?'shower':c.happy<35?'arcade':'')
+      const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble')
+      if(bubble)bubble.textContent=c?.sleepUntil&&c.sleepUntil>Date.now()?'쿨쿨…':need==='kitchen'?'배고파…':need==='bed'?'졸려…':need==='shower'?'씻고 싶어…':need==='arcade'?'놀고 싶어…':c?.level&&c.level>=8?'함께 있어서 좋아!':'기분 좋아!'
+      if(c?.sleepUntil&&c.sleepUntil>Date.now()){this.chiPos=this.clampPosition(68,57);this.placeChiikawa();return}
+      if(need){const spot=this.facilitySpots().find(p=>p.id===need);if(spot){this.chiPos=this.clampPosition((spot.x+50)/2,(spot.y+57)/2);this.placeChiikawa();return}}
+      // Choose a reachable point on the floor without walking through furniture.
+      for(let attempt=0;attempt<12;attempt++){
+        const candidate=this.clampPosition(this.chiPos.x+(Math.random()-.5)*24,this.chiPos.y+(Math.random()-.5)*15)
+        if(!this.nearFurniture(candidate.x,candidate.y)){
+          this.chiPos=candidate
+          break
+        }
       }
-      return true
+      this.placeChiikawa()
+    },3200)
+  }
+  private dropFacility():void{
+    const spots=this.facilitySpots()
+    const hit=spots.map(p=>({...p,d:Math.hypot((this.chiPos.x-p.x)/1.15,(this.chiPos.y-p.y)/1.0)})).sort((a,b)=>a.d-b.d)[0]
+    if(!hit||hit.d>16)return
+    // Every facility is installed by default.
+    const facility=facilities.find(f=>f.id===hit.id)
+    if(!facility)return
+    this.lastInteraction=Date.now()
+    const cell=this.root.querySelector<HTMLElement>(`.house-life-cell[data-facility="${hit.id}"]`)
+    cell?.classList.add('is-using')
+    setTimeout(()=>cell?.classList.remove('is-using'),1200)
+    void this.performCare(facility.action)
+  }
+  private attachChiDrag():void{
+    const chi=this.root.querySelector<HTMLElement>('.house-single-chiikawa')
+    const lot=this.root.querySelector<HTMLElement>('.house-lot')
+    if(!chi||!lot)return
+    chi.addEventListener('pointerdown',(e:PointerEvent)=>{
+      if(this.busy)return
+      e.preventDefault();this.dragging=true;this.dragMoved=false
+      this.dragStart={x:e.clientX,y:e.clientY};this.lastInteraction=Date.now()
+      chi.classList.add('is-dragging');chi.setPointerCapture(e.pointerId)
+    })
+    chi.addEventListener('pointermove',(e:PointerEvent)=>{
+      if(!this.dragging)return
+      if(this.dragStart&&Math.hypot(e.clientX-this.dragStart.x,e.clientY-this.dragStart.y)>6)this.dragMoved=true
+      const r=lot.getBoundingClientRect()
+      this.chiPos=this.clampPosition((e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100)
+      this.placeChiikawa()
+    })
+    const end=(completed:boolean)=>{
+      if(!this.dragging)return
+      this.dragging=false;chi.classList.remove('is-dragging');this.lastInteraction=Date.now()
+      try{localStorage.setItem('geong-house-chi-position',JSON.stringify(this.chiPos))}catch{}
+      if(completed&&this.dragMoved)this.dropFacility();else if(completed)void this.performCare("pet")
+      this.dragStart=null
     }
-    if (action === 'house-remove') {
-      if (this.selected?.kind === 'piece') this.layout.pieces.splice(this.selected.index, 1)
-      else if (this.selected?.kind === 'friend') this.layout.friends.splice(this.selected.index, 1)
-      this.selected = null
-      this.changed()
-      return true
-    }
-    if (action === 'house-done') { this.selected = null; this.renderLot(); return true }
+    chi.addEventListener('pointerup',()=>end(true))
+    chi.addEventListener('pointercancel',()=>end(false))
+    chi.addEventListener('lostpointercapture',()=>end(false))
+  }
+  private async load():Promise<void>{try{const [life,care]=await Promise.all([this.store.houseLife(),this.store.houseCare()]);this.life=life.life;this.care=care.care;this.renderLot();this.renderCare()}catch(e){this.hooks.error(e)}}
+  handle(action:string,button:HTMLElement):boolean{
+    if(action==='house-info'){this.infoOpen=!this.infoOpen;this.renderCare();return true}
+    if(action==='house-build'){const id=button.dataset.id;if(id)void this.build(id);return true}
+    if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.infoOpen=true;this.renderCare()}return true}
+    if(action.startsWith('house-care-')){void this.performCare(action.slice(11),button.dataset.snack);return true}
+    if(action==='house-mini-start'){void this.adventure('mini-start');return true}
+    if(action==='house-mini-stop'){void this.adventure('mini-stop');return true}
+    if(action==='house-event'){void this.adventure('event');return true}
+    if(action==='house-claim'){void this.adventure('claim');return true}
+    if(action==='house-coin')return true
     return false
   }
-
-  private get isOpen(): boolean { return this.root.classList.contains('is-active') }
-  /** Fetch this hour's coin; re-check when the next one is due (an untaken coin vanishes then). */
-  private async loadCoin(): Promise<void> {
-    try {
-      const state = await this.store.houseCoin()
-      this.coin = state.coin
-      this.coinNextAt = state.nextAt
-      this.coinClockSkew = state.now - Date.now()
-      this.hooks.coinAvailable(Boolean(state.coin))
-    } catch { this.coin = null }
-    this.renderCoin()
-    window.clearInterval(this.coinTimer)
-    this.coinTimer = window.setInterval(() => {
-      if (!this.isOpen) { window.clearInterval(this.coinTimer); return }
-      if (Date.now() + this.coinClockSkew >= this.coinNextAt) { void this.loadCoin(); return }
-      this.renderCoin()
-    }, 15000)
+  private async build(id:string):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{const result=await this.store.houseLifeAction('build',id);this.life=result.life;this.renderLot();this.renderCare();this.hooks.wallet();this.hooks.toast('시설 건설을 시작했어요!')}
+    catch(e){this.fail(e)}finally{this.busy=false}
   }
-  private renderCoin(): void {
-    const button = this.lot.querySelector<HTMLButtonElement>('.house-coin')
-    const timer = this.lot.querySelector<HTMLElement>('.house-coin-timer')
-    if (!button || !timer) return
-    const left = Math.max(0, this.coinNextAt - (Date.now() + this.coinClockSkew))
-    const minutes = Math.max(1, Math.ceil(left / 60000))
-    if (this.coin) {
-      button.hidden = false
-      button.style.left = `${this.coin.x}%`
-      button.style.top = `${this.coin.y}%`
-      button.querySelector<HTMLElement>('.house-coin-amount')!.textContent = `+${this.coin.coins}`
-      timer.textContent = `✿ 코인이 떴어요! ${minutes}분 뒤 사라져요`
-    } else {
-      button.hidden = true
-      timer.textContent = this.coinNextAt ? `✿ 다음 코인까지 ${minutes}분` : ''
-    }
+  private async performCare(action:string,snackId?:string):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{const result=await this.store.houseCareAction(action,snackId);this.care=result.care;await this.refreshLife();this.renderCare();this.hooks.wallet();this.hooks.toast(`돌보기 완료! 경험치 +${result.earned}`)}
+    catch(e){this.fail(e)}finally{this.busy=false}
   }
-  private async takeCoin(): Promise<void> {
-    if (!this.coin || this.coinBusy) return
-    this.coinBusy = true
-    const coin = this.coin
-    const button = this.lot.querySelector<HTMLElement>('.house-coin')
-    button?.classList.add('is-taking')
-    try {
-      const result = await this.store.claimHouseCoin(coin.slot)
-      this.coin = null
-      this.hooks.coinAvailable(false)
-      this.coinNextAt = result.nextAt
-      this.hooks.wallet()
-      this.hooks.toast(`✿ 코인 ${result.coins}개를 주웠어요!`)
-    } catch (error) {
-      this.hooks.error(error)
-      await this.loadCoin()
-    } finally {
-      this.coinBusy = false
-      button?.classList.remove('is-taking')
-      this.renderCoin()
-    }
+  private async adventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{
+      const result=await this.store.houseAdventure(action);this.care=result.care
+      if(action==='mini-start'){this.miniActive=true;this.miniStarted=Date.now();this.startMiniAnimation()}
+      if(action==='mini-stop'){this.miniActive=false;this.stopMiniAnimation()}
+      this.renderCare();this.hooks.wallet();this.hooks.toast(result.message+(result.coins?` · ${result.coins.toLocaleString()}코인`:''))
+    }catch(e){if(action==='mini-stop'){this.miniActive=false;this.stopMiniAnimation()}this.fail(e)}finally{this.busy=false}
   }
-  /** 2% grid with wall/floor geometry constraints. */
-  private snap(value: number, low: number, high: number): number {
-    return clamp(Math.round(value / 2) * 2, low, high)
+  private startMiniAnimation():void{
+    this.stopMiniAnimation();this.miniTick=setInterval(()=>{
+      const el=this.root.querySelector<HTMLElement>('.house-mini-pointer');if(!el)return
+      const phase=((Date.now()-this.miniStarted)%2200)/2200
+      el.style.left=`${phase<=.5?phase*200:(1-phase)*200}%`
+    },50)
   }
-
-  /** Each character has an independent clock and direction, never a shared tick. */
-  private scheduleWander(index: number, generation: number, delay: number): void {
-    const timer = window.setTimeout(() => {
-      if (generation !== this.wanderGeneration || !this.isOpen) return
-      const friend = this.layout.friends[index]
-      const node = this.lot.querySelector<HTMLElement>(`.house-friend[data-index="${index}"]`)
-      if (friend && node && !this.drag && !(this.selected?.kind === 'friend' && this.selected.index === index)) {
-        const dx = (Math.random() - 0.5) * (9 + index * 4)
-        const x = clamp(friend.x + dx, 17, 83)
-        const y = clamp(friend.y + (Math.random() - 0.5) * (4 + index * 2), floorTop(x) + 4, floorBottom(x) - 3)
-        node.style.left = `${x}%`
-        node.style.top = `${y}%`
-        node.style.transitionDuration = `${1.8 + index * .65 + Math.random() * 1.2}s`
-        node.classList.toggle('is-walking-left', dx < 0)
-      }
-      this.scheduleWander(index, generation, 2400 + index * 1200 + Math.random() * 3200)
-    }, delay)
-    this.wanderTimers[index] = timer
+  private stopMiniAnimation():void{if(this.miniTick){clearInterval(this.miniTick);this.miniTick=null}}
+  private async refreshLife():Promise<void>{this.life=(await this.store.houseLife()).life;this.renderLot()}
+  private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.2부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
+  private renderLot():void{
+    const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
+    el.innerHTML=`<div class="house-life-grid">${facilities.map(f=>{return `<section class="house-life-cell is-built" data-facility="${f.id}" aria-label="${f.name}"><img src="${f.img}" alt="${f.name}" draggable="false"/><span class="house-facility-label">${f.name}</span></section>`}).join('')}</div><img class="house-single-chiikawa" src="${CHARACTER_IMAGE_URLS.chiikawa}" alt="노말 치이카와" draggable="false"/>`
+    el.insertAdjacentHTML('beforeend',`<div class="house-life-bubble" style="position:absolute;left:50%;top:22%;transform:translateX(-50%);background:white;color:#59483e;padding:5px 10px;border-radius:12px;pointer-events:none;z-index:20">안녕!</div>${this.care?.messAt&&this.care.messAt<=Date.now()?'<button data-action="house-care-tidy" style="position:absolute;left:43%;top:65%;z-index:21">청소하기</button>':''}`)
+    this.placeChiikawa();this.attachChiDrag()
   }
-
-  private remaining(id: DecoId): number {
-    return (this.store.decos[id] ?? 0) - this.layout.pieces.filter(piece => piece.id === id).length
-  }
-
-  private addPiece(id: DecoId): void {
-    if (this.remaining(id) <= 0) { this.hooks.toast('이 데코는 모두 꺼내 놓았어요.'); return }
-    if (this.layout.pieces.length >= HOUSE_MAX_PIECES) { this.hooks.toast(`데코는 최대 ${HOUSE_MAX_PIECES}개까지 놓을 수 있어요.`); return }
-    const jitter = (this.layout.pieces.length % 5) * 4 - 8
-    const x = this.snap(50 + jitter, 12, 88)
-    const y = isWallDeco(id) ? this.snap((wallTop(x) + wallBottom(x)) / 2, wallTop(x) + 2, wallBottom(x) - 2) : this.snap((floorTop(x) + floorBottom(x)) / 2, floorTop(x) + 2, floorBottom(x) - 2)
-    this.layout.pieces.push({ id, x, y, s: 1, f: false })
-    this.selected = { kind: 'piece', index: this.layout.pieces.length - 1 }
-    this.hooks.toast(`${decoById(id).name} 설치 완료! 칸을 따라 끌어서 배치하세요.`)
-    this.changed()
-  }
-
-  private placeFriend(id: CharacterId): void {
-    const existing = this.layout.friends.findIndex(friend => friend.id === id)
-    if (existing >= 0) {
-      // Tapping a friend who is already here sends them home.
-      this.layout.friends.splice(existing, 1)
-      this.selected = null
-      this.hooks.toast(`${fullName(characterById(id))}이(가) 집으로 돌아갔어요.`)
-      this.changed()
-      return
-    }
-    if (this.layout.friends.length >= HOUSE_MAX_FRIENDS) { this.hooks.toast(`친구는 최대 ${HOUSE_MAX_FRIENDS}명까지 데려올 수 있어요.`); return }
-    const slot = [55, 38, 70][this.layout.friends.length] ?? 50
-    this.layout.friends.push({ id, x: slot, y: 59, s: 1, f: false })
-    this.selected = { kind: 'friend', index: this.layout.friends.length - 1 }
-    this.hooks.toast(`${fullName(characterById(id))}이(가) 하우스에 놀러 왔어요!`)
-    this.changed()
-  }
-
-  private mutateSelected(change: (item: { f: boolean }) => void): void {
-    if (this.selected?.kind === 'piece') change(this.layout.pieces[this.selected.index])
-    else if (this.selected?.kind === 'friend' && this.layout.friends[this.selected.index]) change(this.layout.friends[this.selected.index])
-    else return
-    this.changed()
-  }
-
-  private changed(): void {
-    this.render()
-    this.setSaveState('저장 중…')
-    window.clearTimeout(this.saveTimer)
-    this.saveTimer = window.setTimeout(() => { void this.save() }, 700)
-  }
-
-  private async save(): Promise<void> {
-    try {
-      await this.store.saveHouse(this.layout)
-      this.setSaveState('저장됨 ✓')
-    } catch (error) {
-      this.setSaveState('저장 실패')
-      this.hooks.error(error)
-    }
-  }
-
-  private setSaveState(text: string): void {
-    const node = this.root.querySelector<HTMLElement>('.house-save')
-    if (node) node.textContent = text
-  }
-
-  private render(): void { this.renderLot(); this.renderPanel() }
-
-  private renderLot(): void {
-    const layer = this.lot.querySelector<HTMLElement>('.house-items')
-    if (!layer) return
-    const pieces = this.layout.pieces.map((piece, index) => {
-      const selected = this.selected?.kind === 'piece' && this.selected.index === index
-      return `<div class="house-piece${selected ? ' is-selected' : ''}${piece.f ? ' is-flipped' : ''}" data-kind="piece" data-index="${index}" style="left:${piece.x}%;top:${piece.y}%;--s:${piece.s};z-index:${Math.round(piece.y * 10)}"><img src="${DECO_IMAGE_URLS[piece.id]}" alt="${decoById(piece.id).name}" draggable="false" /></div>`
-    })
-    this.layout.friends.forEach((friend, index) => {
-      const character = characterById(friend.id as CharacterId)
-      const selected = this.selected?.kind === 'friend' && this.selected.index === index
-      pieces.push(`<div class="house-piece house-friend${selected ? ' is-selected' : ''}${friend.f ? ' is-flipped' : ''}" data-kind="friend" data-index="${index}" style="left:${friend.x}%;top:${friend.y}%;--s:${friend.s ?? 1};z-index:${FRIEND_LAYER + Math.round(friend.y * 10)}"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="${fullName(character)}" draggable="false" /></div>`)
-    })
-    layer.innerHTML = pieces.join('')
-    this.lot.classList.toggle('house-grid-visible', this.selected?.kind === 'piece')
-    this.lot.classList.toggle('house-grid-wall', this.selected?.kind === 'piece' && isWallDeco(this.layout.pieces[this.selected.index]?.id))
-    const empty = this.lot.querySelector<HTMLElement>('.house-empty')
-    if (empty) empty.hidden = pieces.length > 0
-    const tools = this.root.querySelector<HTMLElement>('.house-tools')
-    if (tools) {
-      tools.hidden = !this.selected
-      const label = tools.querySelector<HTMLElement>('.house-tools-name')
-      if (label) label.textContent = this.selected?.kind === 'piece' ? decoById(this.layout.pieces[this.selected.index].id).name : this.selected?.kind === 'friend' && this.layout.friends[this.selected.index] ? characterById(this.layout.friends[this.selected.index].id as CharacterId).name : ''
-      tools.querySelectorAll<HTMLButtonElement>('[data-action="house-bigger"],[data-action="house-smaller"]').forEach(button => { button.hidden = !this.selected })
-    }
-  }
-
-  private renderPanel(): void {
-    this.root.querySelectorAll<HTMLButtonElement>('[data-action="house-tab"]').forEach(button => {
-      const active = button.dataset.tab === this.tab
-      button.classList.toggle('is-active', active)
-      button.setAttribute('aria-selected', String(active))
-    })
-    const list = this.root.querySelector<HTMLElement>('.house-inventory')
-    if (!list) return
-    if (this.tab !== 'friend') {
-      const owned = DECOS.filter(deco => (this.store.decos[deco.id] ?? 0) > 0 && isWallDeco(deco.id) === (this.tab === 'wall'))
-      list.innerHTML = owned.length
-        ? owned.map(deco => {
-          const left = this.remaining(deco.id)
-          return `<button class="house-slot${left <= 0 ? ' is-used' : ''}" data-action="house-add" data-id="${deco.id}" role="listitem"><img src="${DECO_IMAGE_URLS[deco.id]}" alt="" /><span>${deco.name}</span><em>${left} / ${this.store.decos[deco.id]}</em></button>`
-        }).join('')
-        : '<p class="weed-empty">아직 데코가 없어요. 가챠 화면에서 "데코 뽑기"로 데코를 모아 보세요!</p>'
-    } else {
-      const owned = CHARACTERS.filter(character => this.store.data.owned.includes(character.id))
-      list.innerHTML = owned.length
-        ? owned.map(character => {
-          const here = this.layout.friends.some(friend => friend.id === character.id)
-          const label = here ? '배치 중 · 탭하면 돌려보내기' : character.variant ? character.variant : '데려오기'
-          return `<button class="house-slot${here ? ' is-active' : ''}" data-action="house-friend" data-id="${character.id}" role="listitem"><img src="${CHARACTER_IMAGE_URLS[character.id]}" alt="" /><span>${character.name}</span><em>${label}</em></button>`
-        }).join('')
-        : `<p class="weed-empty">가챠에서 친구를 뽑으면 하우스에 최대 ${HOUSE_MAX_FRIENDS}명까지 데려올 수 있어요.</p>`
-    }
-    const count = this.root.querySelector<HTMLElement>('.house-count')
-    if (count) count.textContent = this.tab !== 'friend' ? `데코 ${this.layout.pieces.length} / ${HOUSE_MAX_PIECES}` : `친구 ${this.layout.friends.length} / ${HOUSE_MAX_FRIENDS}`
-    const friendTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="friend"]')
-    if (friendTab) friendTab.textContent = `🐾 친구 ${this.layout.friends.length} / ${HOUSE_MAX_FRIENDS}`
-    const floorTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="floor"]')
-    if (floorTab) floorTab.textContent = `🪑 데코(바닥)`
-    const wallTab = this.root.querySelector<HTMLElement>('[data-action="house-tab"][data-tab="wall"]')
-    if (wallTab) wallTab.textContent = `🖼 데코(벽)`
-  }
-
-  private onPointerDown(event: PointerEvent): void {
-    const target = (event.target as HTMLElement).closest<HTMLElement>('.house-piece')
-    if (!target) {
-      if (this.selected) { this.selected = null; this.renderLot() }
-      return
-    }
-    event.preventDefault()
-    const kind = target.dataset.kind
-    this.selected = { kind: kind === 'friend' ? 'friend' : 'piece', index: Number(target.dataset.index) }
-    const item = this.selectedItem()
-    if (!item) return
-    this.drag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: item.x, originY: item.y, moved: false }
-    this.lot.setPointerCapture(event.pointerId)
-    this.renderLot()
-  }
-
-  private onPointerMove(event: PointerEvent): void {
-    if (!this.drag || event.pointerId !== this.drag.pointerId) return
-    const item = this.selectedItem()
-    if (!item) return
-    const rect = this.lot.getBoundingClientRect()
-    const dx = (event.clientX - this.drag.startX) / rect.width * 100
-    const dy = (event.clientY - this.drag.startY) / rect.height * 100
-    if (Math.abs(dx) + Math.abs(dy) > 0.6) this.drag.moved = true
-    const x = this.snap(this.drag.originX + dx, 8, 92)
-    item.x = x
-    if (this.selected?.kind === 'piece') {
-      const piece = this.layout.pieces[this.selected.index]
-      const wall = isWallDeco(piece.id)
-      const low = wall ? wallTop(x) + 2 : floorTop(x) + 2
-      const high = wall ? wallBottom(x) - 2 : floorBottom(x) - 2
-      item.y = this.snap(this.drag.originY + dy, low, high)
-    } else {
-      item.y = clamp(this.drag.originY + dy, floorTop(x) + 3, floorBottom(x) - 2)
-    }
-    const isFriend = this.selected?.kind === 'friend'
-    const node = this.lot.querySelector<HTMLElement>(`.house-piece[data-kind="${isFriend ? 'friend' : 'piece'}"][data-index="${this.selected!.index}"]`)
-    if (node) { node.style.left = `${item.x}%`; node.style.top = `${item.y}%`; node.style.zIndex = String((isFriend ? FRIEND_LAYER : 0) + Math.round(item.y * 10)) }
-  }
-
-  private onPointerUp(event: PointerEvent): void {
-    if (!this.drag || event.pointerId !== this.drag.pointerId) return
-    const moved = this.drag.moved
-    this.drag = null
-    if (this.lot.hasPointerCapture(event.pointerId)) this.lot.releasePointerCapture(event.pointerId)
-    if (moved) this.changed()
-  }
-
-  private selectedItem(): { x: number; y: number } | null {
-    if (this.selected?.kind === 'piece') return this.layout.pieces[this.selected.index] ?? null
-    if (this.selected?.kind === 'friend') return this.layout.friends[this.selected.index] ?? null
-    return null
+  private renderCare():void{
+    const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
+    const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
+    const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy],['건강',Math.round(c.health??100)]]
+    const emotion=c.hunger<30?'배가 고파요':c.happy<35?'심심해요':c.clean<30?'씻고 싶어요':c.energy<30?'졸려요':c.happy>=80?'아주 행복해요':'기분이 좋아요'
+    const missions:[string,string,number][]=[['feed','밥주기',1000],['play','게임하기',1500],['pet','쓰다듬기',500]]
+    const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10)
+    const currentDay=c.questDay===today
+    const canClaim=missions.some(([id])=>currentDay&&(c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]&&!c.claimed?.includes(id))
+    const diary=(c.diary||[]).slice(0,6)
+    const moodClass=c.hunger<30||c.happy<35||c.clean<30||c.energy<30?'needs-care':'feeling-good'
+    const tabs:[string,string][]=[['care','돌보기'],['snack','간식'],['mission','오늘의 할 일'],['diary','성장 일기']]
+    const statCards=stats.map(([name,n])=>`<div class="tama-stat"><div class="tama-stat-label"><span>${name}</span><b>${n}%</b></div><div class="house-care-track"><i style="width:${Math.round(n)}%;background:${n<30?'#e8a28d':n<60?'#e6c084':'#91cdb4'}"></i></div></div>`).join('')
+    const carePanel=`<div class="tama-panel-heading">치이카와 돌보기 <small>치이카와를 시설 위로 끌어다 놓아주세요</small></div><div class="tama-care-hint">치이카와를 부엌·샤워장·침대·게임기로 드래그하세요</div><div class="tama-pet"><button data-action="house-care-medicine" ${(c.health??100)>=100?'disabled':''}>약 먹이기</button><button data-action="house-care-tidy" ${!c.messAt||c.messAt>Date.now()?'disabled':''}>청소</button><button data-action="house-care-pet">쓰다듬기</button><span>친밀도를 올려주세요</span></div><section class="house-tama-section"><strong>게임기 타이밍 챌린지</strong><p>게임기에서 게이지를 중앙에 멈춰보세요.</p><div class="house-mini-bar"><span class="house-mini-target"></span><i class="house-mini-pointer"></i></div><button data-action="${this.miniActive?'house-mini-stop':'house-mini-start'}">${this.miniActive?'여기서 멈추기!':'게임 시작'}</button></section><section class="house-tama-section"><strong>깜짝 생활 이벤트</strong><p>LV.2부터 하루 최대 3번 참여할 수 있어요.</p><button data-action="house-event" ${c.level<2?'disabled':''}>이벤트 확인 (${c.eventCount||0}/3)</button></section>`
+    const snackPanel=`<div class="tama-panel-heading">간식 주기 <small>뽑기에서 얻은 간식을 먹여주세요</small></div><div class="tama-snack-grid">${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}><strong>${name}</strong><span>보유 ${this.life.snacks[id]||0}개</span></button>`).join('')}</div><p class="tama-note">${c.level>=4&&c.favorite&&c.tasted?.includes(c.favorite)?`좋아하는 간식: ${snackNames[c.favorite]}`:'간식을 먹이며 취향을 발견해 보세요.'} 간식뽑기는 1회 10,000코인입니다.</p>`
+    const missionPanel=`<div class="tama-panel-heading">오늘의 할 일 <small>매일 치이카와와 추억을 쌓아보세요</small></div><div class="tama-mission-list">${missions.map(([id,name,coins])=>`<div><span>${name}</span><span>${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'진행 전'}</span><b>${coins.toLocaleString()}코인 ${c.claimed?.includes(id)?'· 수령 완료':''}</b></div>`).join('')}</div><button class="tama-main-button" data-action="house-claim" ${canClaim?'':'disabled'}>미션 보상 받기</button>`
+    const diaryPanel=`<div class="tama-panel-heading">성장 일기 <small>치이카와와 함께한 기록 · ${Math.floor((Date.now()-(c.bornAt||Date.now()))/86400000)+1}일차 · 추억 ${c.memories?.length||0}개</small></div><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div>`
+    const panels:Record<string,string>={care:carePanel,snack:snackPanel,mission:missionPanel,diary:diaryPanel}
+    const heartCount=Math.max(0,Math.min(4,Math.ceil((c.hunger+c.happy+c.clean+c.energy)/100)))
+    const hearts=Array.from({length:4},(_,i)=>`<span class="tama-heart ${i<heartCount?'filled':''}" aria-hidden="true">♥</span>`).join('')
+    const miniStats=`<div class="tama-game-hud" aria-label="육성 상태"><div class="tama-hearts" title="종합 컨디션">${hearts}</div><div class="tama-hud-level">LV.${c.level}</div><div class="tama-hud-mood">${emotion}</div></div>`
+    const menu:[string,string,string][]=[['care','⌂','돌보기'],['snack','▣','간식'],['mission','☆','미션'],['diary','▤','일기']]
+    el.innerHTML=`<div class="tama-device">${miniStats}<div class="tama-game-menu" role="tablist">${menu.map(([id,icon,name])=>`<button class="tama-game-key ${this.activeTab===id&&this.infoOpen?'selected':''}" role="tab" aria-selected="${this.activeTab===id&&this.infoOpen}" data-action="house-tab" data-tab="${id}" title="${name}"><span aria-hidden="true">${icon}</span><small>${name}</small></button>`).join('')}<button class="tama-game-key tama-info-key" data-action="house-info" title="상태 보기"><span aria-hidden="true">${this.infoOpen?'×':'☰'}</span><small>${this.infoOpen?'닫기':'상태'}</small></button></div><div class="tama-drawer ${this.infoOpen?'is-open':''}" ${this.infoOpen?'':'hidden'}><div class="tama-drawer-head"><strong>${this.activeTab==='care'?'치이카와 돌보기':this.activeTab==='snack'?'간식 보관함':this.activeTab==='mission'?'오늘의 할 일':'성장 일기'}</strong><button data-action="house-info" aria-label="닫기">×</button></div><div class="tama-drawer-summary"><div class="tama-level">LV.${c.level}</div><span>친밀도 ${c.affection} · ${c.level>=3?(c.personality||'성격 미발견'):'LV.3 성격 발견'}</span></div><div class="tama-exp"><div class="tama-exp-label"><span>성장 경험치</span><b>${c.level>=10?"MAX":`${c.exp} / ${[150,200,250,300,350,400,450,450,450][Math.min(8,c.level-1)]}`}</b></div><div class="house-care-track"><i style="width:${Math.min(100,c.level>=10?100:c.exp/Math.max(1,[150,200,250,300,350,400,450,450,450][Math.min(8,c.level-1)])*100)}%"></i></div></div><div class="tama-stats">${statCards}</div><div class="tama-tab-content">${panels[this.activeTab]}</div></div></div>`
+    if(this.miniActive)this.startMiniAnimation()
   }
 }

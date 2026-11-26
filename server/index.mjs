@@ -25,11 +25,12 @@ async function marketState(accountId, conn=pool, lock=false){
   const r=rows[0], keys=kstMarketKeys()
   return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
 }
-const SKILL_TIERS = {"chiikawa_babo":"legendary", "christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+const SKILL_TIERS = {"clinic_chiikawa":"super","clinic_hachiware":"super","clinic_usagi":"super","clinic_momonga":"super","clinic_kurimanju":"super","clinic_shisa":"super","clinic_kani":"super","clinic_rakko":"super","usagi_monster":"legendary","chiikawa_babo":"legendary", "christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
 
 // Mark event/collaboration characters here when they are introduced.
 // All other catalogued legendary characters automatically join the ticket pool.
 const LEGEND_TICKET_EXCLUDED_IDS = new Set([
+  "usagi_monster",
   'christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi',
   'rilakkuma_chiikawa','korilakkuma_kani',
   'halloween_chiikawa','halloween_hachiware','halloween_usagi'
@@ -137,13 +138,13 @@ async function prepareDatabase() {
     id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`)
-  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([3,3,3,3,3,3,3,3,76])])
-  // Upgrade the shared pool once to the A-H rare-keyring / I blank schedule.
+  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
+  // Upgrade the shared pool once to the 200-ticket clinic schedule.
   const [lotteryPoolRows] = await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
   const existingLotteryPool = lotteryPoolRows.length ? (typeof lotteryPoolRows[0].remaining === 'string' ? JSON.parse(lotteryPoolRows[0].remaining) : lotteryPoolRows[0].remaining) : null
   let lotteryScheduleMigrated = false
-  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 9) {
-    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([3,3,3,3,3,3,3,3,76])])
+  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 12) {
+    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
     // Existing users' awarded items are unaffected; old draw history is cleared below after table creation.
     lotteryScheduleMigrated = true
   }
@@ -285,6 +286,11 @@ async function prepareDatabase() {
     account_id BIGINT UNSIGNED PRIMARY KEY,
     salt VARCHAR(64) NOT NULL,
     last_slot BIGINT NOT NULL DEFAULT 0
+  )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_life (account_id BIGINT UNSIGNED PRIMARY KEY, state_json JSON NOT NULL)` )
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_care (
+    account_id BIGINT UNSIGNED PRIMARY KEY,
+    state_json JSON NOT NULL
   )`)
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_house (
     account_id BIGINT UNSIGNED PRIMARY KEY,
@@ -634,6 +640,40 @@ async function withSave(accountId, change) {
   } finally {
     conn.release()
   }
+}
+
+
+const HOUSE_LEVEL_TOTALS = [0,150,350,600,900,1250,1650,2100,2550,3000]
+function houseLevelFromTotal(total) {let level=1;while(level<10 && total>=HOUSE_LEVEL_TOTALS[level])level++;return level}
+function houseNextExp(level){return level>=10?0:HOUSE_LEVEL_TOTALS[level]-HOUSE_LEVEL_TOTALS[level-1]}
+function houseApplyExp(care, earned, now){
+  if(!earned)return
+  const old=care.level;let total=HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,old-1))]+care.exp+earned
+  total=Math.min(3000,total);care.level=houseLevelFromTotal(total)
+  care.exp=care.level===10?0:total-HOUSE_LEVEL_TOTALS[care.level-1]
+  if(care.level!==old){care.diary.unshift({at:now,text:`LV.${care.level}에 도달했어요!`});care.diary=care.diary.slice(0,25)}
+}
+function housePickPersonality(care){
+ const counts=care.actionCounts||{}
+ const scores=[['먹보',(counts.feed||0)+(counts.snack||0)],['장난꾸러기',counts.play||0],['잠꾸러기',counts.sleep||0],['애교쟁이',(counts.pet||0)+(counts.wash||0)]]
+ const max=Math.max(...scores.map(x=>x[1]));const tied=scores.filter(x=>x[1]===max)
+ const last=care.lastCareAction||'';const category={feed:'먹보',snack:'먹보',play:'장난꾸러기',sleep:'잠꾸러기',pet:'애교쟁이',wash:'애교쟁이'}[last]
+ return tied.find(x=>x[0]===category)?.[0]||tied[0][0]
+}
+function houseEnsurePersonality(care,now){if(care.level>=3&&(!care.personality||care.personality==='미발견')){care.personality=housePickPersonality(care);care.diary.unshift({at:now,text:`${care.personality} 성격을 발견했어요!`})}}
+
+function houseCareDecay(raw, now) {
+  const s=raw && typeof raw==='object' ? raw : {}
+  const elapsed=Math.min(12,Math.max(0,(now-(Number(s.updatedAt)||now))/3600000))
+  const val=(key,rate)=>Math.max(0,Math.min(100,Math.round((Number.isFinite(Number(s[key]))?Number(s[key]):100)-elapsed*rate)))
+  const legacyTotal=Math.max(0,((Number(s.level)||1)-1)*(Number(s.level)||1)*25+(Number(s.exp)||0))
+  const total=Math.min(3000,Math.max(0,s.houseLevelV2?HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,(Number(s.level)||1)-1))]+(Number(s.exp)||0):Math.round(legacyTotal*3000/247500)))
+  const convertedLevel=houseLevelFromTotal(total)
+  return { houseLevelV2:true,lastCareAction:s.lastCareAction||'', hunger:val('hunger',5),happy:val('happy',4),clean:val('clean',3+(s.messAt&&s.messAt<now?2:0)),energy:Math.min(100,val('energy',3)+Math.max(0,Math.min(now,s.sleepUntil||0)-Math.max(now-12*3600000,s.updatedAt||now))/60000), health:Math.max(0,Math.min(100,(s.health??100)-elapsed*((s.hunger<25||s.clean<25)?2:0))), messAt:s.messAt||0, bornAt:s.bornAt||now, favorite:s.favorite||'', tasted:s.tasted||[], memories:s.memories||[], sleepUntil:s.sleepUntil||0,
+    level:convertedLevel,exp:convertedLevel===10?0:total-HOUSE_LEVEL_TOTALS[convertedLevel-1],
+    affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
+    cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
+    personality:s.personality||'미발견', milestones:Array.isArray(s.milestones)?s.milestones:[], diary:Array.isArray(s.diary)?s.diary:[], quests:s.quests&&typeof s.quests==='object'?s.quests:{}, questDay:s.questDay||'',claimed:Array.isArray(s.claimed)?s.claimed:[], eventCount:Number(s.eventCount)||0,eventDay:s.eventDay||'',eventReadyAt:Number(s.eventReadyAt)||0, mini:s.mini||null, miniWins:Number(s.miniWins)||0, petCount:Number(s.petCount)||0, actionCounts:s.actionCounts&&typeof s.actionCounts==='object'?s.actionCounts:{} }
 }
 
 /** Per-account house-coin row (created with a secret random salt on first use). */
@@ -1374,9 +1414,10 @@ async function wildWeedState(accountId, db=pool) {
   const weeds=active.map(w=>({id:Number(w.id),x:Number(w.pos_x),y:Number(w.pos_y),type:w.weed_type==='golden'?'golden':'normal'}))
   return {visible:weeds.length>0,weeds,x:weeds[0]?.x??50,y:weeds[0]?.y??70,type:weeds[0]?.type??'normal',count:Number(base.inventory),goldenCount:Number(base.golden_inventory),slot,nextAt:(slot+1)*WILD_WEED_HOUR}
 }
-const LOTTERY_IDS = Array(9).fill(null)
-const LOTTERY_ACCESSORIES = ['chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring',null]
-const LOTTERY_GRADES = 'ABCDEFGHI'.split('')
+const LOTTERY_IDS = ['clinic_chiikawa','clinic_hachiware','clinic_usagi','clinic_momonga','clinic_kurimanju','clinic_shisa','clinic_kani','clinic_rakko',null,null,null,null]
+const LOTTERY_PETS = {8:'epic',9:'rare',10:'normal'}
+const LOTTERY_GRADES = 'ABCDEFGHIJKX'.split('')
+const unlimitedLottery = account => String(account.username).toLowerCase() === 'test'
 const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:1})
 let lotteryNoticeTablesReady = null
 async function ensureLotteryNoticeTables(){
@@ -1534,6 +1575,7 @@ async function pvpSettle(){
   }catch(e){console.error('[pvp] settlement:',e)}finally{pvpSettlementBusy=false}
 }
 
+const HOUSE_MAINTENANCE = true
 const routes = {
   'GET /api/pvp': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
@@ -1726,11 +1768,11 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
-    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade IN ('A','B','C','D','E','F','G','H') ORDER BY h.id DESC LIMIT 12`)
+    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade IN ('A','B','C','D','E','F','G','H','I','J','K','L') ORDER BY h.id DESC LIMIT 12`)
     await ensureLotteryNoticeTables()
     const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
+    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),unlimited:unlimitedLottery(account),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
   },
   'POST /api/lottery/reset': async (req,res) => {
     const account=await currentAccount(req)
@@ -1740,14 +1782,14 @@ const routes = {
     try{
       await conn.beginTransaction()
       await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
-      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([3,3,3,3,3,3,3,3,76])])
+      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
       await conn.query('DELETE FROM gm_lottery_history')
       await ensureLotteryNoticeTables()
       await conn.query('INSERT INTO gm_lottery_reset_events () VALUES ()')
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{ok:true,...lotteryView([3,3,3,3,3,3,3,3,76]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
+    send(res,200,{ok:true,...lotteryView([1,1,1,1,1,1,1,1,2,5,10,175]),unlimited:unlimitedLottery(account),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
   },
   'POST /api/lottery/reset-seen': async (req,res) => {
     const account=await currentAccount(req)
@@ -1764,7 +1806,7 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const {count}=await readJson(req)
-    if(!Number.isSafeInteger(count)||count<1||count>100)return send(res,400,{error:'invalid_count'})
+    if(!Number.isSafeInteger(count)||count<1||count>200)return send(res,400,{error:'invalid_count'})
     const conn=await pool.getConnection()
     let outcome
     try {
@@ -1775,7 +1817,7 @@ const routes = {
       else {
         const [saves]=await conn.query('SELECT gems, lottery_tickets, owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
         const [reservedTickets]=await conn.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id])
-        if(!saves.length||Number(saves[0].lottery_tickets)-Number(reservedTickets[0]?.qty||0)<count)outcome={error:'not_enough_tickets'}
+        if(!saves.length||(!unlimitedLottery(account)&&Number(saves[0].lottery_tickets)-Number(reservedTickets[0]?.qty||0)<count))outcome={error:'not_enough_tickets'}
         else {
           const owned=normalizeOwned(parseJson(saves[0].owned))
           const [dupeRows]=await conn.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[account.id])
@@ -1788,20 +1830,28 @@ const routes = {
             while(ticket>=remaining[index]){ticket-=remaining[index];index++}
             remaining[index]--
             const id=LOTTERY_IDS[index]
-            const accessoryId=LOTTERY_ACCESSORIES[index]
+            const petGrade=LOTTERY_PETS[index]||null
             const duplicate=!!id&&owned.includes(id)
             const bonus=id&&!duplicate?newEntryBonus(id):0
             if(id){if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
-            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare']);await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,accessoryId,'rare'])}
+            if(petGrade) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[account.id,petGrade])
             collectionBonus+=bonus
-            results.push({grade:LOTTERY_GRADES[index],id,accessoryId,accessoryGrade:accessoryId?'rare':null,duplicate,bonus})
+            results.push({grade:LOTTERY_GRADES[index],id,petGrade,duplicate,bonus})
+            if(remaining.every(n=>n===0)){
+              const id='usagi_monster', duplicate=owned.includes(id), bonus=duplicate?0:newEntryBonus(id)
+              if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)
+              collectionBonus+=bonus
+              results.push({grade:'L',id,duplicate,bonus})
+              await conn.query('INSERT INTO gm_announcements (message,created_ms) VALUES (?,?)',[`${account.nickname||account.username}님이 겅이복권 라스트원상 우사기(괴물화)를 획득했습니다!`,Date.now()])
+              remaining.splice(0,remaining.length,...[1,1,1,1,1,1,1,1,2,5,10,175])
+            }
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
-          await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[count,collectionBonus,JSON.stringify(owned),account.id])
-          await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=ticket_qty-LEAST(ticket_qty,?) WHERE account_id=?',[count,account.id])
+          await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[unlimitedLottery(account)?0:count,collectionBonus,JSON.stringify(owned),account.id])
+          if(!unlimitedLottery(account)) await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=ticket_qty-LEAST(ticket_qty,?) WHERE account_id=?',[count,account.id])
           await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
           for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
-          outcome={...lotteryView(remaining),tickets:Number(saves[0].lottery_tickets)-count,results}
+          outcome={...lotteryView(remaining),unlimited:unlimitedLottery(account),tickets:Number(saves[0].lottery_tickets)-(unlimitedLottery(account)?0:count),results}
         }
       }
       if(outcome.error)await conn.rollback();else await conn.commit()
@@ -2787,12 +2837,174 @@ const routes = {
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
   },
+  'GET /api/house/life': async (req,res) => {
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const [rows]=await pool.query('SELECT state_json FROM gm_house_life WHERE account_id=?',[account.id])
+    const raw=rows[0]?parseJson(rows[0].state_json):null;send(res,200,{life:({...(raw||{}),buildings:Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}])),snacks:(raw?.snacks||{})})})
+  },
+  'POST /api/house/life': async (req,res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {action,id}=await readJson(req)
+    const costs={arcade:100000,shower:80000,bed:30000,kitchen:50000}
+    const snacks={candy:{name:'사탕',weight:35},cookie:{name:'쿠키',weight:30},pudding:{name:'푸딩',weight:20},cake:{name:'딸기 케이크',weight:10},lunch:{name:'특제 도시락',weight:5}}
+    const conn=await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_house_life (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify({buildings:{},snacks:{}})])
+      const [rows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
+      const raw=parseJson(rows[0].state_json)||{};const life=({...(raw||{}),buildings:Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}])),snacks:(raw?.snacks||{})})
+      let spent=0,prize=null
+      if(action==='pull') {
+        spent=10000;const roll=randomInt(100);let cursor=0
+        for(const [key,value] of Object.entries(snacks)){cursor+=value.weight;if(roll<cursor){prize={id:key,name:value.name};break}}
+        life.snacks[prize.id]=(life.snacks[prize.id]||0)+1
+      } else return await conn.rollback(),send(res,400,{error:'invalid_action'})
+      if(!account.is_admin){const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?',[spent,account.id,spent]);if(!paid.affectedRows)return await conn.rollback(),send(res,409,{error:'insufficient_coins'})}
+      await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id])
+      await conn.commit();send(res,200,{life,spent:account.is_admin?0:spent,prize})
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+  },
+  'GET /api/house/care': async (req, res) => {
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const [rows] = await pool.query('SELECT state_json FROM gm_house_care WHERE account_id=?', [account.id])
+    send(res, 200, { care: houseCareDecay(rows[0] ? parseJson(rows[0].state_json) : null, Date.now()) })
+  },
+  'POST /api/house/care': async (req, res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
+    const account = await currentAccount(req)
+    if (!account) return send(res, 401, { error: 'login_required' })
+    const { action, snackId } = await readJson(req)
+    const rules = {
+      feed: { key:'hunger', limit:75, gain:25, cost:100, cooldown:300000, exp:5 },
+      snack: { key:'hunger', limit:90, gain:10, extra:'happy', extraGain:15, cost:0, cooldown:600000, exp:5 },
+      play: { key:'happy', limit:75, gain:25, cost:0, cooldown:600000, exp:10 },
+      wash: { key:'clean', limit:65, gain:35, cost:100, cooldown:900000, exp:5 },
+      sleep: { key:'energy', limit:80, gain:20, cost:0, cooldown:3600000, exp:5 },
+      pet: { key:null, cost:0, cooldown:1800000, exp:3 }, tidy:{key:null,cost:0,cooldown:1000,exp:5}, medicine:{key:null,cost:0,cooldown:3600000,exp:5}
+    }
+    const rule = rules[action]
+    if (!rule) return send(res, 400, { error:'invalid_care_action' })
+    const conn = await pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)', [account.id, JSON.stringify(houseCareDecay(null,Date.now()))])
+      const [rows] = await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE', [account.id])
+      const now=Date.now(), care=houseCareDecay(parseJson(rows[0].state_json),now)
+      const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
+      const life=lifeRows[0]?parseJson(lifeRows[0].state_json):{buildings:{},snacks:{}}
+      life.buildings=Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}]));life.snacks=life.snacks||{}
+      const needs={feed:'kitchen',wash:'shower',play:'arcade',sleep:'bed'}
+      if(needs[action]&&(!life.buildings[needs[action]]||life.buildings[needs[action]].readyAt>now)){await conn.rollback();return send(res,409,{error:'building_required'})}
+      if(action==='snack'&&(!['candy','cookie','pudding','cake','lunch'].includes(snackId)||!(life.snacks[snackId]>0))){await conn.rollback();return send(res,409,{error:'snack_required'})}
+
+      if ((care.cooldowns[action]||0)>now) { await conn.rollback(); return send(res,409,{error:'care_cooldown',nextAt:care.cooldowns[action]}) }
+      if((action==='tidy'&&(!care.messAt||care.messAt>now))||(action==='medicine'&&care.health>=100)){await conn.rollback();return send(res,409,{error:'care_full'})}
+      const allowed=action==='snack' ? care.hunger<=90 || care.happy<=85 : !rule.key || care[rule.key]<=rule.limit
+      if (!allowed) { await conn.rollback(); return send(res,409,{error:'care_full'}) }
+      if (rule.cost) {
+        const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?', [rule.cost,account.id,rule.cost])
+        if (!paid.affectedRows) { await conn.rollback(); return send(res,409,{error:'insufficient_coins'}) }
+      }
+      if(action==='snack'){
+        const bonuses={candy:[5,5],cookie:[10,5],pudding:[10,15],cake:[15,25],lunch:[25,35]}
+        const [h,happy]=bonuses[snackId];care.hunger=Math.min(100,care.hunger+h);care.happy=Math.min(100,care.happy+happy)
+        life.snacks[snackId]--;await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id])
+      }
+      if (rule.key&&action!=='snack') care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
+      if (rule.extra&&action!=='snack') care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
+      if(action==='feed'||action==='snack'){if(!care.messAt)care.messAt=now+30*60000}
+      if(action==='tidy'){care.messAt=0;care.clean=Math.min(100,care.clean+10)}
+      if(action==='medicine')care.health=Math.min(100,care.health+30)
+      if(action==='sleep')care.sleepUntil=now+30*60000
+      if(action==='snack'&&care.level>=4){if(!care.favorite)care.favorite=['candy','cookie','pudding','cake','lunch'][randomInt(5)];if(!care.tasted.includes(snackId))care.tasted.push(snackId);if(snackId===care.favorite){care.happy=Math.min(100,care.happy+10);care.affection=Math.min(1000,care.affection+5)}}
+      if (action==='play') care.energy=Math.max(0,care.energy-10)
+      if (action==='pet') care.affection=Math.min(1000,care.affection+5)
+      const questDay=new Date(now+9*3600000).toISOString().slice(0,10)
+      if(care.questDay!==questDay){care.questDay=questDay;care.quests={};care.claimed=[]}
+      care.quests[action]=(care.quests[action]||0)+1
+      care.actionCounts[action]=(Number(care.actionCounts[action])||0)+1;care.lastCareAction=action
+      if(action==='pet')care.petCount++
+      const label={feed:'처음 밥을 먹었어요',snack:'맛있는 간식을 먹었어요',play:'게임기로 놀았어요',wash:'깨끗하게 씻었어요',sleep:'포근하게 잠들었어요',pet:'쓰다듬어 주었어요'}[action]
+      if(label && !care.milestones.includes(action)){care.milestones.push(action);care.diary.unshift({at:now,text:label});care.diary=care.diary.slice(0,25)}
+      care.cooldowns[action]=now+rule.cooldown
+      const day=new Date(now+9*3600000).toISOString().slice(0,10)
+      if (care.expDay!==day) {care.expDay=day;care.expToday=0}
+      const earned=Math.min(rule.exp,Math.max(0,300-care.expToday))
+      care.expToday+=earned
+      houseApplyExp(care,earned,now)
+      houseEnsurePersonality(care,now)
+      await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
+      await conn.commit()
+      send(res,200,{care,life,spent:rule.cost,earned,levelCoins:0})
+    } catch(error) {await conn.rollback();throw error} finally {conn.release()}
+  },
+  'POST /api/house/adventure': async (req,res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const {action}=await readJson(req)
+    if(!['mini-start','mini-stop','event','claim'].includes(action))return send(res,400,{error:'invalid_action'})
+    const conn=await pool.getConnection()
+    try{
+      await conn.beginTransaction()
+      await conn.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify(houseCareDecay(null,Date.now()))])
+      const [rows]=await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE',[account.id])
+      const now=Date.now(),care=houseCareDecay(parseJson(rows[0].state_json),now),day=new Date(now+9*3600000).toISOString().slice(0,10)
+      if(care.questDay!==day){care.questDay=day;care.claimed=[];care.quests={}}
+      if(care.eventDay!==day){care.eventDay=day;care.eventCount=0}
+      const missions=[['feed','밥주기',1,1000],['play','게임하기',1,1500],['pet','쓰다듬기',1,500]]
+      let earned=0,coins=0,message=''
+      if(action==='mini-start'){
+        const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
+        const arcade=lifeRows[0]&&parseJson(lifeRows[0].state_json)?.buildings?.arcade
+        // Arcade is installed for every player; no construction check is required.
+        if((care.cooldowns.play||0)>now){await conn.rollback();return send(res,409,{error:'care_cooldown'})}
+        if(care.happy>75){await conn.rollback();return send(res,409,{error:'care_full'})}
+        if(care.mini&&now-care.mini.startedAt<30000){await conn.rollback();return send(res,409,{error:'mini_in_progress'})}
+        care.mini={startedAt:now,nonce:randomBytes(8).toString('hex')};message='게임 시작!'
+      }else if(action==='mini-stop'){
+        if(!care.mini||now-care.mini.startedAt<700||now-care.mini.startedAt>30000){await conn.rollback();return send(res,409,{error:'mini_expired'})}
+        const elapsed=now-care.mini.startedAt
+        const phase=(elapsed%2200)/2200
+        const position=phase<=.5?phase*200:(1-phase)*200
+        const perfect=Math.abs(position-50)<=8
+        earned=perfect?15:5;care.happy=Math.min(100,care.happy+(perfect?35:15));care.energy=Math.max(0,care.energy-10)
+        care.mini=null;care.miniWins+=(perfect?1:0);care.cooldowns.play=now+600000;care.actionCounts.play=(care.actionCounts.play||0)+1;care.quests.play=(care.quests.play||0)+1
+        care.lastCareAction='play'
+        if(!care.milestones.includes('play')){care.milestones.push('play');care.diary.unshift({at:now,text:'게임기를 처음 이용했어요'})}
+        message=perfect?'대성공! 행복 +35':'게임 완료! 행복 +15'
+      }else if(action==='event'){
+        if(care.level<2||care.eventCount>=3||now<care.eventReadyAt){await conn.rollback();return send(res,409,{error:'event_unavailable'})}
+        const common=[{text:'반짝이는 동전을 발견했어요!',coins:1000},{text:'기분 좋은 하루예요!',happy:10},{text:'맛있는 음식이 생각나요!',hunger:10},{text:'낮잠을 즐겼어요!',energy:10},{text:'깨끗해져서 상쾌해요!',clean:10},{text:'치이카와가 애교를 부려요!',affection:10},{text:'오늘도 즐거워!',exp:10}]
+        const special={먹보:{text:'부엌에서 맛있는 간식을 생각했어요!',hunger:15},장난꾸러기:{text:'게임기에서 한 판 더 놀고 싶어요!',happy:15},잠꾸러기:{text:'침대에서 꾸벅꾸벅 졸았어요!',energy:15},애교쟁이:{text:'나랑 놀아줘! 치이카와가 다가왔어요!',affection:15}}
+        if(care.level>=5)common.push({text:'하치와레가 놀러 왔어요!',happy:15},{text:'우사기와 함께 놀았어요!',affection:10});if(care.level>=7)common.push({text:'숨바꼭질을 즐겼어요!',happy:15});
+        const chosen=(special[care.personality]&&randomInt(10)<3)?special[care.personality]:common[randomInt(common.length)]
+        care.eventCount++;care.eventReadyAt=now+3*3600000
+        for(const stat of ['happy','hunger','clean','energy'])if(chosen[stat])care[stat]=Math.min(100,care[stat]+chosen[stat])
+        if(chosen.affection)care.affection=Math.min(1000,care.affection+chosen.affection)
+        coins=chosen.coins||0;earned=chosen.exp||0;message=chosen.text
+        care.diary.unshift({at:now,text:message});if(!care.memories.includes(message))care.memories.push(message)
+      }else if(action==='claim'){
+        const eligible=missions.filter(([id,,count])=>(care.quests[id]||0)>=count&&!care.claimed.includes(id))
+        if(!eligible.length){await conn.rollback();return send(res,409,{error:'no_quest_reward'})}
+        coins=eligible.reduce((sum,item)=>sum+item[3],0);care.claimed.push(...eligible.map(item=>item[0]));message=`일일 미션 ${eligible.length}개 보상 수령!`
+      }
+      if(earned){if(care.expDay!==day){care.expDay=day;care.expToday=0}earned=Math.min(earned,Math.max(0,300-care.expToday));care.expToday+=earned;houseApplyExp(care,earned,now)}
+      houseEnsurePersonality(care,now)
+      care.diary=care.diary.slice(0,25)
+      if(coins)await conn.query('UPDATE gm_saves SET gems=gems+? WHERE account_id=?',[coins,account.id])
+      await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id])
+      await conn.commit();send(res,200,{care,earned,coins,message,serverNow:now})
+    }catch(error){await conn.rollback();throw error}finally{conn.release()}
+  },
   'GET /api/house/coin': async (req, res) => {
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     send(res, 200, { coin: null, nextAt: 0, now: Date.now() })
   },
   'POST /api/house/coin': async (req, res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     send(res, 410, { error: 'house_coin_disabled' })
@@ -3206,6 +3418,7 @@ const routes = {
     }
   },
   'POST /api/house/save': async (req, res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     const { layout } = await readJson(req)

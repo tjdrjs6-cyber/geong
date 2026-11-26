@@ -1,1 +1,1 @@
-겅이복권 A-H 각 레어 키링 3장, I상 꽝 76장. 최초 배포 시 기존 12칸 풀을 9칸 100장으로 교체하고 과거 복권 당첨 기록을 초기화합니다. 보유 아이템은 유지합니다. 이후 운영자 초기화도 새 구성입니다.
+LV.10 / 3000 EXP / no level rewards / LV.2 events / LV.3 personality. Apply after four facilities preinstalled patch. Existing growth progress is converted proportionally once.

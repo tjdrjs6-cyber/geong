@@ -7636,3 +7636,11 @@ body > .market-global-shortage-notice.is-visible {
 .pvp-opponents-heading .pvp-refresh-button:active{transform:translateY(1px);border-bottom-width:2px}
 .pvp-opponents-heading .pvp-refresh-button:focus-visible{outline:2px solid #a3497c;outline-offset:3px}
 @media(max-width:360px){.pvp-opponents-heading .pvp-refresh-button{padding:7px 8px;gap:4px;font-size:11px}.pvp-opponents-heading .pvp-refresh-button small{font-size:9px;padding-left:4px}}
+
+/* Temporary maintenance: house and snack draw */
+.nav-button[data-action="house"]:disabled,
+.pull-mode-button[data-mode="deco"]:disabled,
+.auth-tab[data-tab="house"]:disabled {
+  opacity: .55 !important; filter: grayscale(1); cursor: not-allowed !important;
+}
+.nav-button[data-action="house"] small, .pull-mode-button[data-mode="deco"] small { font-size: .7em; white-space: nowrap; }

@@ -338,6 +338,18 @@ export class RemoteGachaStore {
     return { claimed: result.claimed, box: result }
   }
   /** This hour's house coin (null once taken); it disappears when the next one appears at nextAt. */
+  houseLife():Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>}}>{return request('house/life')}
+  async houseLifeAction(action:'build'|'upgrade'|'pull',id?:string):Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string}}>{
+    const result=await request<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string}}>('house/life',{action,id})
+    this.data.gems=Math.max(0,this.data.gems-result.spent);return result
+  }
+  async houseCare(): Promise<{care:HouseCareState}> { return request('house/care') }
+  async houseCareAction(action:string,snackId?:string): Promise<{care:HouseCareState;spent:number;earned:number}> {
+    const result=await request<{care:HouseCareState;spent:number;earned:number}>('house/care',{action,snackId})
+    if(result.spent) this.data.gems=Math.max(0,this.data.gems-result.spent)
+    return result
+  }
+  async houseAdventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>{const result=await request<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>('house/adventure',{action});if(result.coins)this.data.gems+=result.coins;return result}
   async houseCoin(): Promise<HouseCoinState> {
     return request<HouseCoinState>('house/coin')
   }
@@ -355,11 +367,11 @@ export class RemoteGachaStore {
   async sendGlobalChat(message: string): Promise<{ ok: boolean; nextAt: number; now: number }> { return request('global-chat', { message }) }
   async dopamine():Promise<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>{return request('dopamine')}
   async dopaminePlay(stake:number):Promise<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>{const result=await request<{played:boolean;stake:number;won:boolean;coins:number;winners:{nickname:string;stake:number;wonAt:string}[]}>('dopamine/play',{stake});this.data.gems=result.coins;return result}
-  async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
+  async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;unlimited?:boolean;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
   async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
-  async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
-  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
-    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState;dupes:CharDupes}>('lottery/buy',{count})
+  async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;unlimited?:boolean;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
+  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;unlimited?:boolean;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;petGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
+    const result=await request<{remaining:number[];total:number;price:number;tickets:number;unlimited?:boolean;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;petGrade?:string|null;duplicate:boolean;bonus:number}[];save:GachaSave;accessory:AccessoryState;dupes:CharDupes}>('lottery/buy',{count})
     this.data=result.save
     this.accessory=result.accessory
     this.dupes=result.dupes
@@ -502,3 +514,5 @@ export class RemoteGachaStore {
 
 type WeedResult = { save: GachaSave; weed: WeedState | null; earned: number; now: number }
 type BattleResult = { cleared?: {stage:number;coins:number;fragments:number}[]; failedStage?:number; save: GachaSave; battle: BattleState; earned: number; now: number }
+
+export type HouseCareState = {personality?:string;milestones?:string[];diary?:{at:number;text:string}[];questDay?:string;quests?:Record<string,number>;claimed?:string[];eventCount?:number;eventReadyAt?:number;mini?:{startedAt:number;nonce:string}|null;miniWins?:number;actionCounts?:Record<string,number>;hunger:number;happy:number;clean:number;energy:number;level:number;exp:number;affection:number;cooldowns:Record<string,number>;updatedAt:number}
