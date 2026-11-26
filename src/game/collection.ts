@@ -1,6 +1,16 @@
 export const STARTING_COINS = 100
 /** 21 friends: 8 regular (8%), 10 인어의섬 (3%), 3 rare (2%), each with its own weeding bonus and battle power. */
 export const CHARACTERS = [
+  { id: 'clinic_chiikawa', name: '치이카와', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_hachiware', name: '하치와레', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_usagi', name: '우사기', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_momonga', name: '모몽가', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_kurimanju', name: '쿠리만쥬', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_shisa', name: '시사', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_kani', name: '카니', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'clinic_rakko', name: '랏코', variant: '클리닉', probability: 0, tier: 'super', weedBonus: 52, power: 380, color: '#fff4f6', accent: '#f3a3b8' },
+  { id: 'usagi_monster', name: '우사기', variant: '괴물화', probability: 0, tier: 'legendary', weedBonus: 65, power: 570, color: '#fff4f6', accent: '#f3a3b8' },
+
   { id: 'chiikawa_babo', name: '치이카와', variant: '바보', probability: 0.06, tier: 'legendary', weedBonus: 0, power: 540, color: '#fff4f6', accent: '#f3a3b8' },
   { id: 'christmas_chiikawa', name: '치이카와', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },
   { id: 'christmas_hachiware', name: '하치와레', variant: '크리스마스', probability: 0, tier: 'legendary', weedBonus: 0, power: 520, color: '#fff1df', accent: '#dd343a' },

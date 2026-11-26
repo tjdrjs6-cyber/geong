@@ -1,6 +1,16 @@
 import type { CharacterId } from './collection'
 /** 2D cartoon character art. New PNGs should use a centered square transparent canvas with minimal padding to keep consistent visible sizing across all views (lobby, collection, weeding, battle, expedition, storage). Avoid per-character CSS scales. */
 const previewUrls: Record<CharacterId, string> = {
+  clinic_chiikawa: '/assets/chars/clinic_chiikawa.png',
+  clinic_hachiware: '/assets/chars/clinic_hachiware.png',
+  clinic_usagi: '/assets/chars/clinic_usagi.png',
+  clinic_momonga: '/assets/chars/clinic_momonga.png',
+  clinic_kurimanju: '/assets/chars/clinic_kurimanju.png',
+  clinic_shisa: '/assets/chars/clinic_shisa.png',
+  clinic_kani: '/assets/chars/clinic_kani.png',
+  clinic_rakko: '/assets/chars/clinic_rakko.png',
+  usagi_monster: '/assets/chars/usagi_monster.png',
+
   chiikawa_babo: '/assets/chars/chiikawa_babo.png',
   christmas_chiikawa: '/assets/chars/christmas_chiikawa.png',
   christmas_hachiware: '/assets/chars/christmas_hachiware.png',

@@ -370,8 +370,8 @@ export class RemoteGachaStore {
   async lottery():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery')}
   async lotteryResetSeen(id:number):Promise<{ok:boolean}>{return request('lottery/reset-seen',{id})}
   async lotteryReset():Promise<{remaining:number[];total:number;price:number;tickets:number;winners:{nickname:string;grade:string}[]}>{return request('lottery/reset',{})}
-  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
-    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;duplicate:boolean}[];save:GachaSave;accessory:AccessoryState;dupes:CharDupes}>('lottery/buy',{count})
+  async lotteryBuy(count:number):Promise<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;petGrade?:string|null;duplicate:boolean;bonus:number}[]}>{
+    const result=await request<{remaining:number[];total:number;price:number;tickets:number;results:{grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;petGrade?:string|null;duplicate:boolean;bonus:number}[];save:GachaSave;accessory:AccessoryState;dupes:CharDupes}>('lottery/buy',{count})
     this.data=result.save
     this.accessory=result.accessory
     this.dupes=result.dupes

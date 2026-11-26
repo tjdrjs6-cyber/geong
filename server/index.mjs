@@ -25,11 +25,12 @@ async function marketState(accountId, conn=pool, lock=false){
   const r=rows[0], keys=kstMarketKeys()
   return {stones:Number(r.breakthrough_stones||0), weeklyBought:r.weekly_key===keys.weekly?Number(r.weekly_bought):0, dailyBought:r.daily_key===keys.daily?Number(r.daily_bought):0, ...keys}
 }
-const SKILL_TIERS = {"chiikawa_babo":"legendary", "christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
+const SKILL_TIERS = {"clinic_chiikawa":"super","clinic_hachiware":"super","clinic_usagi":"super","clinic_momonga":"super","clinic_kurimanju":"super","clinic_shisa":"super","clinic_kani":"super","clinic_rakko":"super","usagi_monster":"legendary","chiikawa_babo":"legendary", "christmas_chiikawa": "legendary", "christmas_hachiware": "legendary", "christmas_usagi": "legendary", "christmas_tree_usagi": "legendary", "rilakkuma": "rare", "korilakkuma": "rare", "chairoikoguma": "rare", "rilakkuma_chiikawa": "legendary", "korilakkuma_kani": "legendary", "pepero_chiikawa": "normal", "chiikawa": "normal", "hachiware": "normal", "usagi": "normal", "momonga": "normal", "kurimanju": "normal", "shisa": "normal", "kani": "normal", "goblin": "normal", "rakko": "normal", "armor1": "normal", "armor2": "normal", "armor3": "normal", "m_chiikawa": "mermaid", "m_hachiware": "mermaid", "m_usagi": "mermaid", "m_momonga": "mermaid", "m_kurimanju": "mermaid", "m_shisa": "mermaid", "m_kani": "mermaid", "m_rakko": "mermaid", "hanip": "mermaid", "duip": "mermaid", "siren": "rare", "shimajiro": "rare", "anoko": "rare", "dekatsuyo": "rare", "c_curry": "super", "h_curry": "super", "u_curry": "super", "ginger_chiikawa": "super", "ginger_hachiware": "super", "ginger_usagi": "super", "beetle": "super", "kurimanju_bean": "legendary", "rakko_limited": "legendary", "beetle_berserk": "legendary", "honey": "mermaid", "ode": "rare", "ode_prison": "super", "usagi_orange": "legendary", "pajama_chiikawa": "normal", "pajama_hachiware": "normal", "pajama_usagi": "normal", "staff_chiikawa": "rare", "staff_hachiware": "rare", "staff_usagi": "rare", "angel_momonga": "super", "devil_momonga": "super", "halloween_chiikawa": "legendary", "halloween_hachiware": "legendary", "siren_curry": "transcendent", "halloween_usagi": "legendary"}
 
 // Mark event/collaboration characters here when they are introduced.
 // All other catalogued legendary characters automatically join the ticket pool.
 const LEGEND_TICKET_EXCLUDED_IDS = new Set([
+  "usagi_monster",
   'christmas_chiikawa','christmas_hachiware','christmas_usagi','christmas_tree_usagi',
   'rilakkuma_chiikawa','korilakkuma_kani',
   'halloween_chiikawa','halloween_hachiware','halloween_usagi'
@@ -137,13 +138,13 @@ async function prepareDatabase() {
     id TINYINT UNSIGNED PRIMARY KEY, remaining JSON NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`)
-  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([3,3,3,3,3,3,3,3,76])])
-  // Upgrade the shared pool once to the A-H rare-keyring / I blank schedule.
+  await pool.query(`INSERT IGNORE INTO gm_lottery_pool (id, remaining) VALUES (1, ?)` , [JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
+  // Upgrade the shared pool once to the 200-ticket clinic schedule.
   const [lotteryPoolRows] = await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
   const existingLotteryPool = lotteryPoolRows.length ? (typeof lotteryPoolRows[0].remaining === 'string' ? JSON.parse(lotteryPoolRows[0].remaining) : lotteryPoolRows[0].remaining) : null
   let lotteryScheduleMigrated = false
-  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 9) {
-    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([3,3,3,3,3,3,3,3,76])])
+  if (!Array.isArray(existingLotteryPool) || existingLotteryPool.length !== 12) {
+    await pool.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1', [JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
     // Existing users' awarded items are unaffected; old draw history is cleared below after table creation.
     lotteryScheduleMigrated = true
   }
@@ -1413,9 +1414,9 @@ async function wildWeedState(accountId, db=pool) {
   const weeds=active.map(w=>({id:Number(w.id),x:Number(w.pos_x),y:Number(w.pos_y),type:w.weed_type==='golden'?'golden':'normal'}))
   return {visible:weeds.length>0,weeds,x:weeds[0]?.x??50,y:weeds[0]?.y??70,type:weeds[0]?.type??'normal',count:Number(base.inventory),goldenCount:Number(base.golden_inventory),slot,nextAt:(slot+1)*WILD_WEED_HOUR}
 }
-const LOTTERY_IDS = Array(9).fill(null)
-const LOTTERY_ACCESSORIES = ['chiikawa_keyring','hachiware_keyring','usagi_keyring','momonga_keyring','kurimanju_keyring','shisa_keyring','kani_keyring','rakko_keyring',null]
-const LOTTERY_GRADES = 'ABCDEFGHI'.split('')
+const LOTTERY_IDS = ['clinic_chiikawa','clinic_hachiware','clinic_usagi','clinic_momonga','clinic_kurimanju','clinic_shisa','clinic_kani','clinic_rakko',null,null,null,null]
+const LOTTERY_PETS = {8:'epic',9:'rare',10:'normal'}
+const LOTTERY_GRADES = 'ABCDEFGHIJKX'.split('')
 const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:1})
 let lotteryNoticeTablesReady = null
 async function ensureLotteryNoticeTables(){
@@ -1766,7 +1767,7 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const [rows]=await pool.query('SELECT remaining FROM gm_lottery_pool WHERE id=1')
-    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade IN ('A','B','C','D','E','F','G','H') ORDER BY h.id DESC LIMIT 12`)
+    const [winners]=await pool.query(`SELECT h.grade, COALESCE(a.nickname,a.username,'유저') AS nickname FROM gm_lottery_history h JOIN gm_accounts a ON a.id=h.account_id WHERE h.grade IN ('A','B','C','D','E','F','G','H','I','J','K','L') ORDER BY h.id DESC LIMIT 12`)
     await ensureLotteryNoticeTables()
     const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
@@ -1780,14 +1781,14 @@ const routes = {
     try{
       await conn.beginTransaction()
       await conn.query('SELECT remaining FROM gm_lottery_pool WHERE id=1 FOR UPDATE')
-      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([3,3,3,3,3,3,3,3,76])])
+      await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify([1,1,1,1,1,1,1,1,2,5,10,175])])
       await conn.query('DELETE FROM gm_lottery_history')
       await ensureLotteryNoticeTables()
       await conn.query('INSERT INTO gm_lottery_reset_events () VALUES ()')
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{ok:true,...lotteryView([3,3,3,3,3,3,3,3,76]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
+    send(res,200,{ok:true,...lotteryView([1,1,1,1,1,1,1,1,2,5,10,175]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
   },
   'POST /api/lottery/reset-seen': async (req,res) => {
     const account=await currentAccount(req)
@@ -1804,7 +1805,7 @@ const routes = {
     const account=await currentAccount(req)
     if(!account)return send(res,401,{error:'login_required'})
     const {count}=await readJson(req)
-    if(!Number.isSafeInteger(count)||count<1||count>100)return send(res,400,{error:'invalid_count'})
+    if(!Number.isSafeInteger(count)||count<1||count>200)return send(res,400,{error:'invalid_count'})
     const conn=await pool.getConnection()
     let outcome
     try {
@@ -1828,13 +1829,21 @@ const routes = {
             while(ticket>=remaining[index]){ticket-=remaining[index];index++}
             remaining[index]--
             const id=LOTTERY_IDS[index]
-            const accessoryId=LOTTERY_ACCESSORIES[index]
+            const petGrade=LOTTERY_PETS[index]||null
             const duplicate=!!id&&owned.includes(id)
             const bonus=id&&!duplicate?newEntryBonus(id):0
             if(id){if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)}
-            if(accessoryId){await conn.query('INSERT INTO gm_accessory_grades(account_id,accessory_id,grade,quantity) VALUES(?,?,?,1) ON DUPLICATE KEY UPDATE quantity=quantity+1',[account.id,accessoryId,'rare']);await conn.query('INSERT IGNORE INTO gm_accessory_discoveries(account_id,accessory_id,grade) VALUES(?,?,?)',[account.id,accessoryId,'rare'])}
+            if(petGrade) await conn.query('INSERT INTO gm_pet_boxes(owner_id,grade) VALUES(?,?)',[account.id,petGrade])
             collectionBonus+=bonus
-            results.push({grade:LOTTERY_GRADES[index],id,accessoryId,accessoryGrade:accessoryId?'rare':null,duplicate,bonus})
+            results.push({grade:LOTTERY_GRADES[index],id,petGrade,duplicate,bonus})
+            if(remaining.every(n=>n===0)){
+              const id='usagi_monster', duplicate=owned.includes(id), bonus=duplicate?0:newEntryBonus(id)
+              if(duplicate)dupes[id]=(Number(dupes[id])||0)+1;else owned.push(id)
+              collectionBonus+=bonus
+              results.push({grade:'L',id,duplicate,bonus})
+              await conn.query('INSERT INTO gm_announcements (message,created_ms) VALUES (?,?)',[`${account.nickname||account.username}님이 겅이복권 라스트원상 우사기(괴물화)를 획득했습니다!`,Date.now()])
+              remaining.splice(0,remaining.length,...[1,1,1,1,1,1,1,1,2,5,10,175])
+            }
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
           await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[count,collectionBonus,JSON.stringify(owned),account.id])
