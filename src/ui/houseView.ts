@@ -40,7 +40,7 @@ export class HouseView {
       const due=Math.max(c.cooldowns[action]||0,action==='sleep'?sleep:0)
       let label=due>now?this.remaining(due-now):'대기시간 없음'
       const blocked=sleep>now&&['feed','wash','play','sleep'].includes(action)
-      if(['feed','wash','play','sleep'].includes(action)){const button=el.closest('button');if(button)button.disabled=blocked}
+      if(['feed','wash','play','sleep'].includes(action)){const button=el.closest('button');if(button){button.disabled=false;button.style.opacity=blocked?'0.55':''}}
       if(blocked)label='수면 중'
       if(action==='tidy'&&due<=now)label=c.messAt&&c.messAt<=now?'이용 가능':c.messAt?`응가까지 ${this.remaining(c.messAt-now)}`:'청소할 응가 없음'
       if(action==='pet'&&due<=now)label='이용 가능'
@@ -101,11 +101,27 @@ export class HouseView {
     const ok=document.createElement('button');ok.type='button';ok.textContent='확인';ok.onclick=()=>{ok.disabled=true;close();confirm?.()};actions.append(ok)
     dialog.addEventListener('cancel',e=>{e.preventDefault();close()});dialog.append(heading,body,actions);this.root.append(dialog);this.careDialog=dialog;dialog.showModal()
   }
-  private confirmCare(action:string,snackId?:string):void{
+  private fullCareMessage(action:string):string{
+    return ({feed:'아직 치이카와가 배고프지 않습니다.',wash:'치이카와가 아직 깨끗합니다.',play:'치이카와가 충분히 행복한 상태입니다.',sleep:'치이카와가 아직 피곤하지 않습니다.',medicine:'치이카와가 건강합니다. 약을 먹일 필요가 없습니다.',tidy:'하우스에 치울 응가가 없습니다.',snack:'치이카와가 충분히 배부르고 행복합니다.'} as Record<string,string>)[action]||'아직 돌봄이 필요하지 않습니다.'
+  }
+  private careUnavailable(action:string,snackId?:string):string|undefined{
+    const c=this.care;if(!c)return '육성 정보를 불러오는 중입니다.'
+    const now=Date.now(),sleep=c.sleepUntil??0
+    if(sleep>now&&['feed','wash','play','sleep'].includes(action))return action==='sleep'?'치이카와가 이미 자고 있습니다.':`치이카와가 자고 있습니다. 일어난 후 이용해 주세요.\n기상까지 ${this.remaining(sleep-now)}`
+    if(action==='snack'&&(!snackId||!(this.life.snacks[snackId]>0)))return '간식이 부족합니다.'
+    const due=c.cooldowns[action]||0
+    if(due>now)return `${action==='pet'?'조금 뒤에 다시 쓰다듬어 주세요.':'아직 이용할 수 없습니다.'}\n남은 시간 ${this.remaining(due-now)}`
+    if((action==='feed'&&c.hunger>75)||(action==='wash'&&c.clean>65)||(action==='play'&&c.happy>75)||(action==='sleep'&&c.energy>80)||(action==='medicine'&&(c.health??100)>=100)||(action==='tidy'&&(!c.messAt||c.messAt>now))||(action==='snack'&&c.hunger>90&&c.happy>85))return this.fullCareMessage(action)
+    const cost=action==='feed'?1000:action==='medicine'?5000:0
+    if(cost&&this.store.data.gems<cost)return `코인이 부족합니다.\n필요 코인: ${cost.toLocaleString()}코인`
+  }
+  private async confirmCare(action:string,snackId?:string):Promise<void>{
     if(this.busy||this.careDialog)return
-    if((this.care?.sleepUntil??0)>Date.now()&&['feed','wash','play','sleep'].includes(action)){this.showCareDialog('수면 중','치이카와가 일어난 뒤 돌봐주세요.');return}
+    this.busy=true
+    try{this.care=(await this.store.houseCare()).care;this.renderCare()}catch{this.showCareDialog('돌보기 안내','현재 상태를 확인하지 못했습니다. 다시 시도해 주세요.');return}finally{this.busy=false}
     const prompts:Record<string,[string,string]>={feed:['먹이기','치이카와에게 밥을 먹이시겠습니까?\n1,000코인 · 배부름 +25%'],wash:['씻기기','치이카와를 씻기시겠습니까?\n무료 · 청결 +35%'],sleep:['재우기','치이카와를 재우시겠습니까?\n무료 · 체력 +20%'],play:['놀아주기','치이카와와 놀아주시겠습니까?\n무료 · 행복 +25% · 체력 -10%'],medicine:['약 먹이기','치이카와에게 약을 먹이시겠습니까?\n5,000코인 · 건강 +30%'],tidy:['청소','하우스를 청소하시겠습니까?\n응가 제거'],pet:['쓰다듬기','치이카와를 쓰다듬으시겠습니까?\n친밀도 +5'],snack:['간식','치이카와에게 간식을 먹이시겠습니까?']}
     const prompt=prompts[action];if(!prompt)return
+    const unavailable=this.careUnavailable(action,snackId);if(unavailable){this.showCareDialog(`${prompt[0]} 안내`,unavailable);return}
     this.showCareDialog(prompt[0],prompt[1],()=>void this.performCare(action,snackId,prompt[0]))
   }
   private async performCare(action:string,snackId:string|undefined,label:string):Promise<void>{
@@ -120,7 +136,7 @@ export class HouseView {
       this.showCareDialog(`${label} 완료!`,[...changes,`경험치 +${result.earned}`,result.spent?`${result.spent.toLocaleString()}코인 사용`:''].filter(Boolean).join('\n'))
     }catch(e){
       const err=e as {code?:string;nextAt?:number};const remaining=Math.ceil(((err.nextAt??this.care?.cooldowns[action]??0)-Date.now())/1000)
-      const messages:Record<string,string>={care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:action==='tidy'?'청소할 응가가 없어요.':action==='medicine'?'아직 약이 필요하지 않아요.':'아직 돌봄이 필요하지 않아요.',care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:'코인이 부족해요.',snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
+      const messages:Record<string,string>={care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
       this.showCareDialog(`${label} 안내`,messages[err.code||'']||'처리 결과를 확인하지 못했습니다. 상태를 새로 확인한 뒤 다시 시도해 주세요.')
     }finally{this.busy=false}
   }
@@ -200,7 +216,7 @@ export class HouseView {
     const tabs:[string,string][]=[['care','돌보기'],['snack','간식'],['mission','오늘의 할 일'],['diary','성장 일기']]
     const statCards=stats.map(([name,n])=>`<div class="tama-stat"><div class="tama-stat-label"><span>${name}</span><b>${n}%</b></div><div class="house-care-track"><i style="width:${Math.round(n)}%;background:${n<30?'#e8a28d':n<60?'#e6c084':'#91cdb4'}"></i></div></div>`).join('')
     const carePanel=`<div class="tama-panel-heading">치이카와 돌보기 <small>아래 메뉴에서 돌봐주세요</small></div><div class="tama-care-hint">하단 버튼으로 먹이기, 씻기, 놀아주기, 재우기를 할 수 있어요.</div><div class="tama-pet"><button data-action="house-care-medicine">약 먹이기<small class="tama-care-clock" data-care-clock="medicine"></small></button><button data-action="house-care-tidy">청소<small class="tama-care-clock" data-care-clock="tidy"></small></button><button data-action="house-care-pet">쓰다듬기<small class="tama-care-clock" data-care-clock="pet"></small></button><span>친밀도를 올려주세요</span></div><section class="house-tama-section"><strong>깜짝 생활 이벤트</strong><p>LV.2부터 하루 최대 3번 참여할 수 있어요.</p><button data-action="house-event" ${c.level<2?'disabled':''}>이벤트 확인 (${c.eventCount||0}/3)</button></section>`
-    const snackPanel=`<div class="tama-panel-heading">간식 주기 <small>뽑기에서 얻은 간식을 먹여주세요</small></div><div class="tama-snack-grid">${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}><strong>${name}</strong><span>보유 ${this.life.snacks[id]||0}개</span></button>`).join('')}</div><p class="tama-note">${c.level>=4&&c.favorite&&c.tasted?.includes(c.favorite)?`좋아하는 간식: ${snackNames[c.favorite]}`:'간식을 먹이며 취향을 발견해 보세요.'} 간식뽑기는 1회 10,000코인입니다.</p>`
+    const snackPanel=`<div class="tama-panel-heading">간식 주기 <small>뽑기에서 얻은 간식을 먹여주세요</small></div><div class="tama-snack-grid">${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}"><strong>${name}</strong><span>보유 ${this.life.snacks[id]||0}개</span></button>`).join('')}</div><p class="tama-note">${c.level>=4&&c.favorite&&c.tasted?.includes(c.favorite)?`좋아하는 간식: ${snackNames[c.favorite]}`:'간식을 먹이며 취향을 발견해 보세요.'} 간식뽑기는 1회 10,000코인입니다.</p>`
     const missionPanel=`<div class="tama-panel-heading">오늘의 할 일 <small>매일 치이카와와 추억을 쌓아보세요</small></div><div class="tama-mission-list">${missions.map(([id,name,diamonds])=>`<div><span>${name}</span><span>${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'진행 전'}</span><b>${diamonds.toLocaleString()}다이아 ${c.claimed?.includes(id)?'· 수령 완료':''}</b></div>`).join('')}</div><button class="tama-main-button" data-action="house-claim" ${canClaim?'':'disabled'}>미션 보상 받기</button>`
     const diaryPanel=`<div class="tama-panel-heading">성장 일기 <small>치이카와와 함께한 기록 · ${Math.floor((Date.now()-(c.bornAt||Date.now()))/86400000)+1}일차 · 추억 ${c.memories?.length||0}개</small></div><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div>`
     const panels:Record<string,string>={care:carePanel,snack:snackPanel,mission:missionPanel,diary:diaryPanel}
