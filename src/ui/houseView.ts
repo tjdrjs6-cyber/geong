@@ -17,9 +17,7 @@ export class HouseView {
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private activeTab: 'care'|'snack'|'mission'|'diary'='care'
   private infoOpen=false
-  private miniActive=false
-  private miniStarted=0
-  private miniTick:ReturnType<typeof setInterval>|null=null
+  private careDialog:HTMLDialogElement|null=null
   constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
   open():void{
     this.hooks.coinAvailable(false)
@@ -62,37 +60,52 @@ export class HouseView {
   handle(action:string,button:HTMLElement):boolean{
     if(action==='house-info'){this.infoOpen=!this.infoOpen;this.renderCare();return true}
     if(action==='house-tab'){const tab=button.dataset.tab;if(tab==='care'||tab==='snack'||tab==='mission'||tab==='diary'){this.activeTab=tab;this.infoOpen=true;this.renderCare()}return true}
-    if(action.startsWith('house-care-')){void this.performCare(action.slice(11),button.dataset.snack);return true}
-    if(action==='house-mini-start'){void this.adventure('mini-start');return true}
-    if(action==='house-mini-stop'){void this.adventure('mini-stop');return true}
+    if(action.startsWith('house-care-')){this.confirmCare(action.slice(11),button.dataset.snack);return true}
     if(action==='house-event'){void this.adventure('event');return true}
     if(action==='house-claim'){void this.adventure('claim');return true}
     if(action==='house-coin')return true
     return false
   }
-  private async performCare(action:string,snackId?:string):Promise<void>{
-    if(this.busy)return;this.busy=true
-    try{const result=await this.store.houseCareAction(action,snackId);this.care=result.care;await this.refreshLife();this.renderCare();this.hooks.wallet();this.hooks.toast(`돌보기 완료! 경험치 +${result.earned}`)}
-    catch(e){this.fail(e)}finally{this.busy=false}
+  private showCareDialog(title:string,message:string,confirm?:()=>void):void{
+    this.careDialog?.close();this.careDialog?.remove()
+    const dialog=document.createElement('dialog');dialog.className='house-care-dialog';dialog.setAttribute('aria-label',title)
+    const heading=document.createElement('h3');heading.textContent=title
+    const body=document.createElement('p');body.textContent=message
+    const actions=document.createElement('div');actions.className='house-care-dialog-actions'
+    const close=()=>{dialog.close();dialog.remove();if(this.careDialog===dialog)this.careDialog=null}
+    if(confirm){const cancel=document.createElement('button');cancel.type='button';cancel.textContent='취소';cancel.onclick=close;actions.append(cancel)}
+    const ok=document.createElement('button');ok.type='button';ok.textContent='확인';ok.onclick=()=>{ok.disabled=true;close();confirm?.()};actions.append(ok)
+    dialog.addEventListener('cancel',e=>{e.preventDefault();close()});dialog.append(heading,body,actions);this.root.append(dialog);this.careDialog=dialog;dialog.showModal()
   }
-  private async adventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<void>{
+  private confirmCare(action:string,snackId?:string):void{
+    if(this.busy||this.careDialog)return
+    const prompts:Record<string,[string,string]>={feed:['먹이기','치이카와에게 밥을 먹이시겠습니까?\n100코인 · 배부름 +25%'],wash:['씻기기','치이카와를 씻기시겠습니까?\n100코인 · 청결 +35%'],sleep:['재우기','치이카와를 재우시겠습니까?\n체력 +20%'],play:['놀아주기','치이카와와 놀아주시겠습니까?\n행복 +25% · 체력 -10%'],medicine:['약 먹이기','치이카와에게 약을 먹이시겠습니까?\n건강 +30%'],tidy:['청소','하우스를 청소하시겠습니까?\n청결 +10%'],pet:['쓰다듬기','치이카와를 쓰다듬으시겠습니까?\n친밀도 +5'],snack:['간식','치이카와에게 간식을 먹이시겠습니까?']}
+    const prompt=prompts[action];if(!prompt)return
+    this.showCareDialog(prompt[0],prompt[1],()=>void this.performCare(action,snackId,prompt[0]))
+  }
+  private async performCare(action:string,snackId:string|undefined,label:string):Promise<void>{
+    if(this.busy)return;this.busy=true
+    try{
+      const before=this.care;const result=await this.store.houseCareAction(action,snackId);this.care=result.care
+      if(action==='snack'&&snackId)this.life.snacks[snackId]=Math.max(0,(this.life.snacks[snackId]||0)-1)
+      this.renderLot();this.renderCare();this.hooks.wallet()
+      const stats=['hunger','happy','clean','energy','health','affection'] as const
+      const names=['배부름','행복','청결','체력','건강','친밀도']
+      const after=this.care;const changes=stats.map((key,i)=>{const delta=Math.round((after[key]??100)-(before?.[key]??after[key]??100));return delta?`${names[i]} ${delta>0?'+':''}${delta}${key==='affection'?'':'%'}`:''}).filter(Boolean)
+      this.showCareDialog(`${label} 완료!`,[...changes,`경험치 +${result.earned}`,result.spent?`${result.spent.toLocaleString()}코인 사용`:''].filter(Boolean).join('\n'))
+    }catch(e){
+      const err=e as {code?:string;nextAt?:number};const remaining=Math.ceil(((err.nextAt??this.care?.cooldowns[action]??0)-Date.now())/1000)
+      const messages:Record<string,string>={care_full:action==='tidy'?'청소할 응가가 없어요.':action==='medicine'?'아직 약이 필요하지 않아요.':'아직 돌봄이 필요하지 않아요.',care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:'코인이 부족해요.',snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
+      this.showCareDialog(`${label} 안내`,messages[err.code||'']||'처리 결과를 확인하지 못했습니다. 상태를 새로 확인한 뒤 다시 시도해 주세요.')
+    }finally{this.busy=false}
+  }
+  private async adventure(action:'event'|'claim'):Promise<void>{
     if(this.busy)return;this.busy=true
     try{
       const result=await this.store.houseAdventure(action);this.care=result.care
-      if(action==='mini-start'){this.miniActive=true;this.miniStarted=Date.now();this.startMiniAnimation()}
-      if(action==='mini-stop'){this.miniActive=false;this.stopMiniAnimation()}
       this.renderCare();this.hooks.wallet();this.hooks.toast(result.message+(result.coins?` · ${result.coins.toLocaleString()}코인`:''))
-    }catch(e){if(action==='mini-stop'){this.miniActive=false;this.stopMiniAnimation()}this.fail(e)}finally{this.busy=false}
+    }catch(e){this.fail(e)}finally{this.busy=false}
   }
-  private startMiniAnimation():void{
-    this.stopMiniAnimation();this.miniTick=setInterval(()=>{
-      const el=this.root.querySelector<HTMLElement>('.house-mini-pointer');if(!el)return
-      const phase=((Date.now()-this.miniStarted)%2200)/2200
-      el.style.left=`${phase<=.5?phase*200:(1-phase)*200}%`
-    },50)
-  }
-  private stopMiniAnimation():void{if(this.miniTick){clearInterval(this.miniTick);this.miniTick=null}}
-  private async refreshLife():Promise<void>{this.life=(await this.store.houseLife()).life;this.renderLot()}
   private fail(error:unknown):void{const code=(error as {code?:string}).code;const messages:Record<string,string>={insufficient_coins:'코인이 부족해요!',building_required:'시설을 먼저 건설하고 완공을 기다려주세요.',building_in_progress:'건설이 진행 중이에요.',already_built:'이미 건설한 시설이에요.',max_level:'최대 레벨이에요.',care_full:'아직 돌봄이 필요하지 않아요.',care_cooldown:'조금 뒤에 다시 돌봐주세요.',snack_required:'간식이 부족해요.',event_unavailable:'이벤트는 LV.2부터 하루 3번, 3시간 간격으로 가능해요.',no_quest_reward:'수령할 일일 미션 보상이 없어요.',mini_in_progress:'이미 게임 중이에요.',mini_expired:'게임 시간이 끝났어요. 다시 시작해주세요.'};if(code&&messages[code])this.hooks.toast(messages[code]);else this.hooks.error(error)}
   private syncAppearance():void{
     const img=this.root.querySelector<HTMLImageElement>('.house-items .house-single-chiikawa');if(!img)return
@@ -124,7 +137,6 @@ export class HouseView {
       img.style.left=`${x}%`;img.style.top=`${y}%`;el.appendChild(img)
     }
     if(!due&&existing)existing.remove()
-    const tidy=this.root.querySelector<HTMLButtonElement>('[data-action="house-care-tidy"]');if(tidy)tidy.disabled=!due
   }
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
@@ -150,7 +162,7 @@ export class HouseView {
     const moodClass=c.hunger<30||c.happy<35||c.clean<30||c.energy<30?'needs-care':'feeling-good'
     const tabs:[string,string][]=[['care','돌보기'],['snack','간식'],['mission','오늘의 할 일'],['diary','성장 일기']]
     const statCards=stats.map(([name,n])=>`<div class="tama-stat"><div class="tama-stat-label"><span>${name}</span><b>${n}%</b></div><div class="house-care-track"><i style="width:${Math.round(n)}%;background:${n<30?'#e8a28d':n<60?'#e6c084':'#91cdb4'}"></i></div></div>`).join('')
-    const carePanel=`<div class="tama-panel-heading">치이카와 돌보기 <small>아래 메뉴에서 돌봐주세요</small></div><div class="tama-care-hint">하단 버튼으로 먹이기, 씻기, 놀아주기, 재우기를 할 수 있어요.</div><div class="tama-pet"><button data-action="house-care-medicine" ${(c.health??100)>=100?'disabled':''}>약 먹이기</button><button data-action="house-care-tidy" ${!c.messAt||c.messAt>Date.now()?'disabled':''}>청소</button><button data-action="house-care-pet">쓰다듬기</button><span>친밀도를 올려주세요</span></div><section class="house-tama-section"><strong>타이밍 챌린지</strong><p>게이지를 중앙에 멈춰보세요.</p><div class="house-mini-bar"><span class="house-mini-target"></span><i class="house-mini-pointer"></i></div><button data-action="${this.miniActive?'house-mini-stop':'house-mini-start'}">${this.miniActive?'여기서 멈추기!':'게임 시작'}</button></section><section class="house-tama-section"><strong>깜짝 생활 이벤트</strong><p>LV.2부터 하루 최대 3번 참여할 수 있어요.</p><button data-action="house-event" ${c.level<2?'disabled':''}>이벤트 확인 (${c.eventCount||0}/3)</button></section>`
+    const carePanel=`<div class="tama-panel-heading">치이카와 돌보기 <small>아래 메뉴에서 돌봐주세요</small></div><div class="tama-care-hint">하단 버튼으로 먹이기, 씻기, 놀아주기, 재우기를 할 수 있어요.</div><div class="tama-pet"><button data-action="house-care-medicine">약 먹이기</button><button data-action="house-care-tidy">청소</button><button data-action="house-care-pet">쓰다듬기</button><span>친밀도를 올려주세요</span></div><section class="house-tama-section"><strong>깜짝 생활 이벤트</strong><p>LV.2부터 하루 최대 3번 참여할 수 있어요.</p><button data-action="house-event" ${c.level<2?'disabled':''}>이벤트 확인 (${c.eventCount||0}/3)</button></section>`
     const snackPanel=`<div class="tama-panel-heading">간식 주기 <small>뽑기에서 얻은 간식을 먹여주세요</small></div><div class="tama-snack-grid">${Object.entries(snackNames).map(([id,name])=>`<button data-action="house-care-snack" data-snack="${id}" ${(this.life.snacks[id]||0)<=0?'disabled':''}><strong>${name}</strong><span>보유 ${this.life.snacks[id]||0}개</span></button>`).join('')}</div><p class="tama-note">${c.level>=4&&c.favorite&&c.tasted?.includes(c.favorite)?`좋아하는 간식: ${snackNames[c.favorite]}`:'간식을 먹이며 취향을 발견해 보세요.'} 간식뽑기는 1회 10,000코인입니다.</p>`
     const missionPanel=`<div class="tama-panel-heading">오늘의 할 일 <small>매일 치이카와와 추억을 쌓아보세요</small></div><div class="tama-mission-list">${missions.map(([id,name,coins])=>`<div><span>${name}</span><span>${currentDay&&((c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]||0)>0?'완료':'진행 전'}</span><b>${coins.toLocaleString()}코인 ${c.claimed?.includes(id)?'· 수령 완료':''}</b></div>`).join('')}</div><button class="tama-main-button" data-action="house-claim" ${canClaim?'':'disabled'}>미션 보상 받기</button>`
     const diaryPanel=`<div class="tama-panel-heading">성장 일기 <small>치이카와와 함께한 기록 · ${Math.floor((Date.now()-(c.bornAt||Date.now()))/86400000)+1}일차 · 추억 ${c.memories?.length||0}개</small></div><div class="house-diary">${diary.length?diary.map(d=>`<div>${new Date(d.at).toLocaleDateString('ko-KR')} · ${d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`).join(''):'치이카와와 첫 추억을 만들어보세요.'}</div>`
@@ -160,6 +172,5 @@ export class HouseView {
     const miniStats=`<div class="tama-game-hud" aria-label="육성 상태"><div class="tama-hearts" title="종합 컨디션">${hearts}</div><div class="tama-hud-level">LV.${c.level}</div><div class="tama-hud-mood">${emotion}</div></div>`
     const menu:[string,string,string][]=[['care','⌂','돌보기'],['snack','▣','간식'],['mission','☆','미션'],['diary','▤','일기']]
     el.innerHTML=`<div class="tama-device">${miniStats}<div class="tama-direct-care" aria-label="간편 돌보기">${([['feed','먹이기'],['wash','씻기'],['play','놀아주기'],['sleep','재우기']] as const).map(([id,name])=>`<button data-action="house-care-${id}">${name}</button>`).join('')}</div><div class="tama-game-menu" role="tablist">${menu.map(([id,icon,name])=>`<button class="tama-game-key ${this.activeTab===id&&this.infoOpen?'selected':''}" role="tab" aria-selected="${this.activeTab===id&&this.infoOpen}" data-action="house-tab" data-tab="${id}" title="${name}"><span aria-hidden="true">${icon}</span><small>${name}</small></button>`).join('')}<button class="tama-game-key tama-info-key" data-action="house-info" title="상태 보기"><span aria-hidden="true">${this.infoOpen?'×':'☰'}</span><small>${this.infoOpen?'닫기':'상태'}</small></button></div><div class="tama-drawer ${this.infoOpen?'is-open':''}" ${this.infoOpen?'':'hidden'}><div class="tama-drawer-head"><strong>${this.activeTab==='care'?'치이카와 돌보기':this.activeTab==='snack'?'간식 보관함':this.activeTab==='mission'?'오늘의 할 일':'성장 일기'}</strong><button data-action="house-info" aria-label="닫기">×</button></div><div class="tama-drawer-summary"><div class="tama-level">LV.${c.level}</div><span>친밀도 ${c.affection} · ${c.level>=3?(c.personality||'성격 미발견'):'LV.3 성격 발견'}</span></div><div class="tama-exp"><div class="tama-exp-label"><span>성장 경험치</span><b>${c.level>=10?"MAX":`${c.exp} / ${[150,200,250,300,350,400,450,450,450][Math.min(8,c.level-1)]}`}</b></div><div class="house-care-track"><i style="width:${Math.min(100,c.level>=10?100:c.exp/Math.max(1,[150,200,250,300,350,400,450,450,450][Math.min(8,c.level-1)])*100)}%"></i></div></div><div class="tama-stats">${statCards}</div><div class="tama-tab-content">${panels[this.activeTab]}</div></div></div>`
-    if(this.miniActive)this.startMiniAnimation()
   }
 }

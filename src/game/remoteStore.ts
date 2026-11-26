@@ -112,7 +112,7 @@ export const ERROR_TEXT: Record<string, string> = {
 }
 
 export class RequestError extends Error {
-  constructor(readonly code: string) { super(code) }
+  constructor(readonly code: string, readonly nextAt?: number) { super(code) }
 }
 
 async function request<T>(path: string, body?: unknown): Promise<T> {
@@ -125,7 +125,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
     throw new RequestError('network')
   }
   const data = await response.json().catch(() => ({})) as T & ApiError
-  if (!response.ok) throw new RequestError(data.error || 'network')
+  if (!response.ok) throw new RequestError(data.error || 'network', (data as ApiError & {nextAt?:number}).nextAt)
   return data
 }
 
