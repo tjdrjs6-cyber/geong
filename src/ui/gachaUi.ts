@@ -2981,14 +2981,20 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const image=r.petGrade?'/assets/pets/box_normal.png':r.accessoryId?`/assets/accessories/${r.accessoryId}.png`:CHARACTER_IMAGE_URLS[r.id as keyof typeof CHARACTER_IMAGE_URLS]
     const item:RevealItem=r.id?this.characterReveal({id:r.id as CharacterId,duplicate:r.duplicate,bonus:0} as PullResult):{image,name:r.petGrade?this.lotteryPetName(r.petGrade):this.lotteryAccessoryName(r.accessoryId!),rare:true,grade:r.petGrade?({epic:'에픽',rare:'레어',normal:'노말'} as Record<string,string>)[r.petGrade]:'레어',tag:'',sub:'',chance:0,color:'#fff1dc',accent:'#e4b65b'}
     item.rare=true;item.tag=`${name} 당첨!`
-    const animation=this.createLegendOpening('/assets/lottery_ticket_custom.png','겅이복권')
+    const animation=this.createLegendOpening('/assets/lottery_ticket_custom.png','두근두근')
     animation.classList.add('lottery-opening-overlay')
+    const skip=document.createElement('button')
+    skip.type='button';skip.textContent='SKIP »';skip.setAttribute('aria-label','남은 복권 연출 모두 건너뛰기')
+    skip.style.cssText='position:absolute;top:calc(env(safe-area-inset-top, 0px) + 16px);right:16px;z-index:10;padding:10px 18px;border:1px solid #fff3c0;border-radius:12px;background:#35234e;color:#fff3c0;font-weight:800;cursor:pointer;touch-action:manipulation'
+    skip.onclick=(event)=>{event.stopPropagation();if(this.lotteryResults.length)this.finishLottery()}
+    animation.append(skip)
     this.lotteryTimer=window.setTimeout(()=>{
       animation.remove()
       if(this.screen!=='rps'||!this.lotteryResults.length)return
       this.popReveal(item,0,1)
+      skip.className='lottery-reveal-skip';skip.style.position='fixed';skip.style.zIndex='2147483001';document.body.append(skip)
       this.lotteryTimer=window.setTimeout(()=>{
-        this.hidePop()
+        skip.remove();this.hidePop()
         if(this.screen==='rps'&&this.lotteryResults.length){
           if(this.lotteryAutoReveal||this.lotteryResults[this.lotteryRevealed+1]?.grade==='L')complete()
           else this.showLotteryWinPopup(r,complete)
@@ -3037,7 +3043,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private finishLottery():void{
     this.lotteryAutoReveal=false;this.lotteryAnimating=false
     const completedResults=[...this.lotteryResults]
-    document.querySelectorAll('.lottery-opening-overlay').forEach(node=>node.remove());this.hidePop()
+    document.querySelectorAll('.lottery-opening-overlay,.lottery-reveal-skip').forEach(node=>node.remove());this.hidePop()
     window.clearTimeout(this.lotteryTimer);document.getElementById('lottery-win-dialog')?.remove();this.lotteryRevealed=this.lotteryResults.length
     this.renderLotteryResults()
     this.root.querySelector<HTMLElement>('.lottery-ticket')?.setAttribute('hidden','')
