@@ -71,8 +71,24 @@ export class HouseView {
   private syncMess():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
     const due=!!this.care?.messAt&&this.care.messAt<=Date.now()
-    const existing=el.querySelector('.house-care-mess')
-    if(due&&!existing)el.insertAdjacentHTML('beforeend','<img class="house-care-mess" src="/assets/house/care-mess.png" alt="응가" draggable="false"/>')
+    const existing=el.querySelector<HTMLImageElement>('.house-care-mess')
+    if(due&&!existing){
+      // Stable pseudo-random position from the persisted mess timestamp.
+      let seed=(this.care!.messAt! % 4294967296) >>> 0
+      const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+      let x=50,y=70
+      for(let i=0;i<128;i++){
+        const px=7+random()*86,py=42+random()*31
+        const edge=Math.abs(px-50)/48.2
+        // Inset the diamond floor to keep the entire sprite inside.
+        if(py<38.4+16.9*edge+3.5||py>76.9-19.7*edge-3.5)continue
+        if(Math.abs(px-50)<12&&Math.abs(py-56)<11)continue
+        x=px;y=py;break
+      }
+      const img=document.createElement('img')
+      img.className='house-care-mess';img.src='/assets/house/care-mess.png';img.alt='응가';img.draggable=false
+      img.style.left=`${x}%`;img.style.top=`${y}%`;el.appendChild(img)
+    }
     if(!due&&existing)existing.remove()
     const tidy=this.root.querySelector<HTMLButtonElement>('[data-action="house-care-tidy"]');if(tidy)tidy.disabled=!due
   }
