@@ -507,7 +507,7 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title' && this.store.user) window.setTimeout(() => { if (!this.showTutorialOnce()) this.showUpdateNoticeOnce() }, 200)
+    if (screen === 'title' && this.store.user) window.setTimeout(() => { if (!this.showTutorialOnce()) void this.showHouseIntroOnce() }, 200)
     if (screen === 'title') { this.renderWallet(); this.renderHero(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); window.setTimeout(()=>{if(this.screen!=='title')return;this.renderCollection();this.refreshMailBadge();if(Date.now()-this.titleRefreshAt<5000 && this.titleRefreshUser===this.store.user?.username)return;this.titleRefreshAt=Date.now();this.titleRefreshUser=this.store.user?.username;void this.refreshPvpDailyDots();this.prefetchQuickPanels();void this.loadWildWeed();void this.refreshAnnouncementDot();void this.refreshGlobalChatDot();void this.refreshExpeditionBadge(true);void this.refreshRpsBadge();void this.refreshHouseCoinBadge();void this.refreshAchievementReadyBadge()},100) }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
@@ -4848,7 +4848,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         if (key) try { window.localStorage.setItem(key,'done') } catch { /* storage blocked */ }
       }
       overlay.remove()
-      if (this.screen === 'title') window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
+      if (this.screen === 'title') window.setTimeout(() => void this.showHouseIntroOnce(), 120)
     }
     const render = (): void => {
       const [title, description, location] = steps[index]
@@ -4859,6 +4859,28 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     render()
     document.body.appendChild(overlay)
+  }
+
+  private houseIntroBusy = false
+  private async showHouseIntroOnce(): Promise<void> {
+    const username=this.store.user?.username
+    if(!username || this.screen!=='title' || this.houseIntroBusy || document.querySelector('.house-intro-dialog'))return
+    this.houseIntroBusy=true
+    try {
+      const response=await fetch('/api/house/intro',{method:'POST',credentials:'include',cache:'no-store'})
+      if(!response.ok)throw Error('intro')
+      const data=await response.json() as {show:boolean}
+      if(this.store.user?.username!==username)return
+      if(!data.show){this.showUpdateNoticeOnce();return}
+      const dialog=document.createElement('dialog');dialog.className='house-intro-dialog combat-power-modal'
+      dialog.setAttribute('aria-label','치이카와 키우기 안내')
+      dialog.innerHTML=`<div class="combat-power-modal-inner" style="text-align:center;max-width:340px;width:100%;box-sizing:border-box"><h2>치이카와 키우기 오픈!</h2><img src="/assets/house/care-chiikawa.png" alt="치이카와" style="display:block;width:100px;height:100px;object-fit:contain;margin:10px auto"/><p>이제 겅이마켓에서 나만의 치이카와를 키울 수 있어요!</p><p>밥을 먹이고, 씻겨주고, 함께 놀면서 친밀도를 높여 보세요.</p><div style="display:grid;gap:8px"><button type="button" class="modal-primary" data-go>키우기 바로가기</button><button type="button" class="modal-secondary" data-close>닫기</button></div></div>`
+      document.body.append(dialog)
+      dialog.querySelector('[data-go]')?.addEventListener('click',()=>{this.show('house');dialog.close()})
+      dialog.querySelector('[data-close]')?.addEventListener('click',()=>dialog.close())
+      dialog.addEventListener('close',()=>{dialog.remove();if(this.screen==='title')this.showUpdateNoticeOnce()},{once:true})
+      dialog.showModal()
+    } catch { this.showUpdateNoticeOnce() } finally {this.houseIntroBusy=false}
   }
 
   private showUpdateNoticeOnce(): void {

@@ -289,6 +289,7 @@ async function prepareDatabase() {
     salt VARCHAR(64) NOT NULL,
     last_slot BIGINT NOT NULL DEFAULT 0
   )`)
+  await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_intro_seen (account_id BIGINT UNSIGNED PRIMARY KEY)` )
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_life (account_id BIGINT UNSIGNED PRIMARY KEY, state_json JSON NOT NULL)` )
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_house_care (
     account_id BIGINT UNSIGNED PRIMARY KEY,
@@ -2855,6 +2856,11 @@ const routes = {
     })
     users.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko-KR', { sensitivity: 'base', numeric: true }))
     send(res, 200, { users, total: CHARACTER_IDS.length, decoTotal: DECO_IDS.length })
+  },
+  'POST /api/house/intro': async (req,res) => {
+    const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
+    const [result]=await pool.query('INSERT IGNORE INTO gm_house_intro_seen (account_id) VALUES (?)',[account.id])
+    send(res,200,{show:result.affectedRows===1})
   },
   'GET /api/house/life': async (req,res) => {
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
