@@ -2886,7 +2886,7 @@ const routes = {
     const { action, snackId } = await readJson(req)
     const rules = {
       feed: { key:'hunger', limit:75, gain:25, cost:1000, cooldown:300000, exp:5 },
-      snack: { key:'hunger', limit:90, gain:10, extra:'happy', extraGain:15, cost:0, cooldown:600000, exp:5 },
+      snack: { key:null, cost:0, cooldown:1800000, exp:0 },
       play: { key:'happy', limit:75, gain:25, cost:0, cooldown:600000, exp:10 },
       wash: { key:'clean', limit:65, gain:35, cost:0, cooldown:900000, exp:5 },
       sleep: { key:'energy', limit:80, gain:20, cost:0, cooldown:3600000, exp:5 },
@@ -2905,29 +2905,29 @@ const routes = {
       life.buildings=Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}]));life.snacks=life.snacks||{}
       if(action==='snack'&&(!['candy','cookie','pudding','cake','lunch'].includes(snackId)||!(life.snacks[snackId]>0))){await conn.rollback();return send(res,409,{error:'snack_required'})}
 
-      if ((care.sleepUntil||0)>now && ['feed','wash','play','sleep'].includes(action)) { await conn.rollback(); return send(res,409,{error:'care_sleeping',nextAt:care.sleepUntil}) }
+      if ((care.sleepUntil||0)>now && ['feed','wash','play','sleep','snack'].includes(action)) { await conn.rollback(); return send(res,409,{error:'care_sleeping',nextAt:care.sleepUntil}) }
       if ((care.cooldowns[action]||0)>now) { await conn.rollback(); return send(res,409,{error:'care_cooldown',nextAt:care.cooldowns[action]}) }
       if((action==='tidy'&&(!care.messAt||care.messAt>now))||(action==='medicine'&&care.health>=100)){await conn.rollback();return send(res,409,{error:'care_full'})}
-      const allowed=action==='snack' ? care.hunger<=90 || care.happy<=85 : !rule.key || care[rule.key]<=rule.limit
+      const allowed=!rule.key || care[rule.key]<=rule.limit
       if (!allowed) { await conn.rollback(); return send(res,409,{error:'care_full'}) }
       if (rule.cost) {
         const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?', [rule.cost,account.id,rule.cost])
         if (!paid.affectedRows) { await conn.rollback(); return send(res,409,{error:'insufficient_coins'}) }
       }
       if(action==='snack'){
-        const bonuses={candy:[5,5],cookie:[10,5],pudding:[10,15],cake:[15,25],lunch:[25,35]}
-        const [h,happy]=bonuses[snackId];care.hunger=Math.min(100,care.hunger+h);care.happy=Math.min(100,care.happy+happy)
+        const bonuses={candy:20,cookie:25,pudding:30,cake:40,lunch:50}
+        if(care.level>=4){if(!care.favorite)care.favorite=['candy','cookie','pudding','cake','lunch'][randomInt(5)];if(!care.tasted.includes(snackId))care.tasted.push(snackId)}
+        care.affection+=Math.round(bonuses[snackId]*(care.level>=4&&snackId===care.favorite?1.5:1))
         life.snacks[snackId]--;await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id])
       }
       if (rule.key&&action!=='snack') care[rule.key]=Math.min(100,care[rule.key]+rule.gain)
       if (rule.extra&&action!=='snack') care[rule.extra]=Math.min(100,care[rule.extra]+rule.extraGain)
-      if(action==='feed'||action==='snack'){if(!care.messAt)care.messAt=now+30*60000}
+      if(action==='feed'){if(!care.messAt)care.messAt=now+30*60000}
       if(action==='tidy'){care.messAt=0}
       if(action==='medicine')care.health=Math.min(100,care.health+30)
       if(action==='sleep')care.sleepUntil=now+30*60000
-      if(action==='snack'&&care.level>=4){if(!care.favorite)care.favorite=['candy','cookie','pudding','cake','lunch'][randomInt(5)];if(!care.tasted.includes(snackId))care.tasted.push(snackId);if(snackId===care.favorite){care.happy=Math.min(100,care.happy+10);care.affection=Math.min(1000,care.affection+5)}}
-      if (action==='play') care.energy=Math.max(0,care.energy-10)
-      if (action==='pet') care.affection=Math.min(1000,care.affection+5)
+      if (action==='play') {care.energy=Math.max(0,care.energy-10);care.affection+=10}
+      if (action==='pet') care.affection=care.affection+5
       const questDay=new Date(now+9*3600000).toISOString().slice(0,10)
       if(care.questDay!==questDay){care.questDay=questDay;care.quests={};care.claimed=[]}
       care.quests[action]=(care.quests[action]||0)+1
@@ -2989,7 +2989,7 @@ const routes = {
         const chosen=(special[care.personality]&&randomInt(10)<3)?special[care.personality]:common[randomInt(common.length)]
         care.eventCount++;care.eventReadyAt=now+3*3600000
         for(const stat of ['happy','hunger','clean','energy'])if(chosen[stat])care[stat]=Math.min(100,care[stat]+chosen[stat])
-        if(chosen.affection)care.affection=Math.min(1000,care.affection+chosen.affection)
+        if(chosen.affection)care.affection=care.affection+chosen.affection
         coins=chosen.coins||0;earned=chosen.exp||0;message=chosen.text
         care.diary.unshift({at:now,text:message});if(!care.memories.includes(message))care.memories.push(message)
       }else if(action==='claim'){
