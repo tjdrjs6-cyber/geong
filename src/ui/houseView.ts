@@ -69,7 +69,7 @@ export class HouseView {
     const lines=!c?['안녕!','반가워!']:
       (c.sleepUntil??0)>Date.now()?['쿨쿨…','조금만 더 잘래…']:
       (c.health??100)<50?['몸이 안 좋아…','약 먹고 싶어…']:
-      c.hunger<30?['배고파…','맛있는 거 먹고 싶어!']:
+      c.hunger<50?['배고파…','맛있는 거 먹고 싶어!']:
       c.clean<50?['꼬질꼬질해…','씻고 싶어!']:
       c.energy<50?['졸려…','조금 쉬고 싶어.']:
       c.happy<35?['나랑 놀아줘…','심심해…']:
@@ -137,11 +137,19 @@ export class HouseView {
     const c=this.care
     const sleeping=(c?.sleepUntil??0)>Date.now()
     const tired=c!==null&&c.energy<50
+    const hungry=c!==null&&c.hunger<50
     const dirty=c!==null&&c.clean<50
-    const variant=sleeping?'sleeping':tired?'tired':dirty?'dirty':''
+    const variant=sleeping?'sleeping':tired?'tired':hungry?'hungry':dirty?'dirty':''
     const src=`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
     if(img.getAttribute('src')!==src)img.src=src
-    img.alt=sleeping?'잠자는 치이카와':tired?'졸린 치이카와':dirty?'꼬질꼬질한 치이카와':'치이카와'
+    if(variant==='hungry'){
+      img.style.setProperty('transform-origin','50% 100%')
+      img.style.setProperty('transform','translateX(14%) scale(1.27)','important')
+    }else{
+      img.style.removeProperty('transform-origin')
+      img.style.removeProperty('transform')
+    }
+    img.alt=sleeping?'잠자는 치이카와':tired?'졸린 치이카와':hungry?'배고픈 치이카와':dirty?'꼬질꼬질한 치이카와':'치이카와'
   }
   private syncMess():void{
     this.syncAppearance()
@@ -182,13 +190,13 @@ export class HouseView {
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
     const stats:[string,number][]=[['배부름',c.hunger],['행복',c.happy],['청결',c.clean],['체력',c.energy],['건강',Math.round(c.health??100)]]
-    const emotion=c.hunger<30?'배가 고파요':c.happy<35?'심심해요':c.clean<30?'씻고 싶어요':c.energy<50?'졸려요':c.happy>=80?'아주 행복해요':'기분이 좋아요'
+    const emotion=c.hunger<50?'배가 고파요':c.happy<35?'심심해요':c.clean<30?'씻고 싶어요':c.energy<50?'졸려요':c.happy>=80?'아주 행복해요':'기분이 좋아요'
     const missions:[string,string,number][]=[['feed','밥주기',500],['play','놀아주기',500],['pet','쓰다듬기',500]]
     const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10)
     const currentDay=c.questDay===today
     const canClaim=missions.some(([id])=>currentDay&&(c as HouseCareState & {quests?:Record<string,number>}).quests?.[id]&&!c.claimed?.includes(id))
     const diary=(c.diary||[]).slice(0,6)
-    const moodClass=c.hunger<30||c.happy<35||c.clean<30||c.energy<50?'needs-care':'feeling-good'
+    const moodClass=c.hunger<50||c.happy<35||c.clean<30||c.energy<50?'needs-care':'feeling-good'
     const tabs:[string,string][]=[['care','돌보기'],['snack','간식'],['mission','오늘의 할 일'],['diary','성장 일기']]
     const statCards=stats.map(([name,n])=>`<div class="tama-stat"><div class="tama-stat-label"><span>${name}</span><b>${n}%</b></div><div class="house-care-track"><i style="width:${Math.round(n)}%;background:${n<30?'#e8a28d':n<60?'#e6c084':'#91cdb4'}"></i></div></div>`).join('')
     const carePanel=`<div class="tama-panel-heading">치이카와 돌보기 <small>아래 메뉴에서 돌봐주세요</small></div><div class="tama-care-hint">하단 버튼으로 먹이기, 씻기, 놀아주기, 재우기를 할 수 있어요.</div><div class="tama-pet"><button data-action="house-care-medicine">약 먹이기<small class="tama-care-clock" data-care-clock="medicine"></small></button><button data-action="house-care-tidy">청소<small class="tama-care-clock" data-care-clock="tidy"></small></button><button data-action="house-care-pet">쓰다듬기<small class="tama-care-clock" data-care-clock="pet"></small></button><span>친밀도를 올려주세요</span></div><section class="house-tama-section"><strong>깜짝 생활 이벤트</strong><p>LV.2부터 하루 최대 3번 참여할 수 있어요.</p><button data-action="house-event" ${c.level<2?'disabled':''}>이벤트 확인 (${c.eventCount||0}/3)</button></section>`
