@@ -9,7 +9,20 @@ const snackBond:Record<string,number>={candy:20,cookie:25,pudding:30,cake:40,lun
 const relations=[{min:0,name:'처음 만난 사이'},{min:500,name:'조금 친해진 사이'},{min:1500,name:'친한 친구'},{min:3000,name:'단짝 친구'},{min:5000,name:'소중한 친구'},{min:10000,name:'둘도 없는 친구'},{min:20000,name:'가족 같은 사이'},{min:35000,name:'영원한 단짝'},{min:50000,name:'운명적인 만남'},{min:100000,name:'최고의 동반자'}]
 const bg='/assets/bg/house_room_test09.png'
 export function houseLotMarkup():string{return `<img class="house-bg" src="${bg}" alt="" draggable="false"/>`}
-export function houseVisitMarkup(_layout:HouseLayout):string{return `<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items"><img class="house-single-chiikawa" src="/assets/house/care-chiikawa.png" alt="치이카와"/></div></div></div>`}
+type VisitCare = Pick<HouseCareState,'level'|'affection'|'hunger'|'happy'|'clean'|'energy'> & {health:number;sleepUntil:number;deadAt:number}
+export function houseVisitMarkup(layout:HouseLayout):string{
+  const c=(layout as HouseLayout & {visitCare?:VisitCare|null}).visitCare
+  const variant=c?(c.sleepUntil>Date.now()?'sleeping':c.health<50?'sick':c.energy<50?'tired':c.hunger<50?'hungry':c.clean<50?'dirty':''):''
+  const actor=c&&!c.deadAt?`<img src="/assets/house/care-chiikawa${variant?'-'+variant:''}.png" alt="치이카와" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
+  const room=`<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${actor}</div></div></div>`
+  if(!c)return room+`<p class="user-house-note">키우기 정보를 확인할 수 없습니다.</p>`
+  if(c.deadAt)return room+`<p class="user-house-note">치이카와가 사망했습니다.</p>`
+  const pct=(v:number)=>Math.max(0,Math.min(100,Math.round(Number(v)||0)))
+  const bond=Math.max(0,Number(c.affection)||0), rank=relations.reduce((r,v,i)=>bond>=v.min?i:r,0), rel=relations[rank],next=relations[rank+1]
+  const hearts=Math.max(0,Math.min(4,Math.ceil((c.hunger+c.happy+c.clean+c.energy)/100)))
+  const stats=([['배부름',c.hunger],['행복도',c.happy],['청결도',c.clean],['체력',c.energy],['건강',c.health]] as const).map(([name,value])=>`<div><span>${name} <b style="float:right">${pct(value)}%</b></span><div class="house-care-track"><i style="width:${pct(value)}%;background:#8fcbb4"></i></div></div>`).join('')
+  return room+`<section class="house-care" style="width:100%;margin:8px auto"><div class="house-care-head"><b>LV.${Math.max(1,Number(c.level)||1)}</b><span style="color:#d383a5">${'♥'.repeat(hearts)}${'♡'.repeat(4-hearts)}</span></div><div style="text-align:center;margin-bottom:10px"><b>${rel.name}</b><div>친밀도 ${bond.toLocaleString()}${next?' / '+next.min.toLocaleString():''}</div><div class="house-care-track"><i style="width:${next?pct((bond-rel.min)/(next.min-rel.min)*100):100}%"></i></div><small>${next?'다음 관계: '+next.name:'최고 관계 달성'}</small></div><div class="house-care-stats">${stats}</div></section>`
+}
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
   private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number})|null=null

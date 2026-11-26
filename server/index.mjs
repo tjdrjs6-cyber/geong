@@ -3039,7 +3039,11 @@ const routes = {
       const [privacyRows] = await pool.query('SELECT show_house FROM gm_profile_privacy WHERE account_id = ?', [rows[0].id])
       if (privacyRows[0] && !Boolean(privacyRows[0].show_house)) return send(res, 403, { error: 'house_private' })
     }
-    send(res, 200, { nickname: rows[0].nickname, house: await getHouse(rows[0].id) })
+    const house = await getHouse(rows[0].id)
+    const [careRows] = await pool.query('SELECT state_json FROM gm_house_care WHERE account_id = ?', [rows[0].id])
+    const care = careRows[0] ? houseCareDecay(parseJson(careRows[0].state_json), Date.now()) : null
+    const visitCare = care ? Object.fromEntries(['level','affection','hunger','happy','clean','energy','health','sleepUntil','deadAt'].map(key => [key, care[key] || 0])) : null
+    send(res, 200, { nickname: rows[0].nickname, house: { ...house, visitCare } })
   },
   'POST /api/weed/start': async (req, res) => {
     const account = await currentAccount(req)
