@@ -342,9 +342,11 @@ async function prepareDatabase() {
     account_id BIGINT UNSIGNED PRIMARY KEY,
     weapon VARCHAR(12) NOT NULL,
     level TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    pity TINYINT UNSIGNED NOT NULL DEFAULT 0
+    pity DECIMAL(5,2) UNSIGNED NOT NULL DEFAULT 0
   )`)
-  try { await pool.query('ALTER TABLE gm_forge ADD COLUMN pity TINYINT UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  try { await pool.query('ALTER TABLE gm_forge ADD COLUMN pity DECIMAL(5,2) UNSIGNED NOT NULL DEFAULT 0') } catch (error) { if (error?.code !== 'ER_DUP_FIELDNAME') throw error }
+  const [forgePityColumns] = await pool.query("SHOW COLUMNS FROM gm_forge LIKE 'pity'")
+  if (!String(forgePityColumns[0]?.Type).toLowerCase().startsWith('decimal(5,2)')) await pool.query('ALTER TABLE gm_forge MODIFY COLUMN pity DECIMAL(5,2) UNSIGNED NOT NULL DEFAULT 0')
   await pool.query(`CREATE TABLE IF NOT EXISTS gm_diamond_recharge (
     account_id BIGINT UNSIGNED PRIMARY KEY,
     last_ms BIGINT NOT NULL
@@ -2104,7 +2106,7 @@ const routes = {
       }
       const pity=Math.min(100,Math.max(0,Number(rows[0].pity)||0))
       const success=forgeGuaranteed(account) || pity>=100 || randomInt(100)<FORGE_CHANCES[level]
-      const nextPity=success?0:Math.min(100,pity+FORGE_CHANCES[level])
+      const nextPity=success?0:Math.min(100,pity+FORGE_CHANCES[level]/2)
       await conn.query('UPDATE gm_saves SET gems=gems-?,fragments=fragments-?+? WHERE account_id=?',[rpsAdmin(account)?0:coins,rpsAdmin(account)?0:fragments,earned,account.id])
       await conn.query('UPDATE gm_forge SET level=?,pity=? WHERE account_id=?',[level+(success?1:0),nextPity,account.id])
       await conn.commit()
