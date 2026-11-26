@@ -1,3 +1,4 @@
+const HOUSE_SNACK_DISPLAY = [{id:"candy",name:"사탕",rate:35,bond:20},{id:"cookie",name:"쿠키",rate:30,bond:25},{id:"pudding",name:"푸딩",rate:20,bond:30},{id:"cake",name:"딸기케이크",rate:10,bond:40},{id:"lunch",name:"특제도시락",rate:5,bond:50}] as const
 import { TradeMarket } from './tradeMarket'
 import { Plaza } from './plaza'
 // Format displayed game amounts without changing raw game state, IDs, probabilities, or API payloads.
@@ -460,10 +461,12 @@ export class GachaUi {
     }catch(e){this.dopamineRevealing=false;this.handleError(e);await this.openDopamine()}
     finally{this.dopamineBusy=false;this.renderDopamine()}
   }
+  private titleRefreshAt=0
+  private titleRefreshUser:string|undefined
   show(screen: Screen): void {
-    if (screen === 'house') return
     // Prizes are granted atomically on purchase; leaving only dismisses the reveal animation.
     if (this.screen === 'rps' && screen !== 'rps' && this.lotteryResults.length) this.finishLottery()
+    if(this.screen==='house'&&screen!=='house')this.house.close()
     this.screen = screen
     if (screen !== 'lobby') { const popup=this.root.querySelector<HTMLElement>('.pull-popup'); if(popup)popup.hidden=true }
     if (screen !== 'users') {
@@ -504,8 +507,8 @@ export class GachaUi {
     if (screen === 'suggest') void this.loadSuggest()
     if (screen === 'featured') this.renderFeaturedPicker()
     if (screen === 'house') this.house.open()
-    if (screen === 'title' && this.store.user) window.setTimeout(() => { if (!this.showTutorialOnce()) this.showUpdateNoticeOnce() }, 200)
-    if (screen === 'title') { void this.refreshPvpDailyDots();this.prefetchQuickPanels(); void this.loadWildWeed(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); this.renderWallet(); this.renderCollection(); this.renderHero(); this.refreshMailBadge(); void this.refreshAnnouncementDot(); void this.refreshGlobalChatDot(); void this.refreshExpeditionBadge(true); void this.refreshRpsBadge(); void this.refreshHouseCoinBadge(); void this.refreshAchievementReadyBadge() }
+    if (screen === 'title' && this.store.user) window.setTimeout(() => { if (!this.showTutorialOnce()) void this.showHouseIntroOnce() }, 200)
+    if (screen === 'title') { this.renderWallet(); this.renderHero(); requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); window.setTimeout(()=>{if(this.screen!=='title')return;this.renderCollection();this.refreshMailBadge();if(Date.now()-this.titleRefreshAt<5000 && this.titleRefreshUser===this.store.user?.username)return;this.titleRefreshAt=Date.now();this.titleRefreshUser=this.store.user?.username;void this.refreshPvpDailyDots();this.prefetchQuickPanels();void this.loadWildWeed();void this.refreshAnnouncementDot();void this.refreshGlobalChatDot();void this.refreshExpeditionBadge(true);void this.refreshRpsBadge();void this.refreshHouseCoinBadge();void this.refreshAchievementReadyBadge()},100) }
     window.clearInterval(this.weedTimer)
     if (screen === 'weed') { this.renderWeed(); void this.loadWildWeed(); this.weedTimer = window.setInterval(() => {this.renderWeedStatus();if(this.store.wildWeed && Math.floor(this.store.serverNow()/3600000)>this.wildWeedLastSlot)void this.loadWildWeed()}, 1000) }
 
@@ -705,7 +708,7 @@ export class GachaUi {
         <div class="top-rewards" aria-label="오늘의 보상"><button class="reward-chip rps-lobby-tab" data-action="rps"><span><b>겅이복권</b></span></button><button class="reward-chip dopamine-lobby-tab" data-action="dopamine"><span><b>도파민존</b></span></button></div>
         <button class="profile-chip" data-action="featured" aria-label="내 프로필 열기"><span class="profile-avatar"><img alt="" /></span><span class="profile-text"><b class="profile-name">내 프로필</b><small>대표 · 우편함</small></span><i class="mail-badge" hidden>0</i></button>
         <div class="expedition-entry"><img class="expedition-banner-image" src="/expedition_banner.jpg" alt="원정대 그림"/><button type="button" class="expedition-entry-label" data-action="expedition"><i class="deployment-reset-dot" data-deploy-dot="expedition" hidden></i>원정대<i class="expedition-entry-dot" hidden aria-label="오늘 원정대 미배치"></i></button></div>
-        <nav class="gacha-nav" aria-label="이동"><div class="community-menu"><button type="button" class="nav-button nav-community" data-action="community-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>커뮤니티<i class="community-notice-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="community-options" hidden><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button></div></div><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="pvp-daily-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><i class="deployment-reset-dot" data-deploy-dot="weed" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><i class="deployment-reset-dot" data-deploy-dot="battle" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button><button type="button" class="nav-button" data-action="pvp"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="랏코 얼굴" /></span>PvP<i class="pvp-daily-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house" disabled aria-disabled="true" title="업데이트 예정"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>키우기 <small>업데이트 예정</small></button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button><button type="button" class="nav-button" data-action="trade-market"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>유저 거래소</button></div></div><button type="button" class="nav-button nav-pets" data-action="pets"><span class="chiikawa-tab-icon"><img src="/assets/pets/box_normal.png" alt="" /></span>펫</button></nav>
+        <nav class="gacha-nav" aria-label="이동"><div class="community-menu"><button type="button" class="nav-button nav-community" data-action="community-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>커뮤니티<i class="community-notice-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="community-options" hidden><button class="nav-button nav-announcements" data-action="announcements"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>공지사항<i class="announcement-dot" hidden></i></button><button class="nav-button nav-global-chat" data-action="global-chat"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>전체채팅<i class="global-chat-dot" hidden></i></button></div></div><button class="nav-button nav-users" data-action="users"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>유저 목록</button><div class="activity-menu"><button type="button" class="nav-button nav-activity" data-action="activity-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>활동<i class="geongi-keyring-dot" hidden></i><i class="pvp-daily-dot" hidden></i><i class="wild-weed-alert-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="activity-options" hidden><button type="button" class="nav-button" data-action="weed"><i class="deployment-reset-dot" data-deploy-dot="weed" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>제초장<i class="wild-weed-alert-dot" hidden></i></button><button type="button" class="nav-button" data-action="battle"><i class="deployment-reset-dot" data-deploy-dot="battle" hidden></i><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>토벌장</button><button type="button" class="nav-button" data-action="claw"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_face_claw.png" alt="" /></span>키링뽑기<i class="geongi-keyring-dot" hidden></i></button><button type="button" class="nav-button" data-action="pvp"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="랏코 얼굴" /></span>PvP<i class="pvp-daily-dot" hidden></i></button></div></div><div class="myroom-menu"><button type="button" class="nav-button nav-myroom" data-action="myroom-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>마이룸<i class="geongi-equipment-dot" hidden></i><img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="myroom-options" hidden><button type="button" class="nav-button" data-action="equipment"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>장비<i class="geongi-equipment-dot" hidden></i></button><button type="button" class="nav-button" data-action="storage"><span class="chiikawa-tab-icon"><img src="/assets/chars/hachiware_face.png" alt="" /></span>인벤토리</button><button type="button" class="nav-button" data-action="house"><span class="chiikawa-tab-icon"><img src="/assets/chars/chiikawa_tab_icon.png" alt="" /></span>키우기</button><button type="button" class="nav-button" data-action="research"><span class="chiikawa-tab-icon"><img src="/assets/chars/usagi_face_claw.png" alt="" /></span>연구소</button></div></div><div class="market-menu"><button type="button" class="nav-button nav-market" data-action="market-toggle" aria-expanded="false"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="갑옷씨" /></span>상점<img class="menu-toggle-arrow" src="/menu_triangle.png" alt="" aria-hidden="true" /></button><div class="market-options" hidden><button type="button" class="nav-button" data-action="forge"><span class="chiikawa-tab-icon"><img src="/assets/forge/rakko_face.png" alt="" /></span>대장간</button><button type="button" class="nav-button" data-action="shop"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>장터</button><button type="button" class="nav-button" data-action="alchemy"><span class="chiikawa-tab-icon"><img src="/assets/accessories/chiikawa_keyring_face.png" alt="" /></span>연금술</button><button type="button" class="nav-button" data-action="trade-market"><span class="chiikawa-tab-icon"><img src="/shop_armor_face.png" alt="" /></span>유저 거래소</button></div></div><button type="button" class="nav-button nav-pets" data-action="pets"><span class="chiikawa-tab-icon"><img src="/assets/pets/box_normal.png" alt="" /></span>펫</button></nav>
         <section class="toon-stage" aria-label="가챠 무대">
           <div class="toon-machine">${machineMarkup()}</div>
           <i class="toon-floor"></i>
@@ -715,15 +718,15 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" disabled aria-disabled="true" title="업데이트 예정" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 간식 뽑기 <small>업데이트 예정</small></button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · SNACK PICK UP</span><h2>간식 뽑기 등장!</h2><div class="pull-event-info"><b>간식 1개 확정 획득</b><span>확률 보기에서 획득 확률 확인</span></div></div><p class="house-snack-banner">1회 10,000코인 · 간식 1개 확정</p></div>
-          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row"><button class="pull-button deco-pull" data-action="snack-pull" disabled data-count="1"><span><b>간식 1회</b><small>10,000 코인</small></span></button>
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 간식 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · SNACK PICK UP</span><h2>간식 뽑기 등장!</h2><div class="pull-event-info"><b>간식 1개 확정 획득</b><span>확률 보기에서 획득 확률 확인</span></div></div><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:8px;width:100%;box-sizing:border-box">${HOUSE_SNACK_DISPLAY.map(v=>`<div style="text-align:center;min-width:0"><img src="/assets/house/snack-${v.id}.png" alt="${v.name}" style="width:100%;max-width:100px;aspect-ratio:1;object-fit:contain"/><small style="display:block;font-size:clamp(9px,2vw,13px)">${v.name}</small></div>`).join('')}</div><p class="house-snack-banner">1회 200다이아 · 10+1회 2,000다이아</p></div>
+          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row"><button class="pull-button deco-pull" data-action="snack-pull" data-count="1"><span><b>간식 1회</b><small>200 다이아</small></span></button><button class="pull-button deco-pull" data-action="snack-pull" data-count="10"><span><b>간식 10+1회</b><small>2,000 다이아</small></span></button>
           ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
           </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
           </div>
         </div></footer>
         <div class="free-note" hidden>캐릭터 뽑기 하루 10회 무료 · 남은 무료 뽑기 <b class="free-pull-remaining">10</b>회</div>
-        <div class="free-note">캐릭터 뽑기는 50다이아, 간식 뽑기는 10,000코인부터 이용할 수 있어요.</div>
+        <div class="free-note">캐릭터 뽑기는 50다이아, 간식 뽑기는 200다이아부터 이용할 수 있어요.</div>
         <div class="toast" aria-live="polite"></div>
       </main>
       <div class="insufficient-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="insufficient-title" aria-describedby="insufficient-message">
@@ -1621,7 +1624,7 @@ export class GachaUi {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]')
     const action = button?.dataset.action
     if (!action) return
-    if (button.disabled || action === 'house' || action === 'snack-pull' || action === 'deco-pull' || (action === 'mode' && button.dataset.mode === 'deco') || (action === 'user-tab' && button.dataset.tab === 'house')) return
+    if (button.disabled || action === 'deco-pull') return
     this.audio.unlock()
     this.audio.play('ui')
     if (action === 'community-toggle') {
@@ -1994,8 +1997,11 @@ export class GachaUi {
       return
     }
     if(action==='snack-pull'){
-      if(this.busy)return;this.busy=true
-      try{const result=await this.store.houseLifeAction('pull');this.renderWallet();this.setPullMode('deco');this.toast(`간식 획득: ${result.prize?.name||'간식'}!`)}catch(error){this.handleError(error)}finally{this.busy=false}
+      if(this.busy)return;const count=Number(button.dataset.count);if(![1,10].includes(count))return
+      if(!this.pullConfirmed){this.askPullConfirmation('snack',count);return}
+      const cost=count===10?2000:200;if(!this.isAdmin&&(this.store.data.diamonds??0)<cost){this.showInsufficient(cost);return}
+      this.busy=true;this.renderWallet()
+      try{const result=await this.store.houseLifeAction('pull',count===10?'11':'1');this.renderWallet();const prizes=result.prizes??(result.prize?[result.prize]:[]);this.openSnackDialog('간식 뽑기 결과',prizes.map(v=>{const item=HOUSE_SNACK_DISPLAY.find(x=>x.id===v.id);return item?`<div class="result-friend result-tier-deco" style="--friend:#fff3e8;--accent:#e99aae"><span class="result-avatar"><img src="/assets/house/snack-${item.id}.png" alt="${item.name}" style="width:64px;height:64px;object-fit:contain"/></span><span><b>${item.name}</b><small>친밀도 +${item.bond}</small></span><span class="result-chance">${item.rate}%</span></div>`:''}).join(''),`${prizes.length}개 간식을 획득했어요.`)}catch(error){if((error as {code?:string}).code==='insufficient_diamonds')this.showInsufficient(cost);else this.handleError(error)}finally{this.busy=false;this.renderWallet()}
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -3268,7 +3274,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
       pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
-    this.root.querySelectorAll<HTMLButtonElement>('[data-action="snack-pull"]').forEach(pullButton => { pullButton.disabled = true })
+    this.root.querySelectorAll<HTMLButtonElement>('[data-action="snack-pull"]').forEach(pullButton => { pullButton.disabled = this.busy })
     const decoCount = this.root.querySelector<HTMLElement>('.deco-count')
     if (decoCount) decoCount.textContent = `${Object.keys(this.store.decos).length} / ${DECOS.length}`
   }
@@ -3308,14 +3314,14 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const kind=dialog.dataset.kind
     const count=Number(dialog.dataset.count)
     dialog.hidden=true
-    const target=this.root.querySelector<HTMLButtonElement>(kind==='free'?'.free-daily-pull':`.pull-button[data-action="${kind==='deco'?'deco-pull':'pull'}"][data-count="${count}"]`)
+    const target=this.root.querySelector<HTMLButtonElement>(kind==='free'?'.free-daily-pull':`.pull-button[data-action="${kind==='snack'?'snack-pull':kind==='deco'?'deco-pull':'pull'}"][data-count="${count}"]`)
     if(target){this.pullConfirmed=true;target.click();this.pullConfirmed=false}
   }
-  private askPullConfirmation(kind:'char'|'deco'|'free', count:number):void {
+  private askPullConfirmation(kind:'char'|'deco'|'free'|'snack', count:number):void {
     if(![1,10].includes(count))return
     if(kind==='free' && this.freePullRemaining()!==10){this.toast('오늘의 무료 뽑기는 이미 사용했어요.');return}
     const free=kind==='free' && this.freePullRemaining()===10
-    const cost=free?0:kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
+    const cost=free?0:kind==='snack'?(count===10?2000:200):kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
     if(!this.isAdmin && (this.store.data.diamonds??0)<cost){this.showInsufficient(cost);return}
     let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
     if(!dialog){
@@ -3328,13 +3334,20 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     dialog.dataset.kind=kind;dialog.dataset.count=String(count)
     const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
-    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'다이아'}`
+    if(detail)detail.textContent=`${kind==='snack'?'간식':kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'다이아'}`
     dialog.hidden=false
+  }
+  private openSnackDialog(title:string,rows:string,subtitle:string):void {
+    document.querySelector<HTMLDialogElement>('.snack-top-dialog')?.close()
+    const d=document.createElement('dialog');d.className='snack-top-dialog'
+    d.style.cssText='position:fixed;inset:0;margin:auto;width:min(92vw,460px);max-height:85dvh;overflow:auto;padding:0;border:0;border-radius:20px;background:#fff8f2;color:#65482f;box-shadow:0 12px 48px #0006;box-sizing:border-box'
+    d.innerHTML=`<div class="modal-card result-card" style="position:relative;display:block;width:100%;max-width:none;max-height:none;transform:none;margin:0;box-sizing:border-box;padding:18px"><h2 style="text-align:center">${title}</h2><p style="text-align:center">${subtitle}</p><div style="display:grid;gap:6px;max-height:55dvh;overflow:auto;overscroll-behavior:contain">${rows}</div><button type="button" class="modal-primary" style="width:100%;margin-top:12px">확인</button></div>`
+    document.body.append(d);d.querySelector('button')!.addEventListener('click',()=>d.close());d.addEventListener('close',()=>d.remove(),{once:true});d.showModal()
   }
   private openPullRatesDialog():void {
     document.querySelector('.pull-rates-dialog')?.remove()
     const deco=this.root.querySelector('.pull-popup')?.classList.contains('is-deco')??false
-    if(deco){this.toast('간식뽑기: 사탕 35%, 쿠키 30%, 푸딩 20%, 딸기 케이크 10%, 특제 도시락 5%');return}
+    if(deco){this.openSnackDialog('간식 뽑기 확률',HOUSE_SNACK_DISPLAY.map(v=>`<div class="pull-rate-row" style="display:flex;align-items:center;gap:12px;padding:8px"><img src="/assets/house/snack-${v.id}.png" alt="${v.name}" style="width:56px;height:56px;object-fit:contain;flex:none"/><span style="flex:1">${v.name}<small style="display:block">친밀도 +${v.bond}</small></span><b>${v.rate}%</b></div>`).join(''),'전체 획득 확률 100%');return}
     const dialog=document.createElement('div')
     dialog.className='pull-rates-dialog'
     const tierOrder=['transcendent','legendary','super','rare','mermaid','normal'] as const
@@ -3377,7 +3390,6 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('.christmas-banner-tab').forEach(b=>b.classList.toggle('is-active',(b.dataset.banner==='christmas')===christmas))
   }
   private setPullMode(mode: 'char' | 'deco'): void {
-    if (mode === 'deco') mode = 'char'
     this.root.querySelector('.gacha-actions')?.classList.toggle('is-deco', mode === 'deco')
     this.root.querySelector('.pull-popup')?.classList.toggle('is-deco', mode === 'deco')
     this.root.querySelectorAll<HTMLElement>('.pull-action-row .deco-pull').forEach(el => { el.style.display = mode === 'deco' ? '' : 'none' })
@@ -3389,7 +3401,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.renderFreePullStatus()
     this.renderPullRates(mode)
     const balance=this.root.querySelector<HTMLElement>('.pull-popup-balance')
-    if(balance)balance.innerHTML=mode==='deco'?`<img src="/assets/coin.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 코인 <strong>${this.store.data.gems.toLocaleString('ko-KR')}</strong>`:`<img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">${(this.store.data.diamonds??0).toLocaleString('ko-KR')}</strong>`
+    if(balance)balance.innerHTML=`<img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">${(this.store.data.diamonds??0).toLocaleString('ko-KR')}</strong>`
     this.renderChristmasBanner()
     this.root.querySelectorAll<HTMLButtonElement>('.pull-mode-button').forEach(tab => {
       const active = tab.dataset.mode === mode
@@ -3497,7 +3509,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const accessories = user.me ? { counts: this.store.accessory.counts || {}, grades: this.store.accessory.grades || {} } : user.accessories
     const ownedAccessoryCount = WEAPON_ACCESSORIES.reduce((total,item)=>total+ALCHEMY_GRADES.filter(grade=>((grade.id==='normal'?accessories?.counts?.[item.id]:accessories?.grades?.[item.id]?.[grade.id])||0)>0).length,0)
     const count = isPrivate ? '🔒 비공개' : tab === 'house' ? '' : accessory ? `${ownedAccessoryCount} / 48` : deco ? `${user.decos?.length ?? 0} / ${DECOS.length}` : `${user.owned.length} / ${CHARACTERS.length}`
-    const tabButton = (id: string, label: string) => `<button type="button" class="auth-tab${tab === id ? ' is-active' : ''}" data-action="user-tab" data-tab="${id}" ${id === 'house' ? 'disabled aria-disabled="true" title="업데이트 예정"' : ''} data-nickname="${nick}" role="tab" aria-selected="${tab === id}">${label}</button>`
+    const tabButton = (id: string, label: string) => `<button type="button" class="auth-tab${tab === id ? ' is-active' : ''}" data-action="user-tab" data-tab="${id}" data-nickname="${nick}" role="tab" aria-selected="${tab === id}">${label}</button>`
     // Match the personal accessory encyclopedia's card markup and image sizing.
     const accessoryCards = WEAPON_ACCESSORIES.flatMap(item=>ALCHEMY_GRADES.map(grade=>{
       const quantity=grade.id==='normal'?(accessories?.counts?.[item.id]||0):(accessories?.grades?.[item.id]?.[grade.id]||0)
@@ -3506,7 +3518,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     })).join('')
     body.innerHTML = `<div class="user-detail-head"><button class="soft-button" data-action="user-list">← 유저 목록</button>${avatar}<b>${nick} 님의 ${title}</b><span>${count}</span></div>
       ${user.me ? '' : `<button class="modal-primary mail-compose-button" data-action="mail-compose" data-nickname="${nick}">✉ ${nick} 님에게 편지 보내기</button>`}
-      <div class="auth-tabs user-tabs user-tabs-3 user-profile-tabs" role="tablist">${tabButton('char', '캐릭터 도감')}${tabButton('deco', '데코 도감')}${tabButton('accessory', '무기 액세서리 도감')}${tabButton('house', '키우기 (업데이트 예정)')}</div>
+      <div class="auth-tabs user-tabs user-tabs-3 user-profile-tabs" role="tablist">${tabButton('char', '캐릭터 도감')}${tabButton('deco', '데코 도감')}${tabButton('accessory', '무기 액세서리 도감')}${tabButton('house', '키우기')}</div>
       ${isPrivate ? '<p class="users-empty privacy-hidden-notice">🔒 이 정보는 비공개로 설정되어 있어요.<br>프로필 사진과 닉네임은 계속 볼 수 있어요.</p>' : tab === 'house' ? '<div class="user-house"><p class="user-house-loading">하우스를 불러오는 중…</p></div>' : `<div class="collection-grid user-grid ${accessory?'accessory-card-grid profile-accessory-grid':''}">${accessory?accessoryCards:deco?this.decoCards(decoCounts, false):this.collectionCards(user.owned, false)}</div>`}`
     if (tab === 'house' && !isPrivate) void this.loadUserHouse(user.nickname)
   }
@@ -4220,7 +4232,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
 
   private async loadSuggest(): Promise<void> {
     const list = this.root.querySelector<HTMLElement>('.suggest-list')
-    if (list) list.innerHTML = '<p class="users-empty">건의함을 여는 중이에요…</p>'
+    if (list && !list.childElementCount) list.innerHTML = '<p class="users-empty">건의함을 여는 중이에요…</p>'
     const form = this.root.querySelector<HTMLFormElement>('.suggest-form')
     if (form && !form.dataset.bound) {
       form.dataset.bound = '1'
@@ -4836,7 +4848,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
         if (key) try { window.localStorage.setItem(key,'done') } catch { /* storage blocked */ }
       }
       overlay.remove()
-      if (this.screen === 'title') window.setTimeout(() => this.showUpdateNoticeOnce(), 120)
+      if (this.screen === 'title') window.setTimeout(() => void this.showHouseIntroOnce(), 120)
     }
     const render = (): void => {
       const [title, description, location] = steps[index]
@@ -4847,6 +4859,28 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     render()
     document.body.appendChild(overlay)
+  }
+
+  private houseIntroBusy = false
+  private async showHouseIntroOnce(): Promise<void> {
+    const username=this.store.user?.username
+    if(!username || this.screen!=='title' || this.houseIntroBusy || document.querySelector('.house-intro-dialog'))return
+    this.houseIntroBusy=true
+    try {
+      const response=await fetch('/api/house/intro',{method:'POST',credentials:'include',cache:'no-store'})
+      if(!response.ok)throw Error('intro')
+      const data=await response.json() as {show:boolean}
+      if(this.store.user?.username!==username)return
+      if(!data.show){this.showUpdateNoticeOnce();return}
+      const dialog=document.createElement('dialog');dialog.className='house-intro-dialog combat-power-modal'
+      dialog.setAttribute('aria-label','치이카와 키우기 안내')
+      dialog.innerHTML=`<div class="combat-power-modal-inner" style="text-align:center;max-width:340px;width:100%;box-sizing:border-box"><h2>치이카와 키우기 오픈!</h2><img src="/assets/house/care-chiikawa.png" alt="치이카와" style="display:block;width:100px;height:100px;object-fit:contain;margin:10px auto"/><p>이제 겅이마켓에서 나만의 치이카와를 키울 수 있어요!</p><p>밥을 먹이고, 씻겨주고, 함께 놀면서 친밀도를 높여 보세요.</p><div style="display:grid;gap:8px"><button type="button" class="modal-primary" data-go>키우기 바로가기</button><button type="button" class="modal-secondary" data-close>닫기</button></div></div>`
+      document.body.append(dialog)
+      dialog.querySelector('[data-go]')?.addEventListener('click',()=>{this.show('house');dialog.close()})
+      dialog.querySelector('[data-close]')?.addEventListener('click',()=>dialog.close())
+      dialog.addEventListener('close',()=>{dialog.remove();if(this.screen==='title')this.showUpdateNoticeOnce()},{once:true})
+      dialog.showModal()
+    } catch { this.showUpdateNoticeOnce() } finally {this.houseIntroBusy=false}
   }
 
   private showUpdateNoticeOnce(): void {

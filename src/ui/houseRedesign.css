@@ -421,3 +421,95 @@
   to{filter:brightness(1.08) drop-shadow(0 0 5px #ffe4aa)}
 }
 #ui .house-screen .house-single-chiikawa{z-index:21 !important}
+
+/* Direct care controls, shared across desktop and mobile. */
+#ui .house-screen .house-single-chiikawa{left:50% !important;top:56% !important;pointer-events:none !important;cursor:default;touch-action:auto;transition:none !important}
+#ui .house-screen .tama-direct-care{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+#ui .house-screen .tama-direct-care button{min-width:0;padding:10px 2px;border:1px solid #c6a2bd;border-radius:10px;background:#fff8fc;color:#754b65;font-weight:800;font-size:clamp(10px,2.5vw,13px);cursor:pointer;touch-action:manipulation}
+#ui .house-screen .tama-pet{flex-wrap:wrap}
+
+/* House-only custom care artwork. */
+#ui .house-screen .house-care-mess{position:absolute;left:59%;top:63%;width:4.25%;height:3.75%;object-fit:contain;transform:translate(-50%,-50%);z-index:20;pointer-events:none;user-select:none}
+
+/* Roaming actor and click-to-talk, shared PC/mobile. */
+#ui .house-screen .house-roaming-actor{position:absolute;width:17%;height:15%;transform:translate(-50%,-50%);z-index:21;pointer-events:none;transition:left 2.2s ease-in-out,top 2.2s ease-in-out}
+#ui .house-screen .house-roaming-actor .house-single-chiikawa{left:0 !important;top:0 !important;width:100% !important;height:100% !important;transform:none !important;pointer-events:auto !important;cursor:pointer;touch-action:manipulation}
+#ui .house-screen .house-roaming-actor .house-life-bubble{position:absolute;left:50%;bottom:100%;top:auto;transform:translateX(-50%);white-space:nowrap;background:white;color:#59483e;padding:5px 10px;border-radius:12px;font-size:clamp(10px,2.5vw,13px);pointer-events:none;z-index:22}
+#ui .house-screen .house-roaming-actor .house-life-bubble[hidden]{display:none !important}
+
+/* Care confirmation and result: native top-layer, game-styled dialog. */
+#ui .house-care-dialog{box-sizing:border-box;width:min(340px,calc(100% - 32px));max-height:85vh;overflow:auto;margin:auto;padding:22px;border:1px solid #d7b4c9;border-radius:18px;background:#fff8fc;color:#754b65;text-align:center;box-shadow:0 12px 40px #39233255;font-family:inherit}
+#ui .house-care-dialog::backdrop{background:#30202b88}
+#ui .house-care-dialog h3{margin:0 0 14px;font-size:19px;color:#754b65}
+#ui .house-care-dialog p{white-space:pre-line;line-height:1.65;margin:0 0 18px;font-size:14px;color:#754b65}
+#ui .house-care-dialog-actions{display:flex;gap:8px}
+#ui .house-care-dialog-actions button{flex:1;padding:11px;border:1px solid #c6a2bd;border-radius:10px;background:#fff;color:#754b65;font-weight:800;cursor:pointer}
+#ui .house-care-dialog-actions button:last-child{background:#a66d94;color:white}
+
+/* Live care timers, shared desktop/mobile. */
+#ui .house-screen .tama-sleep-clock{margin:6px 0;padding:8px;border-radius:10px;background:#e9e8f6;color:#625780;text-align:center;font-size:clamp(10px,2.5vw,13px);font-weight:700;font-variant-numeric:tabular-nums}
+#ui .house-screen .tama-sleep-clock[hidden]{display:none!important}
+#ui .house-screen .tama-care-clock{display:block;margin-top:4px;font-size:clamp(9px,2vw,11px);font-weight:600;color:#916478;font-variant-numeric:tabular-nums;white-space:normal}
+#ui .house-screen .tama-care-clock.ready{color:#32845b}
+
+#ui .house-screen .tama-direct-care button:disabled{background:#e8e5e8;color:#8b858b;border-color:#d0cbd0;cursor:not-allowed;opacity:0.8}
+#ui .house-screen .tama-direct-care button:disabled .tama-care-clock{color:#777078}
+
+/* Overlay tab area: opening a tab never changes room dimensions. */
+#ui .house-screen[aria-hidden="false"],#ui .house-screen.is-active{display:flex;flex-direction:column;overflow:hidden!important;min-height:0}
+#ui .house-screen .house-scroll-viewport{flex:1 1 auto!important;height:min(62dvh,570px)!important;min-height:0!important;max-height:none!important;width:calc(100% - 12px)!important;margin:4px 6px 0!important;container-type:size}
+#ui .house-screen .house-lot{width:min(100cqw,calc(100cqh * 1086 / 1448),540px)!important;height:auto!important;max-height:100%!important}
+#ui .house-screen .house-care{display:flex;flex:0 0 auto!important;min-height:0;width:calc(100% - 12px)!important;margin:0 6px 4px!important;max-height:none!important;overflow:visible!important}
+#ui .house-screen .tama-device{display:flex;flex-direction:column;min-height:0;width:100%;box-sizing:border-box;padding:4px 6px 6px;border-width:5px}
+#ui .house-screen .tama-device>*{flex-shrink:0}
+#ui .house-screen .tama-bond{padding:3px 8px!important;font-size:11px;line-height:1.3}
+#ui .house-screen .tama-direct-care{margin-top:4px;gap:4px}
+#ui .house-screen .tama-direct-care button{padding:5px 2px}
+#ui .house-screen .tama-game-menu{margin:5px 0;gap:4px}
+#ui .house-screen .tama-game-key{padding:2px}
+#ui .house-screen .tama-game-key span{font-size:16px}
+#ui .house-screen .tama-drawer{position:absolute;left:5px;right:5px;bottom:calc(100% - 100px);z-index:30;min-height:0;max-height:min(23dvh,180px);overflow-y:auto;touch-action:pan-y;box-shadow:0 -4px 12px #67435a24;border:1px solid #d9a8bc;border-radius:10px;padding:7px}
+#ui .house-screen .tama-drawer-head{margin-bottom:3px}
+#ui .house-screen .tama-drawer-summary,#ui .house-screen .tama-drawer .tama-exp{font-size:10px;margin:3px 0}
+#ui .house-screen .tama-fixed-stats{background:#fff8fc;border-radius:10px;padding:5px;margin-top:5px}
+#ui .house-screen .tama-fixed-stats .tama-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:0}
+#ui .house-screen .tama-fixed-stats .tama-stat{min-width:0;padding:3px;border-radius:6px}
+#ui .house-screen .tama-fixed-stats .tama-stat-label{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1px;font-size:10px;line-height:1.2}
+#ui .house-screen .tama-fixed-stats .house-care-track{height:5px}
+
+/* Keep tabs and fixed stats accessible; overlay the upper control area only. */
+#ui .house-screen .tama-device{position:relative}
+#ui .house-screen .tama-drawer{bottom:calc(100% - 100px);max-height:min(25dvh,190px)}
+
+/* Fit the visible room artwork, not its transparent vertical padding.
+   Keep the original 1086x1448 coordinate space for actors and mess.
+   Visible art bounds: x=17..1067, y=330..1149 (819px high). */
+#ui .house-screen .house-lot {
+  width:min(calc(100cqw - 8px), calc(100cqh * 1.22), 540px) !important;
+  height:auto !important;
+  max-height:none !important;
+  aspect-ratio:1086 / 1448 !important;
+}
+#ui .house-screen .house-roaming-actor {width:18% !important;height:16% !important;}
+
+/* Expand tab overlays upward to their natural content height without resizing the room. */
+#ui .house-screen .tama-drawer {
+  height:auto;max-height:none!important;overflow:visible!important;
+  box-sizing:border-box;padding:10px;touch-action:auto;scrollbar-width:none;
+}
+#ui .house-screen .tama-drawer .tama-tab-content {min-height:0;max-height:none;overflow:visible;padding:4px 0 0}
+#ui .house-screen .tama-drawer .tama-panel-heading {margin-bottom:5px;gap:2px}
+#ui .house-screen .tama-drawer .tama-care-hint {padding:5px;line-height:1.4}
+#ui .house-screen .tama-drawer .tama-pet {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:5px 0}
+#ui .house-screen .tama-drawer .tama-pet button {padding:7px 2px;min-width:0;margin:0}
+#ui .house-screen .tama-drawer .tama-pet>span {grid-column:1/-1}
+#ui .house-screen .tama-drawer .house-tama-section {margin-top:5px;padding-top:5px}
+#ui .house-screen .tama-drawer .house-tama-section p {margin:3px 0}
+#ui .house-screen .tama-drawer .tama-snack-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#ui .house-screen .tama-drawer .tama-snack-grid button {flex-direction:column;justify-content:center;gap:2px;padding:5px 2px;min-width:0;font-size:11px}
+#ui .house-screen .tama-drawer .tama-snack-grid button img {width:32px!important;height:32px!important}
+#ui .house-screen .tama-drawer .tama-note {margin:5px 0 0}
+#ui .house-screen .tama-drawer .tama-mission-list {gap:4px;margin-bottom:5px}
+#ui .house-screen .tama-drawer .tama-mission-list>div {padding:5px}
+#ui .house-screen .tama-drawer .house-diary {line-height:1.4;overflow-wrap:anywhere}
+#ui .house-screen .tama-drawer .house-diary>div {padding:4px 2px}

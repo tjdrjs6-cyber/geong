@@ -112,7 +112,7 @@ export const ERROR_TEXT: Record<string, string> = {
 }
 
 export class RequestError extends Error {
-  constructor(readonly code: string) { super(code) }
+  constructor(readonly code: string, readonly nextAt?: number) { super(code) }
 }
 
 async function request<T>(path: string, body?: unknown): Promise<T> {
@@ -125,7 +125,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
     throw new RequestError('network')
   }
   const data = await response.json().catch(() => ({})) as T & ApiError
-  if (!response.ok) throw new RequestError(data.error || 'network')
+  if (!response.ok) throw new RequestError(data.error || 'network', (data as ApiError & {nextAt?:number}).nextAt)
   return data
 }
 
@@ -339,9 +339,9 @@ export class RemoteGachaStore {
   }
   /** This hour's house coin (null once taken); it disappears when the next one appears at nextAt. */
   houseLife():Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>}}>{return request('house/life')}
-  async houseLifeAction(action:'build'|'upgrade'|'pull',id?:string):Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string}}>{
-    const result=await request<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string}}>('house/life',{action,id})
-    this.data.gems=Math.max(0,this.data.gems-result.spent);return result
+  async houseLifeAction(action:'build'|'upgrade'|'pull',id?:string):Promise<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string};prizes?:{id:string;name:string}[]}>{
+    const result=await request<{life:{buildings:Record<string,{level:number;readyAt:number}>;snacks:Record<string,number>};spent:number;prize?:{id:string;name:string};prizes?:{id:string;name:string}[]}>('house/life',{action,id})
+    this.data.diamonds=Math.max(0,(this.data.diamonds??0)-result.spent);return result
   }
   async houseCare(): Promise<{care:HouseCareState}> { return request('house/care') }
   async houseCareAction(action:string,snackId?:string): Promise<{care:HouseCareState;spent:number;earned:number}> {
@@ -349,7 +349,7 @@ export class RemoteGachaStore {
     if(result.spent) this.data.gems=Math.max(0,this.data.gems-result.spent)
     return result
   }
-  async houseAdventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>{const result=await request<{care:HouseCareState;earned:number;coins:number;message:string;serverNow:number}>('house/adventure',{action});if(result.coins)this.data.gems+=result.coins;return result}
+  async houseAdventure(action:'mini-start'|'mini-stop'|'event'|'claim'):Promise<{care:HouseCareState;earned:number;coins:number;diamonds:number;message:string;serverNow:number}>{const result=await request<{care:HouseCareState;earned:number;coins:number;diamonds:number;message:string;serverNow:number}>('house/adventure',{action});if(result.coins)this.data.gems+=result.coins;if(result.diamonds)this.data.diamonds=(this.data.diamonds??0)+result.diamonds;return result}
   async houseCoin(): Promise<HouseCoinState> {
     return request<HouseCoinState>('house/coin')
   }
