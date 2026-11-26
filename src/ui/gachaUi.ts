@@ -714,15 +714,15 @@ export class GachaUi {
         </section>
         <aside class="collection-peek"><button type="button" class="reward-chip catalog-lobby-tab" data-action="catalog"><span><b>도감</b></span></button><button type="button" class="reward-chip achievement-lobby-tab" data-action="achievements"><span><b>업적</b></span></button><button class="reward-chip daily-button" data-action="daily"><span><b>출석 체크</b><small class="daily-copy">출석 보상</small></span></button></aside>
         <footer class="gacha-actions">
-          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 간식 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · SNACK PICK UP</span><h2>간식 뽑기 등장!</h2><div class="pull-event-info"><b>간식 1개 확정 획득</b><span>확률 보기에서 획득 확률 확인</span></div></div><p class="house-snack-banner">1회 10,000코인 · 간식 1개 확정</p></div>
-          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row"><button class="pull-button deco-pull" data-action="snack-pull" data-count="1"><span><b>간식 1회</b><small>10,000 코인</small></span></button>
+          <div class="pull-mode" role="tablist" aria-label="뽑기 종류"><button type="button" class="pull-mode-button is-active" data-action="mode" data-mode="char" role="tab" aria-selected="true"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 캐릭터 뽑기<i class="free-pull-dot" hidden></i></button><button type="button" class="pull-mode-button" data-action="mode" data-mode="deco" role="tab" aria-selected="false"><img class="chiikawa-pull-icon" src="/assets/chars/chiikawa_tab_icon.png" alt="" /> 간식 뽑기</button></div><div class="pull-popup" hidden><button type="button" class="pull-popup-close" data-action="close-pull-popup" aria-label="닫기">×</button><div class="pull-showcase" aria-label="뽑기 미리보기"><div class="pull-showcase-char"><div class="christmas-banner-tabs"><button type="button" class="christmas-banner-tab is-active" data-action="select-gacha-banner" data-banner="standard">초월 세이렌 뽑기</button><button type="button" class="christmas-banner-tab" data-action="select-gacha-banner" data-banner="christmas">크리스마스 뽑기</button></div><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHARACTER PICK UP</span><h2>세이렌(카레) 등장!</h2><div class="pull-event-info"><b>초월 · 세이렌(카레)</b><span>획득 확률 0.01%</span></div></div><img class="pull-event-hero-image" src="/assets/gacha/siren_curry_event.png" alt="세이렌(카레) 이벤트 일러스트" /><div class="christmas-showcase" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · CHRISTMAS PICK UP</span><h2>크리스마스 뽑기 등장!</h2><div class="pull-event-info"><b>치이카와 · 하치와레 · 우사기 · 우사기(트리)</b><span>레전더리 각 0.075%</span></div></div><img class="pull-event-hero-image christmas-event-hero-image" src="/assets/gacha/christmas_event.png" alt="크리스마스 뽑기 이벤트 일러스트" /></div></div><div class="pull-showcase-deco" hidden><div class="pull-event-copy"><span class="pull-event-kicker">GEONGI MARKET · SNACK PICK UP</span><h2>간식 뽑기 등장!</h2><div class="pull-event-info"><b>간식 1개 확정 획득</b><span>확률 보기에서 획득 확률 확인</span></div></div><p class="house-snack-banner">1회 200다이아 · 10+1회 2,000다이아</p></div>
+          <div class="pull-popup-balance" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 10px;padding:7px 14px;width:max-content;max-width:85%;border-radius:999px;background:#fff7e7;border:1px solid #e8c99c;color:#65482f;font-weight:800;box-sizing:border-box"><img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">0</strong></div><div class="pull-action-row"><button class="pull-button deco-pull" data-action="snack-pull" data-count="1"><span><b>간식 1회</b><small>200 다이아</small></span></button><button class="pull-button deco-pull" data-action="snack-pull" data-count="10"><span><b>간식 10+1회</b><small>2,000 다이아</small></span></button>
           ${PULL_OPTIONS.filter(option=>option.count===1||option.count===10).map(option => `<button class="pull-button pull-${option.count}" data-action="pull" data-count="${option.count}"><span><b>${option.count === 1 ? '1회 뽑기' : `10+1회 뽑기`}</b><small>${option.cost} 다이아${option.count === 10 ? ' · 총 11회' : ''}</small></span></button>`).join('')}
           <button type="button" class="pull-button free-daily-pull" data-action="free-daily-pull" data-count="10"><span><b>무료 10회</b><small>하루 한 번</small></span></button>
           </div><button type="button" class="pull-rates-toggle" data-action="pull-rates-toggle">확률 보기</button>
           </div>
         </div></footer>
         <div class="free-note" hidden>캐릭터 뽑기 하루 10회 무료 · 남은 무료 뽑기 <b class="free-pull-remaining">10</b>회</div>
-        <div class="free-note">캐릭터 뽑기는 50다이아, 간식 뽑기는 10,000코인부터 이용할 수 있어요.</div>
+        <div class="free-note">캐릭터 뽑기는 50다이아, 간식 뽑기는 200다이아부터 이용할 수 있어요.</div>
         <div class="toast" aria-live="polite"></div>
       </main>
       <div class="insufficient-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="insufficient-title" aria-describedby="insufficient-message">
@@ -1993,8 +1993,11 @@ export class GachaUi {
       return
     }
     if(action==='snack-pull'){
-      if(this.busy)return;this.busy=true
-      try{const result=await this.store.houseLifeAction('pull');this.renderWallet();this.setPullMode('deco');this.toast(`간식 획득: ${result.prize?.name||'간식'}!`)}catch(error){this.handleError(error)}finally{this.busy=false}
+      if(this.busy)return;const count=Number(button.dataset.count);if(![1,10].includes(count))return
+      if(!this.pullConfirmed){this.askPullConfirmation('snack',count);return}
+      const cost=count===10?2000:200;if(!this.isAdmin&&(this.store.data.diamonds??0)<cost){this.showInsufficient(cost);return}
+      this.busy=true
+      try{const result=await this.store.houseLifeAction('pull',count===10?'11':'1');this.renderWallet();this.setPullMode('deco');const prizes=result.prizes??(result.prize?[result.prize]:[]);const d=document.createElement('dialog');d.className='house-care-dialog';d.innerHTML='<h3>간식 뽑기 결과</h3><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:55vh;overflow:auto">'+prizes.map(v=>`<div style="text-align:center"><img src="/assets/house/snack-${v.id}.png" style="width:54px;height:54px;object-fit:contain" alt=""/><div>${v.name}</div></div>`).join('')+'</div><div class="house-care-dialog-actions"><button>확인</button></div>';this.root.append(d);d.querySelector('button')!.onclick=()=>d.close();d.addEventListener('close',()=>d.remove());d.showModal()}catch(error){if((error as {code?:string}).code==='insufficient_diamonds')this.showInsufficient(cost);else this.handleError(error)}finally{this.busy=false}
       return
     }
     if (action === 'deco-pull' && !this.pullConfirmed) { this.askPullConfirmation('deco',Number(button.dataset.count)); return }
@@ -3267,7 +3270,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.root.querySelectorAll<HTMLButtonElement>('[data-action="pull"]').forEach(pullButton => {
       pullButton.disabled = this.revealing || (!this.isAdmin && this.store.data.gems < (pullCost(Number(pullButton.dataset.count) as PullCount)))
     })
-    this.root.querySelectorAll<HTMLButtonElement>('[data-action="snack-pull"]').forEach(pullButton => { pullButton.disabled = this.busy || this.store.data.gems < 10000 })
+    this.root.querySelectorAll<HTMLButtonElement>('[data-action="snack-pull"]').forEach(pullButton => { pullButton.disabled = this.busy })
     const decoCount = this.root.querySelector<HTMLElement>('.deco-count')
     if (decoCount) decoCount.textContent = `${Object.keys(this.store.decos).length} / ${DECOS.length}`
   }
@@ -3307,14 +3310,14 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const kind=dialog.dataset.kind
     const count=Number(dialog.dataset.count)
     dialog.hidden=true
-    const target=this.root.querySelector<HTMLButtonElement>(kind==='free'?'.free-daily-pull':`.pull-button[data-action="${kind==='deco'?'deco-pull':'pull'}"][data-count="${count}"]`)
+    const target=this.root.querySelector<HTMLButtonElement>(kind==='free'?'.free-daily-pull':`.pull-button[data-action="${kind==='snack'?'snack-pull':kind==='deco'?'deco-pull':'pull'}"][data-count="${count}"]`)
     if(target){this.pullConfirmed=true;target.click();this.pullConfirmed=false}
   }
-  private askPullConfirmation(kind:'char'|'deco'|'free', count:number):void {
+  private askPullConfirmation(kind:'char'|'deco'|'free'|'snack', count:number):void {
     if(![1,10].includes(count))return
     if(kind==='free' && this.freePullRemaining()!==10){this.toast('오늘의 무료 뽑기는 이미 사용했어요.');return}
     const free=kind==='free' && this.freePullRemaining()===10
-    const cost=free?0:kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
+    const cost=free?0:kind==='snack'?(count===10?2000:200):kind==='deco'?decoPullCost(count as DecoPullCount):pullCost(count as PullCount)
     if(!this.isAdmin && (this.store.data.diamonds??0)<cost){this.showInsufficient(cost);return}
     let dialog=this.root.querySelector<HTMLElement>('.pull-confirm-overlay')
     if(!dialog){
@@ -3327,7 +3330,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     }
     dialog.dataset.kind=kind;dialog.dataset.count=String(count)
     const detail=dialog.querySelector<HTMLElement>('.pull-confirm-detail')
-    if(detail)detail.textContent=`${kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'다이아'}`
+    if(detail)detail.textContent=`${kind==='snack'?'간식':kind==='deco'?'데코':'캐릭터'} ${free?'무료 10회':count===10?'10+1회 (총 11회)':`${count}회`} · ${free?'무료':cost.toLocaleString('ko-KR')+'다이아'}`
     dialog.hidden=false
   }
   private openPullRatesDialog():void {
@@ -3387,7 +3390,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     this.renderFreePullStatus()
     this.renderPullRates(mode)
     const balance=this.root.querySelector<HTMLElement>('.pull-popup-balance')
-    if(balance)balance.innerHTML=mode==='deco'?`<img src="/assets/coin.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 코인 <strong>${this.store.data.gems.toLocaleString('ko-KR')}</strong>`:`<img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">${(this.store.data.diamonds??0).toLocaleString('ko-KR')}</strong>`
+    if(balance)balance.innerHTML=`<img src="/assets/diamond.png" alt="" style="width:20px;height:20px;object-fit:contain"/>보유 다이아 <strong class="diamond-value">${(this.store.data.diamonds??0).toLocaleString('ko-KR')}</strong>`
     this.renderChristmasBanner()
     this.root.querySelectorAll<HTMLButtonElement>('.pull-mode-button').forEach(tab => {
       const active = tab.dataset.mode === mode

@@ -2861,15 +2861,16 @@ const routes = {
       await conn.query('INSERT IGNORE INTO gm_house_life (account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify({buildings:{},snacks:{}})])
       const [rows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
       const raw=parseJson(rows[0].state_json)||{};const life=({...(raw||{}),buildings:Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}])),snacks:(raw?.snacks||{})})
-      let spent=0,prize=null
+      let spent=0,prize=null;const prizes=[]
       if(action==='pull') {
-        spent=10000;const roll=randomInt(100);let cursor=0
+        if(id!==undefined&&id!=='1'&&id!=='11')return await conn.rollback(),send(res,400,{error:'invalid_action'})
+        const count=id==='11'?11:1;spent=count===11?2000:200;for(let i=0;i<count;i++){const roll=randomInt(100);let cursor=0
         for(const [key,value] of Object.entries(snacks)){cursor+=value.weight;if(roll<cursor){prize={id:key,name:value.name};break}}
-        life.snacks[prize.id]=(life.snacks[prize.id]||0)+1
+        life.snacks[prize.id]=(life.snacks[prize.id]||0)+1;prizes.push(prize)}
       } else return await conn.rollback(),send(res,400,{error:'invalid_action'})
-      if(!account.is_admin){const [paid]=await conn.query('UPDATE gm_saves SET gems=gems-? WHERE account_id=? AND gems>=?',[spent,account.id,spent]);if(!paid.affectedRows)return await conn.rollback(),send(res,409,{error:'insufficient_coins'})}
+      if(!account.is_admin){const [paid]=await conn.query('UPDATE gm_saves SET diamonds=diamonds-? WHERE account_id=? AND diamonds>=?',[spent,account.id,spent]);if(!paid.affectedRows)return await conn.rollback(),send(res,409,{error:'insufficient_diamonds'})}
       await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id])
-      await conn.commit();send(res,200,{life,spent:account.is_admin?0:spent,prize})
+      await conn.commit();send(res,200,{life,spent:account.is_admin?0:spent,prize,prizes})
     }catch(error){await conn.rollback();throw error}finally{conn.release()}
   },
   'GET /api/house/care': async (req, res) => {
