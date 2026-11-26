@@ -155,7 +155,7 @@ export class GachaUi {
   private clawAutoRunning = false
   private clawAutoCancel = false
   private clawAutoCount = 0
-  private lotteryState: {remaining:number[];total:number;price:number;tickets:number;resetNoticeId?:number;winners?:{nickname:string;grade:string}[]}|null=null
+  private lotteryState: {remaining:number[];total:number;price:number;tickets:number;unlimited?:boolean;resetNoticeId?:number;winners?:{nickname:string;grade:string}[]}|null=null
   private lotteryResults: {grade:string;id:string|null;accessoryId?:string|null;accessoryGrade?:string|null;petGrade?:string|null;duplicate:boolean;bonus?:number}[]=[]
   private lotteryRevealed=0
   private lotteryTimer=0
@@ -2783,7 +2783,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
   private updateLotteryPrice():void{
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||1)
     const price=this.root.querySelector<HTMLElement>('.lottery-price')
-    if(price)price.textContent=`필요 겅이복권 ${Math.max(0,count).toLocaleString('ko-KR')}개`
+    if(price)price.textContent=this.lotteryState?.unlimited?'필요 겅이복권 0개 (무제한)':`필요 겅이복권 ${Math.max(0,count).toLocaleString('ko-KR')}개`
   }
   private lotteryAccessoryName(accessoryId:string):string{
     const names:Record<string,string>={chiikawa:'치이카와',hachiware:'하치와레',usagi:'우사기',momonga:'모몽가',kurimanju:'쿠리만쥬',shisa:'시사',kani:'카니',rakko:'랏코'}
@@ -2794,7 +2794,7 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     const state=this.lotteryState;if(!state)return
     const status=this.root.querySelector<HTMLElement>('.lottery-status')
     if(status)status.textContent=`전체 200장 · 남은 복권 ${state.total}장`
-    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=String(this.lotteryState?.tickets??0)
+    const balance=this.root.querySelector<HTMLElement>('.lottery-balance-value');if(balance)balance.textContent=state.unlimited?'무제한':String(state.tickets)
     const reset=this.root.querySelector<HTMLButtonElement>('[data-action="lottery-reset"]');if(reset)reset.hidden=!['test','tjdrjs885'].includes(this.store.user?.username?.toLowerCase()||'')
     const prizes=this.root.querySelector<HTMLElement>('.lottery-prizes')
     const ids = ['clinic_chiikawa','clinic_hachiware','clinic_usagi','clinic_momonga','clinic_kurimanju','clinic_shisa','clinic_kani','clinic_rakko','usagi_monster'] as CharacterId[]
@@ -2890,11 +2890,11 @@ if (msg) msg.textContent = '집게를 원하는 인형 위치로 움직여 뽑�
     if(!this.lotteryState){this.lotteryTopPopup('복권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');void this.loadLottery();return}
     if(this.lotteryResults.length){this.lotteryTopPopup('진행 중인 복권 결과를 먼저 확인해주세요.');return}
     if(this.lotteryState.total<1){this.lotteryTopPopup('현재 남은 복권이 없습니다.');return}
-    if(this.lotteryState.tickets<1){this.lotteryTopPopup('보유한 겅이복권이 없습니다.');return}
+    if(!this.lotteryState.unlimited&&this.lotteryState.tickets<1){this.lotteryTopPopup('보유한 겅이복권이 없습니다.');return}
     const count=Number(this.root.querySelector<HTMLInputElement>('.lottery-count')?.value||0)
     if(!Number.isInteger(count)||count<1||count>this.lotteryState.total){this.lotteryTopPopup('사용할 복권 수량을 확인해주세요.');return}
-    if(count>this.lotteryState.tickets){this.lotteryTopPopup(`겅이복권이 부족합니다. (보유 ${this.lotteryState.tickets}개)`);return}
-    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
+    if(!this.lotteryState.unlimited&&count>this.lotteryState.tickets){this.lotteryTopPopup(`겅이복권이 부족합니다. (보유 ${this.lotteryState.tickets}개)`);return}
+    const confirmed=await this.lotteryConfirm(`구매 수량: ${count.toLocaleString('ko-KR')}장\n필요 겅이복권: ${this.lotteryState.unlimited?'0 (무제한)':count.toLocaleString('ko-KR')}개\n\n구매하시겠습니까?`)
     if(!confirmed||this.lotteryBusy||this.lotteryResults.length)return
     this.lotteryBusy=true
     try{

@@ -1417,6 +1417,7 @@ async function wildWeedState(accountId, db=pool) {
 const LOTTERY_IDS = ['clinic_chiikawa','clinic_hachiware','clinic_usagi','clinic_momonga','clinic_kurimanju','clinic_shisa','clinic_kani','clinic_rakko',null,null,null,null]
 const LOTTERY_PETS = {8:'epic',9:'rare',10:'normal'}
 const LOTTERY_GRADES = 'ABCDEFGHIJKX'.split('')
+const unlimitedLottery = account => String(account.username).toLowerCase() === 'test'
 const lotteryView = remaining => ({remaining, total: remaining.reduce((a,b)=>a+b,0), price:1})
 let lotteryNoticeTablesReady = null
 async function ensureLotteryNoticeTables(){
@@ -1771,7 +1772,7 @@ const routes = {
     await ensureLotteryNoticeTables()
     const [notices]=await pool.query('SELECT e.id FROM gm_lottery_reset_events e LEFT JOIN gm_lottery_reset_seen s ON s.event_id=e.id AND s.account_id=? WHERE s.event_id IS NULL ORDER BY e.id DESC LIMIT 1',[account.id])
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
+    send(res,200,{...lotteryView(parseJson(rows[0].remaining)),unlimited:unlimitedLottery(account),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners,resetNoticeId:notices.length?Number(notices[0].id):null})
   },
   'POST /api/lottery/reset': async (req,res) => {
     const account=await currentAccount(req)
@@ -1788,7 +1789,7 @@ const routes = {
       await conn.commit()
     }catch(error){await conn.rollback().catch(()=>{});throw error}finally{conn.release()}
     const [ticketRows]=await pool.query('SELECT lottery_tickets FROM gm_saves WHERE account_id=?',[account.id])
-    send(res,200,{ok:true,...lotteryView([1,1,1,1,1,1,1,1,2,5,10,175]),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
+    send(res,200,{ok:true,...lotteryView([1,1,1,1,1,1,1,1,2,5,10,175]),unlimited:unlimitedLottery(account),tickets:Math.max(0,Number(ticketRows[0]?.lottery_tickets||0)-Number((await pool.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id]))[0][0]?.qty||0)),winners:[]})
   },
   'POST /api/lottery/reset-seen': async (req,res) => {
     const account=await currentAccount(req)
@@ -1816,7 +1817,7 @@ const routes = {
       else {
         const [saves]=await conn.query('SELECT gems, lottery_tickets, owned FROM gm_saves WHERE account_id=? FOR UPDATE',[account.id])
         const [reservedTickets]=await conn.query("SELECT COALESCE(SUM(quantity),0) qty FROM gm_drop_listings WHERE seller_id=? AND kind='ticket' AND status='active'",[account.id])
-        if(!saves.length||Number(saves[0].lottery_tickets)-Number(reservedTickets[0]?.qty||0)<count)outcome={error:'not_enough_tickets'}
+        if(!saves.length||(!unlimitedLottery(account)&&Number(saves[0].lottery_tickets)-Number(reservedTickets[0]?.qty||0)<count))outcome={error:'not_enough_tickets'}
         else {
           const owned=normalizeOwned(parseJson(saves[0].owned))
           const [dupeRows]=await conn.query('SELECT items FROM gm_dupes WHERE account_id=? FOR UPDATE',[account.id])
@@ -1846,11 +1847,11 @@ const routes = {
             }
           }
           await conn.query('UPDATE gm_lottery_pool SET remaining=? WHERE id=1',[JSON.stringify(remaining)])
-          await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[count,collectionBonus,JSON.stringify(owned),account.id])
-          await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=ticket_qty-LEAST(ticket_qty,?) WHERE account_id=?',[count,account.id])
+          await conn.query('UPDATE gm_saves SET lottery_tickets=lottery_tickets-?,gems=gems+?,owned=? WHERE account_id=?',[unlimitedLottery(account)?0:count,collectionBonus,JSON.stringify(owned),account.id])
+          if(!unlimitedLottery(account)) await conn.query('UPDATE gm_tradeable_drops SET ticket_qty=ticket_qty-LEAST(ticket_qty,?) WHERE account_id=?',[count,account.id])
           await conn.query('INSERT INTO gm_dupes (account_id,items) VALUES (?,?) ON DUPLICATE KEY UPDATE items=VALUES(items)',[account.id,JSON.stringify(dupes)])
           for(const result of results)await conn.query('INSERT INTO gm_lottery_history (account_id,grade,character_id) VALUES (?,?,?)',[account.id,result.grade,result.id])
-          outcome={...lotteryView(remaining),tickets:Number(saves[0].lottery_tickets)-count,results}
+          outcome={...lotteryView(remaining),unlimited:unlimitedLottery(account),tickets:Number(saves[0].lottery_tickets)-(unlimitedLottery(account)?0:count),results}
         }
       }
       if(outcome.error)await conn.rollback();else await conn.commit()
