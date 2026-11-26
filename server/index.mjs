@@ -2972,7 +2972,7 @@ const routes = {
     if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const {action}=await readJson(req)
-    if(!['mini-start','mini-stop','event','claim'].includes(action))return send(res,400,{error:'invalid_action'})
+    if(!['mini-start','mini-stop','claim'].includes(action))return send(res,400,{error:'invalid_action'})
     const conn=await pool.getConnection()
     try{
       await conn.beginTransaction()
@@ -3003,17 +3003,6 @@ const routes = {
         care.lastCareAction='play'
         if(!care.milestones.includes('play')){care.milestones.push('play');care.diary.unshift({at:now,text:'게임기를 처음 이용했어요'})}
         message=perfect?'대성공! 행복 +35':'게임 완료! 행복 +15'
-      }else if(action==='event'){
-        if(care.level<2||care.eventCount>=3||now<care.eventReadyAt){await conn.rollback();return send(res,409,{error:'event_unavailable'})}
-        const common=[{text:'반짝이는 동전을 발견했어요!',coins:1000},{text:'기분 좋은 하루예요!',happy:10},{text:'맛있는 음식이 생각나요!',hunger:10},{text:'낮잠을 즐겼어요!',energy:10},{text:'깨끗해져서 상쾌해요!',clean:10},{text:'치이카와가 애교를 부려요!',affection:10},{text:'오늘도 즐거워!',exp:10}]
-        const special={먹보:{text:'부엌에서 맛있는 간식을 생각했어요!',hunger:15},장난꾸러기:{text:'게임기에서 한 판 더 놀고 싶어요!',happy:15},잠꾸러기:{text:'침대에서 꾸벅꾸벅 졸았어요!',energy:15},애교쟁이:{text:'나랑 놀아줘! 치이카와가 다가왔어요!',affection:15}}
-        if(care.level>=5)common.push({text:'하치와레가 놀러 왔어요!',happy:15},{text:'우사기와 함께 놀았어요!',affection:10});if(care.level>=7)common.push({text:'숨바꼭질을 즐겼어요!',happy:15});
-        const chosen=(special[care.personality]&&randomInt(10)<3)?special[care.personality]:common[randomInt(common.length)]
-        care.eventCount++;care.eventReadyAt=now+3*3600000
-        for(const stat of ['happy','hunger','clean','energy'])if(chosen[stat])care[stat]=Math.min(100,care[stat]+chosen[stat])
-        if(chosen.affection)care.affection=care.affection+chosen.affection
-        coins=chosen.coins||0;earned=chosen.exp||0;message=chosen.text
-        care.diary.unshift({at:now,text:message});if(!care.memories.includes(message))care.memories.push(message)
       }else if(action==='claim'){
         const eligible=missions.filter(([id,,count])=>(care.quests[id]||0)>=count&&!care.claimed.includes(id))
         if(!eligible.length){await conn.rollback();return send(res,409,{error:'no_quest_reward'})}
