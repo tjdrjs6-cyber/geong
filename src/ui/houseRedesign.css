@@ -491,3 +491,25 @@
   aspect-ratio:1086 / 1448 !important;
 }
 #ui .house-screen .house-roaming-actor {width:18% !important;height:16% !important;}
+
+/* Expand tab overlays upward to their natural content height without resizing the room. */
+#ui .house-screen .tama-drawer {
+  height:auto;max-height:none!important;overflow:visible!important;
+  box-sizing:border-box;padding:10px;touch-action:auto;scrollbar-width:none;
+}
+#ui .house-screen .tama-drawer .tama-tab-content {min-height:0;max-height:none;overflow:visible;padding:4px 0 0}
+#ui .house-screen .tama-drawer .tama-panel-heading {margin-bottom:5px;gap:2px}
+#ui .house-screen .tama-drawer .tama-care-hint {padding:5px;line-height:1.4}
+#ui .house-screen .tama-drawer .tama-pet {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:5px 0}
+#ui .house-screen .tama-drawer .tama-pet button {padding:7px 2px;min-width:0;margin:0}
+#ui .house-screen .tama-drawer .tama-pet>span {grid-column:1/-1}
+#ui .house-screen .tama-drawer .house-tama-section {margin-top:5px;padding-top:5px}
+#ui .house-screen .tama-drawer .house-tama-section p {margin:3px 0}
+#ui .house-screen .tama-drawer .tama-snack-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#ui .house-screen .tama-drawer .tama-snack-grid button {flex-direction:column;justify-content:center;gap:2px;padding:5px 2px;min-width:0;font-size:11px}
+#ui .house-screen .tama-drawer .tama-snack-grid button img {width:32px!important;height:32px!important}
+#ui .house-screen .tama-drawer .tama-note {margin:5px 0 0}
+#ui .house-screen .tama-drawer .tama-mission-list {gap:4px;margin-bottom:5px}
+#ui .house-screen .tama-drawer .tama-mission-list>div {padding:5px}
+#ui .house-screen .tama-drawer .house-diary {line-height:1.4;overflow-wrap:anywhere}
+#ui .house-screen .tama-drawer .house-diary>div {padding:4px 2px}
