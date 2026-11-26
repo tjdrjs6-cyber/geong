@@ -480,3 +480,14 @@
 /* Keep tabs and fixed stats accessible; overlay the upper control area only. */
 #ui .house-screen .tama-device{position:relative}
 #ui .house-screen .tama-drawer{bottom:calc(100% - 100px);max-height:min(25dvh,190px)}
+
+/* Fit the visible room artwork, not its transparent vertical padding.
+   Keep the original 1086x1448 coordinate space for actors and mess.
+   Visible art bounds: x=17..1067, y=330..1149 (819px high). */
+#ui .house-screen .house-lot {
+  width:min(calc(100cqw - 8px), calc(100cqh * 1.22), 540px) !important;
+  height:auto !important;
+  max-height:none !important;
+  aspect-ratio:1086 / 1448 !important;
+}
+#ui .house-screen .house-roaming-actor {width:18% !important;height:16% !important;}
