@@ -1577,7 +1577,7 @@ async function pvpSettle(){
   }catch(e){console.error('[pvp] settlement:',e)}finally{pvpSettlementBusy=false}
 }
 
-const HOUSE_MAINTENANCE = true
+const HOUSE_MAINTENANCE = false
 const routes = {
   'GET /api/pvp': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
