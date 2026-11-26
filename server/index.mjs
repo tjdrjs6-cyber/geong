@@ -1573,6 +1573,7 @@ async function pvpSettle(){
   }catch(e){console.error('[pvp] settlement:',e)}finally{pvpSettlementBusy=false}
 }
 
+const HOUSE_MAINTENANCE = true
 const routes = {
   'GET /api/pvp': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'})
@@ -2832,6 +2833,7 @@ const routes = {
     const raw=rows[0]?parseJson(rows[0].state_json):null;send(res,200,{life:({...(raw||{}),buildings:Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}])),snacks:(raw?.snacks||{})})})
   },
   'POST /api/house/life': async (req,res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const {action,id}=await readJson(req)
     const costs={arcade:100000,shower:80000,bed:30000,kitchen:50000}
@@ -2860,6 +2862,7 @@ const routes = {
     send(res, 200, { care: houseCareDecay(rows[0] ? parseJson(rows[0].state_json) : null, Date.now()) })
   },
   'POST /api/house/care': async (req, res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     const { action, snackId } = await readJson(req)
@@ -2928,6 +2931,7 @@ const routes = {
     } catch(error) {await conn.rollback();throw error} finally {conn.release()}
   },
   'POST /api/house/adventure': async (req,res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
     const {action}=await readJson(req)
     if(!['mini-start','mini-stop','event','claim'].includes(action))return send(res,400,{error:'invalid_action'})
@@ -2990,6 +2994,7 @@ const routes = {
     send(res, 200, { coin: null, nextAt: 0, now: Date.now() })
   },
   'POST /api/house/coin': async (req, res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     send(res, 410, { error: 'house_coin_disabled' })
@@ -3403,6 +3408,7 @@ const routes = {
     }
   },
   'POST /api/house/save': async (req, res) => {
+    if (HOUSE_MAINTENANCE) return send(res, 503, {error:'house_maintenance'})
     const account = await currentAccount(req)
     if (!account) return send(res, 401, { error: 'login_required' })
     const { layout } = await readJson(req)
