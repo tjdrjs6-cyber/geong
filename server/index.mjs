@@ -676,7 +676,7 @@ function houseCareDecay(raw, now) {
     const fresh=houseCareDecay(null,now)
     // Keep already claimed rewards for the same day to prevent duplicate payouts.
     if(s.questDay===new Date(now+9*3600000).toISOString().slice(0,10)){fresh.questDay=s.questDay;fresh.claimed=s.claimed||[]}
-    fresh.heartNotice=s.heartNotice;
+    fresh.heartNotice=s.heartNotice; fresh.costume=s.costume; fresh.pinkOwned=!!s.pinkOwned;
     return fresh
   }
   const elapsed=Math.max(0,(now-(Number(s.updatedAt)||now))/3600000)
@@ -689,7 +689,7 @@ function houseCareDecay(raw, now) {
     affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
     cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
     personality:s.personality||'미발견', milestones:Array.isArray(s.milestones)?s.milestones:[], diary:Array.isArray(s.diary)?s.diary:[], quests:s.quests&&typeof s.quests==='object'?s.quests:{}, questDay:s.questDay||'',claimed:Array.isArray(s.claimed)?s.claimed:[], eventCount:Number(s.eventCount)||0,eventDay:s.eventDay||'',eventReadyAt:Number(s.eventReadyAt)||0, mini:s.mini||null, miniWins:Number(s.miniWins)||0, petCount:Number(s.petCount)||0, actionCounts:s.actionCounts&&typeof s.actionCounts==='object'?s.actionCounts:{} }
-  care.heartNotice=s.heartNotice;
+  care.pinkOwned=!!s.pinkOwned; care.heartNotice=s.heartNotice; care.costume=s.costume==='pink'?'pink':'';
   return houseMarkDeath(care,now)
 }
 async function houseHeartNotice(req,res,ack){
@@ -2525,6 +2525,22 @@ const routes = {
       await trimInbox(c,l.seller_id);await c.commit();send(res,200,{ok:true});
     }catch(e){await c.rollback().catch(()=>{});throw e}finally{c.release()}
   },
+  'POST /api/trade/pink-costume': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const c=await pool.getConnection();try{await c.beginTransaction();
+    await c.query('INSERT IGNORE INTO gm_house_care (account_id,state_json) VALUES (?,?)',[a.id,JSON.stringify(houseCareDecay(null,Date.now()))]);
+    const [r]=await c.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE',[a.id]);const care=parseJson(r[0].state_json)||{};
+    if(Date.now()>=Date.parse('2026-12-05T00:00:00+09:00')){await c.rollback();return send(res,409,{error:'sale_ended'})}
+    if(care.pinkOwned||String(a.username).toLowerCase()==='test'){await c.rollback();return send(res,409,{error:'already_owned'})}
+    const [paid]=await c.query('UPDATE gm_saves SET diamonds=diamonds-5000 WHERE account_id=? AND diamonds>=5000',[a.id]);if(!paid.affectedRows){await c.rollback();return send(res,409,{error:'not_enough_diamonds'})}
+    care.pinkOwned=true;await c.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),a.id]);await c.commit();return send(res,200,{ok:true});
+    }catch(e){await c.rollback();throw e}finally{c.release()}
+  },
+  'GET /api/house/costume-shop': async(req,res)=>{
+    const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
+    const [rows]=await pool.query('SELECT state_json FROM gm_house_care WHERE account_id=?',[a.id]);
+    return send(res,200,{pinkOwned:String(a.username).toLowerCase()==='test'||!!parseJson(rows[0]?.state_json||'{}')?.pinkOwned,pinkSale:Date.now()<Date.parse('2026-12-05T00:00:00+09:00')});
+  },
   'GET /api/trade/market': async(req,res)=>{
     const a=await currentAccount(req);if(!a)return send(res,401,{error:'login_required'});
     const [drops]=await pool.query("SELECT l.id,l.seller_id,l.kind,l.quantity,l.unit_price,a.nickname FROM gm_drop_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.unit_price,l.id LIMIT 300");
@@ -2538,7 +2554,8 @@ const routes = {
     const [legendListings]=await pool.query("SELECT l.id,l.seller_id,l.price,a.nickname FROM gm_legend_listings l JOIN gm_accounts a ON a.id=l.seller_id WHERE l.status='active' ORDER BY l.price,l.id LIMIT 300");
     const [legendMine]=await pool.query("SELECT l.id,l.price FROM gm_legend_listings l WHERE l.seller_id=? AND l.status='active' ORDER BY l.id DESC",[a.id]);
     const [legendAvailable]=await pool.query('SELECT id,trades FROM gm_legend_tickets WHERE owner_id=? AND listing_id IS NULL ORDER BY id',[a.id]);
-    send(res,200,{legendListings,legendMine,legendAvailable,me:Number(a.id),diamonds:Number(totals[0]?.diamonds||0),drops,pets,boxes,mineDrops,minePets,tradeable:{ticket:Math.max(0,Math.min(Number(available[0]?.ticket_qty||0),Number(totals[0]?.lottery_tickets||0)-mineDrops.filter(x=>x.kind==='ticket').reduce((n,x)=>n+Number(x.quantity),0))),stone:Math.max(0,Math.min(Number(available[0]?.stone_qty||0),Number(stones[0]?.breakthrough_stones||0)-mineDrops.filter(x=>x.kind==='stone').reduce((n,x)=>n+Number(x.quantity),0)))}})
+    const [wardrobe]=await pool.query('SELECT state_json FROM gm_house_care WHERE account_id=?',[a.id]);
+    send(res,200,{pinkOwned:String(a.username).toLowerCase()==='test'||!!parseJson(wardrobe[0]?.state_json||'{}')?.pinkOwned,pinkSale:Date.now()<Date.parse('2026-12-05T00:00:00+09:00'),legendListings,legendMine,legendAvailable,me:Number(a.id),diamonds:Number(totals[0]?.diamonds||0),drops,pets,boxes,mineDrops,minePets,tradeable:{ticket:Math.max(0,Math.min(Number(available[0]?.ticket_qty||0),Number(totals[0]?.lottery_tickets||0)-mineDrops.filter(x=>x.kind==='ticket').reduce((n,x)=>n+Number(x.quantity),0))),stone:Math.max(0,Math.min(Number(available[0]?.stone_qty||0),Number(stones[0]?.breakthrough_stones||0)-mineDrops.filter(x=>x.kind==='stone').reduce((n,x)=>n+Number(x.quantity),0)))}})
   },
   'GET /api/plaza/shop': async(req,res)=>{
     const account=await currentAccount(req);if(!account)return send(res,401,{error:'login_required'})
@@ -2947,7 +2964,7 @@ const routes = {
       pet: { key:null, cost:0, cooldown:1800000, exp:3 }, tidy:{key:null,cost:0,cooldown:1000,exp:5}, medicine:{key:null,cost:5000,cooldown:3600000,exp:5}
     }
     const rule = rules[action]
-    if (!rule) return send(res, 400, { error:'invalid_care_action' })
+    if (!rule && action!=='costume') return send(res, 400, { error:'invalid_care_action' })
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
@@ -2955,6 +2972,11 @@ const routes = {
       const [rows] = await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE', [account.id])
       const now=Date.now(), care=houseCareDecay(parseJson(rows[0].state_json),now)
       if(care.deadAt||parseJson(rows[0].state_json)?.deadAt){await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id]);await conn.commit();return send(res,409,{error:care.deadAt?'care_dead':'care_restarted'})}
+      if(action==='costume'){
+        if((!care.pinkOwned&&String(account.username).toLowerCase()!=='test')||!['pink','none'].includes(snackId)){await conn.rollback();return send(res,403,{error:'costume_not_owned'})}
+        care.costume=snackId==='pink'?'pink':'';
+        await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id]);await conn.commit();return send(res,200,{care,spent:0,earned:0})
+      }
       const [lifeRows]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id])
       const life=lifeRows[0]?parseJson(lifeRows[0].state_json):{buildings:{},snacks:{}}
       life.buildings=Object.fromEntries(['arcade','shower','bed','kitchen'].map(key=>[key,{level:1,readyAt:0}]));life.snacks=life.snacks||{}
@@ -3077,7 +3099,7 @@ const routes = {
     const house = await getHouse(rows[0].id)
     const [careRows] = await pool.query('SELECT state_json FROM gm_house_care WHERE account_id = ?', [rows[0].id])
     const care = careRows[0] ? houseCareDecay(parseJson(careRows[0].state_json), Date.now()) : null
-    const visitCare = care ? Object.fromEntries(['level','affection','hunger','happy','clean','energy','health','sleepUntil','deadAt'].map(key => [key, care[key] || 0])) : null
+    const visitCare = care ? Object.fromEntries(['level','affection','hunger','happy','clean','energy','health','sleepUntil','deadAt','costume'].map(key => [key, care[key] || 0])) : null
     send(res, 200, { nickname: rows[0].nickname, house: { ...house, visitCare } })
   },
   'POST /api/weed/start': async (req, res) => {

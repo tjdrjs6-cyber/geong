@@ -9,11 +9,11 @@ const snackBond:Record<string,number>={candy:20,cookie:25,pudding:30,cake:40,lun
 const relations=[{min:0,name:'처음 만난 사이'},{min:500,name:'조금 친해진 사이'},{min:1500,name:'친한 친구'},{min:3000,name:'단짝 친구'},{min:5000,name:'소중한 친구'},{min:10000,name:'둘도 없는 친구'},{min:20000,name:'가족 같은 사이'},{min:35000,name:'영원한 단짝'},{min:50000,name:'운명적인 만남'},{min:100000,name:'최고의 동반자'}]
 const bg='/assets/bg/house_room_test09.png'
 export function houseLotMarkup():string{return `<img class="house-bg" src="${bg}" alt="" draggable="false"/>`}
-type VisitCare = Pick<HouseCareState,'level'|'affection'|'hunger'|'happy'|'clean'|'energy'> & {health:number;sleepUntil:number;deadAt:number}
+type VisitCare = Pick<HouseCareState,'level'|'affection'|'hunger'|'happy'|'clean'|'energy'> & {health:number;sleepUntil:number;deadAt:number;costume?:string}
 export function houseVisitMarkup(layout:HouseLayout):string{
   const c=(layout as HouseLayout & {visitCare?:VisitCare|null}).visitCare
   const variant=c?(c.sleepUntil>Date.now()?'sleeping':c.health<50?'sick':c.energy<50?'tired':c.hunger<50?'hungry':c.clean<50?'dirty':''):''
-  const actor=c&&!c.deadAt?`<img src="/assets/house/care-chiikawa${variant?'-'+variant:''}.png" alt="치이카와" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
+  const actor=c&&!c.deadAt?`<img src="${c.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`}" alt="치이카와" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
   const room=`<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${actor}</div></div></div>`
   if(!c)return room+`<p class="user-house-note">키우기 정보를 확인할 수 없습니다.</p>`
   if(c.deadAt)return room+`<p class="user-house-note">치이카와가 사망했습니다.</p>`
@@ -25,7 +25,7 @@ export function houseVisitMarkup(layout:HouseLayout):string{
 }
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
-  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number})|null=null
+  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string;pinkOwned?:boolean})|null=null
   private chiPos={x:50,y:56}
   private bubbleTimer:ReturnType<typeof setTimeout>|null=null
   private busy=false
@@ -33,7 +33,7 @@ export class HouseView {
   private careClock:ReturnType<typeof setInterval>|null=null
   private roamTimer:ReturnType<typeof setInterval>|null=null
   private activeTab: 'care'|'snack'|'mission'|'diary'='care'
-  private infoOpen=true
+  private infoOpen=false
   private careDialog:HTMLDialogElement|null=null
   constructor(private readonly root:HTMLElement,private readonly store:RemoteGachaStore,private readonly hooks:Hooks){}
   private loadedUser:string|undefined
@@ -199,7 +199,7 @@ export class HouseView {
     const hungry=c!==null&&c.hunger<50
     const dirty=c!==null&&c.clean<50
     const variant=sleeping?'sleeping':sick?'sick':tired?'tired':hungry?'hungry':dirty?'dirty':''
-    const src=`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
+    const src=c?.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
     if(img.getAttribute('src')!==src)img.src=src
     if(variant==='hungry'){
       img.style.setProperty('transform-origin','50% 100%')
@@ -234,6 +234,15 @@ export class HouseView {
     }
     if(!due&&existing)existing.remove()
   }
+  private openCostumes():void{
+    if(!this.care||this.care.deadAt||this.busy)return
+    const owned=!!this.care.pinkOwned||this.store.user?.username?.toLowerCase()==='test'
+    const dialog=document.createElement('dialog');dialog.style.cssText='position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(320px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #d9aabd;border-radius:24px;padding:20px;box-shadow:0 12px 40px #80546b44;background:#fff5f8;color:#654b58;text-align:center;z-index:9999';
+    dialog.innerHTML=`<h3 style="margin:0 0 12px">치이카와의 옷장</h3>${owned?`<img src="/assets/house/costume-pink-item.png" alt="파자마(핑크)" style="width:100px;height:100px;object-fit:contain"><p>파자마(핑크) · 보유 1개</p><button type="button" class="costume-toggle" style="background:#e9b4ca;color:#654b58;border:0;border-radius:14px;padding:12px 24px;font-weight:bold">${this.care.costume==='pink'?'의상 해제':'의상 착용'}</button>`:'<p>보유한 의상이 없습니다. 장터에서 파자마(핑크)를 만나보세요.</p>'}<p><button type="button" class="costume-close" style="background:white;color:#80546b;border:1px solid #e9b4ca;border-radius:12px;padding:8px 24px">닫기</button></p>`
+    const costumeButton=this.root.querySelector<HTMLElement>('.house-costume-button');if(costumeButton)costumeButton.style.display='none';const close=()=>{dialog.close();dialog.remove();this.renderCare()};dialog.querySelector<HTMLButtonElement>('.costume-close')!.onclick=close;dialog.addEventListener('cancel',e=>{e.preventDefault();close()});
+    const toggle=dialog.querySelector<HTMLButtonElement>('.costume-toggle');if(toggle)toggle.onclick=async()=>{if(this.busy)return;this.busy=true;toggle.disabled=true;try{if(this.loadPending)await this.loadPending;const result=await this.store.houseCareAction('costume',this.care?.costume==='pink'?'none':'pink');this.care=result.care;this.renderCare();close()}catch(e){this.hooks.error(e);toggle.disabled=false}finally{this.busy=false}};
+    document.body.append(dialog);dialog.showModal()
+  }
   private renderLot():void{
     const el=this.root.querySelector<HTMLElement>('.house-items');if(!el)return
     if(this.bubbleTimer){clearTimeout(this.bubbleTimer);this.bubbleTimer=null}
@@ -241,11 +250,13 @@ export class HouseView {
     const img=el.querySelector<HTMLImageElement>('.house-single-chiikawa')!
     img.addEventListener('click',()=>this.speak())
     img.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();this.speak()}})
+    const lot=el.closest<HTMLElement>('.house-lot');const viewport=lot?.closest<HTMLElement>('.house-scroll-viewport')||lot;if(viewport){viewport.querySelector('.house-costume-button')?.remove();viewport.style.position='relative';const button=document.createElement('button');button.type='button';button.className='house-costume-button';button.textContent='의상';button.style.cssText='position:absolute;right:12px;bottom:12px;z-index:40;box-sizing:border-box;min-height:36px;white-space:nowrap;padding:7px 12px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold;pointer-events:auto';button.onclick=()=>this.openCostumes();button.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':'';viewport.append(button)}
     this.placeChiikawa()
     this.syncMess()
   }
   private renderCare():void{
     this.syncAppearance()
+    const costumeButton=this.root.querySelector<HTMLElement>('.house-costume-button');if(costumeButton)costumeButton.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':''
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
     if(c.deadAt){this.infoOpen=false;el.innerHTML=`<div class="tama-device"><div style="padding:16px;text-align:center"><div style="color:#aaa;font-size:24px">♡ ♡ ♡ ♡</div><h3>치이카와가 사망했습니다.</h3><p>다시 키우기까지 남은 시간</p><strong class="tama-death-clock">${this.remaining(c.deadAt+86400000-Date.now())}</strong><p>24시간 이후 새로운 치이카와를 만날 수 있습니다.</p><button class="tama-main-button" data-action="house-restart" ${Date.now()<c.deadAt+86400000?'disabled':''}>다시 키우기</button></div></div>`;return}

@@ -124,7 +124,9 @@ export class GachaUi {
   private wildWeedTargetId = 0
   private wildWeedBusy = false
   private wildWeedLastSlot = -1
+  private pinkShop: {user:string;owned:boolean;sale:boolean}|null=null
   private shopTab: 'buy' | 'sell' = 'buy'
+  private async loadPinkShop(){const user=this.store.user?.username;if(!user)return;try{const r=await fetch('/api/house/costume-shop',{credentials:'include',cache:'no-store'});if(!r.ok)throw Error('load');const d=await r.json();if(this.store.user?.username===user){this.pinkShop={user,owned:!!d.pinkOwned,sale:!!d.pinkSale};if(this.screen==='shop')this.renderShop()}}catch{}}
   private storageTab: 'char' | 'deco' | 'accessory' | 'inventory' = 'char'
   private shopSellTab: 'char' | 'deco' | 'inventory' = 'char'
   private bulkSellGrades = new Set<string>(['normal', 'mermaid', 'rare', 'super', 'legendary', 'transcendent'])
@@ -1101,7 +1103,9 @@ export class GachaUi {
     if (bulkFixed) { bulkFixed.hidden = true; bulkFixed.innerHTML = '' }
     const balance = `<div class="shop-balance"><img class="shop-coin-icon" src="/assets/coin.png" alt=""/> 코인 ${Number(this.store.data.gems??0).toLocaleString('ko-KR')} · 💎 다이아 ${Number(this.store.data.diamonds??0).toLocaleString('ko-KR')}</div>`
     if (this.shopTab !== 'sell') {
-      items.innerHTML=balance+`<div class="geong-market-items"><article class="geong-market-item"><img src="/assets/items/breakthrough_stone.png" alt="한계돌파석"/><div><strong>한계돌파석</strong><small>5,000 다이아 · 이번 주 구매 가능 ${Math.max(0,5-this.store.market.weeklyBought)}/5개</small><small>월요일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="stone" ${this.store.market.weeklyBought>=5?'disabled':''}>구매</button></article><article class="geong-market-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권"/><div><strong>겅이복권</strong><small>1,000 다이아 · 오늘 구매 가능 ${Math.max(0,5-this.store.market.dailyBought)}/5개</small><small>매일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="lottery" ${this.store.market.dailyBought>=5?'disabled':''}>구매</button></article></div>`
+      const pink=this.pinkShop?.user===this.store.user?.username?this.pinkShop:null;
+      const pinkCard=`<article class="geong-market-item"><img src="/assets/house/costume-pink-item.png" alt="파자마(핑크)"/><div><strong>파자마(핑크)</strong><small>5,000 다이아 · 계정당 1회 · 거래 불가</small><small>12월 4일까지 판매 · 영구 소장</small></div><button type="button" data-action="pink-shop-buy" ${!pink||pink.owned||!pink.sale?'disabled':''}>${!pink?'확인 중':pink.owned?'구매 완료':pink.sale?'구매':'판매 종료'}</button></article>`;
+      items.innerHTML=balance+`<div class="geong-market-items"><article class="geong-market-item"><img src="/assets/items/breakthrough_stone.png" alt="한계돌파석"/><div><strong>한계돌파석</strong><small>5,000 다이아 · 이번 주 구매 가능 ${Math.max(0,5-this.store.market.weeklyBought)}/5개</small><small>월요일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="stone" ${this.store.market.weeklyBought>=5?'disabled':''}>구매</button></article><article class="geong-market-item"><img src="/assets/lottery_ticket_custom.png" alt="겅이복권"/><div><strong>겅이복권</strong><small>1,000 다이아 · 오늘 구매 가능 ${Math.max(0,5-this.store.market.dailyBought)}/5개</small><small>매일 오전 9시 초기화</small></div><button type="button" data-action="market-buy" data-item="lottery" ${this.store.market.dailyBought>=5?'disabled':''}>구매</button></article>${pinkCard}</div>`
       return
     }
     if (this.shopSellTab === 'inventory') {
@@ -1758,6 +1762,11 @@ export class GachaUi {
     if (action === 'lottery-all') {await this.chooseLotteryCount();return}
     if (action === 'lottery-buy') {await this.buyLottery();return}
     if (action === 'lottery-skip') {this.skipLottery();return}
+    if(action==='pink-shop-buy'){
+      if(button.disabled)return;button.disabled=true;
+      const ok=await new Promise<boolean>(resolve=>{const overlay=document.createElement('div');overlay.className='limit-break-confirm-overlay';overlay.innerHTML=`<div class="limit-break-confirm" role="alertdialog" aria-modal="true"><h3>파자마(핑크) 구매</h3><p>5,000 다이아 · 계정당 1회 · 거래 불가</p><div class="limit-break-confirm-actions"><button data-confirm="cancel">취소</button><button data-confirm="accept">구매하기</button></div></div>`;document.body.append(overlay);overlay.querySelector('[data-confirm="cancel"]')?.addEventListener('click',()=>{overlay.remove();resolve(false)},{once:true});overlay.querySelector('[data-confirm="accept"]')?.addEventListener('click',()=>{overlay.remove();resolve(true)},{once:true})});
+      if(!ok){button.disabled=false;return}try{const r=await fetch('/api/trade/pink-costume',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:'{}'});const d=await r.json();if(!r.ok)throw Error(({already_owned:'이미 보유한 의상입니다.',sale_ended:'판매 기간이 종료되었습니다.',not_enough_diamonds:'다이아가 부족합니다.'} as Record<string,string>)[d.error]||'구매 실패');if(this.pinkShop)this.pinkShop.owned=true;this.renderShop();this.toast('파자마(핑크) 구매 완료!');await this.store.restore();this.renderWallet();this.renderShop()}catch(e){this.toast(e instanceof Error?e.message:'구매 실패')}finally{await this.loadPinkShop();button.disabled=false}return
+    }
     if(action==='market-buy' && (button.dataset.item==='stone'||button.dataset.item==='lottery')){
       const item=button.dataset.item
       const ok=await new Promise<boolean>(resolve=>{const overlay=document.createElement('div');overlay.className='limit-break-confirm-overlay';overlay.innerHTML=`<div class="limit-break-confirm" role="alertdialog" aria-modal="true"><h3>${item==='stone'?'한계돌파석':'겅이복권'} 구매</h3><p>1개 · ${item==='stone'?'5,000':'1,000'} 다이아</p><p>${item==='stone'?`이번 주 남은 수량 ${Math.max(0,5-this.store.market.weeklyBought)}/5개`:`오늘 남은 수량 ${Math.max(0,5-this.store.market.dailyBought)}/5개`}</p><div class="limit-break-confirm-actions"><button data-confirm="cancel">취소</button><button data-confirm="accept">구매하기</button></div></div>`;document.body.appendChild(overlay);overlay.querySelector('[data-confirm="cancel"]')?.addEventListener('click',()=>{overlay.remove();resolve(false)},{once:true});overlay.querySelector('[data-confirm="accept"]')?.addEventListener('click',()=>{overlay.remove();resolve(true)},{once:true})});if(!ok)return
@@ -1766,7 +1775,7 @@ export class GachaUi {
       catch(e){this.handleError(e);button.disabled=false}
       return
     }
-    if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');void this.loadWildWeed();void this.store.loadMarket().then(()=>this.renderShop()).catch(()=>{});this.renderShop();return}
+    if (action === 'shop') {this.shopTab='buy';this.hideShopDialog();this.show('shop');void this.loadPinkShop();void this.loadWildWeed();void this.store.loadMarket().then(()=>this.renderShop()).catch(()=>{});this.renderShop();return}
     if (action === 'shop-tab' && button?.dataset.tab) { this.shopTab = button.dataset.tab === 'buy' ? 'buy' : 'sell'; this.hideShopDialog(); this.renderShop(); return }
     if (action === 'shop-sell-category' && button?.dataset.tab) { const list = this.root.querySelector<HTMLElement>('.shop-screen .shop-items'); if (list) list.scrollTop = 0; this.shopSellTab = button.dataset.tab === 'deco' ? 'deco' : button.dataset.tab === 'inventory' ? 'inventory' : 'char'; this.renderShop(); return }
     
