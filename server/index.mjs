@@ -680,7 +680,7 @@ function houseCareDecay(raw, now) {
     fresh.heartNotice=s.heartNotice; fresh.costume=s.costume; fresh.pinkOwned=!!s.pinkOwned;
     return fresh
   }
-  const elapsed=Math.max(0,(now-Math.max(Number(s.updatedAt)||now,Math.min(now,s.walk?.end||0)))/3600000)
+  const elapsed=Math.max(0,(now-(Number(s.updatedAt)||now))/3600000)
   const val=(key,rate)=>Math.max(0,Math.min(100,Math.round((Number.isFinite(Number(s[key]))?Number(s[key]):100)-elapsed*rate)))
   const legacyTotal=Math.max(0,((Number(s.level)||1)-1)*(Number(s.level)||1)*25+(Number(s.exp)||0))
   const total=Math.min(3000,Math.max(0,s.houseLevelV2?HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,(Number(s.level)||1)-1))]+(Number(s.exp)||0):Math.round(legacyTotal*3000/247500)))
