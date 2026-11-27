@@ -137,6 +137,7 @@ export class HouseView {
   private careUnavailable(action:string,snackId?:string):string|undefined{
     const c=this.care;if(!c)return '육성 정보를 불러오는 중입니다.'
     const now=Date.now(),sleep=c.sleepUntil??0
+    if((c.walk?.end??0)>now)return `치이카와가 산책을 떠났어요. 산책을 마치고 돌아오면 돌봐주세요!\n남은 시간 ${this.remaining(c.walk!.end-now)}`
     if(sleep>now&&['feed','wash','play','sleep','snack'].includes(action))return action==='sleep'?'치이카와가 이미 자고 있습니다.':`치이카와가 자고 있습니다. 일어난 후 이용해 주세요.\n기상까지 ${this.remaining(sleep-now)}`
     if(action==='snack'&&(!snackId||!(this.life.snacks[snackId]>0)))return '간식이 부족합니다.'
     const due=c.cooldowns[action]||0
@@ -147,6 +148,7 @@ export class HouseView {
   }
   private async confirmCare(action:string,snackId?:string):Promise<void>{
     if(this.busy||this.careDialog)return
+    if((this.care?.walk?.end??0)>Date.now()){this.showCareDialog('산책 중이에요!',this.careUnavailable(action,snackId)!);return}
     this.busy=true
     try{if(this.loadPending)await this.loadPending;this.care=(await this.store.houseCare()).care;this.renderCare()}catch{this.showCareDialog('돌보기 안내','현재 상태를 확인하지 못했습니다. 다시 시도해 주세요.');return}finally{this.busy=false}
     const prompts:Record<string,[string,string]>={feed:['먹이기','치이카와에게 밥을 먹이시겠습니까?\n1,000코인 · 배부름 +25%'],wash:['씻기기','치이카와를 씻기시겠습니까?\n무료 · 청결 +35%'],sleep:['재우기','치이카와를 재우시겠습니까?\n무료 · 체력 +20%'],play:['놀아주기','치이카와와 놀아주시겠습니까?\n무료 · 행복 +25% · 체력 -10% · 친밀도 +10'],medicine:['약 먹이기','치이카와에게 약을 먹이시겠습니까?\n5,000코인 · 건강 +30%'],tidy:['청소','하우스를 청소하시겠습니까?\n응가 제거'],pet:['쓰다듬기','치이카와를 쓰다듬으시겠습니까?\n친밀도 +5'],snack:['간식','치이카와에게 간식을 먹이시겠습니까?']}
@@ -155,7 +157,9 @@ export class HouseView {
     this.showCareDialog(prompt[0],action==='snack'&&snackId?`${prompt[1]}\n친밀도 +${snackBond[snackId]} (좋아하는 간식은 50% 추가)`:prompt[1],()=>void this.performCare(action,snackId,prompt[0]))
   }
   private async performCare(action:string,snackId:string|undefined,label:string):Promise<void>{
-    if(this.busy)return;this.busy=true
+    if(this.busy)return;
+    if((this.care?.walk?.end??0)>Date.now()){this.showCareDialog('산책 중이에요!',this.careUnavailable(action,snackId)!);return}
+    this.busy=true
     try{
       const before=this.care;const result=await this.store.houseCareAction(action,snackId);this.care=result.care
       if(action==='snack'&&snackId)this.life.snacks[snackId]=Math.max(0,(this.life.snacks[snackId]||0)-1)
@@ -166,7 +170,7 @@ export class HouseView {
       this.showCareDialog(`${label} 완료!`,[...changes,`경험치 +${result.earned}`,result.spent?`${result.spent.toLocaleString()}코인 사용`:''].filter(Boolean).join('\n'))
     }catch(e){
       const err=e as {code?:string;nextAt?:number};const remaining=Math.ceil(((err.nextAt??this.care?.cooldowns[action]??0)-Date.now())/1000)
-      const messages:Record<string,string>={care_dead:'치이카와가 사망했습니다.',care_restarted:'새로운 치이카와를 만나 주세요.',care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
+      const messages:Record<string,string>={walk_unavailable:'치이카와가 산책을 떠났어요. 산책을 마치고 돌아오면 돌봐주세요!',care_dead:'치이카와가 사망했습니다.',care_restarted:'새로운 치이카와를 만나 주세요.',care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
       this.showCareDialog(`${label} 안내`,messages[err.code||'']||'처리 결과를 확인하지 못했습니다. 상태를 새로 확인한 뒤 다시 시도해 주세요.')
     }finally{this.busy=false}
   }
