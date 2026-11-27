@@ -669,6 +669,7 @@ function housePickPersonality(care){
 }
 function houseEnsurePersonality(care,now){if(care.level>=3&&(!care.personality||care.personality==='미발견')){care.personality=housePickPersonality(care);care.diary.unshift({at:now,text:`${care.personality} 성격을 발견했어요!`})}}
 
+const WALK_PLACES=[[1,500,5,5],[2,1500,10,10],[4,3000,20,15],[6,10000,30,20],[8,20000,40,30],[10,40000,50,40]]
 function houseCareDecay(raw, now) {
   const s=raw && typeof raw==='object' ? raw : {}
   if(s.deadAt){
@@ -679,7 +680,7 @@ function houseCareDecay(raw, now) {
     fresh.heartNotice=s.heartNotice; fresh.costume=s.costume; fresh.pinkOwned=!!s.pinkOwned;
     return fresh
   }
-  const elapsed=Math.max(0,(now-(Number(s.updatedAt)||now))/3600000)
+  const elapsed=Math.max(0,(now-Math.max(Number(s.updatedAt)||now,Math.min(now,s.walk?.end||0)))/3600000)
   const val=(key,rate)=>Math.max(0,Math.min(100,Math.round((Number.isFinite(Number(s[key]))?Number(s[key]):100)-elapsed*rate)))
   const legacyTotal=Math.max(0,((Number(s.level)||1)-1)*(Number(s.level)||1)*25+(Number(s.exp)||0))
   const total=Math.min(3000,Math.max(0,s.houseLevelV2?HOUSE_LEVEL_TOTALS[Math.max(0,Math.min(9,(Number(s.level)||1)-1))]+(Number(s.exp)||0):Math.round(legacyTotal*3000/247500)))
@@ -689,7 +690,7 @@ function houseCareDecay(raw, now) {
     affection:Math.max(0,Number(s.affection)||0),expDay:s.expDay||'',expToday:Number(s.expToday)||0,
     cooldowns:s.cooldowns&&typeof s.cooldowns==='object'?s.cooldowns:{},updatedAt:now,
     personality:s.personality||'미발견', milestones:Array.isArray(s.milestones)?s.milestones:[], diary:Array.isArray(s.diary)?s.diary:[], quests:s.quests&&typeof s.quests==='object'?s.quests:{}, questDay:s.questDay||'',claimed:Array.isArray(s.claimed)?s.claimed:[], eventCount:Number(s.eventCount)||0,eventDay:s.eventDay||'',eventReadyAt:Number(s.eventReadyAt)||0, mini:s.mini||null, miniWins:Number(s.miniWins)||0, petCount:Number(s.petCount)||0, actionCounts:s.actionCounts&&typeof s.actionCounts==='object'?s.actionCounts:{} }
-  care.pinkOwned=!!s.pinkOwned; care.heartNotice=s.heartNotice; care.costume=s.costume==='pink'?'pink':'';
+  care.walk=s.walk||null; care.walkReadyAt=s.walkReadyAt||0; care.pinkOwned=!!s.pinkOwned; care.heartNotice=s.heartNotice; care.costume=s.costume==='pink'?'pink':'';
   return houseMarkDeath(care,now)
 }
 async function houseHeartNotice(req,res,ack){
@@ -703,10 +704,10 @@ async function houseHeartNotice(req,res,ack){
     const raw=parseJson(rows[0].state_json),care=houseCareDecay(raw,now)
     const hearts=Math.max(0,Math.min(4,Math.ceil((care.hunger+care.happy+care.clean+care.energy)/100)))
     const prev=raw.heartNotice
-    const pending=!ack && Boolean(prev && (prev.pending || hearts<prev.hearts))
-    const notice={hearts,pending}
+    const pending=!ack && Boolean(prev && (prev.pending || hearts<prev.hearts || (care.walk?.end<=now && prev.walkEnd!==care.walk.end)))
+    const notice={hearts,pending,walkEnd:care.walk?.end<=now?care.walk.end:prev?.walkEnd}
     const saved=Boolean(raw.deadAt)!==Boolean(care.deadAt)?care:raw
-    if(!prev||prev.hearts!==hearts||prev.pending!==pending||saved!==raw){saved.heartNotice=notice;await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(saved),account.id])}
+    if(!prev||prev.hearts!==hearts||prev.pending!==pending||prev.walkEnd!==notice.walkEnd||saved!==raw){saved.heartNotice=notice;await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(saved),account.id])}
     await conn.commit();send(res,200,{pending,hearts})
   }catch(e){await conn.rollback();throw e}finally{conn.release()}
 }
@@ -2964,7 +2965,7 @@ const routes = {
       pet: { key:null, cost:0, cooldown:1800000, exp:3 }, tidy:{key:null,cost:0,cooldown:1000,exp:5}, medicine:{key:null,cost:5000,cooldown:3600000,exp:5}
     }
     const rule = rules[action]
-    if (!rule && action!=='costume') return send(res, 400, { error:'invalid_care_action' })
+    if (!rule && !['costume','walk-start','walk-claim'].includes(action)) return send(res, 400, { error:'invalid_care_action' })
     const conn = await pool.getConnection()
     try {
       await conn.beginTransaction()
@@ -2972,6 +2973,29 @@ const routes = {
       const [rows] = await conn.query('SELECT state_json FROM gm_house_care WHERE account_id=? FOR UPDATE', [account.id])
       const now=Date.now(), care=houseCareDecay(parseJson(rows[0].state_json),now)
       if(care.deadAt||parseJson(rows[0].state_json)?.deadAt){await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id]);await conn.commit();return send(res,409,{error:care.deadAt?'care_dead':'care_restarted'})}
+      if(action==='walk-start'||action==='walk-claim'){
+        const reject=async()=>{await conn.rollback();return send(res,409,{error:'walk_unavailable'})};
+        let message='';
+        if(action==='walk-start'){
+          const i=Number(snackId), place=WALK_PLACES[i];
+          if(!Number.isInteger(i)||!place||care.walk||care.walkReadyAt>now||care.sleepUntil>now||care.level<place[0]||Math.min(care.hunger,care.energy,care.health)<50)return reject();
+          care.energy-=place[3];care.walk={i,end:now+3600000};care.walkReadyAt=now+18000000;message='산책을 떠났어요!';
+        }else{
+          if(!care.walk||care.walk.end>now)return reject();
+          const i=care.walk.i,place=WALK_PLACES[i];if(!place)return reject();
+          let snacks=0,tickets=0,stones=0;const roll=randomInt(100);
+          if(i===0&&roll<5||i===1&&roll<20)snacks=1;
+          if(i===2&&roll<5||i===3&&roll<20)tickets=1;
+          if(i===4&&roll<5)stones=1;
+          if(i===5){if(roll<30)snacks=3;else if(roll<45)tickets=3;else if(roll<50)stones=1;}
+          if(snacks){await conn.query('INSERT IGNORE INTO gm_house_life(account_id,state_json) VALUES (?,?)',[account.id,JSON.stringify({buildings:{},snacks:{}})]);const [lr]=await conn.query('SELECT state_json FROM gm_house_life WHERE account_id=? FOR UPDATE',[account.id]);const life=parseJson(lr[0].state_json);life.snacks=life.snacks||{};for(let j=0;j<snacks;j++){const k=['candy','cookie','pudding','cake','lunch'][randomInt(5)];life.snacks[k]=(life.snacks[k]||0)+1;}await conn.query('UPDATE gm_house_life SET state_json=? WHERE account_id=?',[JSON.stringify(life),account.id]);}
+          await conn.query('UPDATE gm_saves SET gems=gems+?,lottery_tickets=lottery_tickets+? WHERE account_id=?',[place[1],tickets,account.id]);
+          if(stones){await conn.query('INSERT IGNORE INTO gm_market_items(account_id) VALUES(?)',[account.id]);await conn.query('UPDATE gm_market_items SET breakthrough_stones=breakthrough_stones+? WHERE account_id=?',[stones,account.id]);}
+          care.affection+=place[2];care.walk=null;message=`${place[1]}코인 · 친밀도 +${place[2]} · ${snacks?'간식 '+snacks+'개':tickets?'겅이복권 '+tickets+'개':stones?'한계돌파석 1개':'특별 보상 없음'}`;
+        }
+        await conn.query('UPDATE gm_house_care SET state_json=? WHERE account_id=?',[JSON.stringify(care),account.id]);await conn.commit();return send(res,200,{care,spent:0,earned:0,message});
+      }
+      if(care.walk?.end>now){await conn.rollback();return send(res,409,{error:'walk_unavailable'})}
       if(action==='costume'){
         if((!care.pinkOwned&&String(account.username).toLowerCase()!=='test')||!['pink','none'].includes(snackId)){await conn.rollback();return send(res,403,{error:'costume_not_owned'})}
         care.costume=snackId==='pink'?'pink':'';

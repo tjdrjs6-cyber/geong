@@ -25,7 +25,7 @@ export function houseVisitMarkup(layout:HouseLayout):string{
 }
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
-  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string;pinkOwned?:boolean})|null=null
+  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string;pinkOwned?:boolean;walk?:{i:number;end:number}|null;walkReadyAt?:number})|null=null
   private chiPos={x:50,y:56}
   private bubbleTimer:ReturnType<typeof setTimeout>|null=null
   private busy=false
@@ -181,7 +181,7 @@ export class HouseView {
   private syncAppearance():void{
     const img=this.root.querySelector<HTMLImageElement>('.house-items .house-single-chiikawa');if(!img)return
     const c=this.care
-    const dead=!!c?.deadAt;img.style.visibility=dead?'hidden':'';if(dead){const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble');if(bubble)bubble.hidden=true;return}
+    const dead=!!c?.deadAt||(c?.walk?.end??0)>Date.now();img.style.visibility=dead?'hidden':'';if(dead){const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble');if(bubble)bubble.hidden=true;return}
     const sleeping=(c?.sleepUntil??0)>Date.now()
     const sick=c!==null&&(c.health??100)<50
     const actor=img.closest<HTMLElement>('.house-roaming-actor')
@@ -259,8 +259,16 @@ export class HouseView {
     this.placeChiikawa()
     this.syncMess()
   }
+  private openWalk():void{
+    const c=this.care;if(!c||c.deadAt||this.busy)return;
+    const names=['동네 공원','꽃밭','숲속','바닷가','놀이공원','비밀의 숲'],levels=[1,2,4,6,8,10],coins=[500,1500,3000,10000,20000,40000],bond=[5,10,20,30,40,50],cost=[5,10,15,20,30,40],special=['간식 5%','간식 20%','겅이복권 5%','겅이복권 20%','한계돌파석 5%','꽝 50% · 간식 3개 30% · 복권 3개 15% · 돌 5%'];
+    const d=document.createElement('dialog');d.style.cssText='width:min(92vw,440px);max-height:85dvh;overflow:auto;border:1px solid #e9b4ca;border-radius:18px;background:#fff5f8;color:#80546b;padding:16px';
+    const now=Date.now();d.innerHTML='<h3>치이카와의 산책</h3>'+(c.walk?(c.walk.end>now?`<p>산책 중 · ${names[c.walk.i]} · ${this.remaining(c.walk.end-now)}</p>`:'<button data-walk="claim">산책 보상 받기</button>'):(c.walkReadyAt??0)>now?`<p>다음 산책까지 ${this.remaining(c.walkReadyAt!-now)}</p>`:names.map((n,i)=>`<button data-walk="${i}" ${c.level<levels[i]||Math.min(c.hunger,c.energy,c.health??100)<50||(c.sleepUntil??0)>now?'disabled':''} style="display:block;width:100%;margin:5px 0;padding:8px;border:1px solid #e9b4ca;border-radius:10px;background:#fff;color:#80546b">${n} · LV.${levels[i]} · 1시간<br>${coins[i]}코인 · 친밀도 +${bond[i]} · 체력 -${cost[i]}%<br>${special[i]}</button>`).join(''))+'<button data-close>닫기</button>';
+    document.body.append(d);d.showModal();d.onclose=()=>d.remove();d.querySelector('[data-close]')!.addEventListener('click',()=>d.close());d.querySelectorAll<HTMLButtonElement>('[data-walk]').forEach(b=>b.onclick=async()=>{if(this.busy)return;this.busy=true;try{const v=b.dataset.walk!;const r=await this.store.houseCareAction(v==='claim'?'walk-claim':'walk-start',v);this.care=r.care;d.close();this.renderCare();this.hooks.wallet();void this.load();this.showCareDialog('산책', (r as unknown as {message?:string}).message||'산책 상태가 변경되었습니다.')}catch(e){this.hooks.error(e)}finally{this.busy=false}});
+  }
   private renderCare():void{
     this.syncAppearance()
+    const viewport=this.root.querySelector<HTMLElement>('.house-scroll-viewport');if(viewport){let b=viewport.querySelector<HTMLButtonElement>('.house-walk-button');if(!b){b=document.createElement('button');b.className='house-walk-button';b.style.cssText='position:absolute;left:12px;bottom:12px;z-index:40;padding:7px 12px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold';b.onclick=()=>this.openWalk();viewport.append(b)}b.textContent=this.care?.walk?'산책 확인':'산책';b.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':'';}
     const costumeButton=this.root.querySelector<HTMLElement>('.house-costume-button');if(costumeButton)costumeButton.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':''
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
