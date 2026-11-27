@@ -13,7 +13,7 @@ type VisitCare = Pick<HouseCareState,'level'|'affection'|'hunger'|'happy'|'clean
 export function houseVisitMarkup(layout:HouseLayout):string{
   const c=(layout as HouseLayout & {visitCare?:VisitCare|null}).visitCare
   const variant=c?(c.sleepUntil>Date.now()?'sleeping':c.health<50?'sick':c.energy<50?'tired':c.hunger<50?'hungry':c.clean<50?'dirty':''):''
-  const actor=c&&!c.deadAt?`<img src="${c.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`}" alt="치이카와" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
+  const actor=c&&!c.deadAt?`<img src="${c.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`}" alt="치이카와" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/assets/house/care-chiikawa${variant?'-'+variant:''}.png'}else if(this.dataset.fallback==='1'){this.dataset.fallback='2';this.src='/assets/house/care-chiikawa.png'}else{this.onerror=null}" style="position:absolute!important;left:50%!important;top:56%!important;width:17%!important;height:15%!important;max-width:17%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;pointer-events:none"/>`:''
   const room=`<div class="house-visit-frame"><div class="house-lot house-visit">${houseLotMarkup()}<div class="house-items">${actor}</div></div></div>`
   if(!c)return room+`<p class="user-house-note">키우기 정보를 확인할 수 없습니다.</p>`
   if(c.deadAt)return room+`<p class="user-house-note">치이카와가 사망했습니다.</p>`
@@ -200,7 +200,12 @@ export class HouseView {
     const dirty=c!==null&&c.clean<50
     const variant=sleeping?'sleeping':sick?'sick':tired?'tired':hungry?'hungry':dirty?'dirty':''
     const src=c?.costume==='pink'?`/assets/house/costume-pink-${variant||'worn'}.png`:`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`
-    if(img.getAttribute('src')!==src)img.src=src
+    if(img.dataset.appearanceSrc!==src){
+      img.dataset.appearanceSrc=src
+      const fallbacks=[`/assets/house/care-chiikawa${variant?'-'+variant:''}.png`,'/assets/house/care-chiikawa.png'].filter((v,i,a)=>v!==src&&a.indexOf(v)===i)
+      img.onerror=()=>{const next=fallbacks.shift();if(next)img.src=next;else img.onerror=null}
+      img.src=src
+    }
     if(variant==='hungry'){
       img.style.setProperty('transform-origin','50% 100%')
       img.style.setProperty('transform','translateX(14%) scale(1.27)','important')
