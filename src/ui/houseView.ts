@@ -25,7 +25,7 @@ export function houseVisitMarkup(layout:HouseLayout):string{
 }
 export class HouseView {
   private life:Life={buildings:{},snacks:{}}
-  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string;pinkOwned?:boolean})|null=null
+  private care:(HouseCareState & {health?:number;messAt?:number;bornAt?:number;favorite?:string;tasted?:string[];memories?:string[];sleepUntil?:number;deadAt?:number;costume?:string;pinkOwned?:boolean;walk?:{i:number;end:number}|null;walkReadyAt?:number})|null=null
   private chiPos={x:50,y:56}
   private bubbleTimer:ReturnType<typeof setTimeout>|null=null
   private busy=false
@@ -137,6 +137,7 @@ export class HouseView {
   private careUnavailable(action:string,snackId?:string):string|undefined{
     const c=this.care;if(!c)return '육성 정보를 불러오는 중입니다.'
     const now=Date.now(),sleep=c.sleepUntil??0
+    if((c.walk?.end??0)>now)return `치이카와가 산책을 떠났어요. 산책을 마치고 돌아오면 돌봐주세요!\n남은 시간 ${this.remaining(c.walk!.end-now)}`
     if(sleep>now&&['feed','wash','play','sleep','snack'].includes(action))return action==='sleep'?'치이카와가 이미 자고 있습니다.':`치이카와가 자고 있습니다. 일어난 후 이용해 주세요.\n기상까지 ${this.remaining(sleep-now)}`
     if(action==='snack'&&(!snackId||!(this.life.snacks[snackId]>0)))return '간식이 부족합니다.'
     const due=c.cooldowns[action]||0
@@ -147,6 +148,7 @@ export class HouseView {
   }
   private async confirmCare(action:string,snackId?:string):Promise<void>{
     if(this.busy||this.careDialog)return
+    if((this.care?.walk?.end??0)>Date.now()){this.showCareDialog('산책 중이에요!',this.careUnavailable(action,snackId)!);return}
     this.busy=true
     try{if(this.loadPending)await this.loadPending;this.care=(await this.store.houseCare()).care;this.renderCare()}catch{this.showCareDialog('돌보기 안내','현재 상태를 확인하지 못했습니다. 다시 시도해 주세요.');return}finally{this.busy=false}
     const prompts:Record<string,[string,string]>={feed:['먹이기','치이카와에게 밥을 먹이시겠습니까?\n1,000코인 · 배부름 +25%'],wash:['씻기기','치이카와를 씻기시겠습니까?\n무료 · 청결 +35%'],sleep:['재우기','치이카와를 재우시겠습니까?\n무료 · 체력 +20%'],play:['놀아주기','치이카와와 놀아주시겠습니까?\n무료 · 행복 +25% · 체력 -10% · 친밀도 +10'],medicine:['약 먹이기','치이카와에게 약을 먹이시겠습니까?\n5,000코인 · 건강 +30%'],tidy:['청소','하우스를 청소하시겠습니까?\n응가 제거'],pet:['쓰다듬기','치이카와를 쓰다듬으시겠습니까?\n친밀도 +5'],snack:['간식','치이카와에게 간식을 먹이시겠습니까?']}
@@ -155,7 +157,9 @@ export class HouseView {
     this.showCareDialog(prompt[0],action==='snack'&&snackId?`${prompt[1]}\n친밀도 +${snackBond[snackId]} (좋아하는 간식은 50% 추가)`:prompt[1],()=>void this.performCare(action,snackId,prompt[0]))
   }
   private async performCare(action:string,snackId:string|undefined,label:string):Promise<void>{
-    if(this.busy)return;this.busy=true
+    if(this.busy)return;
+    if((this.care?.walk?.end??0)>Date.now()){this.showCareDialog('산책 중이에요!',this.careUnavailable(action,snackId)!);return}
+    this.busy=true
     try{
       const before=this.care;const result=await this.store.houseCareAction(action,snackId);this.care=result.care
       if(action==='snack'&&snackId)this.life.snacks[snackId]=Math.max(0,(this.life.snacks[snackId]||0)-1)
@@ -166,7 +170,7 @@ export class HouseView {
       this.showCareDialog(`${label} 완료!`,[...changes,`경험치 +${result.earned}`,result.spent?`${result.spent.toLocaleString()}코인 사용`:''].filter(Boolean).join('\n'))
     }catch(e){
       const err=e as {code?:string;nextAt?:number};const remaining=Math.ceil(((err.nextAt??this.care?.cooldowns[action]??0)-Date.now())/1000)
-      const messages:Record<string,string>={care_dead:'치이카와가 사망했습니다.',care_restarted:'새로운 치이카와를 만나 주세요.',care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
+      const messages:Record<string,string>={walk_unavailable:'치이카와가 산책을 떠났어요. 산책을 마치고 돌아오면 돌봐주세요!',care_dead:'치이카와가 사망했습니다.',care_restarted:'새로운 치이카와를 만나 주세요.',care_sleeping:'치이카와가 자고 있어요. 기상 후 다시 돌봐주세요.',care_full:this.fullCareMessage(action),care_cooldown:remaining>0?`다시 이용하려면 ${Math.floor(remaining/60)}분 ${remaining%60}초 기다려 주세요.`:'조금 뒤에 다시 돌봐주세요.',insufficient_coins:`코인이 부족합니다.\n필요 코인: ${(action==='medicine'?5000:1000).toLocaleString()}코인`,snack_required:'간식이 부족해요.',login_required:'다시 로그인해 주세요.'}
       this.showCareDialog(`${label} 안내`,messages[err.code||'']||'처리 결과를 확인하지 못했습니다. 상태를 새로 확인한 뒤 다시 시도해 주세요.')
     }finally{this.busy=false}
   }
@@ -181,7 +185,7 @@ export class HouseView {
   private syncAppearance():void{
     const img=this.root.querySelector<HTMLImageElement>('.house-items .house-single-chiikawa');if(!img)return
     const c=this.care
-    const dead=!!c?.deadAt;img.style.visibility=dead?'hidden':'';if(dead){const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble');if(bubble)bubble.hidden=true;return}
+    const dead=!!c?.deadAt||(c?.walk?.end??0)>Date.now();img.style.visibility=dead?'hidden':'';if(dead){const bubble=this.root.querySelector<HTMLElement>('.house-life-bubble');if(bubble)bubble.hidden=true;return}
     const sleeping=(c?.sleepUntil??0)>Date.now()
     const sick=c!==null&&(c.health??100)<50
     const actor=img.closest<HTMLElement>('.house-roaming-actor')
@@ -259,8 +263,26 @@ export class HouseView {
     this.placeChiikawa()
     this.syncMess()
   }
+  private openWalk():void{
+    const c=this.care;if(!c||c.deadAt||this.busy)return;
+    const names=['동네 공원','꽃밭','숲속','바닷가','놀이공원','비밀의 숲'],levels=[1,2,4,6,8,10],coins=[500,1500,3000,10000,20000,40000],bond=[5,10,20,30,40,50],cost=[5,10,15,20,30,40],special=['간식 5%','간식 20%','겅이복권 5%','겅이복권 20%','한계돌파석 5%','꽝 50% / 간식 3개 30% / 복권 3개 15% / 돌 5%'];
+    const now=Date.now();
+    const execute=async(v:string)=>{if(this.busy)return;this.busy=true;try{if(this.loadPending)await this.loadPending;const r=await this.store.houseCareAction(v==='claim'?'walk-claim':'walk-start',v);this.care=r.care;this.renderCare();this.hooks.wallet();void this.load();this.showCareDialog('산책', (r as unknown as {message?:string}).message||'산책 상태가 변경되었습니다.')}catch(e){this.showCareDialog('산책 안내','산책을 진행할 수 없습니다. 현재 상태와 쿨타임을 확인해 주세요.');this.hooks.error(e)}finally{this.busy=false}};
+    if(c.walk){if(c.walk.end>now)this.showCareDialog('산책 중',`${names[c.walk.i]} · 남은 시간 ${this.remaining(c.walk.end-now)}`);else this.showCareDialog('산책 완료','치이카와가 돌아왔어요! 보상을 받을까요?',()=>void execute('claim'));return}
+    if((c.walkReadyAt??0)>now){this.showCareDialog('산책 안내',`다음 산책까지 ${this.remaining(c.walkReadyAt!-now)}`);return}
+    const d=document.createElement('dialog');d.className='house-care-dialog';d.style.cssText='position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 16px);overflow:auto;border:1px solid #e4b8ca;border-radius:22px;background:#fff5f8;color:#80546b;padding:12px;box-shadow:0 12px 40px #80546b44;pointer-events:auto';
+    const reason=(i:number)=>c.level<levels[i]?`LV.${levels[i]}부터 가능`:(c.sleepUntil??0)>now?'잠자는 중입니다.':Math.min(c.hunger,c.energy,c.health??100)<50?'배부름·체력·건강이 모두 50% 이상이어야 합니다.':'';
+    let selected=-1;
+    d.innerHTML=`<h3 style="margin:0;text-align:center">치이카와의 산책</h3><p style="margin:4px 0 10px;text-align:center;font-size:12px">오늘은 어디로 놀러 갈까요? · 1시간</p><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px">${names.map((n,i)=>`<button type="button" data-place="${i}" ${c.level<levels[i]?'disabled aria-disabled="true"':''} style="opacity:${c.level<levels[i]?0.55:1};pointer-events:${c.level<levels[i]?'none':'auto'};min-width:0;min-height:0;padding:7px 4px;border:1px solid #e4b8ca;border-radius:12px;background:${reason(i)?'#eee8eb':'#fff'};color:#80546b;line-height:1.35;white-space:normal;text-align:center;cursor:${c.level<levels[i]?'not-allowed':'pointer'}"><strong style="font-size:13px">${n}</strong><br><small>${reason(i)?'잠김 · ':''}LV.${levels[i]}</small><br><small>${coins[i].toLocaleString()}코인 · 친밀도 +${bond[i]}</small><br><small>체력 -${cost[i]}% · ${special[i]}</small></button>`).join('')}</div><p data-hint style="margin:8px 0;font-size:12px;text-align:center">장소를 선택해 주세요.</p><div class="house-care-dialog-actions"><button type="button" data-close>닫기</button><button type="button" data-start disabled>산책 보내기</button></div>`;
+    const close=()=>{d.close();d.remove();if(this.careDialog===d)this.careDialog=null};
+    const start=d.querySelector<HTMLButtonElement>('[data-start]')!,hint=d.querySelector<HTMLElement>('[data-hint]')!;
+    d.querySelectorAll<HTMLButtonElement>('[data-place]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.place);if(b.disabled||c.level<levels[i])return;selected=i;d.querySelectorAll<HTMLButtonElement>('[data-place]').forEach(x=>{x.style.outline=x===b?'2px solid #d68eac':'none'});const why=reason(selected);hint.textContent=why||`${names[selected]} · 체력 -${cost[selected]}%`;start.disabled=!!why});
+    start.onclick=()=>{if(selected<0||reason(selected))return;const i=selected;close();this.showCareDialog('산책 보내기',`${names[i]}로 1시간 산책을 보낼까요?\n체력 -${cost[i]}%`,()=>void execute(String(i)))};
+    d.querySelector<HTMLButtonElement>('[data-close]')!.onclick=close;d.addEventListener('cancel',e=>{e.preventDefault();close()});this.root.append(d);this.careDialog=d;d.showModal();
+  }
   private renderCare():void{
     this.syncAppearance()
+    const viewport=this.root.querySelector<HTMLElement>('.house-scroll-viewport');if(viewport){let b=viewport.querySelector<HTMLButtonElement>('.house-walk-button');if(!b){b=document.createElement('button');b.className='house-walk-button';b.style.cssText='position:absolute;left:12px;bottom:12px;z-index:40;padding:7px 12px;border:1px solid #d9aabd;border-radius:10px;background:#fff5f8;color:#80546b;font-weight:bold';b.onclick=()=>this.openWalk();viewport.append(b)}b.textContent=this.care?.walk?'산책 확인':'산책';b.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':'';}
     const costumeButton=this.root.querySelector<HTMLElement>('.house-costume-button');if(costumeButton)costumeButton.style.display=this.infoOpen||!this.care||this.care.deadAt?'none':''
     const el=this.root.querySelector<HTMLElement>('.house-care');if(!el)return
     const c=this.care;if(!c){el.innerHTML='육성 정보를 불러오는 중…';return}
